@@ -153,6 +153,14 @@ func WireHandlers(deps HandlerDependencies) *HandlerSet {
 
 	// WebSocket handler.
 	hs.Stream = websockethandlers.NewStreamHandler(deps.Log, deps.Config, deps.Hub, *deps.HmacVerifier, deps.AuditLogger)
+
+	// Route non-telemetry device frames (command results, and later PTY data and
+	// app registration) from the device WebSocket to the feature that owns them.
+	// The hub only understands telemetry; everything else lands here.
+	if deps.Hub != nil && deps.CommandService != nil {
+		deps.Hub.SetDeviceFrameHandler(websockethandlers.NewDeviceFrameHandler(deps.CommandService, deps.Log))
+		deps.CommandService.SetStatusPublisher(deps.Hub)
+	}
 	// Telemetry history handler.
 	var telemetryRepo *storage.TelemetryRepository
 	if deps.DB != nil {

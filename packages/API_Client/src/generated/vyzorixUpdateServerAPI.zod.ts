@@ -281,6 +281,16 @@ export const CommandResponseSchema = z.object({
   serverTime: z.number().int().optional(),
   status: z.string().optional(),
 });
+export const CommandResultAckSchema = z.object({
+  dispatchId: z.string().optional(),
+  recorded: z.boolean().optional(),
+  serverTime: z.number().int().optional(),
+});
+export const CommandResultReportSchema = z.object({
+  error: z.string().optional(),
+  output: z.string().optional(),
+  success: z.boolean().optional(),
+});
 export const CommandRetryResultSchema = z.object({
   command_id: z.string().optional(),
   dispatchId: z.string().optional(),

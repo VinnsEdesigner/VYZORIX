@@ -430,6 +430,9 @@ func (s *Server) setupDeviceManagementRoutes(r *gin.RouterGroup) {
 		s.commandHandler.Handle,
 	)
 	deviceMgmt.GET("/:imei/commands/pending", s.commandHandler.GetPending)
+	// HTTP fallback for a device that finished a command while its WebSocket was
+	// down; the primary path is the command_result frame on /:imei/stream.
+	deviceMgmt.POST("/:imei/command/:dispatchId/result", s.commandHandler.ReportResult)
 	deviceMgmt.DELETE("/:imei", s.deviceUpdaterHandler.Delete)
 	deviceMgmt.GET("/:imei/stream", s.streamHandler.Handle)
 	deviceMgmt.GET("/:imei/connection-status", s.connectionStatusHandler.GetStatus)

@@ -121,6 +121,7 @@ type Command struct {
 	Command       string
 	Status        Status
 	FailureReason string
+	Result        string
 	DeviceID      string
 	ID            string
 	Args          []byte
@@ -215,6 +216,43 @@ func (c *Command) GetArgs(v interface{}) error {
 // CanRetry returns true if the command can be retried.
 func (c *Command) CanRetry() bool {
 	return c.MaxRetries == 0 || c.RetryCount < c.MaxRetries
+}
+
+// ApplyResult records a device-reported terminal outcome. It enforces the
+// lifecycle transition (delivered/pending -> completed/failed) so a late or
+// duplicated device report cannot resurrect a command that already finished,
+// and it stores the device output separately from the failure reason.
+//
+// A successful report clears any earlier failure reason; a failed report clears
+// any earlier result. Both are idempotent: re-applying the same terminal status
+// returns (false, nil) rather than an error, so a retried delivery confirmation
+// is safe. It returns true only when the status actually changed.
+func (c *Command) ApplyResult(success bool, output string, at time.Time) (bool, error) {
+	target := StatusCompleted
+	if !success {
+		target = StatusFailed
+	}
+
+	if c.Status == target {
+		return false, nil
+	}
+	if c.Status.IsTerminal() {
+		return false, fmt.Errorf("%w: cannot transition from %s to %s", ErrInvalidCommandTransition, c.Status, target)
+	}
+
+	c.Status = target
+	ms := at.UnixMilli()
+	c.CompletedAt = &ms
+	c.UpdatedAt = at
+
+	if success {
+		c.Result = output
+		c.FailureReason = ""
+	} else {
+		c.FailureReason = output
+	}
+
+	return true, nil
 }
 
 // ShouldRetryNow returns true if enough time has passed since the last attempt.

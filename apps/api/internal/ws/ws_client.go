@@ -202,7 +202,28 @@ func (c *Client) ReadPump() {
 
 		if t.Type == "telemetry" {
 			c.processTelemetry(raw, &t)
+			continue
 		}
+
+		// Any other frame type (command results, PTY data, app registration,
+		// ...) is routed to the feature handler. With no handler installed the
+		// frame is logged and dropped rather than silently swallowed.
+		if handler := c.Hub.deviceFrameHandlerFor(); handler != nil {
+			if !handler.HandleDeviceFrame(context.Background(), c.DeviceID, t.Type, raw) {
+				c.logUnknownFrameType(t.Type)
+			}
+		} else if t.Type != "" {
+			c.logUnknownFrameType(t.Type)
+		}
+	}
+}
+
+// logUnknownFrameType records a device frame whose type nothing handled. It is
+// deliberately low-severity: a newer device sending an unknown type is expected
+// and must not be treated as an error.
+func (c *Client) logUnknownFrameType(frameType string) {
+	if c.log != nil {
+		c.log.Debug("unhandled ws frame type", "deviceId", c.DeviceID, "type", frameType)
 	}
 }
 

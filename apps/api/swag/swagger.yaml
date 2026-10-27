@@ -551,6 +551,24 @@ definitions:
       status:
         type: string
     type: object
+  github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandResultAck:
+    properties:
+      dispatchId:
+        type: string
+      recorded:
+        type: boolean
+      serverTime:
+        type: integer
+    type: object
+  github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandResultReport:
+    properties:
+      error:
+        type: string
+      output:
+        type: string
+      success:
+        type: boolean
+    type: object
   github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandRetryResult:
     properties:
       command_id:
@@ -6403,6 +6421,51 @@ paths:
           schema:
             $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse'
       summary: Execute command
+      tags:
+      - commands
+  /device/{imei}/command/{dispatchId}/result:
+    post:
+      consumes:
+      - application/json
+      description: Device reports the terminal outcome of a dispatched command (HTTP
+        fallback for a dropped WebSocket)
+      parameters:
+      - description: device IMEI
+        in: path
+        name: imei
+        required: true
+        type: string
+      - description: dispatch ID
+        in: path
+        name: dispatchId
+        required: true
+        type: string
+      - description: result payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandResultReport'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: result recorded
+          schema:
+            $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandResultAck'
+        "400":
+          description: invalid input
+          schema:
+            $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse'
+        "404":
+          description: command not found
+          schema:
+            $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse'
+        "500":
+          description: internal error
+          schema:
+            $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse'
+      summary: Report command result
       tags:
       - commands
   /device/{imei}/commands/pending:

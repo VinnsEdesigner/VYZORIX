@@ -5977,6 +5977,72 @@
                 }
             }
         },
+        "/device/{imei}/command/{dispatchId}/result": {
+            "post": {
+                "description": "Device reports the terminal outcome of a dispatched command (HTTP fallback for a dropped WebSocket)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "commands"
+                ],
+                "summary": "Report command result",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "device IMEI",
+                        "name": "imei",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "dispatch ID",
+                        "name": "dispatchId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "result payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandResultReport"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "result recorded",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandResultAck"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "command not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/device/{imei}/commands/pending": {
             "get": {
                 "description": "Returns commands pending delivery for a device",
@@ -11706,6 +11772,34 @@
                 },
                 "status": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandResultAck": {
+            "type": "object",
+            "properties": {
+                "dispatchId": {
+                    "type": "string"
+                },
+                "recorded": {
+                    "type": "boolean"
+                },
+                "serverTime": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandResultReport": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "output": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
                 }
             }
         },

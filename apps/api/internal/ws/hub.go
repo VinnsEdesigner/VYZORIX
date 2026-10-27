@@ -37,6 +37,7 @@ type Hub struct {
 	deviceRepo           device.Repository
 	eventProcessor       EventProcessor
 	dashboardBroadcaster DashboardBroadcaster
+	deviceFrameHandler   DeviceFrameHandler
 	deviceStatus         chan DeviceStatusUpdate
 	rateLimiter          *RateLimiter
 	register             chan *Client
@@ -351,8 +352,18 @@ func (h *Hub) handleDeviceStatus(ctx context.Context, status DeviceStatusUpdate)
 	}
 }
 
-// Register adds a client to the hub.
-func (h *Hub) Register(c *Client) { h.register <- c }
+// Register adds a client to the hub. The logger is attached synchronously here,
+// before the registration is queued: ReadPump starts as soon as Handle returns
+// and logs on its very first frame, so a logger assigned only in the async
+// registration goroutine could still be nil when the first frame (or the first
+// read error) arrives.
+func (h *Hub) Register(c *Client) {
+	if c.log == nil {
+		c.log = h.log
+	}
+
+	h.register <- c
+}
 
 // Unregister removes a client from the hub.
 func (h *Hub) Unregister(c *Client) { h.unreg <- c }

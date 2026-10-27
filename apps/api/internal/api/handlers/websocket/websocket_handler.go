@@ -5,7 +5,6 @@ import (
 	"log/slog"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
 	apperrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
 	config "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/config"
 	cryptohmac "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/crypto"
@@ -17,12 +16,11 @@ import (
 // StreamHandler handles WebSocket connections for device streaming.
 // This is the main entry point for the device streaming API.
 type StreamHandler struct {
-	log           *slog.Logger
-	hub           *hub.Hub
-	upgrader      *StreamUpgrader
-	messageRouter *MessageRouter
-	presenter     *Presenter
-	config        config.Config
+	log       *slog.Logger
+	hub       *hub.Hub
+	upgrader  *StreamUpgrader
+	presenter *Presenter
+	config    config.Config
 }
 
 // NewStreamHandler creates a new StreamHandler with all dependencies.
@@ -34,16 +32,14 @@ func NewStreamHandler(
 	auditLogger *audit.Logger,
 ) *StreamHandler {
 	upgrader := NewStreamUpgrader(log, cfg, hmacVerifier)
-	messageRouter := NewMessageRouter(h, log)
 	presenter := NewPresenter(auditLogger, log)
 
 	return &StreamHandler{
-		log:           log,
-		config:        cfg,
-		hub:           h,
-		upgrader:      upgrader,
-		messageRouter: messageRouter,
-		presenter:     presenter,
+		log:       log,
+		config:    cfg,
+		hub:       h,
+		upgrader:  upgrader,
+		presenter: presenter,
 	}
 }
 
@@ -88,34 +84,4 @@ func (h *StreamHandler) Handle(c *gin.Context) {
 	// Start pumps - ReadPump blocks, so run WritePump in goroutine.
 	go client.WritePump()
 	client.ReadPump()
-}
-
-// BroadcastTelemetry sends telemetry data to all connected dashboard clients.
-func (h *StreamHandler) BroadcastTelemetry(raw []byte) {
-	h.hub.BroadcastTelemetry(raw)
-}
-
-// ClientCount returns the number of connected WebSocket clients.
-func (h *StreamHandler) ClientCount() int {
-	return h.hub.ClientCount()
-}
-
-// GetClient retrieves a specific client by device ID.
-func (h *StreamHandler) GetClient(deviceID string) *hub.Client {
-	return h.hub.GetClient(deviceID)
-}
-
-// DisconnectClient forcefully disconnects a client by device ID.
-func (h *StreamHandler) DisconnectClient(deviceID string) {
-	h.messageRouter.DisconnectClient(deviceID)
-}
-
-// SendToClient sends a command frame to a specific device.
-func (h *StreamHandler) SendToClient(deviceID string, frame command.CommandFrame) bool {
-	return h.hub.Send(deviceID, frame)
-}
-
-// IsOnline checks if a device is currently connected via WebSocket.
-func (h *StreamHandler) IsOnline(deviceID string) bool {
-	return h.hub.Online(deviceID)
 }

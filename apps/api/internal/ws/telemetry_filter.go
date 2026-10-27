@@ -278,31 +278,6 @@ func (tf *TelemetryFilter) incrementForwarded() {
 	tf.metricsMu.Unlock()
 }
 
-// UnsubscribeAll unsubscribes a client from all devices.
-func (tf *TelemetryFilter) UnsubscribeAll(clientID string) {
-	tf.mu.Lock()
-	defer tf.mu.Unlock()
-
-	devices, ok := tf.subscriptions[clientID]
-	if !ok {
-		return
-	}
-
-	for deviceID := range devices {
-		delete(tf.deviceSubscribers[deviceID], clientID)
-
-		if len(tf.deviceSubscribers[deviceID]) == 0 {
-			delete(tf.deviceSubscribers, deviceID)
-		}
-	}
-
-	delete(tf.subscriptions, clientID)
-
-	tf.metricsMu.Lock()
-	tf.metrics.TotalUnsubscribes += int64(len(devices))
-	tf.metricsMu.Unlock()
-}
-
 // nowUnix returns current Unix timestamp.
 func nowUnix() int64 {
 	return time.Now().Unix()

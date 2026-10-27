@@ -23,6 +23,7 @@ var ErrTooManyPendingCommands = errors.New("device has too many pending commands
 type Service struct {
 	commandRepo command.Repository
 	deviceRepo  device.Repository
+	publisher   StatusPublisher
 }
 
 // NewService creates a new CommandService.
@@ -179,31 +180,89 @@ func (s *Service) MarkDelivered(ctx context.Context, commandID string) error {
 	return s.commandRepo.Update(ctx, cmd)
 }
 
-// MarkCompleted marks a command as completed.
-func (s *Service) MarkCompleted(ctx context.Context, commandID string) error {
-	cmd, err := s.commandRepo.FindByID(ctx, commandID)
-	if err != nil {
-		return err
-	}
-
-	now := time.Now().UnixMilli()
-	cmd.Status = command.StatusCompleted
-	cmd.CompletedAt = &now
-	cmd.UpdatedAt = time.Now()
-
-	return s.commandRepo.Update(ctx, cmd)
+// MarkCompleted marks a command as completed by dispatch ID, recording the
+// device-reported output. It is the counterpart of MarkDelivered and is the
+// entry point a device's command result travels through.
+func (s *Service) MarkCompleted(ctx context.Context, dispatchID, result string) error {
+	return s.applyTerminal(ctx, dispatchID, true, result)
 }
 
-// MarkFailed marks a command as failed with an error message.
-func (s *Service) MarkFailed(ctx context.Context, commandID string, failureReason string) error {
-	// Get the command to verify it exists and get dispatch_id.
-	cmd, err := s.commandRepo.FindByID(ctx, commandID)
+// MarkFailed marks a command as failed by dispatch ID with an error message.
+func (s *Service) MarkFailed(ctx context.Context, dispatchID, failureReason string) error {
+	return s.applyTerminal(ctx, dispatchID, false, failureReason)
+}
+
+// applyTerminal loads the command, applies the terminal transition through the
+// domain, and persists it. The domain enforces the lifecycle (an already
+// terminal command is not resurrected by a late report) and keeps result and
+// failure_reason distinct.
+func (s *Service) applyTerminal(ctx context.Context, dispatchID string, success bool, output string) error {
+	cmd, err := s.commandRepo.FindByDispatchIDOnly(ctx, dispatchID)
 	if err != nil {
+		if errors.Is(err, command.ErrNotFound) {
+			return application.ErrCommandNotFound
+		}
+
 		return err
 	}
 
-	// Use repository's MarkFailed which sets failure_reason properly.
-	return s.commandRepo.MarkFailed(ctx, cmd.DispatchID, failureReason)
+	return s.applyTerminalTo(ctx, cmd, success, output)
+}
+
+// ReportResult records a device-reported terminal outcome for a command that
+// belongs to deviceID. The ownership check matters: a device must not be able to
+// complete or fail a command dispatched to a different device by guessing a
+// dispatch ID.
+func (s *Service) ReportResult(ctx context.Context, deviceID, dispatchID string, success bool, output string) error {
+	cmd, err := s.commandRepo.FindByDispatchIDOnly(ctx, dispatchID)
+	if err != nil {
+		if errors.Is(err, command.ErrNotFound) {
+			return application.ErrCommandNotFound
+		}
+
+		return err
+	}
+
+	if cmd.DeviceID != deviceID {
+		return application.ErrCommandNotFound
+	}
+
+	return s.applyTerminalTo(ctx, cmd, success, output)
+}
+
+// applyTerminalTo applies the terminal transition to a loaded command, persists
+// it, and publishes the new status. Applying the same terminal status twice is a
+// no-op, so a retried device report does not produce a spurious error.
+func (s *Service) applyTerminalTo(ctx context.Context, cmd *command.Command, success bool, output string) error {
+	changed, err := cmd.ApplyResult(success, output, time.Now())
+	if err != nil {
+		return err
+	}
+	if !changed {
+		return nil
+	}
+
+	if err := s.commandRepo.Update(ctx, cmd); err != nil {
+		return err
+	}
+
+	if s.publisher != nil {
+		s.publisher.PublishCommandStatusForDevice(ctx, cmd.DispatchID, cmd.DeviceID, string(cmd.Status))
+	}
+
+	return nil
+}
+
+// SetStatusPublisher installs the hook used to fan a terminal command status out
+// to realtime subscribers. It is optional so the service stays usable without a
+// hub (tests, CLI paths); a nil publisher simply skips the notification.
+func (s *Service) SetStatusPublisher(p StatusPublisher) {
+	s.publisher = p
+}
+
+// StatusPublisher publishes a command status change to realtime subscribers.
+type StatusPublisher interface {
+	PublishCommandStatusForDevice(ctx context.Context, dispatchID, deviceID, status string)
 }
 
 // CancelCommand cancels a pending command.

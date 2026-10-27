@@ -459,6 +459,18 @@ type CommandConfirmResult struct {
 	ConfirmationRequired bool   `json:"confirmation_required"`
 }
 
+type CommandResultReport struct {
+	Error   string `json:"error,omitempty"`
+	Output  string `json:"output,omitempty"`
+	Success bool   `json:"success"`
+}
+
+type CommandResultAck struct {
+	DispatchID string `json:"dispatchId"`
+	ServerTime int64  `json:"serverTime"`
+	Recorded   bool   `json:"recorded"`
+}
+
 type ConfigVersion struct {
 	ChangedBy    string `json:"changed_by"`
 	ID           string `json:"id"`

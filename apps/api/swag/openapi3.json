@@ -7321,6 +7321,88 @@
         }
       }
     },
+    "/device/{imei}/command/{dispatchId}/result": {
+      "post": {
+        "summary": "Report command result",
+        "description": "Device reports the terminal outcome of a dispatched command (HTTP fallback for a dropped WebSocket)",
+        "tags": [
+          "commands"
+        ],
+        "parameters": [
+          {
+            "name": "imei",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "device IMEI"
+          },
+          {
+            "name": "dispatchId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "dispatch ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "result payload",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommandResultReport"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "result recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommandResultAck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "command not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/device/{imei}/commands/pending": {
       "get": {
         "summary": "List pending commands",
@@ -14260,6 +14342,34 @@
           },
           "status": {
             "type": "string"
+          }
+        }
+      },
+      "CommandResultAck": {
+        "type": "object",
+        "properties": {
+          "dispatchId": {
+            "type": "string"
+          },
+          "recorded": {
+            "type": "boolean"
+          },
+          "serverTime": {
+            "type": "integer"
+          }
+        }
+      },
+      "CommandResultReport": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "output": {
+            "type": "string"
+          },
+          "success": {
+            "type": "boolean"
           }
         }
       },

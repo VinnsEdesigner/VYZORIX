@@ -53,7 +53,7 @@ func (r *CommandRepository) exec(ctx context.Context, query string, args ...inte
 func (r *CommandRepository) FindByID(ctx context.Context, id string) (*command.Command, error) {
 	query := `
 		SELECT id, device_id, dispatch_id, command, args, status, 
-		       delivered_at, completed_at, created_at, updated_at 
+		       delivered_at, completed_at, created_at, updated_at, result
 		FROM commands WHERE id = ?`
 
 	var cmd command.Command
@@ -62,9 +62,11 @@ func (r *CommandRepository) FindByID(ctx context.Context, id string) (*command.C
 
 	var deliveredAt, completedAt sql.NullInt64
 
+	var result sql.NullString
+
 	err := r.queryRow(ctx, query, id).Scan(
 		&cmd.ID, &cmd.DeviceID, &cmd.DispatchID, &cmd.Command, &argsJSON,
-		&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt,
+		&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt, &result,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -85,6 +87,9 @@ func (r *CommandRepository) FindByID(ctx context.Context, id string) (*command.C
 
 	if completedAt.Valid {
 		cmd.CompletedAt = &completedAt.Int64
+	}
+	if result.Valid {
+		cmd.Result = result.String
 	}
 
 	return &cmd, nil
@@ -94,7 +99,7 @@ func (r *CommandRepository) FindByID(ctx context.Context, id string) (*command.C
 func (r *CommandRepository) FindByDispatchID(ctx context.Context, deviceID, dispatchID string) (*command.Command, error) {
 	query := `
 		SELECT id, device_id, dispatch_id, command, args, status, 
-		       delivered_at, completed_at, created_at, updated_at 
+		       delivered_at, completed_at, created_at, updated_at, result
 		FROM commands WHERE dispatch_id = ? AND device_id = ?`
 
 	var cmd command.Command
@@ -103,9 +108,11 @@ func (r *CommandRepository) FindByDispatchID(ctx context.Context, deviceID, disp
 
 	var deliveredAt, completedAt sql.NullInt64
 
+	var result sql.NullString
+
 	err := r.queryRow(ctx, query, dispatchID, deviceID).Scan(
 		&cmd.ID, &cmd.DeviceID, &cmd.DispatchID, &cmd.Command, &argsJSON,
-		&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt,
+		&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt, &result,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -126,6 +133,9 @@ func (r *CommandRepository) FindByDispatchID(ctx context.Context, deviceID, disp
 
 	if completedAt.Valid {
 		cmd.CompletedAt = &completedAt.Int64
+	}
+	if result.Valid {
+		cmd.Result = result.String
 	}
 
 	return &cmd, nil
@@ -135,7 +145,7 @@ func (r *CommandRepository) FindByDispatchID(ctx context.Context, deviceID, disp
 func (r *CommandRepository) FindByDispatchIDOnly(ctx context.Context, dispatchID string) (*command.Command, error) {
 	query := `
 		SELECT id, device_id, dispatch_id, command, args, status, 
-		       delivered_at, completed_at, created_at, updated_at 
+		       delivered_at, completed_at, created_at, updated_at, result
 		FROM commands WHERE dispatch_id = ?`
 
 	var cmd command.Command
@@ -144,9 +154,11 @@ func (r *CommandRepository) FindByDispatchIDOnly(ctx context.Context, dispatchID
 
 	var deliveredAt, completedAt sql.NullInt64
 
+	var result sql.NullString
+
 	err := r.queryRow(ctx, query, dispatchID).Scan(
 		&cmd.ID, &cmd.DeviceID, &cmd.DispatchID, &cmd.Command, &argsJSON,
-		&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt,
+		&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt, &result,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -168,6 +180,9 @@ func (r *CommandRepository) FindByDispatchIDOnly(ctx context.Context, dispatchID
 	if completedAt.Valid {
 		cmd.CompletedAt = &completedAt.Int64
 	}
+	if result.Valid {
+		cmd.Result = result.String
+	}
 
 	return &cmd, nil
 }
@@ -176,7 +191,7 @@ func (r *CommandRepository) FindByDispatchIDOnly(ctx context.Context, dispatchID
 func (r *CommandRepository) FindByDeviceID(ctx context.Context, deviceID string, limit int) ([]*command.Command, error) {
 	query := `
 		SELECT id, device_id, dispatch_id, command, args, status, 
-		       delivered_at, completed_at, created_at, updated_at 
+		       delivered_at, completed_at, created_at, updated_at, result
 		FROM commands WHERE device_id = ? ORDER BY created_at DESC LIMIT ?`
 
 	rows, err := r.queryRows(ctx, query, deviceID, limit)
@@ -195,9 +210,11 @@ func (r *CommandRepository) FindByDeviceID(ctx context.Context, deviceID string,
 
 		var deliveredAt, completedAt sql.NullInt64
 
+		var result sql.NullString
+
 		if err := rows.Scan(
 			&cmd.ID, &cmd.DeviceID, &cmd.DispatchID, &cmd.Command, &argsJSON,
-			&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt,
+			&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt, &result,
 		); err != nil {
 			return nil, err
 		}
@@ -212,6 +229,9 @@ func (r *CommandRepository) FindByDeviceID(ctx context.Context, deviceID string,
 
 		if completedAt.Valid {
 			cmd.CompletedAt = &completedAt.Int64
+		}
+		if result.Valid {
+			cmd.Result = result.String
 		}
 
 		commands = append(commands, &cmd)
@@ -310,7 +330,8 @@ func (r *CommandRepository) Update(ctx context.Context, cmd *command.Command) er
 	query := `
 		UPDATE commands SET 
 			device_id = ?, dispatch_id = ?, command = ?, args = ?, 
-			status = ?, delivered_at = ?, completed_at = ?, updated_at = ?
+			status = ?, delivered_at = ?, completed_at = ?, updated_at = ?,
+			result = ?, failure_reason = ?
 		WHERE id = ?`
 
 	argsJSON, err := json.Marshal(cmd.Args)
@@ -320,7 +341,8 @@ func (r *CommandRepository) Update(ctx context.Context, cmd *command.Command) er
 
 	_, err = r.exec(ctx, query,
 		cmd.DeviceID, cmd.DispatchID, cmd.Command, argsJSON,
-		cmd.Status, cmd.DeliveredAt, cmd.CompletedAt, cmd.UpdatedAt, cmd.ID)
+		cmd.Status, cmd.DeliveredAt, cmd.CompletedAt, cmd.UpdatedAt,
+		cmd.Result, cmd.FailureReason, cmd.ID)
 
 	return err
 }
@@ -329,7 +351,7 @@ func (r *CommandRepository) Update(ctx context.Context, cmd *command.Command) er
 func (r *CommandRepository) FindPendingByDeviceID(ctx context.Context, deviceID string) ([]*command.Command, error) {
 	query := `
 		SELECT id, device_id, dispatch_id, command, args, status,
-		       delivered_at, completed_at, created_at, updated_at
+		       delivered_at, completed_at, created_at, updated_at, result
 		FROM commands WHERE device_id = ? AND status = 'pending'
 		ORDER BY created_at ASC`
 
@@ -349,9 +371,11 @@ func (r *CommandRepository) FindPendingByDeviceID(ctx context.Context, deviceID 
 
 		var deliveredAt, completedAt sql.NullInt64
 
+		var result sql.NullString
+
 		err := rows.Scan(
 			&cmd.ID, &cmd.DeviceID, &cmd.DispatchID, &cmd.Command, &argsJSON,
-			&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt,
+			&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt, &result,
 		)
 		if err != nil {
 			return nil, err
@@ -367,6 +391,9 @@ func (r *CommandRepository) FindPendingByDeviceID(ctx context.Context, deviceID 
 
 		if completedAt.Valid {
 			cmd.CompletedAt = &completedAt.Int64
+		}
+		if result.Valid {
+			cmd.Result = result.String
 		}
 
 		commands = append(commands, &cmd)
@@ -395,7 +422,7 @@ func (r *CommandRepository) FindHistoryByDeviceID(ctx context.Context, deviceID 
 	}
 
 	// Get paginated results - include failure_reason.
-	query := `SELECT id, device_id, dispatch_id, command, args, status, delivered_at, completed_at, created_at, updated_at, failure_reason ` + baseQuery + ` ORDER BY created_at DESC LIMIT ? OFFSET ?`
+	query := `SELECT id, device_id, dispatch_id, command, args, status, delivered_at, completed_at, created_at, updated_at, failure_reason, result ` + baseQuery + ` ORDER BY created_at DESC LIMIT ? OFFSET ?`
 	args = append(args, limit, offset)
 
 	rows, err := r.queryRows(ctx, query, args...)
@@ -414,12 +441,13 @@ func (r *CommandRepository) FindHistoryByDeviceID(ctx context.Context, deviceID 
 
 		var deliveredAt, completedAt sql.NullInt64
 
+		var result sql.NullString
+
 		var failureReason sql.NullString
 
 		err := rows.Scan(
 			&cmd.ID, &cmd.DeviceID, &cmd.DispatchID, &cmd.Command, &argsJSON,
-			&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt,
-			&failureReason,
+			&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt, &failureReason, &result,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -435,6 +463,9 @@ func (r *CommandRepository) FindHistoryByDeviceID(ctx context.Context, deviceID 
 
 		if completedAt.Valid {
 			cmd.CompletedAt = &completedAt.Int64
+		}
+		if result.Valid {
+			cmd.Result = result.String
 		}
 
 		if failureReason.Valid {
@@ -518,25 +549,46 @@ func (r *CommandRepository) MarkDelivered(ctx context.Context, dispatchID string
 }
 
 // MarkCompleted marks a command as completed by dispatch ID with result.
+// The result is the device-reported output (e.g. stdout); failure_reason is
+// cleared because a completed command did not fail.
 func (r *CommandRepository) MarkCompleted(ctx context.Context, dispatchID, result string) error {
 	now := time.Now()
-	_, err := r.exec(ctx,
-		`UPDATE commands SET status = ?, completed_at = ?, updated_at = ?, failure_reason = ? WHERE dispatch_id = ?`,
+	res, err := r.exec(ctx,
+		`UPDATE commands SET status = ?, completed_at = ?, updated_at = ?, result = ?, failure_reason = NULL WHERE dispatch_id = ?`,
 		command.StatusCompleted, now.UnixMilli(), now, result, dispatchID,
 	)
+	if err != nil {
+		return err
+	}
 
-	return err
+	return requireRowsAffected(res, command.ErrNotFound)
 }
 
 // MarkFailed marks a command as failed by dispatch ID with error message.
 func (r *CommandRepository) MarkFailed(ctx context.Context, dispatchID, errMsg string) error {
 	now := time.Now()
-	_, err := r.exec(ctx,
+	res, err := r.exec(ctx,
 		`UPDATE commands SET status = ?, completed_at = ?, updated_at = ?, failure_reason = ? WHERE dispatch_id = ?`,
 		command.StatusFailed, now.UnixMilli(), now, errMsg, dispatchID,
 	)
+	if err != nil {
+		return err
+	}
 
-	return err
+	return requireRowsAffected(res, command.ErrNotFound)
+}
+
+// requireRowsAffected turns a zero-row update into err, so callers cannot
+// mistake a no-op (unknown dispatch ID) for a successful state transition.
+func requireRowsAffected(res sql.Result, err error) error {
+	rows, rerr := res.RowsAffected()
+	if rerr != nil {
+		return rerr
+	}
+	if rows == 0 {
+		return err
+	}
+	return nil
 }
 
 // DeleteOldCommands removes commands older than the given timestamp.
@@ -556,7 +608,7 @@ func (r *CommandRepository) DeleteOldCommands(ctx context.Context, olderThan int
 func (r *CommandRepository) FindByDispatchPrefix(ctx context.Context, prefix string) ([]*command.Command, error) {
 	query := `
 		SELECT id, device_id, dispatch_id, command, args, status,
-		       delivered_at, completed_at, created_at, updated_at
+		       delivered_at, completed_at, created_at, updated_at, result
 		FROM commands WHERE dispatch_id LIKE ? || '%'
 		ORDER BY created_at ASC`
 
@@ -574,9 +626,11 @@ func (r *CommandRepository) FindByDispatchPrefix(ctx context.Context, prefix str
 		var argsJSON []byte
 		var deliveredAt, completedAt sql.NullInt64
 
+		var result sql.NullString
+
 		err := rows.Scan(
 			&cmd.ID, &cmd.DeviceID, &cmd.DispatchID, &cmd.Command, &argsJSON,
-			&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt,
+			&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt, &result,
 		)
 		if err != nil {
 			return nil, err
@@ -592,6 +646,9 @@ func (r *CommandRepository) FindByDispatchPrefix(ctx context.Context, prefix str
 
 		if completedAt.Valid {
 			cmd.CompletedAt = &completedAt.Int64
+		}
+		if result.Valid {
+			cmd.Result = result.String
 		}
 
 		commands = append(commands, &cmd)
@@ -621,7 +678,7 @@ func (r *CommandRepository) FindPending(ctx context.Context, limit int) ([]*comm
 	now := time.Now().UnixMilli()
 	query := `
 		SELECT id, device_id, dispatch_id, command, args, status,
-		       delivered_at, completed_at, created_at, updated_at, failure_reason,
+		       delivered_at, completed_at, created_at, updated_at, failure_reason, result,
 		       retry_count, max_retries, next_retry_at
 		FROM commands
 		WHERE status = 'pending' AND (next_retry_at IS NULL OR next_retry_at <= ?)
@@ -641,13 +698,14 @@ func (r *CommandRepository) FindPending(ctx context.Context, limit int) ([]*comm
 		var cmd command.Command
 		var argsJSON []byte
 		var deliveredAt, completedAt sql.NullInt64
+
+		var result sql.NullString
 		var failureReason sql.NullString
 		var nextRetryAt sql.NullInt64
 
 		err := rows.Scan(
 			&cmd.ID, &cmd.DeviceID, &cmd.DispatchID, &cmd.Command, &argsJSON,
-			&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt,
-			&failureReason, &cmd.RetryCount, &cmd.MaxRetries, &nextRetryAt,
+			&cmd.Status, &deliveredAt, &completedAt, &cmd.CreatedAt, &cmd.UpdatedAt, &failureReason, &result, &cmd.RetryCount, &cmd.MaxRetries, &nextRetryAt,
 		)
 		if err != nil {
 			return nil, err
@@ -663,6 +721,9 @@ func (r *CommandRepository) FindPending(ctx context.Context, limit int) ([]*comm
 
 		if completedAt.Valid {
 			cmd.CompletedAt = &completedAt.Int64
+		}
+		if result.Valid {
+			cmd.Result = result.String
 		}
 
 		if failureReason.Valid {

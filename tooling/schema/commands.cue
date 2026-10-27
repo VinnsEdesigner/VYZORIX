@@ -97,3 +97,17 @@ package vyzorix
         confirmation_required: bool
         ttl_seconds: int
 }
+
+// CommandResultReport.
+#CommandResultReport: {
+        success: bool
+        output?: string
+        error?: string
+}
+
+// CommandResultAck.
+#CommandResultAck: {
+        dispatchId: string
+        recorded: bool
+        serverTime: int64
+}
