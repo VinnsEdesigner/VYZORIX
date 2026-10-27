@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
 	apperrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
 	hub "github.com/VinnsEdesigner/vyzorix/apps/api/internal/ws"
 
@@ -45,6 +46,13 @@ type PTYDeviceResolver interface {
 	DeviceOrganization(ctx context.Context, deviceID string) string
 }
 
+// PTYAudit records terminal session lifecycle events. *audit.Logger implements
+// it; the interface keeps the handler independent of the concrete logger (and
+// lets a no-op stand in where no audit store is configured).
+type PTYAudit interface {
+	PTYSession(ctx context.Context, e audit.PTYSessionEvent)
+}
+
 // PTYAuthorizer gates opening a terminal. It is the PTY_SESSION_OPEN risk gate:
 // a shell is the most dangerous capability on the device, so it must not be
 // reachable without the same authorization the command path applies.
@@ -56,14 +64,15 @@ type PTYAuthorizer interface {
 
 // ptyOperatorClient is one browser terminal connection.
 type ptyOperatorClient struct {
-	conn      *websocket.Conn
-	log       *slog.Logger
-	sessions  map[string]bool
-	outbox    chan []byte
-	operator  string
-	orgID     string
-	closeOnce sync.Once
-	mu        sync.Mutex
+	conn          *websocket.Conn
+	log           *slog.Logger
+	sessions      map[string]bool
+	outbox        chan []byte
+	operator      string
+	orgID         string
+	closeOnce     sync.Once
+	mu            sync.Mutex
+	wantRecording bool
 }
 
 // OperatorTerminalHandler serves the browser terminal endpoint.
@@ -71,13 +80,15 @@ type ptyOperatorClient struct {
 // Unlike the device stream, this endpoint speaks the same binary PTY framing as
 // the device side, with JSON only for control messages (open, resize, close).
 type OperatorTerminalHandler struct {
-	relay      *hub.PTYRelay
-	log        *slog.Logger
-	clients    map[string]*ptyOperatorClient
-	devices    PTYDeviceResolver
-	authorizer PTYAuthorizer
-	upgrader   websocket.Upgrader
-	mu         sync.RWMutex
+	relay        *hub.PTYRelay
+	log          *slog.Logger
+	clients      map[string]*ptyOperatorClient
+	devices      PTYDeviceResolver
+	authorizer   PTYAuthorizer
+	audit        PTYAudit
+	upgrader     websocket.Upgrader
+	recordingDir string
+	mu           sync.RWMutex
 }
 
 // NewOperatorTerminalHandler creates the operator terminal handler.
@@ -85,6 +96,8 @@ func NewOperatorTerminalHandler(
 	relay *hub.PTYRelay,
 	devices PTYDeviceResolver,
 	authorizer PTYAuthorizer,
+	auditLogger PTYAudit,
+	recordingDir string,
 	allowedOrigins []string,
 	log *slog.Logger,
 ) *OperatorTerminalHandler {
@@ -107,12 +120,14 @@ func NewOperatorTerminalHandler(
 	}
 
 	return &OperatorTerminalHandler{
-		relay:      relay,
-		devices:    devices,
-		authorizer: authorizer,
-		log:        log,
-		upgrader:   websocket.Upgrader{CheckOrigin: checkOrigin, HandshakeTimeout: 10 * time.Second},
-		clients:    make(map[string]*ptyOperatorClient),
+		relay:        relay,
+		devices:      devices,
+		authorizer:   authorizer,
+		audit:        auditLogger,
+		recordingDir: recordingDir,
+		log:          log,
+		upgrader:     websocket.Upgrader{CheckOrigin: checkOrigin, HandshakeTimeout: 10 * time.Second},
+		clients:      make(map[string]*ptyOperatorClient),
 	}
 }
 
@@ -157,6 +172,15 @@ func (h *OperatorTerminalHandler) Handle(c *gin.Context) {
 		if !allowed {
 			h.log.Warn("pty open denied",
 				"operatorId", op.ID, "deviceId", deviceID, "reason", reason)
+			h.auditSession(c.Request.Context(), audit.PTYSessionEvent{
+				DeviceID:   deviceID,
+				OperatorID: op.ID,
+				Reason:     reason,
+				IPAddress:  c.ClientIP(),
+				UserAgent:  c.Request.UserAgent(),
+				Result:     audit.ResultBlocked,
+				Opened:     true,
+			})
 			_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthzScopeForbidden, "not permitted to open a terminal: "+reason))
 
 			return
@@ -291,13 +315,16 @@ func (c *ptyOperatorClient) handleBinaryInput(h *OperatorTerminalHandler, raw []
 // message is logged and ignored rather than closing the connection: a bad
 // control frame must not tear down a working terminal.
 func (c *ptyOperatorClient) handleControl(h *OperatorTerminalHandler, deviceID string, raw []byte) {
+	// Field order groups the three strings, then the scalars, then the bool, to
+	// avoid padding.
 	var msg struct {
 		Type      string `json:"type"`
 		SessionID string `json:"sessionId"`
 		Reason    string `json:"reason"`
+		Credits   int    `json:"credits"`
 		Rows      uint16 `json:"rows"`
 		Cols      uint16 `json:"cols"`
-		Credits   int    `json:"credits"`
+		Record    bool   `json:"record"`
 	}
 	if err := json.Unmarshal(raw, &msg); err != nil {
 		c.log.Warn("bad pty control frame", "operatorId", c.operator, "err", err)
@@ -307,6 +334,7 @@ func (c *ptyOperatorClient) handleControl(h *OperatorTerminalHandler, deviceID s
 
 	switch msg.Type {
 	case "pty_open":
+		c.wantRecording = msg.Record
 		c.handleOpen(h, deviceID, msg.SessionID)
 	case "pty_resize":
 		c.handleResize(h, msg.SessionID, msg.Rows, msg.Cols)
@@ -331,7 +359,10 @@ func (c *ptyOperatorClient) handleOpen(h *OperatorTerminalHandler, deviceID, ses
 		return
 	}
 
-	session, err := h.relay.Registry().Open(sessionID, deviceID, c.operator, c.orgID, false)
+	// Recording is opt-in per session and only available when a directory is
+	// configured. The operator's request is honoured only if both hold.
+	record := c.wantRecording && h.recordingDir != ""
+	session, err := h.relay.Registry().Open(sessionID, deviceID, c.operator, c.orgID, record)
 	if err != nil {
 		c.sendError(sessionID, err.Error())
 
@@ -353,7 +384,23 @@ func (c *ptyOperatorClient) handleOpen(h *OperatorTerminalHandler, deviceID, ses
 	c.sessions[sessionID] = true
 	c.mu.Unlock()
 
+	h.auditSession(context.Background(), audit.PTYSessionEvent{
+		SessionID:  sessionID,
+		DeviceID:   session.DeviceID,
+		OperatorID: c.operator,
+		Result:     audit.ResultSuccess,
+		Opened:     true,
+		Recording:  session.Recording,
+	})
+
 	c.sendJSON(map[string]string{"type": "pty_opened", "sessionId": sessionID})
+}
+
+// auditSession records a terminal session event when an audit logger is wired.
+func (h *OperatorTerminalHandler) auditSession(ctx context.Context, e audit.PTYSessionEvent) {
+	if h.audit != nil {
+		h.audit.PTYSession(ctx, e)
+	}
 }
 
 // handleResize forwards a window size change to the device.
@@ -454,6 +501,12 @@ func (h *OperatorTerminalHandler) removeClient(c *ptyOperatorClient) {
 	// device's shell with no way to reach it.
 	for _, id := range owned {
 		h.relay.CloseSession(id, "operator_disconnected", nil)
+		h.auditSession(context.Background(), audit.PTYSessionEvent{
+			SessionID:  id,
+			OperatorID: c.operator,
+			Reason:     "operator_disconnected",
+			Result:     audit.ResultSuccess,
+		})
 	}
 
 	c.closeOnce.Do(func() { close(c.outbox) })

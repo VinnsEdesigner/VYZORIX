@@ -3,6 +3,7 @@ package wire
 
 import (
 	"context"
+	"path/filepath"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/adapters/response"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers"
@@ -280,8 +281,12 @@ func wireDeviceFrameRouting(hs *HandlerSet, deps HandlerDependencies) {
 	// session registry (credit window, per-device cap) and sends device-bound
 	// traffic over the ephemeral path so keystrokes never hit the database.
 	var ptyRelay *hub.PTYRelay
+	recordingDir := ""
 	if deps.Hub != nil {
-		ptyRelay = hub.NewPTYRelay(hub.NewPTYRegistry(hub.PTYRegistryConfig{}), deps.Hub, deps.Log)
+		recordingDir = filepath.Join(deps.Config.DataDir, "pty-recordings")
+		ptyRelay = hub.NewPTYRelay(hub.NewPTYRegistry(hub.PTYRegistryConfig{
+			NewRecorder: newPTYRecorderFactory(recordingDir, deps.Log),
+		}), deps.Hub, deps.Log)
 	}
 	hs.PTYRelay = ptyRelay
 
@@ -293,6 +298,8 @@ func wireDeviceFrameRouting(hs *HandlerSet, deps HandlerDependencies) {
 			ptyRelay,
 			NewPTYDeviceResolver(deps.DeviceRepo),
 			nil,
+			ptyAuditLogger(deps.AuditLogger),
+			recordingDir,
 			deps.Config.AllowedOrigins,
 			deps.Log,
 		)

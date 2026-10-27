@@ -38,6 +38,7 @@ const (
 type PTYSession struct {
 	OpenedAt   time.Time
 	LastSeenAt time.Time
+	recorder   *PTYRecorder
 	SessionID  string
 	DeviceID   string
 	OperatorID string
@@ -46,9 +47,15 @@ type PTYSession struct {
 	Credit     int
 }
 
+// Recorder returns the session's cast recorder, or nil when recording is off.
+func (s *PTYSession) Recorder() *PTYRecorder {
+	return s.recorder
+}
+
 // PTYRegistry tracks live PTY sessions and their flow-control credit.
 type PTYRegistry struct {
 	now          func() time.Time
+	newRecorder  func(sessionID string) (*PTYRecorder, error)
 	sessions     map[string]*PTYSession
 	byDevice     map[string]int
 	sessionTTL   time.Duration
@@ -60,7 +67,11 @@ type PTYRegistry struct {
 // PTYRegistryConfig configures the registry. Zero values take the defaults.
 type PTYRegistryConfig struct {
 	// Now is injectable so tests can drive TTL expiry without sleeping.
-	Now                  func() time.Time
+	Now func() time.Time
+	// NewRecorder opens a cast recorder for a session. When nil, recording is
+	// unavailable and a session that asks for it fails to open rather than
+	// silently running unrecorded.
+	NewRecorder          func(sessionID string) (*PTYRecorder, error)
 	SessionTTL           time.Duration
 	MaxSessionsPerDevice int
 	CreditWindow         int
@@ -84,6 +95,7 @@ func NewPTYRegistry(cfg PTYRegistryConfig) *PTYRegistry {
 	return &PTYRegistry{
 		sessions:     make(map[string]*PTYSession),
 		byDevice:     make(map[string]int),
+		newRecorder:  cfg.NewRecorder,
 		maxPerDevice: cfg.MaxSessionsPerDevice,
 		creditWindow: cfg.CreditWindow,
 		sessionTTL:   cfg.SessionTTL,
@@ -113,6 +125,18 @@ func (r *PTYRegistry) Open(sessionID, deviceID, operatorID, orgID string, record
 		LastSeenAt: now,
 		Credit:     r.creditWindow,
 	}
+
+	// Open the recorder before publishing the session, so a caller that asked for
+	// recording either gets it or gets an error. Silently running unrecorded would
+	// defeat the point of asking.
+	if recording && r.newRecorder != nil {
+		rec, err := r.newRecorder(sessionID)
+		if err != nil {
+			return nil, err
+		}
+		s.recorder = rec
+	}
+
 	r.sessions[sessionID] = s
 	r.byDevice[deviceID]++
 
@@ -150,6 +174,12 @@ func (r *PTYRegistry) Close(sessionID string) (*PTYSession, error) {
 		r.byDevice[s.DeviceID]--
 	}
 
+	// Flush and close the cast file. This runs under the registry lock, which is
+	// acceptable: Close is a single file close, not an I/O loop.
+	if s.recorder != nil {
+		_ = s.recorder.Close()
+	}
+
 	return s, nil
 }
 
@@ -163,6 +193,9 @@ func (r *PTYRegistry) CloseByDevice(deviceID string) []*PTYSession {
 	var closed []*PTYSession
 	for id, s := range r.sessions {
 		if s.DeviceID == deviceID {
+			if s.recorder != nil {
+				_ = s.recorder.Close()
+			}
 			closed = append(closed, s)
 			delete(r.sessions, id)
 		}

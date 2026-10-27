@@ -31,6 +31,9 @@ func DefaultScopesForRole(roleName string) ScopedPermissions {
 			{ActionServiceAccountsRead, orgAll},
 			{ActionAnnotationsRead, orgAll},
 			{ActionConfigVersionsRead, orgAll},
+			// Visibility into supervised apps; starting/stopping them is an
+			// operator action.
+			{ActionAppsRead, devicesAll},
 		}
 	}
 	appendOperator := func() {
@@ -42,6 +45,10 @@ func DefaultScopesForRole(roleName string) ScopedPermissions {
 			ScopedPermission{ActionDiagnosticsRead, diagnosticsAll},
 			ScopedPermission{ActionInboxRead, inboxAll},
 			ScopedPermission{ActionInboxWrite, inboxAll},
+			// App lifecycle is routine operations work. Shell and USB are
+			// deliberately absent: both are arbitrary device access, granted to
+			// admins only.
+			ScopedPermission{ActionAppsWrite, devicesAll},
 		)
 	}
 	appendAdmin := func() {
@@ -62,6 +69,11 @@ func DefaultScopesForRole(roleName string) ScopedPermissions {
 			ScopedPermission{ActionServiceAccountsWrite, orgAll},
 			ScopedPermission{ActionAnnotationsWrite, orgAll},
 			ScopedPermission{ActionConfigVersionsWrite, orgAll},
+			// Arbitrary device access. A shell is unbounded code execution and a
+			// USB attach can flash external hardware, so both are admin-only and
+			// never implied by the operator defaults above.
+			ScopedPermission{ActionShell, devicesAll},
+			ScopedPermission{ActionUsb, devicesAll},
 		)
 	}
 	appendSuperAdmin := func() {

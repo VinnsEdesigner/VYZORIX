@@ -20,6 +20,8 @@ const (
 	ActionSetObservability   Action = "observability"
 	ActionSetInboxManage     Action = "inbox.manage"
 	ActionSetShellManage     Action = "shell.manage"
+	ActionSetUsbManage       Action = "usb.manage"
+	ActionSetAppsManage      Action = "apps.manage"
 )
 
 // actionSets maps an aggregate action to the base actions it implies.
@@ -37,6 +39,8 @@ var actionSets = map[Action][]Action{
 	// Shell access is its own aggregate so it can be granted without also
 	// granting the ability to dispatch arbitrary commands, and vice versa.
 	ActionSetShellManage:     {ActionShell},
+	ActionSetUsbManage:       {ActionUsb},
+	ActionSetAppsManage:      {ActionAppsRead, ActionAppsWrite},
 	ActionSetTelemetryManage: {ActionTelemetryRead, ActionTelemetryWrite},
 	ActionSetObservability: {
 		ActionTelemetryRead, ActionDiagnosticsRead,

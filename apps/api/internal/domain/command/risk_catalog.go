@@ -74,6 +74,35 @@ var riskRegistry = map[string]CommandRiskProfile{
 		RequiresConfirmation: true,
 		ConfirmationTTL:      2 * time.Minute,
 	},
+
+	// Interactive shell: run one command on the device and return its output.
+	// High, not critical: it is stateless and scoped to the caller's own devices.
+	// It is still gated by the shell.execute scope, so a caller without that grant
+	// cannot reach it regardless of tier.
+	TypeShellExec: {Tier: RiskTierHigh},
+
+	// Opening a terminal session is destructive-adjacent: a shell is arbitrary,
+	// stateful code execution with no undo, so it is critical and requires an
+	// explicit confirmation, matching factory_reset.
+	TypePTYSessionOpen: {
+		Tier:                 RiskTierCritical,
+		RequiresConfirmation: true,
+		ConfirmationTTL:      2 * time.Minute,
+	},
+
+	// Attaching to a USB device lets the caller read, write and flash it.
+	// Irreversible once written, so critical with confirmation; the MFA
+	// requirement for critical-tier commands is enforced by the risk evaluator.
+	TypeUsbAttach: {
+		Tier:                 RiskTierCritical,
+		RequiresConfirmation: true,
+		ConfirmationTTL:      2 * time.Minute,
+	},
+
+	// Supervised application lifecycle. Medium: it mutates device state but is
+	// reversible by stopping or restarting the app.
+	TypeAppStart: {Tier: RiskTierMedium},
+	TypeAppStop:  {Tier: RiskTierMedium},
 }
 
 // LookupRiskProfile returns the risk profile for the given command name. The.

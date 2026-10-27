@@ -315,6 +315,15 @@ func startServer(cfg *config.Config, log *slog.Logger, apiServer *api.Server,
 	if apiServer.UsageStatsService() != nil {
 		lifecycleManager.Register("usage-stats", worker.NewUsageStatsWorker(apiServer.UsageStatsService(), lockSvc, log, 6*time.Hour))
 	}
+	if apiServer.PTYRelay() != nil {
+		lifecycleManager.Register("pty-expiry", worker.NewPTYExpiryWorker(
+			apiServer.PTYRelay(),
+			apiServer.PTYRecordingDir(),
+			lockSvc,
+			log,
+			worker.DefaultPTYExpiryInterval,
+		))
+	}
 	if apiServer.DB != nil && apiServer.AlertEvaluator != nil {
 		lifecycleManager.Register("alert-evaluation", worker.NewAlertEvaluationWorker(apiServer.AlertEvaluator, lockSvc, log, time.Duration(cfg.AlertConfig.EvalIntervalSecs)*time.Second))
 	}

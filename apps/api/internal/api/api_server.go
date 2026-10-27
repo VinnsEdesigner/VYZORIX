@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -725,4 +726,20 @@ func NewServerWithDeps(cfg *ServerConfigWithDeps) *Server {
 // UsageStatsService returns the self-telemetry snapshot service.
 func (s *Server) UsageStatsService() *usagestats.Service {
 	return s.statsSvc
+}
+
+// PTYRelay returns the terminal session relay, or nil when PTY is not wired.
+// It is exposed so the PTY expiry worker can be registered against it.
+func (s *Server) PTYRelay() *hub.PTYRelay {
+	return s.ptyRelay
+}
+
+// PTYRecordingDir returns the directory cast recordings are written to. It is
+// empty when PTY is not wired.
+func (s *Server) PTYRecordingDir() string {
+	if s.ptyRelay == nil {
+		return ""
+	}
+
+	return filepath.Join(s.config.DataDir, "pty-recordings")
 }

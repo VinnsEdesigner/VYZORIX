@@ -26,6 +26,15 @@ const (
 	// granted on its own and never implied by command.execute.
 	ActionShell Action = "shell.execute"
 
+	// USB session access: read, write and flash an external device over OTG.
+	// Separate from shell.execute because the two are different capabilities;
+	// holding one must not imply the other.
+	ActionUsb Action = "usb.attach"
+
+	// Supervised applications on a device: list them, and start/stop them.
+	ActionAppsRead  Action = "apps.read"
+	ActionAppsWrite Action = "apps.write"
+
 	// Telemetry: query device telemetry history, latest, stats, export.
 	ActionTelemetryRead  Action = "telemetry.read"
 	ActionTelemetryWrite Action = "telemetry.write"

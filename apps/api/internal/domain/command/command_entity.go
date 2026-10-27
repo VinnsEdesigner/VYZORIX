@@ -107,6 +107,19 @@ const (
 	TypeWakeUpUpdater = "WAKE_UP_UPDATER"
 	// TypeCheckUpdate is sent to trigger an update check on a device.
 	TypeCheckUpdate = "CHECK_UPDATE"
+
+	// TypeShellExec runs a single command on the device and returns its output.
+	// It is stateless: one command in, one result out, no session. Use the PTY
+	// session flow (see the operator terminal endpoint) for an interactive shell.
+	TypeShellExec = "SHELL_EXEC"
+	// TypePTYSessionOpen requests an interactive terminal session on the device.
+	TypePTYSessionOpen = "PTY_SESSION_OPEN"
+	// TypeUsbAttach grants a USB session on the device's OTG bus.
+	TypeUsbAttach = "USB_ATTACH"
+	// TypeAppStart starts a supervised application on the device.
+	TypeAppStart = "APP_START"
+	// TypeAppStop stops a supervised application on the device.
+	TypeAppStop = "APP_STOP"
 )
 
 // Command represents a command to be sent to a device.

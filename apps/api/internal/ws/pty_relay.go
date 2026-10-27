@@ -97,7 +97,10 @@ func (r *PTYRelay) RelayInput(sessionID string, payload []byte) bool {
 		return false
 	}
 
-	frame := EncodePTYFrame(ChannelPTY, PTYTypeData, payload)
+	// The payload is session-prefixed: a device multiplexes several sessions over
+	// one socket, so a DATA frame that did not name its session would be
+	// unroutable. This mirrors the output path, which prefixes the same way.
+	frame := EncodePTYFrame(ChannelPTY, PTYTypeData, EncodeSessionData(sessionID, payload))
 	if !r.devices.SendEphemeral(session.DeviceID, frame) {
 		r.log.Debug("pty input dropped",
 			"sessionId", sessionID, "deviceId", session.DeviceID, "bytes", len(payload))
@@ -130,9 +133,24 @@ func (r *PTYRelay) RelayOutput(sessionID string, operator PTYOperator, payload [
 		return false
 	}
 
+	r.recordOutput(sessionID, payload)
 	r.registry.Touch(sessionID)
 
 	return true
+}
+
+// recordOutput appends delivered output to the session's cast file when
+// recording is on. It records only what the operator actually saw, so the cast
+// matches the session rather than the device's raw stream.
+func (r *PTYRelay) recordOutput(sessionID string, payload []byte) {
+	session, err := r.registry.Get(sessionID)
+	if err != nil || session.Recorder() == nil {
+		return
+	}
+
+	if !session.Recorder().WriteOutput(payload) {
+		r.log.Warn("pty recording dropped output (size cap reached)", "sessionId", sessionID)
+	}
 }
 
 // AckCredit returns credit to a session when the operator acknowledges frames.

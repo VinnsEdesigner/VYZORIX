@@ -62,6 +62,11 @@ const (
 	ActionAPIKeyFailed  Action = "api_key_failed"
 	// Command execution audit actions (Phase 2 risk/audit).
 	ActionCommandExecuted Action = "command_executed"
+	// Terminal session audit actions. Opening a shell is the most privileged
+	// operation the platform exposes, so every session open, close and denial
+	// is recorded independently of command execution.
+	ActionPTYSessionOpened Action = "pty_session_opened"
+	ActionPTYSessionClosed Action = "pty_session_closed"
 )
 
 // Result represents the outcome of an action.

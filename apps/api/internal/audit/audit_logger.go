@@ -66,6 +66,9 @@ func (n *NoOpLogger) APIKeyFailed(ctx context.Context, operatorID, keyPrefix, ip
 // CommandExecuted is a no-op for the command execution audit event.
 func (n *NoOpLogger) CommandExecuted(ctx context.Context, e CommandExecutedEvent) {}
 
+// PTYSession is a no-op for the terminal session audit event.
+func (n *NoOpLogger) PTYSession(_ context.Context, _ PTYSessionEvent) {}
+
 // NoOpAuditRepo is a no-operation audit repository for when no separate DB is configured.
 type NoOpAuditRepo struct{}
 
@@ -643,4 +646,58 @@ type CommandExecutedEvent struct {
 	ActorEmail string
 	OldValue   string
 	NewValue   string
+}
+
+// PTYSession logs a terminal session lifecycle event: opened, closed, or denied.
+// Opening a shell is the most privileged operation the platform exposes, so it is
+// audited separately from command execution and records who opened it, on which
+// device, and why it ended.
+func (l *Logger) PTYSession(ctx context.Context, e PTYSessionEvent) {
+	metadata := map[string]string{
+		"session_id": e.SessionID,
+		"device_id":  e.DeviceID,
+	}
+	if e.Reason != "" {
+		metadata["reason"] = e.Reason
+	}
+	if e.Recording {
+		metadata["recording"] = "true"
+	}
+
+	action := ActionPTYSessionOpened
+	if !e.Opened {
+		action = ActionPTYSessionClosed
+	}
+
+	l.LogEvent(ctx, &Entry{
+		OperatorID:   e.OperatorID,
+		Action:       action,
+		ResourceType: "device",
+		ResourceID:   e.DeviceID,
+		IPAddress:    e.IPAddress,
+		UserAgent:    e.UserAgent,
+		Result:       e.Result,
+		// A terminal is always treated as critical-tier for audit purposes: it is
+		// unbounded code execution, whether or not the caller reached it through
+		// the confirmation flow.
+		RiskTier: "critical",
+		Metadata: metadata,
+	})
+}
+
+// PTYSessionEvent carries the fields needed to audit a terminal session. It is a
+// value type so handlers assemble it without allocating when there is nothing to
+// record.
+type PTYSessionEvent struct {
+	SessionID  string
+	DeviceID   string
+	OperatorID string
+	Reason     string
+	IPAddress  string
+	UserAgent  string
+	Result     Result
+	// Opened distinguishes an open from a close for the same struct.
+	Opened bool
+	// Recording reports whether the session is being recorded.
+	Recording bool
 }

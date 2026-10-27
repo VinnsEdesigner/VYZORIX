@@ -63,8 +63,21 @@ func TestRelayInputEncodesAndSends(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DecodePTYFrame: %v", err)
 	}
-	if channel != ChannelPTY || frameType != PTYTypeData || string(payload) != "ls\n" {
-		t.Fatalf("frame = %d/%d/%q, want pty/data/ls\\n", channel, frameType, payload)
+	if channel != ChannelPTY || frameType != PTYTypeData {
+		t.Fatalf("frame = %d/%d, want pty/data", channel, frameType)
+	}
+
+	// The device-bound payload must name its session: a device multiplexes
+	// several sessions over one socket and cannot route a bare payload.
+	sessionID, data, err := DecodeSessionData(payload)
+	if err != nil {
+		t.Fatalf("DecodeSessionData: %v", err)
+	}
+	if sessionID != "s1" {
+		t.Fatalf("sessionID = %q, want s1", sessionID)
+	}
+	if string(data) != "ls\n" {
+		t.Fatalf("data = %q, want ls\\n", data)
 	}
 }
 
