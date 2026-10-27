@@ -38,9 +38,9 @@ type DashboardRateLimits struct {
 	DeviceTimelineLimit  int
 	DeviceTimelineRefill time.Duration
 
-	// GET /v1/dashboard/device/:imei/terminal: 5 requests per minute. Opening a
-	// shell is the most sensitive dashboard action, so it is throttled harder
-	// than any other.
+	// GET /v1/dashboard/device/:imei/terminal: 20 requests per minute. Higher
+	// than a command because reconnecting a terminal is routine, but still
+	// bounded: a shell is the most sensitive dashboard action.
 	TerminalOpenLimit  int
 	TerminalOpenRefill time.Duration
 }
@@ -74,9 +74,10 @@ func DefaultDashboardRateLimits() *DashboardRateLimits {
 		DeviceTimelineLimit:  30,
 		DeviceTimelineRefill: time.Minute,
 
-		// Terminal open: 5 per minute. A shell is the most sensitive action, and a
-		// human opens at most a handful of terminals a minute.
-		TerminalOpenLimit:  5,
+		// Terminal open: 20 per minute. Reconnects are routine, so the limit has
+		// to tolerate a client re-establishing a few times, while still bounding
+		// how fast shells can be opened.
+		TerminalOpenLimit:  20,
 		TerminalOpenRefill: time.Minute,
 	}
 }
