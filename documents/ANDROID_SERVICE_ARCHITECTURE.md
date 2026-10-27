@@ -721,11 +721,17 @@ snapshot of reality, so the Android work has a fixed target.
 | PTY audit | **Done** | `ActionPTYSessionOpened`/`Closed`; the operator handler records open, close and denial with the reason and recording flag. |
 | PTY recording | **Done** | asciinema v2 casts via `pty_recorder.go`, opt-in per session, size-capped, swept by age. Output only, so prompt input is never captured. |
 | End-to-end test | **Done** | Real operator and device WebSockets through the hub, relay and both handlers: round trip, teardown on disconnect, and cast output. |
-| Per-session MFA | **Not implemented** | Authorization is the route scope plus the org check; the `PTYAuthorizer` hook is wired as `nil`. Intentionally deferred. |
+| Terminal risk gate | **Done** | `PTYAuthorizer` delegates to the shared command `Authorizer`, so `PTY_SESSION_OPEN`'s critical tier is enforced: MFA-verified session plus a single-use confirmation token (449 when satisfiable, 403 on hard deny). This *is* the per-session MFA the earlier revision deferred. |
+| Rate limiting | **Done** | `TerminalOpenLimit`, 20/min, applied to both the terminal and recording routes. |
+| Recording retrieval | **Done** | `GET /v1/dashboard/device/:imei/recordings/:sessionId`, org-scoped, session ID constrained to a UUID with a resolved-path check. |
+| Race-free under `-race` | **Done** | Two `Client` field races (on `log` and `OrgID`) found and fixed. |
+| `SHELL_EXEC` / `USB_ATTACH` / `APP_*` dispatch | **Server side done, device side pending** | The server classifies and delivers these; the device agent implements the executors. No server-side handler is needed or wanted — see §5. |
+| **USB / app scopes are not yet enforced** | **Open** | `ActionUsb`, `ActionAppsRead` and `ActionAppsWrite` exist, are granted by role, and have action sets — but **no route checks them**, because the USB and app endpoints do not exist yet. They become enforced when those routes are built. Until then they are policy with nothing to apply to. |
 | App proxy | **Not started** | §10's cloudflared-lite work. |
 
-The terminal feature is built and covered by tests end to end. The two remaining rows
-are separate work: per-session MFA (an intentional deferral) and the app proxy.
+The terminal feature is built, race-free and covered by tests end to end. What remains
+is **new surface, not missing pieces**: the USB and app routes (which will consume the
+scopes already defined), and the public app proxy.
 
 ---
 
