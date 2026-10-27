@@ -40,18 +40,36 @@ type ClientMetrics struct {
 
 // Client represents a WebSocket client connection to a device.
 type Client struct {
-	Conn        *websocket.Conn
-	Send        chan command.CommandFrame
-	PtySend     chan []byte
-	Hub         *Hub
-	log         *slog.Logger
-	Done        chan struct{}
+	Conn    *websocket.Conn
+	Send    chan command.CommandFrame
+	PtySend chan []byte
+	Hub     *Hub
+	log     *slog.Logger
+	Done    chan struct{}
+	// orgID is set once at registration and read on every telemetry frame. It is
+	// atomic because the registration goroutine writes it while ReadPump (a
+	// different goroutine) reads it, which a plain field would race on.
+	orgID       atomic.Value
 	DeviceID    string
 	ClientID    string
-	OrgID       string
 	metrics     ClientMetrics
 	connectedAt int64
 	isConnected atomic.Bool
+}
+
+// SetOrgID records the device's organization. Called once, at registration.
+func (c *Client) SetOrgID(orgID string) {
+	c.orgID.Store(orgID)
+}
+
+// OrgID returns the device's organization, or "" if it has not been resolved.
+// Safe to call from any goroutine.
+func (c *Client) OrgID() string {
+	if v, ok := c.orgID.Load().(string); ok {
+		return v
+	}
+
+	return ""
 }
 
 // closeConn safely closes a websocket connection, logging any error.
@@ -285,9 +303,9 @@ func (c *Client) processTelemetry(raw []byte, t *telemetry.TelemetryFrame) {
 	c.Hub.BroadcastTelemetry(raw)
 
 	// Fan out to GraphQL telemetryReceived subscribers in the device's org. The
-	// org is resolved once at registration (c.OrgID), so this is O(1).
-	if c.OrgID != "" {
-		c.Hub.PublishTelemetry(c.OrgID, c.DeviceID, *t)
+	// org is resolved once at registration, so this is O(1).
+	if orgID := c.OrgID(); orgID != "" {
+		c.Hub.PublishTelemetry(orgID, c.DeviceID, *t)
 	}
 
 	// Process telemetry for threshold breach events.

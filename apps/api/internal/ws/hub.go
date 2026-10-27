@@ -227,11 +227,15 @@ func (h *Hub) handleClientRegistration(ctx context.Context, c *Client) {
 		}
 	}
 
-	c.log = h.log
+	// The logger is attached by Register, before the client is queued, so
+	// ReadPump can rely on it from its first frame. It is deliberately not set
+	// here: this goroutine runs concurrently with ReadPump, and writing the
+	// field again would be a data race.
+	//
 	// Resolve the device's organization once, at registration, so the realtime
 	// fan-out does not need a DB lookup per telemetry frame.
-	if c.OrgID == "" {
-		c.OrgID = h.OrganizationForDevice(ctx, c.DeviceID)
+	if c.OrgID() == "" {
+		c.SetOrgID(h.OrganizationForDevice(ctx, c.DeviceID))
 	}
 	h.clients[c.DeviceID] = c
 	h.mu.Unlock()
@@ -267,8 +271,8 @@ func (h *Hub) emitDeviceConnected(ctx context.Context, c *Client) {
 	}
 
 	// Fan out to GraphQL deviceUpdated subscribers in the device's organization.
-	if c.OrgID != "" {
-		h.PublishDeviceUpdate(c.OrgID, c.DeviceID, map[string]any{
+	if c.OrgID() != "" {
+		h.PublishDeviceUpdate(c.OrgID(), c.DeviceID, map[string]any{
 			"deviceId":  c.DeviceID,
 			"online":    true,
 			"timestamp": metadata["timestamp"],
@@ -319,8 +323,8 @@ func (h *Hub) emitDeviceDisconnected(ctx context.Context, c *Client) {
 	}
 
 	// Fan out to GraphQL deviceUpdated subscribers in the device's organization.
-	if c.OrgID != "" {
-		h.PublishDeviceUpdate(c.OrgID, c.DeviceID, map[string]any{
+	if c.OrgID() != "" {
+		h.PublishDeviceUpdate(c.OrgID(), c.DeviceID, map[string]any{
 			"deviceId":  c.DeviceID,
 			"online":    false,
 			"timestamp": metadata["timestamp"],
