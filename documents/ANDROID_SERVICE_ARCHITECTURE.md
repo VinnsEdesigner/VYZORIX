@@ -343,6 +343,30 @@ server side):
 | `USB_ATTACH` | critical | MFA + confirmation; destructive/irreversible |
 | `APP_START` / `APP_STOP` | medium | supervisor control |
 
+**The server does not execute commands, and there is no server-side handler for
+`SHELL_EXEC` — that is by design, not a gap.** The server is a command plane.
+For every command type its job is the same four steps: authorize against the
+risk profile, sign the frame with the device secret, deliver it over the device
+WebSocket (or an FCM silent wake), and record the result the device reports
+back. The *device agent* executes. A server-side handler would mean the server
+ran shell commands, which is impossible (it has no access to the device) and
+undesirable (it would bypass the device's own privilege model).
+
+So `SHELL_EXEC` is classified (for the risk gate) and dispatched (to the
+device) — never executed server-side. Two consequences for the device agent:
+
+- **It must implement `SHELL_EXEC`.** A `high`-tier one-shot command whose
+  output is returned through the `command_result` path (§6.3 covers the frame
+  shape for PTY; the same result path applies here).
+- **It must not silently ignore an unknown type.** If a device receives a
+  command it does not implement, it should report a **failed** result rather
+  than drop it, so the operator learns the command was not executed instead of
+  watching it sit `delivered` forever.
+
+Do not add an allowlist of "known" command types on the server. The device
+agent owns that knowledge; the server's job is to authorize and deliver. A
+server-side list would reject every new command until a server deploy shipped.
+
 **Interactive shells are not a command.** An earlier revision listed
 `PTY_SESSION_OPEN` here. The implemented design opens a session over the operator
 WebSocket instead (`GET /v1/device/:imei/terminal`, gated on the `shell.execute`
@@ -637,7 +661,9 @@ Two fd-capabilities decide whether the premise holds. **Build these first.**
    `wrap_sys_device` → a control transfer. If this works, the USB pillar is proven.
 3. **Layer 1:** `android.sock` + `ApiRouter` + first 5 APIs + proot launch + watchdog.
 4. **Layer 4:** cloud WS against the real `/v1/device/:imei/stream` with HMAC;
-   `SHELL_EXEC` end to end (Phase 0 — ships value without PTY).
+   `SHELL_EXEC` end to end (Phase 0 — ships value without PTY). The device agent
+   implements the executor; the server only classifies and dispatches it (see
+   §5).
 5. **Layer 2:** `pty-agent` multiplexer, binary framing, `tmux`.
 6. **Layer 3:** supervisor + `app-*` + inotify + PID start-time tokens.
 7. **Last:** public app proxy (wildcard DNS/TLS, streaming).

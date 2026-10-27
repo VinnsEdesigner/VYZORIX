@@ -79,6 +79,10 @@ var riskRegistry = map[string]CommandRiskProfile{
 	// High, not critical: it is stateless and scoped to the caller's own devices.
 	// It is still gated by the shell.execute scope, so a caller without that grant
 	// cannot reach it regardless of tier.
+	//
+	// This entry exists so the risk gate can classify the command; the server
+	// never executes it. See the TypeShellExec doc comment in command_entity.go
+	// for why there is deliberately no server-side handler.
 	TypeShellExec: {Tier: RiskTierHigh},
 
 	// Opening a terminal session is destructive-adjacent: a shell is arbitrary,

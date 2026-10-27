@@ -111,6 +111,24 @@ const (
 	// TypeShellExec runs a single command on the device and returns its output.
 	// It is stateless: one command in, one result out, no session. Use the PTY
 	// session flow (see the operator terminal endpoint) for an interactive shell.
+	//
+	// There is deliberately no server-side handler for this type, and adding one
+	// would be a design error. The server is a command plane, not an executor:
+	// its job for every command type is the same four steps — authorize against
+	// the risk profile, sign the frame with the device secret, deliver it over
+	// the device WebSocket (or FCM wake), and record the result the device
+	// reports back. Executing the command is the device agent's job, on the
+	// device, under its own sandbox. A server-side handler would mean the server
+	// ran shell commands, which is neither possible (it has no access to the
+	// device) nor desirable (it would bypass the device's own privilege model).
+	//
+	// So this constant exists to be *classified* and *dispatched*, not executed:
+	// risk_catalog.go gives it a tier so the risk gate knows how to authorize it,
+	// and the command plane carries it to the device like any other type. The
+	// device agent is what runs the command and reports the outcome, which then
+	// flows back through the command_result path. Until that agent implements it,
+	// a device that receives SHELL_EXEC should report a failed result rather than
+	// ignore it, so the caller learns the command was not executed.
 	TypeShellExec = "SHELL_EXEC"
 	// TypePTYSessionOpen requests an interactive terminal session on the device.
 	TypePTYSessionOpen = "PTY_SESSION_OPEN"
