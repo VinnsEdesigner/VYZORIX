@@ -27,6 +27,13 @@ const (
 	ptyOperatorPongWait = 70 * time.Second
 	// ptyOperatorPingPeriod is the keepalive interval.
 	ptyOperatorPingPeriod = 30 * time.Second
+	// ptyOperatorIdleTimeout closes a session whose operator has sent nothing for
+	// this long. The registry TTL (2h) bounds a session's absolute life; this is
+	// tighter and input-driven, so a tab left open does not hold a shell: a
+	// terminal with no keystrokes is a terminal nobody is using.
+	ptyOperatorIdleTimeout = 15 * time.Minute
+	// ptyOperatorIdleCheck is how often the idle watchdog runs.
+	ptyOperatorIdleCheck = time.Minute
 	// ptyOperatorReadLimit caps an inbound frame. Operator input is keystrokes
 	// and control messages; a paste is the realistic upper bound.
 	ptyOperatorReadLimit = 1 << 20
@@ -53,26 +60,58 @@ type PTYAudit interface {
 	PTYSession(ctx context.Context, e audit.PTYSessionEvent)
 }
 
+// PTYAuthRequest carries the actor context a terminal-open decision needs. It
+// mirrors the command path's authorization inputs so the same risk gate applies
+// to a shell as to any other critical operation.
+type PTYAuthRequest struct {
+	OperatorID        string
+	OrgID             string
+	DeviceID          string
+	ConfirmationToken string
+	MFAVerified       bool
+	IsSuperAdmin      bool
+}
+
+// PTYAuthDecision is the outcome of the terminal-open gate.
+type PTYAuthDecision struct {
+	// Reason is the audit reason for a denial.
+	Reason string
+	// Message is the client-facing explanation.
+	Message string
+	// Allowed reports whether the session may open.
+	Allowed bool
+	// NeedsConfirmation is true when the block is a confirmation/MFA gate the
+	// client can satisfy and retry, as opposed to a hard deny.
+	NeedsConfirmation bool
+}
+
 // PTYAuthorizer gates opening a terminal. It is the PTY_SESSION_OPEN risk gate:
 // a shell is the most dangerous capability on the device, so it must not be
-// reachable without the same authorization the command path applies.
+// reachable without the same authorization the command path applies. The
+// concrete implementation delegates to the shared command Authorizer, so the
+// critical tier registered for PTY_SESSION_OPEN is actually consulted rather
+// than being dead policy.
 type PTYAuthorizer interface {
-	// AuthorizePTYOpen reports whether the operator may open a shell on the
-	// device, and why not when refused.
-	AuthorizePTYOpen(ctx context.Context, operatorID, deviceID string) (allowed bool, reason string)
+	// AuthorizePTYOpen evaluates the request against the PTY_SESSION_OPEN risk
+	// profile.
+	AuthorizePTYOpen(ctx context.Context, req PTYAuthRequest) PTYAuthDecision
 }
 
 // ptyOperatorClient is one browser terminal connection.
+//
+//nolint:govet // fieldalignment: grouping by role reads better than packing.
 type ptyOperatorClient struct {
 	conn          *websocket.Conn
 	log           *slog.Logger
 	sessions      map[string]bool
 	outbox        chan []byte
+	closed        chan struct{}
 	operator      string
 	orgID         string
+	lastInput     time.Time
 	closeOnce     sync.Once
-	mu            sync.Mutex
 	wantRecording bool
+	mu            sync.Mutex
 }
 
 // OperatorTerminalHandler serves the browser terminal endpoint.
@@ -165,23 +204,43 @@ func (h *OperatorTerminalHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	// The risk gate for a shell session. Refused before the upgrade so the client
-	// gets a normal HTTP error rather than a socket that closes immediately.
+	// The risk gate for a shell session, evaluated before the upgrade so the
+	// client gets a normal HTTP error rather than a socket that closes
+	// immediately. This consults the PTY_SESSION_OPEN risk profile, so a shell
+	// gets the same critical-tier treatment as any other dangerous operation:
+	// an MFA-verified session plus a single-use confirmation token.
 	if h.authorizer != nil {
-		allowed, reason := h.authorizer.AuthorizePTYOpen(c.Request.Context(), op.ID, deviceID)
-		if !allowed {
+		decision := h.authorizer.AuthorizePTYOpen(c.Request.Context(), PTYAuthRequest{
+			OperatorID:        op.ID,
+			OrgID:             orgID,
+			DeviceID:          deviceID,
+			ConfirmationToken: c.Query("confirmation_token"),
+			MFAVerified:       sessionMFAVerified(c),
+			IsSuperAdmin:      op.IsSuperAdmin(),
+		})
+		if !decision.Allowed {
 			h.log.Warn("pty open denied",
-				"operatorId", op.ID, "deviceId", deviceID, "reason", reason)
+				"operatorId", op.ID, "deviceId", deviceID, "reason", decision.Reason)
 			h.auditSession(c.Request.Context(), audit.PTYSessionEvent{
 				DeviceID:   deviceID,
 				OperatorID: op.ID,
-				Reason:     reason,
+				Reason:     decision.Reason,
 				IPAddress:  c.ClientIP(),
 				UserAgent:  c.Request.UserAgent(),
 				Result:     audit.ResultBlocked,
 				Opened:     true,
 			})
-			_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthzScopeForbidden, "not permitted to open a terminal: "+reason))
+
+			// A confirmation gate is satisfiable: report it as such so the client
+			// knows to obtain a token and retry, rather than treating it as a
+			// permanent denial.
+			if decision.NeedsConfirmation {
+				_ = c.Error(apperrors.NewServerError(apperrors.CodeSecurityRiskUnconfirmed, decision.Message))
+
+				return
+			}
+
+			_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthzScopeForbidden, decision.Message))
 
 			return
 		}
@@ -195,18 +254,77 @@ func (h *OperatorTerminalHandler) Handle(c *gin.Context) {
 	}
 
 	client := &ptyOperatorClient{
-		conn:     conn,
-		log:      h.log,
-		operator: op.ID,
-		orgID:    orgID,
-		sessions: make(map[string]bool),
-		outbox:   make(chan []byte, ptyOperatorOutbox),
+		conn:      conn,
+		log:       h.log,
+		operator:  op.ID,
+		orgID:     orgID,
+		sessions:  make(map[string]bool),
+		outbox:    make(chan []byte, ptyOperatorOutbox),
+		lastInput: time.Now(),
+		closed:    make(chan struct{}),
 	}
 
 	h.registerClient(client)
 
 	go client.writePump()
+	go client.idleWatchdog(h)
+
 	client.readPump(h, deviceID)
+}
+
+// idleWatchdog closes this operator's sessions once no input has arrived for
+// ptyOperatorIdleTimeout. The socket itself is left alone: a client may still
+// send pty_open to start a fresh session. Without this a forgotten tab holds a
+// shell open until the registry's much longer absolute TTL.
+func (c *ptyOperatorClient) idleWatchdog(h *OperatorTerminalHandler) {
+	ticker := time.NewTicker(ptyOperatorIdleCheck)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-c.done():
+			return
+		case <-ticker.C:
+			c.closeIdleSessions(h)
+		}
+	}
+}
+
+// closeIdleSessions ends sessions the operator has not typed into for too long.
+func (c *ptyOperatorClient) closeIdleSessions(h *OperatorTerminalHandler) {
+	c.mu.Lock()
+	idleFor := time.Since(c.lastInput)
+	owned := make([]string, 0, len(c.sessions))
+	for id := range c.sessions {
+		owned = append(owned, id)
+	}
+	c.mu.Unlock()
+
+	if idleFor < ptyOperatorIdleTimeout {
+		return
+	}
+
+	for _, id := range owned {
+		h.log.Info("closing idle terminal session",
+			"sessionId", id, "operatorId", c.operator, "idleFor", idleFor.String())
+		h.relay.CloseSession(id, "idle_timeout", c)
+
+		c.mu.Lock()
+		delete(c.sessions, id)
+		c.mu.Unlock()
+	}
+}
+
+// done reports whether the client's connection has been torn down.
+func (c *ptyOperatorClient) done() <-chan struct{} {
+	return c.closed
+}
+
+// touchInput records operator activity, deferring the idle timeout.
+func (c *ptyOperatorClient) touchInput() {
+	c.mu.Lock()
+	c.lastInput = time.Now()
+	c.mu.Unlock()
 }
 
 // OperatorFor returns the operator endpoint for a session, or nil when the
@@ -282,6 +400,10 @@ func (c *ptyOperatorClient) readPump(h *OperatorTerminalHandler, deviceID string
 		if err != nil {
 			return
 		}
+
+		// Any traffic counts as activity, so the idle watchdog only fires on a
+		// genuinely forgotten tab.
+		c.touchInput()
 
 		switch msgType {
 		case websocket.BinaryMessage:
@@ -509,7 +631,10 @@ func (h *OperatorTerminalHandler) removeClient(c *ptyOperatorClient) {
 		})
 	}
 
-	c.closeOnce.Do(func() { close(c.outbox) })
+	c.closeOnce.Do(func() {
+		close(c.closed)
+		close(c.outbox)
+	})
 }
 
 // Compile-time assertions.
@@ -517,3 +642,11 @@ var (
 	_ hub.PTYOperator   = (*ptyOperatorClient)(nil)
 	_ PTYOperatorLookup = (*OperatorTerminalHandler)(nil)
 )
+
+// sessionMFAVerified reports whether the authenticated session has cleared MFA.
+// A critical-tier operation requires it, matching the command path.
+func sessionMFAVerified(c *gin.Context) bool {
+	sess := middleware.GetSession(c)
+
+	return sess != nil && sess.MFAVerifiedAt != nil
+}

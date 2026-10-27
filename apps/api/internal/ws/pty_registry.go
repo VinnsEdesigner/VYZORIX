@@ -5,6 +5,8 @@ import (
 	"errors"
 	"sync"
 	"time"
+
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/uuid"
 )
 
 // PTY session errors.
@@ -20,7 +22,22 @@ var (
 	// retry or an attempt to take over another session; both must be refused
 	// rather than silently overwriting the existing entry.
 	ErrPTYSessionExists = errors.New("pty session id already in use")
+	// ErrPTYSessionIDInvalid is returned when a client-supplied session ID is not
+	// a well-formed UUID.
+	ErrPTYSessionIDInvalid = errors.New("pty session id is not a valid uuid")
 )
+
+// IsValidPTYSessionID reports whether a client-supplied session ID has the
+// expected shape: a UUID. The recorder uses the ID as a filename, so a value
+// containing path separators or dots is refused rather than sanitised, keeping
+// the rule in one place and the recorder free of path handling.
+func IsValidPTYSessionID(sessionID string) bool {
+	if sessionID == "" || len(sessionID) > MaxPTYSessionIDLen {
+		return false
+	}
+
+	return uuid.IsValid(sessionID)
+}
 
 // PTY session limits. These bound memory and blast radius per device.
 const (
@@ -119,10 +136,18 @@ func (r *PTYRegistry) Open(sessionID, deviceID, operatorID, orgID string, record
 		return nil, ErrPTYTooManySessions
 	}
 
-	// Session IDs are client-supplied. Refusing a duplicate prevents two failure
-	// modes: overwriting a live entry (leaking the first session, which would
-	// never be closed and would keep counting against the device cap) and letting
-	// one operator adopt another's session by guessing its ID.
+	// Session IDs are client-supplied, so validate the shape before storing one.
+	// The ID becomes a filename for the cast recording, and a path-ish value is
+	// exactly the input a future refactor might mishandle; rejecting it here
+	// keeps that class of bug out of the recorder entirely.
+	if !IsValidPTYSessionID(sessionID) {
+		return nil, ErrPTYSessionIDInvalid
+	}
+
+	// Refusing a duplicate prevents two failure modes: overwriting a live entry
+	// (leaking the first session, which would never be closed and would keep
+	// counting against the device cap) and letting one operator adopt another's
+	// session by guessing its ID.
 	if _, exists := r.sessions[sessionID]; exists {
 		return nil, ErrPTYSessionExists
 	}

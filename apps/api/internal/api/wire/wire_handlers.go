@@ -92,6 +92,7 @@ type HandlerSet struct {
 	Stream                *websockethandlers.StreamHandler
 	PTYRelay              *hub.PTYRelay
 	OperatorTerminal      *websockethandlers.OperatorTerminalHandler
+	RecordingHandler      *websockethandlers.RecordingHandler
 	TelemetryHistory      *handlers.TelemetryHistoryHandler
 	ConnectionStatus      *handlers.ConnectionStatusHandler
 	AdminClients          *admin.ClientsHandler
@@ -294,10 +295,21 @@ func wireDeviceFrameRouting(hs *HandlerSet, deps HandlerDependencies) {
 	// the route's scope middleware plus the org check inside the handler, so no
 	// separate authorizer is wired here.
 	if ptyRelay != nil {
+		// The terminal-open gate delegates to the same Authorizer the command path
+		// uses, so PTY_SESSION_OPEN's critical tier (MFA + single-use confirmation)
+		// is actually enforced rather than being declared-but-unused policy.
+		ptyAuth := NewPTYAuthorizer(command.NewAuthorizerFromService(deps.ConfirmationService))
+
+		hs.RecordingHandler = websockethandlers.NewRecordingHandler(
+			NewPTYDeviceResolver(deps.DeviceRepo),
+			recordingDir,
+			deps.Log,
+		)
+
 		hs.OperatorTerminal = websockethandlers.NewOperatorTerminalHandler(
 			ptyRelay,
 			NewPTYDeviceResolver(deps.DeviceRepo),
-			nil,
+			ptyAuth,
 			ptyAuditLogger(deps.AuditLogger),
 			recordingDir,
 			deps.Config.AllowedOrigins,

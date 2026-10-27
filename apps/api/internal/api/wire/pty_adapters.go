@@ -8,7 +8,9 @@ import (
 	"os"
 
 	websockethandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/websocket"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/command"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
+	domaincommand "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/storage"
 	hub "github.com/VinnsEdesigner/vyzorix/apps/api/internal/ws"
 )
@@ -70,6 +72,44 @@ func newPTYRecorderFactory(dir string, log *slog.Logger) func(sessionID string) 
 		return rec, err
 	}
 }
+
+// ptyAuthorizer adapts the shared command Authorizer to the terminal handler's
+// gate. Delegating (rather than reimplementing) is the point: the critical tier
+// registered for PTY_SESSION_OPEN in risk_catalog.go is consulted by the same
+// evaluator the command path uses, so a shell gets the same MFA and
+// single-use-confirmation requirements as any other critical operation.
+type ptyAuthorizer struct {
+	authorizer *command.Authorizer
+}
+
+// NewPTYAuthorizer creates the terminal-open authorizer.
+func NewPTYAuthorizer(authorizer *command.Authorizer) websockethandlers.PTYAuthorizer {
+	if authorizer == nil {
+		return nil
+	}
+
+	return &ptyAuthorizer{authorizer: authorizer}
+}
+
+// AuthorizePTYOpen evaluates the request against the PTY_SESSION_OPEN profile.
+func (a *ptyAuthorizer) AuthorizePTYOpen(ctx context.Context, req websockethandlers.PTYAuthRequest) websockethandlers.PTYAuthDecision {
+	outcome := a.authorizer.Authorize(ctx, domaincommand.ActorContext{
+		OperatorID:   req.OperatorID,
+		OrgID:        req.OrgID,
+		IsSuperAdmin: req.IsSuperAdmin,
+		MFAVerified:  req.MFAVerified,
+	}, domaincommand.TypePTYSessionOpen, req.DeviceID, req.ConfirmationToken)
+
+	return websockethandlers.PTYAuthDecision{
+		Allowed:           outcome.Allowed,
+		Reason:            outcome.Reason,
+		Message:           outcome.Message,
+		NeedsConfirmation: outcome.NeedsConfirmation,
+	}
+}
+
+// Compile-time assertion.
+var _ websockethandlers.PTYAuthorizer = (*ptyAuthorizer)(nil)
 
 // Compile-time assertions that the adapters satisfy the handler contracts.
 var (

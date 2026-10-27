@@ -13,19 +13,19 @@ import (
 func TestPTYRegistryRejectsDuplicateSessionID(t *testing.T) {
 	r := NewPTYRegistry(PTYRegistryConfig{})
 
-	first, err := r.Open("sess-1", "dev-1", "op-1", "org-1", false)
+	first, err := r.Open("aaaaaaaa-1111-4111-8111-111111111111", "dev-1", "op-1", "org-1", false)
 	if err != nil {
 		t.Fatalf("first Open: %v", err)
 	}
 
 	// A different operator reusing the same ID must be refused.
-	_, err = r.Open("sess-1", "dev-2", "op-2", "org-1", false)
+	_, err = r.Open("aaaaaaaa-1111-4111-8111-111111111111", "dev-2", "op-2", "org-1", false)
 	if !errors.Is(err, ErrPTYSessionExists) {
 		t.Fatalf("duplicate Open err = %v, want ErrPTYSessionExists", err)
 	}
 
 	// The original session must be untouched.
-	got, err := r.Get("sess-1")
+	got, err := r.Get("aaaaaaaa-1111-4111-8111-111111111111")
 	if err != nil {
 		t.Fatalf("Get: %v", err)
 	}

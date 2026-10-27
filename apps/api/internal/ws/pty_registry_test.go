@@ -9,7 +9,7 @@ import (
 func TestPTYRegistryOpenAndClose(t *testing.T) {
 	r := NewPTYRegistry(PTYRegistryConfig{})
 
-	s, err := r.Open("s1", "dev-1", "op-1", "org-1", false)
+	s, err := r.Open("11111111-1111-4111-8111-111111111111", "dev-1", "op-1", "org-1", false)
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
@@ -20,7 +20,7 @@ func TestPTYRegistryOpenAndClose(t *testing.T) {
 		t.Fatalf("counts = %d/%d, want 1/1", r.Count(), r.CountForDevice("dev-1"))
 	}
 
-	if _, err := r.Close("s1"); err != nil {
+	if _, err := r.Close("11111111-1111-4111-8111-111111111111"); err != nil {
 		t.Fatalf("Close: %v", err)
 	}
 	if r.Count() != 0 || r.CountForDevice("dev-1") != 0 {
@@ -31,17 +31,17 @@ func TestPTYRegistryOpenAndClose(t *testing.T) {
 func TestPTYRegistryEnforcesPerDeviceCap(t *testing.T) {
 	r := NewPTYRegistry(PTYRegistryConfig{MaxSessionsPerDevice: 2})
 
-	for i, id := range []string{"s1", "s2"} {
+	for i, id := range []string{"11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"} {
 		if _, err := r.Open(id, "dev-1", "op-1", "org-1", false); err != nil {
 			t.Fatalf("open %d: %v", i, err)
 		}
 	}
 
 	// The third must be refused, but another device is unaffected.
-	if _, err := r.Open("s3", "dev-1", "op-1", "org-1", false); !errors.Is(err, ErrPTYTooManySessions) {
+	if _, err := r.Open("33333333-3333-4333-8333-333333333333", "dev-1", "op-1", "org-1", false); !errors.Is(err, ErrPTYTooManySessions) {
 		t.Fatalf("err = %v, want ErrPTYTooManySessions", err)
 	}
-	if _, err := r.Open("s4", "dev-2", "op-1", "org-1", false); err != nil {
+	if _, err := r.Open("44444444-4444-4444-8444-444444444444", "dev-2", "op-1", "org-1", false); err != nil {
 		t.Fatalf("a different device must not be capped by dev-1: %v", err)
 	}
 }
@@ -49,30 +49,30 @@ func TestPTYRegistryEnforcesPerDeviceCap(t *testing.T) {
 func TestPTYRegistryCreditWindow(t *testing.T) {
 	r := NewPTYRegistry(PTYRegistryConfig{CreditWindow: 3})
 
-	if _, err := r.Open("s1", "dev-1", "op-1", "org-1", false); err != nil {
+	if _, err := r.Open("11111111-1111-4111-8111-111111111111", "dev-1", "op-1", "org-1", false); err != nil {
 		t.Fatalf("Open: %v", err)
 	}
 
 	for i := 0; i < 3; i++ {
-		if err := r.TakeCredit("s1"); err != nil {
+		if err := r.TakeCredit("11111111-1111-4111-8111-111111111111"); err != nil {
 			t.Fatalf("take %d: %v", i, err)
 		}
 	}
 
 	// Exhausted: the relay uses this to drop output rather than buffer forever.
-	if err := r.TakeCredit("s1"); !errors.Is(err, ErrPTYNoCredit) {
+	if err := r.TakeCredit("11111111-1111-4111-8111-111111111111"); !errors.Is(err, ErrPTYNoCredit) {
 		t.Fatalf("err = %v, want ErrPTYNoCredit", err)
 	}
 
 	// An ack restores credit...
-	r.GrantCredit("s1", 1)
-	if err := r.TakeCredit("s1"); err != nil {
+	r.GrantCredit("11111111-1111-4111-8111-111111111111", 1)
+	if err := r.TakeCredit("11111111-1111-4111-8111-111111111111"); err != nil {
 		t.Fatalf("take after grant: %v", err)
 	}
 
 	// ...but never beyond the window, so a buggy operator cannot inflate it.
-	r.GrantCredit("s1", 1000)
-	s, _ := r.Get("s1")
+	r.GrantCredit("11111111-1111-4111-8111-111111111111", 1000)
+	s, _ := r.Get("11111111-1111-4111-8111-111111111111")
 	if s.Credit > 3 {
 		t.Fatalf("credit = %d, want it capped at the window (3)", s.Credit)
 	}
@@ -81,20 +81,20 @@ func TestPTYRegistryCreditWindow(t *testing.T) {
 func TestPTYRegistryCreditForUnknownSession(t *testing.T) {
 	r := NewPTYRegistry(PTYRegistryConfig{})
 
-	if err := r.TakeCredit("missing"); !errors.Is(err, ErrPTYSessionNotFound) {
+	if err := r.TakeCredit("dddddddd-1111-4111-8111-111111111111"); !errors.Is(err, ErrPTYSessionNotFound) {
 		t.Fatalf("err = %v, want ErrPTYSessionNotFound", err)
 	}
 	// Granting to an unknown session is a no-op, not a panic: the session may
 	// have closed between the device sending data and the ack arriving.
-	r.GrantCredit("missing", 5)
+	r.GrantCredit("dddddddd-1111-4111-8111-111111111111", 5)
 }
 
 func TestPTYRegistryCloseByDevice(t *testing.T) {
 	r := NewPTYRegistry(PTYRegistryConfig{})
 
-	_, _ = r.Open("s1", "dev-1", "op-1", "org-1", false)
-	_, _ = r.Open("s2", "dev-1", "op-2", "org-1", false)
-	_, _ = r.Open("s3", "dev-2", "op-1", "org-1", false)
+	_, _ = r.Open("11111111-1111-4111-8111-111111111111", "dev-1", "op-1", "org-1", false)
+	_, _ = r.Open("22222222-2222-4222-8222-222222222222", "dev-1", "op-2", "org-1", false)
+	_, _ = r.Open("33333333-3333-4333-8333-333333333333", "dev-2", "op-1", "org-1", false)
 
 	closed := r.CloseByDevice("dev-1")
 	if len(closed) != 2 {
@@ -115,25 +115,25 @@ func TestPTYRegistryExpiry(t *testing.T) {
 		Now:        func() time.Time { return now },
 	})
 
-	_, _ = r.Open("s1", "dev-1", "op-1", "org-1", false)
+	_, _ = r.Open("11111111-1111-4111-8111-111111111111", "dev-1", "op-1", "org-1", false)
 
 	// Advance past the TTL without touching the session.
 	now = now.Add(2 * time.Minute)
 
 	expired := r.Expired()
-	if len(expired) != 1 || expired[0].SessionID != "s1" {
+	if len(expired) != 1 || expired[0].SessionID != "11111111-1111-4111-8111-111111111111" {
 		t.Fatalf("expired = %v, want s1", expired)
 	}
 
 	// Activity keeps a session alive.
 	now = time.Date(2026, 10, 27, 12, 0, 0, 0, time.UTC)
-	_, _ = r.Open("s2", "dev-2", "op-1", "org-1", false)
+	_, _ = r.Open("22222222-2222-4222-8222-222222222222", "dev-2", "op-1", "org-1", false)
 	now = now.Add(30 * time.Second)
-	r.Touch("s2")
+	r.Touch("22222222-2222-4222-8222-222222222222")
 	now = now.Add(30 * time.Second)
 
 	for _, s := range r.Expired() {
-		if s.SessionID == "s2" {
+		if s.SessionID == "22222222-2222-4222-8222-222222222222" {
 			t.Fatal("a touched session must not be reported as expired")
 		}
 	}
@@ -141,12 +141,12 @@ func TestPTYRegistryExpiry(t *testing.T) {
 
 func TestPTYRegistryCloseIsIdempotent(t *testing.T) {
 	r := NewPTYRegistry(PTYRegistryConfig{})
-	_, _ = r.Open("s1", "dev-1", "op-1", "org-1", false)
+	_, _ = r.Open("11111111-1111-4111-8111-111111111111", "dev-1", "op-1", "org-1", false)
 
-	if _, err := r.Close("s1"); err != nil {
+	if _, err := r.Close("11111111-1111-4111-8111-111111111111"); err != nil {
 		t.Fatalf("first close: %v", err)
 	}
-	if _, err := r.Close("s1"); !errors.Is(err, ErrPTYSessionNotFound) {
+	if _, err := r.Close("11111111-1111-4111-8111-111111111111"); !errors.Is(err, ErrPTYSessionNotFound) {
 		t.Fatalf("second close err = %v, want ErrPTYSessionNotFound", err)
 	}
 }

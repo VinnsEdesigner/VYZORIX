@@ -324,6 +324,16 @@ func (h *ExecuteHandler) sendCommandAndBuildFrame(c *gin.Context, imei string, r
 
 	cmdResp, err := h.commandService.SendCommand(c.Request.Context(), cmdReq)
 	if err != nil {
+		// An unimplemented type is a client error, not a server fault: the request
+		// named something the device agent cannot execute. Report it as such so the
+		// caller learns immediately rather than watching a command sit delivered.
+		if errors.Is(err, cmdSvc.ErrCommandNotImplemented) {
+			_ = c.Error(domainerrors.NewServerError(domainerrors.CodeValidationInvalidEnum,
+				"command type is not implemented: "+req.Command))
+
+			return nil, command.CommandFrame{}, err
+		}
+
 		h.log.Error("failed to send command", "error", err, "deviceId", imei)
 		_ = c.Error(domainerrors.NewServerError(domainerrors.CodeInternalServerError, "failed to send command"))
 		return nil, command.CommandFrame{}, err

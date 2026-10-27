@@ -303,11 +303,25 @@ func (s *Server) setupDashboardRoutes(r ...*gin.RouterGroup) {
 
 	dashboard.GET("/devices", s.requireScope(permission.ActionDeviceRead, permission.WildcardScope(permission.ScopeDevices)), s.deviceListHandler.Handle)
 	// Interactive terminal. Gated on shell.execute, which is granted separately
-	// from command.execute: a shell is arbitrary, stateful code execution.
+	// from command.execute: a shell is arbitrary, stateful code execution. The
+	// rate limiter is the tightest in this file because opening a shell is the
+	// most sensitive dashboard action, and the handler additionally enforces the
+	// PTY_SESSION_OPEN critical tier (MFA + confirmation token).
 	if s.operatorTerminalHandler != nil {
 		dashboard.GET("/device/:imei/terminal",
 			s.requireScope(permission.ActionShell, permission.WildcardScope(permission.ScopeDevices)),
+			s.dashboardRateLimiter.TerminalOpenLimit(),
 			s.operatorTerminalHandler.Handle)
+	}
+
+	// Terminal session recordings. Gated on shell.execute too: a recording shows
+	// everything that appeared on the terminal, so reading one is as sensitive as
+	// opening the session.
+	if s.recordingHandler != nil && s.recordingHandler.Enabled() {
+		dashboard.GET("/device/:imei/recordings/:sessionId",
+			s.requireScope(permission.ActionShell, permission.WildcardScope(permission.ScopeDevices)),
+			s.dashboardRateLimiter.TerminalOpenLimit(),
+			s.recordingHandler.Handle)
 	}
 	dashboard.GET("/devices/operator", s.requireScope(permission.ActionDeviceRead, permission.WildcardScope(permission.ScopeDevices)), s.deviceListHandler.ListByOperator)
 	if s.commandHistoryHandler != nil {

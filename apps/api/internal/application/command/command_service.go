@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application"
@@ -18,6 +19,33 @@ const MaxPendingCommandsPerDevice = 50
 
 // ErrTooManyPendingCommands is returned when a device has too many pending commands.
 var ErrTooManyPendingCommands = errors.New("device has too many pending commands")
+
+// ErrCommandNotImplemented is returned when a command type has no device-side
+// handler. The command plane otherwise fails open at a conservative tier, which
+// is right for authorization but wrong for dispatch: a type nobody executes
+// would be accepted, signed, delivered, and then silently do nothing. Rejecting
+// it up front makes that failure loud and immediate.
+var ErrCommandNotImplemented = errors.New("command type is not implemented")
+
+// implementedCommands is the set of command types the device agent handles.
+// Registering a type in risk_catalog.go classifies it for authorization; adding
+// it here is what makes it dispatchable. The two are deliberately separate so a
+// half-built feature cannot ship silently.
+var implementedCommands = map[string]bool{
+	command.TypeWakeUpUpdater: true,
+	command.TypeCheckUpdate:   true,
+	"device.wake_up":          true,
+	"device.check_update":     true,
+	"device.status":           true,
+	"device.reboot":           true,
+	"device.factory_reset":    true,
+}
+
+// IsCommandImplemented reports whether the device agent can execute a command
+// type.
+func IsCommandImplemented(name string) bool {
+	return implementedCommands[name]
+}
 
 // Service handles command operations.
 type Service struct {
@@ -36,6 +64,13 @@ func NewService(commandRepo command.Repository, deviceRepo device.Repository) *S
 
 // SendCommand sends a command to a device.
 func (s *Service) SendCommand(ctx context.Context, req *dto.SendCommandRequest) (*dto.SendCommandResponse, error) {
+	// Reject a command type the device cannot execute before creating anything, so
+	// an unimplemented type fails immediately instead of being signed, delivered,
+	// and silently ignored.
+	if !IsCommandImplemented(req.Command) {
+		return nil, fmt.Errorf("%w: %s", ErrCommandNotImplemented, req.Command)
+	}
+
 	// Check if device exists.
 	_, err := s.deviceRepo.FindByID(ctx, req.DeviceID)
 	if err != nil {

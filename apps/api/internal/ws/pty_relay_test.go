@@ -41,7 +41,7 @@ func newRelayWithSession(t *testing.T, sink PTYDevice, window int) (*PTYRelay, *
 	t.Helper()
 
 	reg := NewPTYRegistry(PTYRegistryConfig{CreditWindow: window})
-	if _, err := reg.Open("s1", "dev-1", "op-1", "org-1", false); err != nil {
+	if _, err := reg.Open("11111111-1111-4111-8111-111111111111", "dev-1", "op-1", "org-1", false); err != nil {
 		t.Fatalf("Open: %v", err)
 	}
 
@@ -52,7 +52,7 @@ func TestRelayInputEncodesAndSends(t *testing.T) {
 	sink := &fakeDeviceSink{accept: true}
 	relay, _ := newRelayWithSession(t, sink, DefaultPTYCreditWindow)
 
-	if !relay.RelayInput("s1", []byte("ls\n")) {
+	if !relay.RelayInput("11111111-1111-4111-8111-111111111111", []byte("ls\n")) {
 		t.Fatal("RelayInput must report success when the device accepts")
 	}
 	if len(sink.frames) != 1 {
@@ -73,7 +73,7 @@ func TestRelayInputEncodesAndSends(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DecodeSessionData: %v", err)
 	}
-	if sessionID != "s1" {
+	if sessionID != "11111111-1111-4111-8111-111111111111" {
 		t.Fatalf("sessionID = %q, want s1", sessionID)
 	}
 	if string(data) != "ls\n" {
@@ -85,7 +85,7 @@ func TestRelayInputUnknownSession(t *testing.T) {
 	sink := &fakeDeviceSink{accept: true}
 	relay, _ := newRelayWithSession(t, sink, DefaultPTYCreditWindow)
 
-	if relay.RelayInput("nope", []byte("x")) {
+	if relay.RelayInput("cccccccc-1111-4111-8111-111111111111", []byte("x")) {
 		t.Fatal("input for an unknown session must be dropped")
 	}
 	if len(sink.frames) != 0 {
@@ -100,14 +100,14 @@ func TestRelayOutputAppliesCreditWindow(t *testing.T) {
 	relay, _ := newRelayWithSession(t, &fakeDeviceSink{accept: true}, 2)
 	op := &fakeOperator{accept: true}
 
-	if !relay.RelayOutput("s1", op, []byte("a")) {
+	if !relay.RelayOutput("11111111-1111-4111-8111-111111111111", op, []byte("a")) {
 		t.Fatal("first frame must be delivered")
 	}
-	if !relay.RelayOutput("s1", op, []byte("b")) {
+	if !relay.RelayOutput("11111111-1111-4111-8111-111111111111", op, []byte("b")) {
 		t.Fatal("second frame must be delivered")
 	}
 	// Window exhausted.
-	if relay.RelayOutput("s1", op, []byte("c")) {
+	if relay.RelayOutput("11111111-1111-4111-8111-111111111111", op, []byte("c")) {
 		t.Fatal("a frame beyond the window must be dropped")
 	}
 	if len(op.delivered) != 2 {
@@ -115,8 +115,8 @@ func TestRelayOutputAppliesCreditWindow(t *testing.T) {
 	}
 
 	// An ack restores exactly one unit of credit.
-	relay.AckCredit("s1", 1)
-	if !relay.RelayOutput("s1", op, []byte("d")) {
+	relay.AckCredit("11111111-1111-4111-8111-111111111111", 1)
+	if !relay.RelayOutput("11111111-1111-4111-8111-111111111111", op, []byte("d")) {
 		t.Fatal("after an ack the next frame must be delivered")
 	}
 }
@@ -127,11 +127,11 @@ func TestRelayOutputReturnsCreditWhenOperatorRefuses(t *testing.T) {
 	relay, reg := newRelayWithSession(t, &fakeDeviceSink{accept: true}, 1)
 	op := &fakeOperator{accept: false}
 
-	if relay.RelayOutput("s1", op, []byte("a")) {
+	if relay.RelayOutput("11111111-1111-4111-8111-111111111111", op, []byte("a")) {
 		t.Fatal("a refused delivery must report false")
 	}
 
-	s, _ := reg.Get("s1")
+	s, _ := reg.Get("11111111-1111-4111-8111-111111111111")
 	if s.Credit != 1 {
 		t.Fatalf("credit = %d, want it restored to 1 after a refused delivery", s.Credit)
 	}
@@ -141,10 +141,10 @@ func TestRelayCloseSessionNotifiesOperator(t *testing.T) {
 	relay, reg := newRelayWithSession(t, &fakeDeviceSink{accept: true}, DefaultPTYCreditWindow)
 	op := &fakeOperator{accept: true}
 
-	relay.CloseSession("s1", "operator_closed", op)
+	relay.CloseSession("11111111-1111-4111-8111-111111111111", "operator_closed", op)
 
-	if len(op.closed) != 1 || op.closed[0] != "s1:operator_closed" {
-		t.Fatalf("closed = %v, want [s1:operator_closed]", op.closed)
+	if len(op.closed) != 1 || op.closed[0] != "11111111-1111-4111-8111-111111111111:operator_closed" {
+		t.Fatalf("closed = %v, want [11111111-1111-4111-8111-111111111111:operator_closed]", op.closed)
 	}
 	if reg.Count() != 0 {
 		t.Fatal("the session must be gone from the registry")
@@ -156,7 +156,7 @@ func TestRelayCloseUnknownSessionIsSafe(t *testing.T) {
 	op := &fakeOperator{accept: true}
 
 	// Must not panic, and must not notify for a session that never existed.
-	relay.CloseSession("missing", "whatever", op)
+	relay.CloseSession("dddddddd-1111-4111-8111-111111111111", "whatever", op)
 
 	if len(op.closed) != 0 {
 		t.Fatal("no notification for an unknown session")
@@ -166,7 +166,7 @@ func TestRelayCloseUnknownSessionIsSafe(t *testing.T) {
 func TestRelayCloseDeviceSessions(t *testing.T) {
 	sink := &fakeDeviceSink{accept: true}
 	relay, reg := newRelayWithSession(t, sink, DefaultPTYCreditWindow)
-	if _, err := reg.Open("s2", "dev-1", "op-1", "org-1", false); err != nil {
+	if _, err := reg.Open("22222222-2222-4222-8222-222222222222", "dev-1", "op-1", "org-1", false); err != nil {
 		t.Fatalf("Open s2: %v", err)
 	}
 
@@ -188,7 +188,7 @@ func TestRelaySendToDeviceResolvesFromSession(t *testing.T) {
 	relay, _ := newRelayWithSession(t, sink, DefaultPTYCreditWindow)
 
 	// Empty deviceID: the relay resolves the device from the session in payload.
-	payload := EncodeSessionData("s1", EncodePTYResize(40, 100))
+	payload := EncodeSessionData("11111111-1111-4111-8111-111111111111", EncodePTYResize(40, 100))
 	if !relay.SendToDevice("", PTYTypeResize, payload) {
 		t.Fatal("SendToDevice must resolve the device from the session")
 	}
@@ -201,7 +201,7 @@ func TestRelaySendToDeviceUnknownSession(t *testing.T) {
 	sink := &fakeDeviceSink{accept: true}
 	relay, _ := newRelayWithSession(t, sink, DefaultPTYCreditWindow)
 
-	payload := EncodeSessionData("missing", nil)
+	payload := EncodeSessionData("dddddddd-1111-4111-8111-111111111111", nil)
 	if relay.SendToDevice("", PTYTypeResize, payload) {
 		t.Fatal("an unknown session must not produce a device frame")
 	}

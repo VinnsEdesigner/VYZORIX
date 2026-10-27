@@ -219,7 +219,7 @@ func TestE2ETerminalRoundTrip(t *testing.T) {
 	rig := newE2ERig(t, t.TempDir())
 
 	// 1. Open a session.
-	openMsg, _ := json.Marshal(map[string]any{"type": "pty_open", "sessionId": "sess-1"})
+	openMsg, _ := json.Marshal(map[string]any{"type": "pty_open", "sessionId": "aaaaaaaa-1111-4111-8111-111111111111"})
 	if err := rig.operatorConn.WriteMessage(websocket.TextMessage, openMsg); err != nil {
 		t.Fatalf("operator open: %v", err)
 	}
@@ -229,7 +229,7 @@ func TestE2ETerminalRoundTrip(t *testing.T) {
 	}
 
 	// 2. Operator input must reach the device.
-	input := hub.EncodePTYFrame(hub.ChannelPTY, hub.PTYTypeData, hub.EncodeSessionData("sess-1", []byte("ls\n")))
+	input := hub.EncodePTYFrame(hub.ChannelPTY, hub.PTYTypeData, hub.EncodeSessionData("aaaaaaaa-1111-4111-8111-111111111111", []byte("ls\n")))
 	if err := rig.operatorConn.WriteMessage(websocket.BinaryMessage, input); err != nil {
 		t.Fatalf("operator input: %v", err)
 	}
@@ -254,7 +254,7 @@ func TestE2ETerminalRoundTrip(t *testing.T) {
 func TestE2ESessionClosedOnOperatorDisconnect(t *testing.T) {
 	rig := newE2ERig(t, t.TempDir())
 
-	openMsg, _ := json.Marshal(map[string]any{"type": "pty_open", "sessionId": "sess-1"})
+	openMsg, _ := json.Marshal(map[string]any{"type": "pty_open", "sessionId": "aaaaaaaa-1111-4111-8111-111111111111"})
 	if err := rig.operatorConn.WriteMessage(websocket.TextMessage, openMsg); err != nil {
 		t.Fatalf("operator open: %v", err)
 	}
@@ -288,7 +288,7 @@ func TestE2ERecordingProducesCast(t *testing.T) {
 	dir := t.TempDir()
 	rig := newE2ERig(t, dir)
 
-	openMsg, _ := json.Marshal(map[string]any{"type": "pty_open", "sessionId": "rec-1", "record": true})
+	openMsg, _ := json.Marshal(map[string]any{"type": "pty_open", "sessionId": "bbbbbbbb-1111-4111-8111-111111111111", "record": true})
 	if err := rig.operatorConn.WriteMessage(websocket.TextMessage, openMsg); err != nil {
 		t.Fatalf("operator open: %v", err)
 	}
@@ -296,7 +296,7 @@ func TestE2ERecordingProducesCast(t *testing.T) {
 		t.Fatal("operator never received pty_opened")
 	}
 
-	input := hub.EncodePTYFrame(hub.ChannelPTY, hub.PTYTypeData, hub.EncodeSessionData("rec-1", []byte("whoami\n")))
+	input := hub.EncodePTYFrame(hub.ChannelPTY, hub.PTYTypeData, hub.EncodeSessionData("bbbbbbbb-1111-4111-8111-111111111111", []byte("whoami\n")))
 	if err := rig.operatorConn.WriteMessage(websocket.BinaryMessage, input); err != nil {
 		t.Fatalf("operator input: %v", err)
 	}
@@ -306,11 +306,11 @@ func TestE2ERecordingProducesCast(t *testing.T) {
 	}
 
 	// Closing the session flushes the recorder.
-	closeMsg, _ := json.Marshal(map[string]any{"type": "pty_close", "sessionId": "rec-1"})
+	closeMsg, _ := json.Marshal(map[string]any{"type": "pty_close", "sessionId": "bbbbbbbb-1111-4111-8111-111111111111"})
 	_ = rig.operatorConn.WriteMessage(websocket.TextMessage, closeMsg)
 	time.Sleep(200 * time.Millisecond)
 
-	path := dir + "/rec-1.cast"
+	path := dir + "/bbbbbbbb-1111-4111-8111-111111111111.cast"
 	raw, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("cast file missing: %v", err)

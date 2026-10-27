@@ -37,6 +37,12 @@ type DashboardRateLimits struct {
 	DeviceInspectRefill  time.Duration
 	DeviceTimelineLimit  int
 	DeviceTimelineRefill time.Duration
+
+	// GET /v1/dashboard/device/:imei/terminal: 5 requests per minute. Opening a
+	// shell is the most sensitive dashboard action, so it is throttled harder
+	// than any other.
+	TerminalOpenLimit  int
+	TerminalOpenRefill time.Duration
 }
 
 // DefaultDashboardRateLimits returns the default rate limits per the spec.
@@ -67,6 +73,11 @@ func DefaultDashboardRateLimits() *DashboardRateLimits {
 		DeviceInspectRefill:  time.Minute,
 		DeviceTimelineLimit:  30,
 		DeviceTimelineRefill: time.Minute,
+
+		// Terminal open: 5 per minute. A shell is the most sensitive action, and a
+		// human opens at most a handful of terminals a minute.
+		TerminalOpenLimit:  5,
+		TerminalOpenRefill: time.Minute,
 	}
 }
 
@@ -79,6 +90,7 @@ type DashboardRateLimiterMiddleware struct {
 	sendCommandLimiter    *RateLimiter
 	deviceInspectLimiter  *RateLimiter
 	deviceTimelineLimiter *RateLimiter
+	terminalOpenLimiter   *RateLimiter
 }
 
 // NewDashboardRateLimiterMiddleware creates a new dashboard rate limiter middleware.
@@ -95,6 +107,7 @@ func NewDashboardRateLimiterMiddleware(limits *DashboardRateLimits) *DashboardRa
 		sendCommandLimiter:    NewRateLimiter(limits.SendCommandLimit, limits.SendCommandRefill),
 		deviceInspectLimiter:  NewRateLimiter(limits.DeviceInspectLimit, limits.DeviceInspectRefill),
 		deviceTimelineLimiter: NewRateLimiter(limits.DeviceTimelineLimit, limits.DeviceTimelineRefill),
+		terminalOpenLimiter:   NewRateLimiter(limits.TerminalOpenLimit, limits.TerminalOpenRefill),
 	}
 }
 
@@ -133,6 +146,13 @@ func (m *DashboardRateLimiterMiddleware) DeviceTimelineLimit() gin.HandlerFunc {
 	return dashboardRateLimitMiddleware(m.deviceTimelineLimiter)
 }
 
+// TerminalOpenLimit returns the rate limiter middleware for the interactive
+// terminal endpoint. It is deliberately the tightest limit in this set: opening
+// a shell is the most sensitive dashboard action.
+func (m *DashboardRateLimiterMiddleware) TerminalOpenLimit() gin.HandlerFunc {
+	return dashboardRateLimitMiddleware(m.terminalOpenLimiter)
+}
+
 // Stop stops all rate limiter cleanup goroutines.
 func (m *DashboardRateLimiterMiddleware) Stop() {
 	m.commandHistoryLimiter.Stop()
@@ -142,6 +162,7 @@ func (m *DashboardRateLimiterMiddleware) Stop() {
 	m.sendCommandLimiter.Stop()
 	m.deviceInspectLimiter.Stop()
 	m.deviceTimelineLimiter.Stop()
+	m.terminalOpenLimiter.Stop()
 }
 
 // Stats returns statistics for all rate limiters.
@@ -154,6 +175,7 @@ func (m *DashboardRateLimiterMiddleware) Stats() map[string]RateLimiterStats {
 		"send_command":    m.sendCommandLimiter.Stats(),
 		"device_inspect":  m.deviceInspectLimiter.Stats(),
 		"device_timeline": m.deviceTimelineLimiter.Stats(),
+		"terminal_open":   m.terminalOpenLimiter.Stats(),
 	}
 }
 
