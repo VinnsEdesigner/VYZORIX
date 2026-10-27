@@ -690,16 +690,16 @@ snapshot of reality, so the Android work has a fixed target.
 | PTY relay | **Done** | `internal/ws/pty_relay.go`: input, output, control, teardown. |
 | Ephemeral device send | **Done** | `Hub.SendEphemeral` drops rather than persisting, so keystrokes never hit the database. |
 | Operator terminal endpoint | **Done** | `GET /v1/device/:imei/terminal`, session auth + org check. |
-| `shell.execute` scope | **Declared, not granted** | The action and action set exist and the route checks them, but **no default role grants it**, so no operator can open a terminal until it is added to `internal/domain/permission/defaults.go` or granted per-org. |
-| Session expiry scheduling | **Not wired** | `PTYRelay.ExpireSessions` exists and is tested, but nothing calls it on a timer. Idle sessions are only reaped on device/operator disconnect. |
-| PTY audit | **Not wired** | No `AuditLogger` is passed to the PTY handlers, so opening a shell is not yet audited. |
-| PTY recording | **Not implemented** | The `Recording` flag exists on the session struct but nothing writes a `.cast`. |
-| Per-session MFA | **Not implemented** | Authorization is the route scope plus the org check; the `PTYAuthorizer` hook is wired as `nil`. |
+| `shell.execute` scope | **Done** | Granted to `admin` and `super_admin` only; deliberately absent from `viewer` and `operator`. `usb.attach` is admin-only too; `apps.read` is viewer, `apps.write` is operator. Covered by `defaults_test.go`. |
+| Session expiry scheduling | **Done** | `pty_expiry_worker.go` closes idle sessions on a ticker and prunes old casts, under the server lock. Registered on the lifecycle manager. |
+| PTY audit | **Done** | `ActionPTYSessionOpened`/`Closed`; the operator handler records open, close and denial with the reason and recording flag. |
+| PTY recording | **Done** | asciinema v2 casts via `pty_recorder.go`, opt-in per session, size-capped, swept by age. Output only, so prompt input is never captured. |
+| End-to-end test | **Done** | Real operator and device WebSockets through the hub, relay and both handlers: round trip, teardown on disconnect, and cast output. |
+| Per-session MFA | **Not implemented** | Authorization is the route scope plus the org check; the `PTYAuthorizer` hook is wired as `nil`. Intentionally deferred. |
 | App proxy | **Not started** | §10's cloudflared-lite work. |
 
-The four gaps marked "not wired / not implemented" are the remaining server work for
-the terminal feature to be production-complete. Everything else in the PTY path is
-built and covered by tests.
+The terminal feature is built and covered by tests end to end. The two remaining rows
+are separate work: per-session MFA (an intentional deferral) and the app proxy.
 
 ---
 
