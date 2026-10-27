@@ -25,13 +25,13 @@ type recordedFrame struct {
 	raw       string
 }
 
-func (h *recordingFrameHandler) HandleDeviceFrame(_ context.Context, deviceID, frameType string, raw []byte) bool {
+func (h *recordingFrameHandler) HandleDeviceFrame(_ context.Context, frame DeviceFrame) bool {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	h.frames = append(h.frames, recordedFrame{deviceID, frameType, string(raw)})
+	h.frames = append(h.frames, recordedFrame{frame.DeviceID, frame.Type, string(frame.Raw)})
 
-	return frameType == "command_result"
+	return frame.Type == "command_result"
 }
 
 func (h *recordingFrameHandler) snapshot() []recordedFrame {

@@ -302,6 +302,13 @@ func (s *Server) setupDashboardRoutes(r ...*gin.RouterGroup) {
 	dashboard.Use(middleware.NewOrganizationMembership(s.memberHandler.MembershipChecker()).Middleware())
 
 	dashboard.GET("/devices", s.requireScope(permission.ActionDeviceRead, permission.WildcardScope(permission.ScopeDevices)), s.deviceListHandler.Handle)
+	// Interactive terminal. Gated on shell.execute, which is granted separately
+	// from command.execute: a shell is arbitrary, stateful code execution.
+	if s.operatorTerminalHandler != nil {
+		dashboard.GET("/device/:imei/terminal",
+			s.requireScope(permission.ActionShell, permission.WildcardScope(permission.ScopeDevices)),
+			s.operatorTerminalHandler.Handle)
+	}
 	dashboard.GET("/devices/operator", s.requireScope(permission.ActionDeviceRead, permission.WildcardScope(permission.ScopeDevices)), s.deviceListHandler.ListByOperator)
 	if s.commandHistoryHandler != nil {
 		s.commandHistoryHandler.RegisterRoutes(dashboard, s.dashboardRateLimiter)

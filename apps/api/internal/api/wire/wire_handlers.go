@@ -68,7 +68,11 @@ type HandlerDependencies struct {
 	MemberService         *orgapplication.MemberService
 	InvitationService     *orgapplication.InvitationService
 	OrgSettingsService    *orgapplication.OrganizationSettingsService
-	Config                config.Config
+	// PTYOperators resolves the operator endpoint for a live PTY session.
+	PTYOperators websockethandlers.PTYOperatorLookup
+	// Config is the only value-typed field; keeping it last avoids padding
+	// between the pointer fields above.
+	Config config.Config
 }
 
 // HandlerSet contains all handler instances.
@@ -85,6 +89,8 @@ type HandlerSet struct {
 	Command               *cmdhandlers.ExecuteHandler
 	Confirmation          *confirmationhandlers.Handler
 	Stream                *websockethandlers.StreamHandler
+	PTYRelay              *hub.PTYRelay
+	OperatorTerminal      *websockethandlers.OperatorTerminalHandler
 	TelemetryHistory      *handlers.TelemetryHistoryHandler
 	ConnectionStatus      *handlers.ConnectionStatusHandler
 	AdminClients          *admin.ClientsHandler
@@ -154,13 +160,7 @@ func WireHandlers(deps HandlerDependencies) *HandlerSet {
 	// WebSocket handler.
 	hs.Stream = websockethandlers.NewStreamHandler(deps.Log, deps.Config, deps.Hub, *deps.HmacVerifier, deps.AuditLogger)
 
-	// Route non-telemetry device frames (command results, and later PTY data and
-	// app registration) from the device WebSocket to the feature that owns them.
-	// The hub only understands telemetry; everything else lands here.
-	if deps.Hub != nil && deps.CommandService != nil {
-		deps.Hub.SetDeviceFrameHandler(websockethandlers.NewDeviceFrameHandler(deps.CommandService, deps.Log))
-		deps.CommandService.SetStatusPublisher(deps.Hub)
-	}
+	wireDeviceFrameRouting(hs, deps)
 	// Telemetry history handler.
 	var telemetryRepo *storage.TelemetryRepository
 	if deps.DB != nil {
@@ -269,4 +269,56 @@ func WireHandlers(deps HandlerDependencies) *HandlerSet {
 	hs.AppCheckVerifier = deps.AppCheckVerifier
 
 	return hs
+}
+
+// wireDeviceFrameRouting builds the PTY relay and the device frame handler, and
+// connects them to the hub. It is separate from WireHandlers to keep that
+// function's branching manageable, and because this is one cohesive unit: the
+// relay, its operator endpoint and its device sink must agree on the registry.
+func wireDeviceFrameRouting(hs *HandlerSet, deps HandlerDependencies) {
+	// PTY relay: terminal sessions between operators and devices. It owns the
+	// session registry (credit window, per-device cap) and sends device-bound
+	// traffic over the ephemeral path so keystrokes never hit the database.
+	var ptyRelay *hub.PTYRelay
+	if deps.Hub != nil {
+		ptyRelay = hub.NewPTYRelay(hub.NewPTYRegistry(hub.PTYRegistryConfig{}), deps.Hub, deps.Log)
+	}
+	hs.PTYRelay = ptyRelay
+
+	// Operator terminal endpoint. Authorization for opening a shell is enforced by
+	// the route's scope middleware plus the org check inside the handler, so no
+	// separate authorizer is wired here.
+	if ptyRelay != nil {
+		hs.OperatorTerminal = websockethandlers.NewOperatorTerminalHandler(
+			ptyRelay,
+			NewPTYDeviceResolver(deps.DeviceRepo),
+			nil,
+			deps.Config.AllowedOrigins,
+			deps.Log,
+		)
+	}
+
+	if deps.Hub == nil {
+		return
+	}
+
+	// Route non-telemetry device frames (command results, PTY data, and later app
+	// registration) from the device WebSocket to the feature that owns them. The
+	// hub only understands telemetry; everything else lands here.
+	var ptySink websockethandlers.PTYDeviceSink
+	if ptyRelay != nil {
+		ptySink = websockethandlers.NewPTYDeviceHandler(ptyRelay, deps.PTYOperators, deps.Log)
+
+		// A device's sessions cannot outlive its connection: reap them when it
+		// drops so a reconnect cannot inherit a stranded shell.
+		deps.Hub.SetDeviceDisconnectHook(func(deviceID string) {
+			ptyRelay.CloseDeviceSessions(deviceID, nil)
+		})
+	}
+
+	deps.Hub.SetDeviceFrameHandler(websockethandlers.NewDeviceFrameHandler(deps.CommandService, ptySink, deps.Log))
+
+	if deps.CommandService != nil {
+		deps.CommandService.SetStatusPublisher(deps.Hub)
+	}
 }

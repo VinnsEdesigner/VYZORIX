@@ -88,6 +88,7 @@ func (u *StreamUpgrader) Upgrade(c *gin.Context, deviceID string) (*websocket.Co
 		DeviceID: deviceID,
 		Conn:     conn,
 		Send:     make(chan command.CommandFrame, 32),
+		PtySend:  make(chan []byte, hub.DefaultPTYClientBuffer),
 		Hub:      nil, // Will be set by caller.
 
 		Done: make(chan struct{}),

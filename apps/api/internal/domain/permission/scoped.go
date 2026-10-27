@@ -21,6 +21,11 @@ const (
 	// Command execution on a device.
 	ActionCommand Action = "command.execute"
 
+	// Interactive shell access to a device. Deliberately separate from
+	// ActionCommand: a shell is arbitrary, stateful code execution, so it is
+	// granted on its own and never implied by command.execute.
+	ActionShell Action = "shell.execute"
+
 	// Telemetry: query device telemetry history, latest, stats, export.
 	ActionTelemetryRead  Action = "telemetry.read"
 	ActionTelemetryWrite Action = "telemetry.write"

@@ -38,6 +38,7 @@ type Hub struct {
 	eventProcessor       EventProcessor
 	dashboardBroadcaster DashboardBroadcaster
 	deviceFrameHandler   DeviceFrameHandler
+	deviceDisconnectHook func(deviceID string)
 	deviceStatus         chan DeviceStatusUpdate
 	rateLimiter          *RateLimiter
 	register             chan *Client
@@ -300,6 +301,10 @@ func (h *Hub) handleClientUnregistration(ctx context.Context, c *Client) {
 		h.messageQueue.RemoveQueue(c.DeviceID)
 	}
 
+	if hook := h.deviceDisconnectHookFor(); hook != nil {
+		hook(c.DeviceID)
+	}
+
 	h.deviceStatus <- DeviceStatusUpdate{DeviceID: c.DeviceID, Online: false, Source: "websocket"}
 	h.log.Info("device websocket offline", "deviceId", c.DeviceID)
 }
@@ -526,6 +531,40 @@ func (h *Hub) Send(deviceID string, frame command.CommandFrame) bool {
 			return success
 		}
 
+		return false
+	}
+}
+
+// SendEphemeral delivers a binary frame to a device without ever persisting it.
+//
+// Unlike Send, this must not fall back to the message queue: Send calls
+// EnqueueWithConfirmation, which performs a synchronous database write for every
+// queued frame. PTY traffic (keystrokes at tens per second, terminal output) is
+// both high-frequency and worthless once the session is gone, so persisting it
+// would hammer the database and replay stale bytes into a later session.
+//
+// It returns false when the device is offline or its PTY buffer is full; the
+// caller drops the frame. Dropping is correct for terminal traffic — the credit
+// window is the flow control, not the queue.
+func (h *Hub) SendEphemeral(deviceID string, frame []byte) bool {
+	if len(frame) == 0 {
+		return false
+	}
+
+	h.mu.RLock()
+	c := h.clients[deviceID]
+	h.mu.RUnlock()
+
+	if c == nil || c.PtySend == nil {
+		return false
+	}
+
+	select {
+	case c.PtySend <- frame:
+		return true
+	default:
+		// Buffer full: drop rather than block or persist. The credit window will
+		// make the device slow down.
 		return false
 	}
 }

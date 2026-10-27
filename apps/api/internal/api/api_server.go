@@ -164,6 +164,8 @@ type Server struct {
 	alertHandler                *alerthandlers.Handler
 	AlertEvaluator              *alertapp.Evaluator
 	streamHandler               *websockethandlers.StreamHandler
+	operatorTerminalHandler     *websockethandlers.OperatorTerminalHandler
+	ptyRelay                    *hub.PTYRelay
 	telemetryHistoryHandler     *handlers.TelemetryHistoryHandler
 	connectionStatusHandler     *handlers.ConnectionStatusHandler
 	adminClientsHandler         *admin.ClientsHandler
@@ -652,6 +654,8 @@ func NewServerWithDeps(cfg *ServerConfigWithDeps) *Server {
 	s.commandHandler = cfg.HandlerSet.Command
 	s.confirmationHandler = cfg.HandlerSet.Confirmation
 	s.streamHandler = cfg.HandlerSet.Stream
+	s.operatorTerminalHandler = cfg.HandlerSet.OperatorTerminal
+	s.ptyRelay = cfg.HandlerSet.PTYRelay
 	s.telemetryHistoryHandler = cfg.HandlerSet.TelemetryHistory
 	s.connectionStatusHandler = cfg.HandlerSet.ConnectionStatus
 	s.adminClientsHandler = cfg.HandlerSet.AdminClients

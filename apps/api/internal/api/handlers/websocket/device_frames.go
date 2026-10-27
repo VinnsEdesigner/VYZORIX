@@ -9,6 +9,7 @@ import (
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application"
 	cmdapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/command"
+	hub "github.com/VinnsEdesigner/vyzorix/apps/api/internal/ws"
 )
 
 // Device frame types a device may send upstream over the device WebSocket. Only
@@ -40,29 +41,44 @@ type commandResultFrame struct {
 	Success    bool   `json:"success"`
 }
 
+// PTYDeviceSink receives binary PTY frames from a device. It is satisfied by the
+// PTY relay; the interface keeps this handler independent of the relay's wiring.
+type PTYDeviceSink interface {
+	// HandleDeviceBinary handles one binary frame from a device. It reports
+	// whether the frame was recognised.
+	HandleDeviceBinary(deviceID string, raw []byte) bool
+}
+
 // DeviceFrameHandler routes non-telemetry device frames to the feature that owns
-// them. It currently handles command results; PTY data and app registration will
-// register additional cases here rather than in the transport layer.
+// them. It handles command results (text) and PTY traffic (binary); app
+// registration will add another text case here rather than in the transport
+// layer.
 type DeviceFrameHandler struct {
 	commands CommandResultSink
+	pty      PTYDeviceSink
 	log      *slog.Logger
 }
 
-// NewDeviceFrameHandler creates a DeviceFrameHandler.
-func NewDeviceFrameHandler(commands CommandResultSink, log *slog.Logger) *DeviceFrameHandler {
+// NewDeviceFrameHandler creates a DeviceFrameHandler. Either sink may be nil; a
+// frame for a missing sink is dropped rather than treated as an error.
+func NewDeviceFrameHandler(commands CommandResultSink, pty PTYDeviceSink, log *slog.Logger) *DeviceFrameHandler {
 	if log == nil {
 		log = slog.Default()
 	}
 
-	return &DeviceFrameHandler{commands: commands, log: log}
+	return &DeviceFrameHandler{commands: commands, pty: pty, log: log}
 }
 
 // HandleDeviceFrame implements hub.DeviceFrameHandler. It returns whether the
-// frame type was recognised.
-func (h *DeviceFrameHandler) HandleDeviceFrame(ctx context.Context, deviceID, frameType string, raw []byte) bool {
-	switch frameType {
+// frame was recognised.
+func (h *DeviceFrameHandler) HandleDeviceFrame(_ context.Context, frame hub.DeviceFrame) bool {
+	if frame.Kind == hub.FrameBinary {
+		return h.handleBinary(frame)
+	}
+
+	switch frame.Type {
 	case frameTypeCommandResult:
-		h.handleCommandResult(ctx, deviceID, raw)
+		h.handleCommandResult(frame)
 
 		return true
 	default:
@@ -70,50 +86,61 @@ func (h *DeviceFrameHandler) HandleDeviceFrame(ctx context.Context, deviceID, fr
 	}
 }
 
+// handleBinary routes a binary frame to the PTY relay.
+func (h *DeviceFrameHandler) handleBinary(frame hub.DeviceFrame) bool {
+	if h.pty == nil {
+		return false
+	}
+
+	return h.pty.HandleDeviceBinary(frame.DeviceID, frame.Raw)
+}
+
 // handleCommandResult records a command's terminal outcome. A malformed or
 // unknown frame is logged and dropped: a device must never be able to break its
 // own connection (or another device's) by sending a bad frame.
-func (h *DeviceFrameHandler) handleCommandResult(ctx context.Context, deviceID string, raw []byte) {
-	var frame commandResultFrame
-	if err := json.Unmarshal(raw, &frame); err != nil {
-		h.log.Warn("bad command_result frame", "deviceId", deviceID, "err", err)
+func (h *DeviceFrameHandler) handleCommandResult(frame hub.DeviceFrame) {
+	var payload commandResultFrame
+	if err := json.Unmarshal(frame.Raw, &payload); err != nil {
+		h.log.Warn("bad command_result frame", "deviceId", frame.DeviceID, "err", err)
 
 		return
 	}
 
-	if frame.DispatchID == "" {
-		h.log.Warn("command_result frame missing dispatchId", "deviceId", deviceID)
+	if payload.DispatchID == "" {
+		h.log.Warn("command_result frame missing dispatchId", "deviceId", frame.DeviceID)
 
 		return
 	}
 
 	if h.commands == nil {
-		h.log.Warn("command_result received but no command sink is wired", "deviceId", deviceID)
+		h.log.Warn("command_result received but no command sink is wired", "deviceId", frame.DeviceID)
 
 		return
 	}
 
-	output := frame.Output
+	output := payload.Output
 	if output == "" {
-		output = frame.Error
+		output = payload.Error
 	}
 
-	err := h.commands.ReportResult(ctx, deviceID, frame.DispatchID, frame.Success, output)
+	err := h.commands.ReportResult(context.Background(), frame.DeviceID, payload.DispatchID, payload.Success, output)
 	switch {
 	case err == nil:
 		h.log.Debug("command result recorded",
-			"deviceId", deviceID, "dispatchId", frame.DispatchID, "success", frame.Success)
+			"deviceId", frame.DeviceID, "dispatchId", payload.DispatchID, "success", payload.Success)
 	case errors.Is(err, application.ErrCommandNotFound):
 		// A device reporting a dispatch ID we do not know, or one that belongs to
 		// another device. Do not reveal which; just note it.
 		h.log.Warn("command_result for unknown or foreign dispatchId",
-			"deviceId", deviceID, "dispatchId", frame.DispatchID)
+			"deviceId", frame.DeviceID, "dispatchId", payload.DispatchID)
 	default:
 		h.log.Error("failed to record command result",
-			"deviceId", deviceID, "dispatchId", frame.DispatchID, "err", err)
+			"deviceId", frame.DeviceID, "dispatchId", payload.DispatchID, "err", err)
 	}
 }
 
-// Compile-time reference so the unused import stays meaningful if the command
-// service signature changes; ReportResult is the contract this handler needs.
-var _ CommandResultSink = (*cmdapp.Service)(nil)
+// Compile-time references so the contracts stay checked.
+var (
+	_ hub.DeviceFrameHandler = (*DeviceFrameHandler)(nil)
+	_ CommandResultSink      = (*cmdapp.Service)(nil)
+)

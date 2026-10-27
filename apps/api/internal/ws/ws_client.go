@@ -42,6 +42,7 @@ type ClientMetrics struct {
 type Client struct {
 	Conn        *websocket.Conn
 	Send        chan command.CommandFrame
+	PtySend     chan []byte
 	Hub         *Hub
 	log         *slog.Logger
 	Done        chan struct{}
@@ -180,7 +181,7 @@ func (c *Client) ReadPump() {
 	})
 
 	for {
-		_, raw, err := c.Conn.ReadMessage()
+		msgType, raw, err := c.Conn.ReadMessage()
 		if err != nil {
 			c.log.Debug("ws read error", "deviceId", c.DeviceID, "err", err)
 			return
@@ -188,32 +189,64 @@ func (c *Client) ReadPump() {
 
 		c.RecordMessageReceived()
 
-		// Decode once here and hand the frame to the telemetry path. Decoding in
-		// ReadPump just to read the type and again in processTelemetry doubled the
-		// per-frame cost on the busiest path.
-		var t telemetry.TelemetryFrame
-		if err := json.Unmarshal(raw, &t); err != nil {
-			if c.log != nil {
-				c.log.Warn("bad ws frame", "deviceId", c.DeviceID, "err", err)
+		switch msgType {
+		case websocket.BinaryMessage:
+			// Binary frames are PTY traffic. They go straight to the feature
+			// handler: JSON-decoding them would always fail and silently drop
+			// every terminal frame.
+			//
+			// A PTY frame can never exceed the header plus one maximum payload, so
+			// anything larger is rejected before dispatch. The connection read limit
+			// already caps the allocation at 1MB; this bounds it far tighter for the
+			// one frame type a device sends at high frequency.
+			if len(raw) > PTYFrameHeaderSize+MaxPTYPayload {
+				c.log.Warn("oversized binary frame dropped",
+					"deviceId", c.DeviceID, "bytes", len(raw), "max", PTYFrameHeaderSize+MaxPTYPayload)
+
+				continue
 			}
 
-			continue
-		}
+			if !c.Hub.DispatchDeviceFrame(context.Background(), DeviceFrame{
+				DeviceID: c.DeviceID,
+				Raw:      raw,
+				Kind:     FrameBinary,
+			}) {
+				c.logUnknownFrameType("binary")
+			}
 
-		if t.Type == "telemetry" {
-			c.processTelemetry(raw, &t)
-			continue
-		}
+		case websocket.TextMessage:
+			// Decode once here and hand the frame to the telemetry path. Decoding
+			// in ReadPump just to read the type and again in processTelemetry
+			// doubled the per-frame cost on the busiest path.
+			var t telemetry.TelemetryFrame
+			if err := json.Unmarshal(raw, &t); err != nil {
+				if c.log != nil {
+					c.log.Warn("bad ws frame", "deviceId", c.DeviceID, "err", err)
+				}
 
-		// Any other frame type (command results, PTY data, app registration,
-		// ...) is routed to the feature handler. With no handler installed the
-		// frame is logged and dropped rather than silently swallowed.
-		if handler := c.Hub.deviceFrameHandlerFor(); handler != nil {
-			if !handler.HandleDeviceFrame(context.Background(), c.DeviceID, t.Type, raw) {
+				continue
+			}
+
+			if t.Type == "telemetry" {
+				c.processTelemetry(raw, &t)
+				continue
+			}
+
+			// Any other text frame type (command results, app registration, ...)
+			// is routed to the feature handler. With no handler installed the
+			// frame is logged and dropped rather than silently swallowed.
+			if !c.Hub.DispatchDeviceFrame(context.Background(), DeviceFrame{
+				DeviceID: c.DeviceID,
+				Type:     t.Type,
+				Raw:      raw,
+				Kind:     FrameText,
+			}) && t.Type != "" {
 				c.logUnknownFrameType(t.Type)
 			}
-		} else if t.Type != "" {
-			c.logUnknownFrameType(t.Type)
+
+		default:
+			// Ping/pong/close are handled by the library, so any other message
+			// type is unexpected; ignore it rather than guessing.
 		}
 	}
 }
@@ -352,6 +385,24 @@ func (c *Client) WritePump() {
 				close(frame.DeliveryConfirmation)
 				frame.DeliveryConfirmation = nil
 			}
+		case ptyFrame, ok := <-c.PtySend:
+			setWriteDeadline(c.Conn, time.Now().Add(writeTimeout), c.log)
+
+			// Nothing closes PtySend in normal operation: the pump terminates when
+			// the command channel closes. A closed PTY channel therefore means the
+			// connection is being torn down, so stop rather than spin on it.
+			if !ok {
+				return
+			}
+
+			// PTY frames are binary and bypass the command-path rate limiter and
+			// compression: they are small, latency-sensitive, and the session's
+			// credit window is the real flow control.
+			if err := c.Conn.WriteMessage(websocket.BinaryMessage, ptyFrame); err != nil {
+				return
+			}
+
+			c.RecordMessageSent()
 		case <-ticker.C:
 			setWriteDeadline(c.Conn, time.Now().Add(writeTimeout), c.log)
 
