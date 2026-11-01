@@ -208,6 +208,23 @@ func (s *ServerSigner) Sign(kind, deviceID string, body []byte) (signatureB64, n
 	return base64.StdEncoding.EncodeToString(sig), nonce, timestampMs, nil
 }
 
+// SignCanonical signs a caller-built canonical string and returns the base64
+// ASN.1 DER signature.
+//
+// This exists because Sign generates its own timestamp and nonce, which is right
+// for a payload that carries neither — but a command frame carries both, and the
+// signature must cover the values the frame actually holds. Signing with values
+// the caller cannot see produces a signature that can never verify.
+func (s *ServerSigner) SignCanonical(canonical string) (string, error) {
+	digest := sha256.Sum256([]byte(canonical))
+	sig, err := ecdsa.SignASN1(rand.Reader, s.key, digest[:])
+	if err != nil {
+		return "", fmt.Errorf("sign: %w", err)
+	}
+
+	return base64.StdEncoding.EncodeToString(sig), nil
+}
+
 // VerifyServerSignature is the device-side check, mirrored here so a test can
 // assert the two implementations agree byte for byte.
 func VerifyServerSignature(

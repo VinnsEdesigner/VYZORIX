@@ -2,9 +2,12 @@
 package crypto
 
 import (
+	"crypto/ecdsa"
 	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/sha512"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -128,8 +131,96 @@ func (s *CommandSigner) ValidateTimestamp(frame *command.CommandFrame, maxDriftM
 	return drift <= maxDriftMs
 }
 
+// SignCommandFrameWithKey signs a frame with the server's own key rather than a
+// per-device shared secret.
+//
+// This is the keypair model's signing path: the server holds a private key that
+// never leaves it, and every device verifies against the same public key pinned in
+// the app. Nothing per-device is transmitted, which is the property the HMAC
+// scheme could not have — it needed the secret delivered to each device, and the
+// only channel available was FCM.
+//
+// The signature covers the frame's canonical string with a domain prefix, so a
+// device signature can never be replayed as a server one.
+func SignCommandFrameWithKey(
+	signer *ServerSigner,
+	frame *command.CommandFrame,
+	deviceID string,
+) error {
+	if frame.Timestamp == 0 {
+		frame.Timestamp = time.Now().UnixMilli()
+	}
+
+	// The nonce must be on the frame *before* the canonical string is built: the
+	// string includes it, so signing with an empty nonce and setting it afterwards
+	// produces a signature that can never verify.
+	nonceBytes := make([]byte, 16)
+	if _, err := rand.Read(nonceBytes); err != nil {
+		return fmt.Errorf("nonce: %w", err)
+	}
+	frame.Nonce = hex.EncodeToString(nonceBytes)
+
+	sig, err := signer.SignCanonical(CommandCanonical(frame, deviceID))
+	if err != nil {
+		return err
+	}
+
+	frame.Signature = sig
+
+	return nil
+}
+
+// CommandSignKind is the signature domain for a command frame. It keeps commands
+// distinguishable from config and from a connect, so one cannot be replayed as
+// another.
+const CommandSignKind = "command"
+
+// CommandCanonical is the flat string a command frame's signature covers.
+//
+// It is one function, used by both signing and verification, so the two cannot
+// drift — which the HMAC path did: it had BuildCanonicalString and a second
+// inline copy in ValidateCommandHMAC that could disagree.
+//
+// The domain prefix is included, so a signature over a command cannot be replayed
+// as a signature over anything else. Every field is present and separator-delimited,
+// so no two different frames produce the same string.
+func CommandCanonical(frame *command.CommandFrame, deviceID string) string {
+	argsStr := string(frame.Args)
+	if argsStr == "" {
+		argsStr = "{}"
+	}
+
+	return CommandSignKind + "|" + frame.DispatchID + "|" + deviceID + "|" + frame.Command + "|" +
+		strconv.FormatInt(frame.Timestamp, 10) + "|" + frame.Nonce + "|" + argsStr
+}
+
+// ValidateCommandSignatureWithKey verifies a frame signed by the server's key.
+// The device does the same check against the pinned public key.
+func ValidateCommandSignatureWithKey(
+	serverPublicKeyPEM string,
+	frame *command.CommandFrame,
+	deviceID string,
+) bool {
+	pub, err := DecodePublicKey(serverPublicKeyPEM)
+	if err != nil {
+		return false
+	}
+
+	sig, err := base64.StdEncoding.DecodeString(frame.Signature)
+	if err != nil {
+		return false
+	}
+
+	digest := sha256.Sum256([]byte(CommandCanonical(frame, deviceID)))
+
+	return ecdsa.VerifyASN1(pub, digest[:], sig)
+}
+
 // ValidateConnectHMAC validates WebSocket connection HMAC per DEVICE_REGISTRATION.md §4.1.
 // Format: HMAC over "CONNECT:<deviceId>:<timestamp>:<nonce>".
+//
+// Deprecated: the keypair model replaces this. See VerifyConnectSignature. Kept so
+// an already-deployed device is not cut off by a server upgrade.
 func (s *CommandSigner) ValidateConnectHMAC(deviceID, timestamp, nonce, providedHmac, secret string) bool {
 	canonical := "CONNECT:" + deviceID + ":" + timestamp + ":" + nonce
 
@@ -138,6 +229,41 @@ func (s *CommandSigner) ValidateConnectHMAC(deviceID, timestamp, nonce, provided
 	expected := hex.EncodeToString(mac.Sum(nil))
 
 	return hmac.Equal([]byte(providedHmac), []byte(expected))
+}
+
+// ConnectSignKind is the device-signature domain for a WebSocket connect. It is
+// distinct from the command and config domains so a connect signature cannot be
+// replayed as anything else.
+const ConnectSignKind = "connect"
+
+// ConnectCanonical is the flat string a device signs for its WebSocket connect.
+// One function, used by both sides, for the same reason CommandCanonical is.
+func ConnectCanonical(deviceID, timestamp, nonce string) string {
+	return ConnectSignKind + "|" + deviceID + "|" + timestamp + "|" + nonce
+}
+
+// VerifyConnectSignature verifies a device's WebSocket connect handshake using its
+// registered public key.
+//
+// This replaces ValidateConnectHMAC. The device signs with the private key it
+// generated at first boot; the server verifies against the public half it received
+// at enroll. Nothing shared, so nothing to transmit.
+func VerifyConnectSignature(
+	devicePublicKeyPEM, deviceID, timestamp, nonce, signature string,
+) bool {
+	pub, err := DecodePublicKey(devicePublicKeyPEM)
+	if err != nil {
+		return false
+	}
+
+	sig, err := base64.StdEncoding.DecodeString(signature)
+	if err != nil {
+		return false
+	}
+
+	digest := sha256.Sum256([]byte(ConnectCanonical(deviceID, timestamp, nonce)))
+
+	return ecdsa.VerifyASN1(pub, digest[:], sig)
 }
 
 // GenerateNonce generates a cryptographically random 16-byte nonce (32 hex chars).
