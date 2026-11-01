@@ -211,6 +211,14 @@ func (s *Server) setupDevicePublicRoutes(public *gin.RouterGroup) {
 	if s.inboxHandler != nil {
 		devicePublicGroup.POST("/inbox", s.inboxHandler.CreateInboxRequest)
 	}
+
+	// Keypair enrollment. Public by necessity: a freshly installed device has no
+	// credential yet, so there is nothing to authenticate with. Safety rests on
+	// the pairing code's entropy, TTL, single-use rule and the public group's rate
+	// limiting. See doc/REGISTRATION_CONTRACT.md §4 and §9.
+	if s.enrollHandler != nil {
+		devicePublicGroup.POST("/enroll", s.enrollHandler.Enroll)
+	}
 	// Public confirm endpoint - device confirms registration after receiving commandSecret.
 	if s.deviceConfirmHandler != nil {
 		devicePublicGroup.POST("/confirm", s.deviceConfirmHandler.Handle)
@@ -461,6 +469,22 @@ func (s *Server) setupDeviceManagementRoutes(r *gin.RouterGroup) {
 }
 
 func (s *Server) setupDeviceInboxRoutes(r *gin.RouterGroup) {
+	// Claiming a device is an authenticated operator action, so it is registered
+	// independently of the inbox handler: it needs org context and the device-write
+	// scope, not the inbox scopes. See doc/REGISTRATION_CONTRACT.md §3 phase B.
+	if s.enrollHandler != nil {
+		claimGroup := r.Group("/device")
+		claimGroup.Use(middleware.NewOrganizationContext(nil).Middleware())
+		claimGroup.Use(middleware.NewOrganizationMembership(s.memberHandler.MembershipChecker()).Middleware())
+		claimGroup.Use(s.cookieAuth.Middleware())
+
+		claimGroup.POST(
+			"/claim",
+			s.requireScope(permission.ActionDeviceWrite, permission.WildcardScope(permission.ScopeDevices)),
+			s.enrollHandler.Claim,
+		)
+	}
+
 	if s.inboxHandler != nil && s.deviceRegRateLimiter != nil {
 		deviceInbox := r.Group("/device")
 

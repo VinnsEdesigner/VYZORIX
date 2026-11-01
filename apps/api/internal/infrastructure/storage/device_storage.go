@@ -60,21 +60,24 @@ const deviceColumns = `
 	command_secret_hash, online, registered_at, last_seen, operator_id,
 	organization_id,
 	created_at, updated_at, device_name, manufacturer, model, os_version, security_patch,
-	deregistered_at, deletion_scheduled_at, fcm_token_refreshed_at, tags
+	deregistered_at, deletion_scheduled_at, fcm_token_refreshed_at, tags, tier,
+	public_key, pairing_code, pairing_expires_at
 `
 
 // scanDevice scans a device from a row.
 func scanDevice(row *sql.Row) (*device.Device, error) {
 	var d device.Device
 	var fcmToken, operatorID, organizationID, deviceName, manufacturer, model, osVersion, securityPatch, tagsJSON sql.NullString
-	var deregisteredAt, deletionScheduledAt, fcmTokenRefreshedAt sql.NullInt64
+	var publicKey, pairingCode sql.NullString
+	var deregisteredAt, deletionScheduledAt, fcmTokenRefreshedAt, tier, pairingExpiresAt sql.NullInt64
 
 	err := row.Scan(
 		&d.ID, &d.FirebaseInstallID, &fcmToken, &d.AppVersion, &d.DeviceClass,
 		&d.CommandSecretHash, &d.Online, &d.RegisteredAt, &d.LastSeen, &operatorID,
 		&organizationID,
 		&d.CreatedAt, &d.UpdatedAt, &deviceName, &manufacturer, &model, &osVersion, &securityPatch,
-		&deregisteredAt, &deletionScheduledAt, &fcmTokenRefreshedAt, &tagsJSON,
+		&deregisteredAt, &deletionScheduledAt, &fcmTokenRefreshedAt, &tagsJSON, &tier,
+		&publicKey, &pairingCode, &pairingExpiresAt,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -85,6 +88,12 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 		return nil, err
 	}
 
+	d.Tier = device.TierFromInt(int(tier.Int64))
+	d.PublicKey = publicKey.String
+	d.PairingCode = pairingCode.String
+	if pairingExpiresAt.Valid {
+		d.PairingExpiresAt = &pairingExpiresAt.Int64
+	}
 	d.FCMToken = fcmToken.String
 	d.OperatorID = operatorID.String
 	d.OrganizationID = organizationID.String
@@ -123,18 +132,26 @@ func scanDevices(rows *sql.Rows) ([]*device.Device, error) {
 	for rows.Next() {
 		var d device.Device
 		var fcmToken, operatorID, organizationID, deviceName, manufacturer, model, osVersion, securityPatch, tagsJSON sql.NullString
-		var deregisteredAt, deletionScheduledAt, fcmTokenRefreshedAt sql.NullInt64
+		var publicKey, pairingCode sql.NullString
+		var deregisteredAt, deletionScheduledAt, fcmTokenRefreshedAt, tier, pairingExpiresAt sql.NullInt64
 
 		if err := rows.Scan(
 			&d.ID, &d.FirebaseInstallID, &fcmToken, &d.AppVersion, &d.DeviceClass,
 			&d.CommandSecretHash, &d.Online, &d.RegisteredAt, &d.LastSeen, &operatorID,
 			&organizationID,
 			&d.CreatedAt, &d.UpdatedAt, &deviceName, &manufacturer, &model, &osVersion, &securityPatch,
-			&deregisteredAt, &deletionScheduledAt, &fcmTokenRefreshedAt, &tagsJSON,
+			&deregisteredAt, &deletionScheduledAt, &fcmTokenRefreshedAt, &tagsJSON, &tier,
+			&publicKey, &pairingCode, &pairingExpiresAt,
 		); err != nil {
 			return nil, err
 		}
 
+		d.Tier = device.TierFromInt(int(tier.Int64))
+		d.PublicKey = publicKey.String
+		d.PairingCode = pairingCode.String
+		if pairingExpiresAt.Valid {
+			d.PairingExpiresAt = &pairingExpiresAt.Int64
+		}
 		d.FCMToken = fcmToken.String
 		d.OperatorID = operatorID.String
 		d.OrganizationID = organizationID.String
@@ -214,7 +231,41 @@ func (r *DeviceRepository) FindByIMEIAndOrganization(ctx context.Context, imei, 
 // Returns ErrNotFound if device doesn't exist OR doesn't belong to the organization.
 func (r *DeviceRepository) FindByIDAndOrganization(ctx context.Context, id, orgID string) (*device.Device, error) {
 	query := `SELECT ` + deviceColumns + ` FROM devices WHERE id = ? AND organization_id = ?`
+
 	return scanDevice(r.queryRow(ctx, query, id, orgID))
+}
+
+// FindByPairingCode looks a device up by the code an operator types to claim it.
+//
+// It matches only a live code: an expired one is not returned, so an operator
+// cannot claim a device whose notification went stale. The caller still checks
+// expiry, but refusing here means the common case fails before any state change.
+func (r *DeviceRepository) FindByPairingCode(ctx context.Context, code string) (*device.Device, error) {
+	query := `SELECT ` + deviceColumns + ` FROM devices
+	          WHERE pairing_code = ? AND pairing_code != ''
+	            AND (pairing_expires_at IS NULL OR pairing_expires_at > ?)`
+
+	return scanDevice(r.queryRow(ctx, query, code, time.Now().UnixMilli()))
+}
+
+// ClearPairingCode consumes a device's code, so it cannot be claimed twice.
+func (r *DeviceRepository) ClearPairingCode(ctx context.Context, id string) error {
+	result, err := r.exec(ctx,
+		`UPDATE devices SET pairing_code = '', pairing_expires_at = NULL, updated_at = ? WHERE id = ?`,
+		time.Now(), id)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return device.ErrNotFound
+	}
+
+	return nil
 }
 
 // Create creates a new device.
@@ -223,8 +274,9 @@ func (r *DeviceRepository) Create(ctx context.Context, d *device.Device) error {
 		INSERT INTO devices (id, firebase_install_id, fcm_token, app_version, device_class,
 		                    command_secret_hash, online, registered_at, last_seen, operator_id,
 		                    organization_id,
-		                    created_at, updated_at, device_name, manufacturer, model, os_version, tags, tier)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		                    created_at, updated_at, device_name, manufacturer, model, os_version, tags, tier,
+		                    public_key, pairing_code, pairing_expires_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err := r.exec(ctx, query,
 		d.ID, d.FirebaseInstallID, nullString(d.FCMToken), d.AppVersion, d.DeviceClass,
@@ -232,6 +284,7 @@ func (r *DeviceRepository) Create(ctx context.Context, d *device.Device) error {
 		nullString(d.OrganizationID),
 		d.CreatedAt, d.UpdatedAt, nullString(d.DeviceName), nullString(d.Manufacturer),
 		nullString(d.Model), nullString(d.OSVersion), tagsToJSON(d.Tags), int(d.Tier),
+		nullString(d.PublicKey), nullString(d.PairingCode), nullInt(d.PairingExpiresAt),
 	)
 
 	return err
@@ -248,14 +301,16 @@ func (r *DeviceRepository) Update(ctx context.Context, d *device.Device) error {
 		SET firebase_install_id = ?, fcm_token = ?, app_version = ?, device_class = ?,
 		    command_secret_hash = ?, online = ?, registered_at = ?, last_seen = ?,
 		    operator_id = ?, organization_id = ?, updated_at = ?, device_name = ?, manufacturer = ?,
-		    model = ?, os_version = ?, tags = ?, tier = ?
+		    model = ?, os_version = ?, tags = ?, tier = ?,
+		    public_key = ?, pairing_code = ?, pairing_expires_at = ?
 		WHERE id = ?`
 
 	result, err := r.exec(ctx, query,
 		d.FirebaseInstallID, nullString(d.FCMToken), d.AppVersion, d.DeviceClass,
 		d.CommandSecretHash, d.Online, d.RegisteredAt, d.LastSeen, nullString(d.OperatorID),
 		nullString(d.OrganizationID), time.Now(), nullString(d.DeviceName), nullString(d.Manufacturer),
-		nullString(d.Model), nullString(d.OSVersion), tagsToJSON(d.Tags), int(d.Tier), d.ID,
+		nullString(d.Model), nullString(d.OSVersion), tagsToJSON(d.Tags), int(d.Tier),
+		nullString(d.PublicKey), nullString(d.PairingCode), nullInt(d.PairingExpiresAt), d.ID,
 	)
 	if err != nil {
 		return err

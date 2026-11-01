@@ -181,6 +181,7 @@ type Server struct {
 	updaterHandler              *updaterhandlers.Handler
 	updatesHandler              *updateshandlers.UpdatesHandler
 	inboxHandler                *inboxhandlers.Handler
+	enrollHandler               *inboxhandlers.EnrollHandler
 	inboxService                *inbox.Service
 	deviceConfirmHandler        *devicehandlers.ConfirmHandler
 	diagnosticsHandler          *diagnosticshandlers.Handler
@@ -531,6 +532,9 @@ func (s *Server) wireConfirmHandler(cfg *ServerConfig) {
 
 	// Create confirm handler with inbox cleanup capability.
 	s.deviceConfirmHandler = devicehandlers.NewConfirmHandlerWithCleanup(cfg.DeviceService, inboxRepo)
+
+	// The keypair registration endpoints. See doc/REGISTRATION_CONTRACT.md.
+	s.enrollHandler = inboxhandlers.NewEnrollHandler(cfg.DeviceService)
 }
 
 // wireDiagnosticsHandler creates and assigns the diagnostics handlers.

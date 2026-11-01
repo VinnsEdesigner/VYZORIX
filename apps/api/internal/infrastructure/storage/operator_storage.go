@@ -1383,3 +1383,13 @@ func nullString(s string) sql.NullString {
 
 	return sql.NullString{String: s, Valid: true}
 }
+
+// nullInt returns a sql.NullInt64 for an optional timestamp pointer, so a nil
+// stores as SQL NULL rather than as a zero that reads back as the epoch.
+func nullInt(p *int64) sql.NullInt64 {
+	if p == nil {
+		return sql.NullInt64{}
+	}
+
+	return sql.NullInt64{Int64: *p, Valid: true}
+}

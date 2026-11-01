@@ -39,6 +39,15 @@ type Repository interface {
 	// Returns ErrNotFound if device doesn't exist or doesn't belong to the organization.
 	FindByIDAndOrganization(ctx context.Context, id, orgID string) (*Device, error)
 
+	// FindByPairingCode retrieves a pending device by the code an operator types
+	// to claim it. Only a live code matches, so an expired notification cannot
+	// be claimed. See doc/REGISTRATION_CONTRACT.md.
+	FindByPairingCode(ctx context.Context, code string) (*Device, error)
+
+	// ClearPairingCode consumes a device's pairing code so it cannot be claimed
+	// twice.
+	ClearPairingCode(ctx context.Context, id string) error
+
 	// Create creates a new device.
 	Create(ctx context.Context, d *Device) error
 

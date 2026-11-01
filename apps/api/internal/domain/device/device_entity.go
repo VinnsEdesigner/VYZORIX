@@ -43,32 +43,44 @@ func TierFromInt(v int) Tier {
 }
 
 // Device represents a registered device with explicit lifecycle management.
+//
+// Field order is deliberate: pointer-bearing fields first, then the pointer-free
+// scalars, so the GC scans a shorter region. `fieldalignment` enforces it, and a
+// string added to the scalar tail is what it flags.
 type Device struct {
 	UpdatedAt           time.Time
 	CreatedAt           time.Time
 	FCMTokenRefreshedAt *int64
 	DeregisteredAt      *int64
 	DeletionScheduledAt *int64
+	PairingExpiresAt    *int64
 	Metadata            map[string]string
-	FirebaseInstallID   string
-	CommandSecretHash   string
+	OperatorID          string
+	Manufacturer        string
 	OrganizationID      string
 	Model               string
 	OSVersion           string
 	FCMToken            string
 	Lifecycle           Lifecycle
-	OperatorID          string
+	FirebaseInstallID   string
 	DeviceClass         string
 	SecurityPatch       string
 	DeviceName          string
-	Manufacturer        string
+	CommandSecretHash   string
 	ID                  string
 	AppVersion          string
-	Tags                []string
-	LastSeen            int64
-	RegisteredAt        int64
-	Tier                Tier
-	Online              bool
+	// PairingCode is the short code the device shows in a notification and the
+	// operator types into the web app. Empty once claimed.
+	PairingCode string
+	// PublicKey is the device's own signing key, PEM SubjectPublicKeyInfo, sent
+	// once at enroll. The private half never leaves the device, which is what
+	// removes the shared secret the old HMAC scheme had to transmit.
+	PublicKey    string
+	Tags         []string
+	LastSeen     int64
+	RegisteredAt int64
+	Tier         Tier
+	Online       bool
 }
 
 // NewDevice creates a new Device with pending lifecycle and the least privileged

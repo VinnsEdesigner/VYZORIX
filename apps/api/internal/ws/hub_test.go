@@ -24,6 +24,16 @@ func newNoopDeviceRepo() *noopDeviceRepo {
 	return &noopDeviceRepo{online: make(map[string]bool)}
 }
 
+// FindByPairingCode and ClearPairingCode complete the Repository interface. They
+// are unused by these tests, which never exercise enrollment.
+func (r *noopDeviceRepo) FindByPairingCode(_ context.Context, _ string) (*device.Device, error) {
+	return nil, device.ErrNotFound
+}
+
+func (r *noopDeviceRepo) ClearPairingCode(_ context.Context, _ string) error {
+	return nil
+}
+
 func (r *noopDeviceRepo) SetOnline(_ context.Context, id string, online bool) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

@@ -579,6 +579,16 @@ func newNoopDeviceRepoForTests() *noopDeviceRepoForTests {
 }
 
 // ownDevicesForTests registers several IMEIs as belonging to orgID.
+// FindByPairingCode and ClearPairingCode complete the Repository interface. The
+// tests that use this repo do not exercise enrollment.
+func (r *noopDeviceRepoForTests) FindByPairingCode(_ context.Context, _ string) (*device.Device, error) {
+	return nil, device.ErrNotFound
+}
+
+func (r *noopDeviceRepoForTests) ClearPairingCode(_ context.Context, _ string) error {
+	return nil
+}
+
 func (r *noopDeviceRepoForTests) ownDevicesForTests(orgID string, imeis ...string) {
 	for _, imei := range imeis {
 		r.ownDevice(imei, orgID)

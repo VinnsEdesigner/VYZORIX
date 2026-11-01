@@ -555,6 +555,9 @@ var migrations = []Migration{
 	// Device state tier, so resolution reads it from the record rather than
 	// trusting a caller. See documents/ANDROID_SERVICE_BOUNDARY_CONTRACT.md §3.
 	{Apply: migrateAddDeviceTier, Name: "add_device_tier", Version: 74},
+	// Device signing key and pairing code: the keypair registration model.
+	// See doc/REGISTRATION_CONTRACT.md.
+	{Apply: migrateAddDeviceIdentity, Name: "add_device_identity", Version: 75},
 }
 
 // runMigrations applies all pending migrations.
