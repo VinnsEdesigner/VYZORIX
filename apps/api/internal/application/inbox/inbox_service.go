@@ -299,16 +299,23 @@ func (s *Service) ApproveDevice(ctx context.Context, imei string, operatorID, or
 		return nil, fmt.Errorf("failed to update inbox entry: %w", err)
 	}
 
-	// Send FCM notification (best effort).
+	// Notify the device that it was approved. The push carries **no secret**: the
+	// keypair model has none to deliver, which is the point. The old flow put the
+	// plaintext command secret in this frame, over FCM — an unauthenticated channel
+	// — which made every downstream signature only as strong as that handoff.
+	// See doc/REGISTRATION_CONTRACT.md §1.
+	//
+	// The device learns it was approved by fetching its config over the WebSocket
+	// it already holds; this push is only a wake hint for a device that went
+	// offline.
 	fcmPushSent := false
 	if s.fcmNotifier != nil && entry.FCMToken != "" {
 		wake := fcm.SilentWake{
-			Token:         entry.FCMToken,
-			Command:       "REGISTRATION_APPROVED",
-			CommandSecret: secret,
-			DispatchID:    entry.ID,
-			DeviceID:      entry.IMEI,
-			Priority:      "high",
+			Token:      entry.FCMToken,
+			Command:    "REGISTRATION_APPROVED",
+			DispatchID: entry.ID,
+			DeviceID:   entry.IMEI,
+			Priority:   "high",
 		}
 		if err := s.fcmNotifier.SendSilentWake(ctx, wake); err != nil {
 			s.logger.Warn("failed to send FCM notification on approval",
@@ -749,19 +756,18 @@ func (s *Service) ResendApproval(ctx context.Context, imei, operatorID, orgID st
 		return nil, ErrInboxNotApproved
 	}
 
-	if entry.CommandSecret == "" {
-		return nil, fmt.Errorf("command secret not found for approved entry")
-	}
-
+	// No secret check and no secret in the push. The old resend path required the
+	// plaintext secret to still be stored, and delivered it over FCM; both are gone
+	// with the keypair model, where there is nothing to resend. See
+	// doc/REGISTRATION_CONTRACT.md §1 and §8.
 	fcmPushSent := false
 	if s.fcmNotifier != nil && entry.FCMToken != "" {
 		wake := fcm.SilentWake{
-			Token:         entry.FCMToken,
-			Command:       "REGISTRATION_APPROVED",
-			CommandSecret: entry.CommandSecret,
-			DispatchID:    entry.ID,
-			DeviceID:      entry.IMEI,
-			Priority:      "high",
+			Token:      entry.FCMToken,
+			Command:    "REGISTRATION_APPROVED",
+			DispatchID: entry.ID,
+			DeviceID:   entry.IMEI,
+			Priority:   "high",
 		}
 		if err := s.fcmNotifier.SendSilentWake(ctx, wake); err != nil {
 			s.logger.Warn("failed to resend FCM notification",

@@ -51,16 +51,15 @@ type FCMMetrics struct {
 }
 
 type SilentWake struct {
-	Token         string
-	Command       string
-	DispatchID    string
-	DeviceID      string
-	Priority      string
-	CommandSecret string
-	APKFilename   string
-	SHA256        string
-	DownloadURL   string
-	APKSize       int64
+	Token       string
+	Command     string
+	DispatchID  string
+	DeviceID    string
+	Priority    string
+	APKFilename string
+	SHA256      string
+	DownloadURL string
+	APKSize     int64
 }
 
 type Notifier interface {
@@ -501,18 +500,18 @@ func ptr24Hours() *time.Duration {
 }
 
 // buildFCMData constructs the data payload for FCM messages.
-// Includes APK info for update commands and CommandSecret for registration.
+//
+// It carries no secret. An earlier version put the plaintext command secret in
+// `command_secret` so the device could complete registration — over FCM, which is
+// an unauthenticated channel. The keypair model has no secret to deliver, so the
+// field is gone rather than left empty: a wire field that exists is a field
+// something will fill in again. See doc/REGISTRATION_CONTRACT.md §1.
 func buildFCMData(wake SilentWake) map[string]string {
 	data := map[string]string{
 		"action":      "WAKE_DAEMON",
 		"command":     wake.Command,
 		"dispatch_id": wake.DispatchID,
 		"device_id":   wake.DeviceID,
-	}
-
-	// Include CommandSecret for registration approval.
-	if wake.CommandSecret != "" {
-		data["command_secret"] = wake.CommandSecret
 	}
 
 	// Include APK info for update commands.
