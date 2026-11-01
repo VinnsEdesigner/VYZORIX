@@ -58,6 +58,9 @@ const (
 // not durable: a session is a live connection between an operator and a device,
 // and it is meaningless once the server restarts.
 type PTYSession struct {
+	// Fields are ordered so pointer-bearing ones come first and the pointer-free
+	// scalars trail: the GC then has a shorter region to scan. Reordering the
+	// scalars above the strings/slices is what fieldalignment flags.
 	OpenedAt   time.Time
 	LastSeenAt time.Time
 	recorder   *PTYRecorder
@@ -65,8 +68,28 @@ type PTYSession struct {
 	DeviceID   string
 	OperatorID string
 	OrgID      string
-	Recording  bool
+	// capability is the resolved API allowlist, device tier and expiry the session
+	// carries. It is the boundary contract's §7 decision, recorded here at open so
+	// the device's cloud WebSocket (Build 4) can deliver it and so it is
+	// observable before that exists. Empty means the session was opened without a
+	// resolver configured.
+	capability []string
 	Credit     int
+	expiresAt  int64
+	Recording  bool
+	tier       int
+}
+
+// SetCapability records the resolved capability on the session.
+func (s *PTYSession) SetCapability(allowlist []string, tier int, expiresAt int64) {
+	s.capability = allowlist
+	s.tier = tier
+	s.expiresAt = expiresAt
+}
+
+// Capability returns the resolved API allowlist, device tier and expiry.
+func (s *PTYSession) Capability() (allowlist []string, tier int, expiresAt int64) {
+	return s.capability, s.tier, s.expiresAt
 }
 
 // Recorder returns the session's cast recorder, or nil when recording is off.

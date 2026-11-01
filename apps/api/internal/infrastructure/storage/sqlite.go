@@ -552,6 +552,9 @@ var migrations = []Migration{
 	{Apply: migrateKnownDevices, Name: "create_known_devices_tables", Version: 72},
 	// Command result output (e.g. SHELL_EXEC stdout) reported by a device.
 	{Apply: migrateAddCommandResult, Name: "add_command_result", Version: 73},
+	// Device state tier, so resolution reads it from the record rather than
+	// trusting a caller. See documents/ANDROID_SERVICE_BOUNDARY_CONTRACT.md §3.
+	{Apply: migrateAddDeviceTier, Name: "add_device_tier", Version: 74},
 }
 
 // runMigrations applies all pending migrations.

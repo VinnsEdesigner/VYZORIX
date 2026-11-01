@@ -96,3 +96,114 @@ func ActionSets() map[Action][]Action {
 	}
 	return out
 }
+
+// Device API catalog — the single source of truth for what each device API
+// requires. One entry per API; nothing else in the system repeats it. The
+// device's @VyzorixApi annotation, where one exists, is documentation only and is
+// never consulted, so it cannot drift into authority.
+//
+// Each entry carries both axes: the capability Requirement (does the role hold
+// the tags?) and the scoped Action+Scope (on which resource may it act?).
+// Resolution is ResolveSessionCapability in grants.go.
+
+// ApiRequirement is the requirement for one device API.
+type ApiRequirement struct {
+	// Action is the resource action evaluated against the scoped engine, e.g.
+	// ActionDeviceRead for a read-only device API.
+	Action Action
+	// Scope is the resource scope prefix, e.g. ScopeDevices. The concrete scope
+	// (devices:imei:<id>) is built by the caller from the target device.
+	Scope string
+	// Tags is the capability requirement.
+	Tags Requirement
+	// MinTier is the lowest device tier that can serve the API. Resolution
+	// intersects on it, so an unrooted device never receives a root-only API.
+	MinTier Tier
+}
+
+// DeviceAPICatalog maps an API name to its requirement. This is the authority;
+// adding an API is one entry here plus its handler.
+var DeviceAPICatalog = map[string]ApiRequirement{
+	// Battery: no runtime permission, public read.
+	"battery": {
+		Action:  ActionDeviceRead,
+		Scope:   ScopeDevices,
+		Tags:    Requirement{All: []Tag{DataPublic, OpRead, ProtectionNormal, VisibilityPublic}},
+		MinTier: TierUnrooted,
+	},
+	// Device identity and platform facts: public read.
+	"device_info": {
+		Action:  ActionDeviceRead,
+		Scope:   ScopeDevices,
+		Tags:    Requirement{All: []Tag{DataPublic, OpRead, ProtectionNormal, VisibilityPublic}},
+		MinTier: TierUnrooted,
+	},
+	// Internal storage capacity: app-visible data, read.
+	"storage": {
+		Action:  ActionDeviceRead,
+		Scope:   ScopeDevices,
+		Tags:    Requirement{All: []Tag{DataApp, OpRead, ProtectionNormal, VisibilityPublic}},
+		MinTier: TierUnrooted,
+	},
+	// Connectivity state: public read.
+	"network": {
+		Action:  ActionDeviceRead,
+		Scope:   ScopeDevices,
+		Tags:    Requirement{All: []Tag{DataPublic, OpRead, ProtectionNormal, VisibilityPublic}},
+		MinTier: TierUnrooted,
+	},
+	// Recent logcat: private, readable by operator and above.
+	"logcat": {
+		Action:  ActionDeviceRead,
+		Scope:   ScopeDevices,
+		Tags:    Requirement{All: []Tag{DataPrivate, OpRead, ProtectionNormal, VisibilityPrivate}},
+		MinTier: TierUnrooted,
+	},
+	// Session open/close/resize: a shell is arbitrary code execution, so it is
+	// its own capability and never implied by command.execute.
+	"session": {
+		Action:  ActionShell,
+		Scope:   ScopeDevices,
+		Tags:    Requirement{All: []Tag{DataPrivate, OpWrite, ProtectionDangerous, VisibilityPrivate}},
+		MinTier: TierUnrooted,
+	},
+	// USB: reachable two ways. Unrooted (tier 1) through UsbManager and a handed
+	// fd; rooted (tier 2) through the device nodes directly. Any expresses the
+	// alternative a flat conjunction cannot, and MinTier stays 1 because the
+	// UsbManager path serves an unrooted device.
+	"usb": {
+		Action:  ActionUsb,
+		Scope:   ScopeDevices,
+		Tags:    Requirement{All: []Tag{HwUsb, DataHardware, OpWrite, ProtectionSignature, VisibilityPrivate}},
+		MinTier: TierUnrooted,
+	},
+	// USB device-node access: rooted devices only. This is the tier-2-only entry —
+	// an unrooted device can never be handed it, because resolution intersects on
+	// MinTier.
+	"usb_nodes": {
+		Action:  ActionUsb,
+		Scope:   ScopeDevices,
+		Tags:    Requirement{All: []Tag{HwUsb, DataHardware, OpWrite, ProtectionSignature}},
+		MinTier: TierRooted,
+	},
+	// Full filesystem read: advanced devices only.
+	"filesystem": {
+		Action:  ActionDeviceRead,
+		Scope:   ScopeDevices,
+		Tags:    Requirement{All: []Tag{DataPrivate, OpRead, VisibilityPrivate}},
+		MinTier: TierAdvanced,
+	},
+}
+
+// ApiRequirementFor returns the requirement for an API and whether it is known.
+// An unknown API is not in the catalog and therefore never resolvable — the
+// fail-closed default.
+func ApiRequirementFor(api string) (ApiRequirement, bool) {
+	req, ok := DeviceAPICatalog[api]
+	return req, ok
+}
+
+// Resolution lives in ResolveSessionCapability (grants.go). There is deliberately
+// no second resolver here: an earlier revision had one that applied tags and tier
+// but not the resource axis, which meant two functions could disagree about the
+// same session. One resolver, one answer.

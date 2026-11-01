@@ -105,3 +105,55 @@ func DefaultScopesForRole(roleName string) ScopedPermissions {
 
 	return perms
 }
+
+// DefaultTagsForRole returns the capability tags a role holds by default. It is
+// the tag-axis counterpart of DefaultScopesForRole: the scoped permissions answer
+// "on which resource may this role act", the tags answer "does this role hold the
+// capability an API requires". Both are consulted; neither implies the other.
+//
+// The role ladder is the same four roles, each a strict superset of the one
+// below, so a viewer can never satisfy a requirement an operator cannot.
+//
+// Fail-closed: an unknown role falls back to the viewer set, mirroring
+// DefaultScopesForRole.
+func DefaultTagsForRole(roleName string) TagSet {
+	viewer := TagSet{
+		DataPublic,
+		OpRead,
+		ProtectionNormal,
+		VisibilityPublic,
+	}
+
+	operator := append(append(TagSet{}, viewer...),
+		DataApp,
+		DataPrivate,
+		VisibilityPrivate,
+	)
+
+	admin := append(append(TagSet{}, operator...),
+		OpWrite,
+		ProtectionDangerous,
+		ProtectionSignature,
+		DataHardware,
+		HwUsb,
+	)
+
+	// super_admin holds the same tags as admin. That is not an oversight: the tag
+	// axis carries capability dimensions (data, op, protection, visibility,
+	// hardware), and super_admin's extra authority is org-admin *actions*
+	// (admin.lockout, admin.impersonate), which the scoped engine grants and this
+	// axis does not model.
+
+	switch roleName {
+	case "viewer":
+		return viewer
+	case "operator":
+		return operator
+	case "admin":
+		return admin
+	case "super_admin":
+		return admin
+	default:
+		return viewer
+	}
+}

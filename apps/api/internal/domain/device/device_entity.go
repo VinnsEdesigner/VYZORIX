@@ -8,6 +8,40 @@ import (
 // ErrNotFound is returned when a device is not found.
 var ErrNotFound = errors.New("device not found")
 
+// Tier is a device's state capability level. It is read from the device record
+// and compared during resolution; it is never asserted by a caller, so an
+// unrooted device cannot be handed a rooted-only API. The values mirror
+// permission.Tier, which this package cannot import (a domain package does not
+// depend on another domain package), so the numbers are the contract between
+// them and permission.Tier carries the doc comment naming them.
+type Tier int
+
+const (
+	// TierUnrooted is a stock device: app-private storage and the UsbManager path.
+	TierUnrooted Tier = 1
+	// TierRooted adds direct device-node access (/dev/bus/usb) and RW external
+	// storage.
+	TierRooted Tier = 2
+	// TierAdvanced is unrestricted: full filesystem and device access.
+	TierAdvanced Tier = 3
+)
+
+// TierFromInt parses a stored tier, defaulting to the least privileged on an
+// unknown or absent value: a device whose state is not recorded is treated as
+// unrooted, never as advanced.
+func TierFromInt(v int) Tier {
+	switch Tier(v) {
+	case TierUnrooted:
+		return TierUnrooted
+	case TierRooted:
+		return TierRooted
+	case TierAdvanced:
+		return TierAdvanced
+	default:
+		return TierUnrooted
+	}
+}
+
 // Device represents a registered device with explicit lifecycle management.
 type Device struct {
 	UpdatedAt           time.Time
@@ -33,15 +67,18 @@ type Device struct {
 	Tags                []string
 	LastSeen            int64
 	RegisteredAt        int64
+	Tier                Tier
 	Online              bool
 }
 
-// NewDevice creates a new Device with pending lifecycle.
+// NewDevice creates a new Device with pending lifecycle and the least privileged
+// tier. A device reports its own state later; it does not start trusted.
 func NewDevice(id string, firebaseInstallID string) *Device {
 	return &Device{
 		ID:                id,
 		FirebaseInstallID: firebaseInstallID,
 		Lifecycle:         LifecyclePending,
+		Tier:              TierUnrooted,
 		CreatedAt:         time.Now(),
 		UpdatedAt:         time.Now(),
 	}

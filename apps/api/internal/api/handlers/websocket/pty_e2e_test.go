@@ -129,6 +129,7 @@ func newE2ERig(t *testing.T, recordingDir string) *e2eRig {
 		relay,
 		stubResolver{orgID: "org-1"},
 		nil,
+		stubCapabilityResolver{},
 		audit.NewNoOpLogger(),
 		recordingDir,
 		[]string{"*"},
@@ -211,6 +212,21 @@ func newE2ERig(t *testing.T, recordingDir string) *e2eRig {
 type stubResolver struct{ orgID string }
 
 func (s stubResolver) DeviceOrganization(context.Context, string) string { return s.orgID }
+
+// stubCapabilityResolver stands in for the real resolver. It returns a non-empty
+// allowlist, because the open path treats an empty one as a refusal (the boundary
+// contract's deny-by-default rule), and this test is about the terminal round
+// trip, not about capability denial.
+type stubCapabilityResolver struct{}
+
+func (stubCapabilityResolver) ResolveForSession(
+	context.Context, string, string, string,
+) (websockethandlers.SessionCapabilityInfo, bool) {
+	return websockethandlers.SessionCapabilityInfo{
+		APIAllowlist: []string{"session", "battery"},
+		Tier:         1,
+	}, true
+}
 
 // TestE2ETerminalRoundTrip drives the whole path over real WebSockets: the
 // operator opens a session, the device receives OPEN, keystrokes reach the

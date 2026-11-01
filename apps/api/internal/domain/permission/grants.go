@@ -50,3 +50,108 @@ type GrantRepository interface {
 	// RevokeForSubject removes all grants for a subject (e.g. when a team is deleted).
 	RevokeForSubject(ctx context.Context, subjectType SubjectType, subjectID string) error
 }
+
+// SessionCapability is the resolved authorization a session carries to the
+// device. It is deliberately flat: identity, the resolved API allowlist, the
+// device tier, and an expiry. It carries no role, no scope and no tags — the
+// device must not re-derive authority, because a token that could be reasoned
+// about could disagree with the server, and because the token is the only
+// cryptographically-bound artefact.
+//
+// The API allowlist is a filter on top of the capability, not the capability
+// itself: for anything with a file descriptor (a PTY, a USB handle) the fd is the
+// real revocable grant, and closing it revokes access (architecture §9.1).
+type SessionCapability struct {
+	SessionID    string
+	DeviceID     string
+	OperatorID   string
+	APIAllowlist []string
+	Tier         Tier
+	ExpiresAt    int64
+}
+
+// Permits reports whether the session may call api. Fail-closed: an empty
+// allowlist permits nothing. This is the opposite of the device bridge's current
+// behaviour, where an empty allowlist means "every API"; that inversion is the
+// single most dangerous line in the bridge and this model forbids it.
+func (c SessionCapability) Permits(api string) bool {
+	if c.SessionID == "" || c.DeviceID == "" {
+		return false
+	}
+	for _, allowed := range c.APIAllowlist {
+		if allowed == api {
+			return true
+		}
+	}
+	return false
+}
+
+// ResolveSessionCapability is the whole server-side decision in one call: given a
+// role, its custom grants, the target device, and the device's tier, it produces
+// the capability the device will enforce. It composes both axes — the tag
+// requirement (capability) and the scoped evaluator (resource) — and intersects
+// on the device tier.
+//
+// The allowlist is deny-by-default: an API absent from the catalog, a role that
+// lacks its tags, or a device below its minimum tier all leave it out. A role
+// with no matching grant therefore receives an empty allowlist and can call
+// nothing, which is the correct outcome rather than an error.
+//
+// ctx is threaded through rather than replaced with context.Background():
+// GrantsResolved consults scope resolvers, which may read the database, so the
+// call must honour the request's cancellation and deadline like any other.
+func ResolveSessionCapability(
+	ctx context.Context,
+	sessionID string,
+	role string,
+	custom []*ResourcePermission,
+	deviceID string,
+	deviceTier Tier,
+	expiresAt int64,
+) SessionCapability {
+	eval := NewEvaluator(role, custom)
+	deviceScope := BuildScope(ScopeDevices, deviceID)
+
+	return resolveWith(ctx, sessionID, role, eval, deviceID, deviceScope, deviceTier, expiresAt)
+}
+
+// resolveWith is the shared body. It applies the two axes in one pass so neither
+// can be forgotten:
+//
+//	capability = catalog[api].Tags.SatisfiedBy(roleTags(role))
+//	resource   = evaluator.Grants(api.Action, deviceScope)
+//	allowed    = capability && resource && tier >= api.MinTier
+func resolveWith(
+	ctx context.Context,
+	sessionID string,
+	role string,
+	eval *Evaluator,
+	deviceID string,
+	deviceScope string,
+	deviceTier Tier,
+	expiresAt int64,
+) SessionCapability {
+	grants := DefaultTagsForRole(role)
+
+	allowlist := make([]string, 0, len(DeviceAPICatalog))
+	for api, req := range DeviceAPICatalog {
+		if deviceTier < req.MinTier {
+			continue
+		}
+		if !req.Tags.SatisfiedBy(grants) {
+			continue
+		}
+		if !eval.GrantsResolved(ctx, req.Action, deviceScope) {
+			continue
+		}
+		allowlist = append(allowlist, api)
+	}
+
+	return SessionCapability{
+		SessionID:    sessionID,
+		DeviceID:     deviceID,
+		APIAllowlist: allowlist,
+		Tier:         deviceTier,
+		ExpiresAt:    expiresAt,
+	}
+}

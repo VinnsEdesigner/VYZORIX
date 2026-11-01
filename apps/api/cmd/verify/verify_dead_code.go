@@ -102,7 +102,7 @@ func collectDeclarations(pkgs []*packages.Package, ifaceImpl map[string]bool) ma
 			}
 			pos := pkg.Fset.Position(ident.Pos())
 			if strings.HasSuffix(pos.Filename, "_test.go") {
-				continue // test helpers are not production dead code
+				continue // Test helpers are not production dead code.
 			}
 			sig, ok := fn.Type().(*types.Signature)
 			if !ok || sig.Recv() == nil {
@@ -110,7 +110,7 @@ func collectDeclarations(pkgs []*packages.Package, ifaceImpl map[string]bool) ma
 			}
 			recv := deref(sig.Recv().Type())
 			if _, isIface := recv.Underlying().(*types.Interface); isIface {
-				continue // interface method declarations are the contract itself
+				continue // Interface method declarations are the contract itself.
 			}
 			named, ok := recv.(*types.Named)
 			if !ok {

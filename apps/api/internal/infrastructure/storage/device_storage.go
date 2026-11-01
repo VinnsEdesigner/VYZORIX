@@ -223,35 +223,39 @@ func (r *DeviceRepository) Create(ctx context.Context, d *device.Device) error {
 		INSERT INTO devices (id, firebase_install_id, fcm_token, app_version, device_class,
 		                    command_secret_hash, online, registered_at, last_seen, operator_id,
 		                    organization_id,
-		                    created_at, updated_at, device_name, manufacturer, model, os_version, tags)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		                    created_at, updated_at, device_name, manufacturer, model, os_version, tags, tier)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err := r.exec(ctx, query,
 		d.ID, d.FirebaseInstallID, nullString(d.FCMToken), d.AppVersion, d.DeviceClass,
 		d.CommandSecretHash, d.Online, d.RegisteredAt, d.LastSeen, nullString(d.OperatorID),
 		nullString(d.OrganizationID),
 		d.CreatedAt, d.UpdatedAt, nullString(d.DeviceName), nullString(d.Manufacturer),
-		nullString(d.Model), nullString(d.OSVersion), tagsToJSON(d.Tags),
+		nullString(d.Model), nullString(d.OSVersion), tagsToJSON(d.Tags), int(d.Tier),
 	)
 
 	return err
 }
 
 // Update updates an existing device.
+//
+// `tags` and `tier` are in the SET list. tags was missing before: the argument
+// list already passed tagsToJSON(d.Tags), so the statement had one more argument
+// than placeholders and every Update failed. tier is added with the same fix.
 func (r *DeviceRepository) Update(ctx context.Context, d *device.Device) error {
 	query := `
 		UPDATE devices 
 		SET firebase_install_id = ?, fcm_token = ?, app_version = ?, device_class = ?,
 		    command_secret_hash = ?, online = ?, registered_at = ?, last_seen = ?,
 		    operator_id = ?, organization_id = ?, updated_at = ?, device_name = ?, manufacturer = ?,
-		    model = ?, os_version = ?
+		    model = ?, os_version = ?, tags = ?, tier = ?
 		WHERE id = ?`
 
 	result, err := r.exec(ctx, query,
 		d.FirebaseInstallID, nullString(d.FCMToken), d.AppVersion, d.DeviceClass,
 		d.CommandSecretHash, d.Online, d.RegisteredAt, d.LastSeen, nullString(d.OperatorID),
 		nullString(d.OrganizationID), time.Now(), nullString(d.DeviceName), nullString(d.Manufacturer),
-		nullString(d.Model), nullString(d.OSVersion), tagsToJSON(d.Tags), d.ID,
+		nullString(d.Model), nullString(d.OSVersion), tagsToJSON(d.Tags), int(d.Tier), d.ID,
 	)
 	if err != nil {
 		return err

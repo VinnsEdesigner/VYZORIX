@@ -178,3 +178,139 @@ func BuildScope(prefix, id string) string {
 func WildcardScope(prefix string) string {
 	return prefix + ":*"
 }
+
+// Capability tags — the second authorization axis.
+//
+// The scoped engine above answers "on which resource may this operator act?".
+// Tags answer a different question: "does this role hold the capability an API
+// requires?". The two compose; neither implies the other. A capability tag is
+// written "dimension:value" and carries no resource identity — the resource axis
+// stays in Scope, so there is exactly one source of truth for it.
+
+// Tag is one capability attribute of the form "dimension:value".
+type Tag string
+
+const (
+	// Data sensitivity.
+	DataPublic   Tag = "data:public"
+	DataApp      Tag = "data:app"
+	DataHardware Tag = "data:hardware"
+	DataPrivate  Tag = "data:private"
+
+	// Operation.
+	OpRead  Tag = "op:read"
+	OpWrite Tag = "op:write"
+
+	// Android permission class the API needs at runtime.
+	ProtectionNormal    Tag = "protection:normal"
+	ProtectionDangerous Tag = "protection:dangerous"
+	ProtectionSignature Tag = "protection:signature"
+
+	// Who may see the result.
+	VisibilityPublic  Tag = "visibility:public"
+	VisibilityPrivate Tag = "visibility:private"
+
+	// Hardware touched. Only HwUsb exists because only USB is in the catalog;
+	// camera/location/mic are added with their APIs, not before. A tag no
+	// requirement names is inert — it would make a role look like it holds a
+	// capability that no check consults.
+	HwUsb Tag = "hw:usb"
+)
+
+// Tier is a device's state capability level, read from the device record and
+// never asserted by a caller. An unrooted device can never be handed an API that
+// requires a higher tier, because resolution intersects on MinTier.
+type Tier int
+
+const (
+	// TierUnrooted is a stock device: app-private storage and the UsbManager path.
+	TierUnrooted Tier = 1
+	// TierRooted adds direct device-node access (/dev/bus/usb) and RW external
+	// storage.
+	TierRooted Tier = 2
+	// TierAdvanced is unrestricted (the highest state): full filesystem and device access.
+	TierAdvanced Tier = 3
+)
+
+// TagSet is an unordered set of capability tags held by a role, a path, or a
+// requirement check.
+type TagSet []Tag
+
+// AllTags is every capability tag the system defines. It exists so a test can
+// assert each one is actually required by a catalog entry: a tag nothing names
+// is inert, and it makes a role look like it holds a capability no check
+// consults.
+var AllTags = []Tag{
+	DataPublic, DataApp, DataHardware, DataPrivate,
+	OpRead, OpWrite,
+	ProtectionNormal, ProtectionDangerous, ProtectionSignature,
+	VisibilityPublic, VisibilityPrivate,
+	HwUsb,
+}
+
+// Has reports whether the set contains t.
+func (s TagSet) Has(t Tag) bool {
+	for _, have := range s {
+		if have == t {
+			return true
+		}
+	}
+	return false
+}
+
+// Requirement is a capability requirement expressed as three tag sets. All must
+// be held, at least one of Any must be held, and none of Deny may be held. Any
+// and Deny are what a flat conjunction cannot express: UsbApi works on tier 1 OR
+// tier 2 (Any), and a deny makes a boundary readable without reading the
+// complement of a grant.
+type Requirement struct {
+	All  []Tag
+	Any  []Tag
+	Deny []Tag
+}
+
+// SatisfiedBy reports whether grant holds every tag the requirement demands.
+//
+// Fail-closed: an empty requirement is satisfied by an empty grant (an API that
+// needs nothing needs nothing), but a requirement with tags is never satisfied by
+// a grant that lacks them. There is deliberately no "empty grant means
+// everything" case — that inversion is what made the earlier sketch fail open.
+func (r Requirement) SatisfiedBy(grant TagSet) bool {
+	for _, t := range r.All {
+		if !grant.Has(t) {
+			return false
+		}
+	}
+	if len(r.Any) > 0 {
+		found := false
+		for _, t := range r.Any {
+			if grant.Has(t) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	for _, t := range r.Deny {
+		if grant.Has(t) {
+			return false
+		}
+	}
+	return true
+}
+
+// The filesystem is NOT modelled here.
+//
+// An earlier revision of this package carried a PathPolicy/PathBindable model
+// with fs:* tags, mirroring the device's bind rules. It was removed: the server
+// has no filesystem, so it could not enforce any of it, and nothing consumed it.
+// It had also drifted — it listed `rootfs`, `overlay` and `android.sock` as an
+// "engine zone" to protect, when the rootfs is the container's own root and the
+// socket is the door §2.2 exists to open.
+//
+// Bind rules are a device concern and live in exactly one place:
+// `ProotLauncher.binds()` and `ProotLauncher.isEngineZonePath()` in the Android
+// repo, where the closed-world list and the engine-zone assertion actually run.
+// Duplicating them here would give two sources of truth for one boundary.

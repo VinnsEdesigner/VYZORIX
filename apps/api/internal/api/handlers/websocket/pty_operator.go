@@ -60,6 +60,27 @@ type PTYAudit interface {
 	PTYSession(ctx context.Context, e audit.PTYSessionEvent)
 }
 
+// PTYCapabilityResolver resolves the capability a session carries to the device:
+// the API allowlist the server decided, the device's tier, and an expiry. It is
+// the boundary contract's §7 resolution, invoked at session open so the decision
+// is made once rather than per call.
+//
+// The device's cloud WebSocket (Build 4) is what will deliver this to the device.
+// Until it exists the resolved capability is recorded on the session and audited,
+// so the decision is made and observable now and the delivery is the only piece
+// left to add.
+type PTYCapabilityResolver interface {
+	ResolveForSession(ctx context.Context, operatorID, orgID, deviceID string) (SessionCapabilityInfo, bool)
+}
+
+// SessionCapabilityInfo is the resolved capability, kept as plain data so this
+// package does not import the permission domain.
+type SessionCapabilityInfo struct {
+	APIAllowlist []string
+	Tier         int
+	ExpiresAt    int64
+}
+
 // PTYAuthRequest carries the actor context a terminal-open decision needs. It
 // mirrors the command path's authorization inputs so the same risk gate applies
 // to a shell as to any other critical operation.
@@ -124,6 +145,7 @@ type OperatorTerminalHandler struct {
 	clients      map[string]*ptyOperatorClient
 	devices      PTYDeviceResolver
 	authorizer   PTYAuthorizer
+	capabilities PTYCapabilityResolver
 	audit        PTYAudit
 	upgrader     websocket.Upgrader
 	recordingDir string
@@ -135,6 +157,7 @@ func NewOperatorTerminalHandler(
 	relay *hub.PTYRelay,
 	devices PTYDeviceResolver,
 	authorizer PTYAuthorizer,
+	capabilities PTYCapabilityResolver,
 	auditLogger PTYAudit,
 	recordingDir string,
 	allowedOrigins []string,
@@ -162,6 +185,7 @@ func NewOperatorTerminalHandler(
 		relay:        relay,
 		devices:      devices,
 		authorizer:   authorizer,
+		capabilities: capabilities,
 		audit:        auditLogger,
 		recordingDir: recordingDir,
 		log:          log,
@@ -485,6 +509,32 @@ func (c *ptyOperatorClient) handleOpen(h *OperatorTerminalHandler, deviceID, ses
 	// configured. The operator's request is honoured only if both hold.
 	record := c.wantRecording && h.recordingDir != ""
 	session, err := h.relay.Registry().Open(sessionID, deviceID, c.operator, c.orgID, record)
+
+	// Resolve the session's capability before the device is told to open a
+	// shell. This is the boundary contract's §7 decision — role tags intersected
+	// with the device tier and the scoped grant — made once, here, rather than
+	// re-derived per call. A resolution that yields an empty allowlist is a
+	// refusal: the session would be able to call nothing, so it is not opened.
+	if h.capabilities != nil {
+		capability, ok := h.capabilities.ResolveForSession(
+			context.Background(), c.operator, c.orgID, session.DeviceID)
+		if !ok || len(capability.APIAllowlist) == 0 {
+			_, _ = h.relay.Registry().Close(sessionID)
+			h.auditSession(context.Background(), audit.PTYSessionEvent{
+				SessionID:  sessionID,
+				DeviceID:   session.DeviceID,
+				OperatorID: c.operator,
+				Reason:     "no capability resolved for session",
+				Result:     audit.ResultBlocked,
+				Opened:     true,
+			})
+			c.sendError(sessionID, "no capability resolved for this session")
+
+			return
+		}
+
+		session.SetCapability(capability.APIAllowlist, capability.Tier, capability.ExpiresAt)
+	}
 	if err != nil {
 		c.sendError(sessionID, err.Error())
 

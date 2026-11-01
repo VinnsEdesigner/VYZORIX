@@ -310,6 +310,7 @@ func wireDeviceFrameRouting(hs *HandlerSet, deps HandlerDependencies) {
 			ptyRelay,
 			NewPTYDeviceResolver(deps.DeviceRepo),
 			ptyAuth,
+			newPTYCapabilityResolver(deps),
 			ptyAuditLogger(deps.AuditLogger),
 			recordingDir,
 			deps.Config.AllowedOrigins,
