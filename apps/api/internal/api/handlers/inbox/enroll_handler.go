@@ -2,6 +2,7 @@ package inbox
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -9,7 +10,10 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/responses"
 	devicesvc "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/device"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
 	apperrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
+	cryptohmac "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/crypto"
+	hub "github.com/VinnsEdesigner/vyzorix/apps/api/internal/ws"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,17 +33,27 @@ var (
 // See doc/REGISTRATION_CONTRACT.md for the flow this implements.
 type EnrollHandler struct {
 	devices *devicesvc.Service
+	// hub delivers the config to the device over the WebSocket it is holding
+	// open through onboarding. Nil leaves the config to be fetched later.
+	hub *hub.Hub
+	// signer signs the config and the frame carrying it. Nil means no key is
+	// configured, in which case no config is issued rather than an unsigned one.
+	signer *cryptohmac.ServerSigner
 }
 
 // NewEnrollHandler creates the handler. It returns nil when there is no device
 // service, so the caller's nil check leaves the routes unregistered rather than
 // panicking at request time.
-func NewEnrollHandler(devices *devicesvc.Service) *EnrollHandler {
+func NewEnrollHandler(
+	devices *devicesvc.Service,
+	hubRef *hub.Hub,
+	signer *cryptohmac.ServerSigner,
+) *EnrollHandler {
 	if devices == nil {
 		return nil
 	}
 
-	return &EnrollHandler{devices: devices}
+	return &EnrollHandler{devices: devices, hub: hubRef, signer: signer}
 }
 
 // enrollRequest is the wire shape. It carries no secret: the public key is the
@@ -190,12 +204,55 @@ func (h *EnrollHandler) Claim(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"deviceId":       d.ID,
-		"name":           d.DeviceName,
-		"model":          d.Model,
-		"manufacturer":   d.Manufacturer,
-		"osVersion":      d.OSVersion,
-		"organizationId": d.OrganizationID,
-		"tier":           int(d.Tier),
+		"deviceId":        d.ID,
+		"name":            d.DeviceName,
+		"model":           d.Model,
+		"manufacturer":    d.Manufacturer,
+		"osVersion":       d.OSVersion,
+		"organizationId":  d.OrganizationID,
+		"tier":            int(d.Tier),
+		"configDelivered": h.deliverConfig(c, d.ID),
 	})
+}
+
+// deliverConfig signs and pushes the device's config over the WebSocket it is
+// holding open through onboarding, and reports whether it was sent.
+//
+// A failure is not an error for the claim: the device is bound and registered
+// either way, and it re-fetches on reconnect by version. Reporting the outcome
+// lets the operator see that the device has not been configured yet.
+func (h *EnrollHandler) deliverConfig(c *gin.Context, deviceID string) bool {
+	if h.hub == nil || h.signer == nil {
+		return false
+	}
+
+	sign := func(document string) (string, error) {
+		return h.signer.SignCanonical(document)
+	}
+
+	envelope, err := h.devices.ConfigForDevice(c.Request.Context(), sign, deviceID)
+	if err != nil {
+		// Logged, not surfaced: the claim succeeded and the config is retryable.
+		_ = c.Error(err)
+
+		return false
+	}
+
+	frame := command.CommandFrame{
+		Type:      "device_config",
+		Command:   command.TypeDeviceConfig,
+		Args:      []byte(fmt.Sprintf(`{"version":%d,"document":%q}`, envelope.Version, envelope.Document)),
+		Timestamp: envelope.IssuedAt,
+	}
+
+	// Sign the frame so the device can verify it came from this server. The
+	// document carries its own signature too; this covers the envelope, so a
+	// swapped document fails the frame check.
+	if err := cryptohmac.SignCommandFrameWithKey(h.signer, &frame, deviceID); err != nil {
+		_ = c.Error(err)
+
+		return false
+	}
+
+	return h.hub.Send(deviceID, frame)
 }

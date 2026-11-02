@@ -119,6 +119,10 @@ github.com/PuerkitoBio/purell v1.1.1 h1:WEQqlqaGbrPkxLJWfBwQmfEAE1Z7ONdDLqrN38tN
 github.com/PuerkitoBio/purell v1.1.1/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 h1:d+Bc7a5rLufV/sSk/8dngufqelfh6jnri85riMAaF/M=
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
+github.com/VinnsEdesigner/libv v0.0.0-20261101223253-61e45396f71a h1:oko3agbapCLy+wniAhPetn0DOyqokM7IN3WhhLRnmoM=
+github.com/VinnsEdesigner/libv v0.0.0-20261101223253-61e45396f71a/go.mod h1:TOXA/S+y1vgV/EmjG2aGuy0AgKPOPOtdtLEuhznA0A4=
+github.com/VinnsEdesigner/libv/go v0.0.0-20261101223253-61e45396f71a h1:ll9WWMnqAUZSV/+6b3y5K25/7XbGCai7m1Lo3hnWkOo=
+github.com/VinnsEdesigner/libv/go v0.0.0-20261101223253-61e45396f71a/go.mod h1:GQn/e57AgT6QFDY2DPMk39HiggmatwYCRgwl3xfUz+s=
 github.com/alecthomas/assert/v2 v2.11.0 h1:2Q9r3ki8+JYXvGsDyBXwH3LcJ+WK5D0gc5E8vS6K3D0=
 github.com/alecthomas/assert/v2 v2.11.0/go.mod h1:Bze95FyfUr7x34QZrjL+XP+0qgp/zg8yS+TtBj1WA3k=
 github.com/alecthomas/chroma/v2 v2.27.0 h1:FodwmyOBgJULFYmDqibcp9pvfDLWdtPRh9v/r5BXYZs=

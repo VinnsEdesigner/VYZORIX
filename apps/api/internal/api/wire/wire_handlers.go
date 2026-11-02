@@ -81,7 +81,9 @@ type HandlerDependencies struct {
 
 // HandlerSet contains all handler instances.
 type HandlerSet struct {
-	Auth *authhandlers.AllHandlers
+	// ServerSigner signs commands and the device config. Nil when no key is set.
+	ServerSigner *cryptohmac.ServerSigner
+	Auth         *authhandlers.AllHandlers
 	// DEPRECATED: DeviceRegister - /v1/device/register endpoint removed.
 	// DeviceRegister     *devicehandlers.RegisterHandler.
 	DeviceStatus          *devicehandlers.StatusHandler
@@ -117,7 +119,7 @@ type HandlerSet struct {
 
 // WireHandlers creates and wires all handler instances.
 func WireHandlers(deps HandlerDependencies) *HandlerSet {
-	hs := &HandlerSet{}
+	hs := &HandlerSet{ServerSigner: deps.ServerSigner}
 
 	// Auth handlers.
 	hs.Auth = authhandlers.NewAllHandlers(&authhandlers.Dependencies{

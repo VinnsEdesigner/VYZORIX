@@ -80,19 +80,22 @@ import (
 // (wireOperationalHandlers, wireAuthorizationWiring, wireInboxHandler, ...).
 // It is built internally by NewServerWithDeps from the injected dependencies.
 type ServerConfig struct {
-	AlertConfig           config.AlertConfig
-	Version               string
-	FCMNotifier           fcm.Notifier
-	OperatorRepo          operator.Repository
-	OAuthStateRepo        authhandlers.OAuthStateProvider
-	AuthService           *auth.AuthService
-	Lockout               *middleware.Lockout
-	AuthLimiter           *middleware.RateLimiter
-	IPIntelligence        *middleware.IPIntelligence
-	Log                   *slog.Logger
-	SessionManager        *infraauth.SessionManager
-	GoogleVerifier        *infraauth.GoogleTokenVerifier
-	Hub                   *hub.Hub
+	AlertConfig    config.AlertConfig
+	Version        string
+	FCMNotifier    fcm.Notifier
+	OperatorRepo   operator.Repository
+	OAuthStateRepo authhandlers.OAuthStateProvider
+	AuthService    *auth.AuthService
+	Lockout        *middleware.Lockout
+	AuthLimiter    *middleware.RateLimiter
+	IPIntelligence *middleware.IPIntelligence
+	Log            *slog.Logger
+	SessionManager *infraauth.SessionManager
+	GoogleVerifier *infraauth.GoogleTokenVerifier
+	Hub            *hub.Hub
+	// ServerSigner signs the device config. Nil when no key is configured, in
+	// which case the config is not issued rather than issued unsigned.
+	ServerSigner          *cryptohmac.ServerSigner
 	CommandService        *command.Service
 	ConfirmationService   *confirmation.Service
 	EmailService          *emailService.Service
@@ -534,7 +537,7 @@ func (s *Server) wireConfirmHandler(cfg *ServerConfig) {
 	s.deviceConfirmHandler = devicehandlers.NewConfirmHandlerWithCleanup(cfg.DeviceService, inboxRepo)
 
 	// The keypair registration endpoints. See doc/REGISTRATION_CONTRACT.md.
-	s.enrollHandler = inboxhandlers.NewEnrollHandler(cfg.DeviceService)
+	s.enrollHandler = inboxhandlers.NewEnrollHandler(cfg.DeviceService, cfg.Hub, cfg.ServerSigner)
 }
 
 // wireDiagnosticsHandler creates and assigns the diagnostics handlers.
@@ -700,6 +703,8 @@ func NewServerWithDeps(cfg *ServerConfigWithDeps) *Server {
 		OrgSettingsService:    cfg.HandlerSet.OrgSettingsService,
 		AlertConfig:           cfg.AlertConfig,
 		AppCheckVerifier:      cfg.HandlerSet.AppCheckVerifier,
+		Hub:                   cfg.Hub,
+		ServerSigner:          cfg.HandlerSet.ServerSigner,
 	}
 	s.wireAuthorizationWiring(serverCfg)
 	s.wireOperationalHandlers(serverCfg)
