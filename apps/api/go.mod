@@ -17,6 +17,7 @@ require (
 	github.com/prometheus/client_model v0.6.2
 	github.com/stretchr/testify v1.12.1
 	github.com/swaggo/swag v1.16.6
+	github.com/VinnsEdesigner/libv/go v0.0.0-20261101223253-61e45396f71a
 	github.com/tursodatabase/libsql-client-go v0.0.0-20260528064733-9d5d30a29a60
 	golang.org/x/crypto v0.58.0
 	google.golang.org/api v0.293.0
@@ -63,7 +64,6 @@ require (
 	github.com/OpenPeeDeeP/depguard/v2 v2.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
-	github.com/VinnsEdesigner/libv/go v0.0.0-20261101223253-61e45396f71a // indirect
 	github.com/alecthomas/chroma/v2 v2.27.0 // indirect
 	github.com/alecthomas/go-check-sumtype v0.5.1-0.20260828200218-ae6904d28606 // indirect
 	github.com/alexkohler/nakedret/v2 v2.0.6 // indirect
