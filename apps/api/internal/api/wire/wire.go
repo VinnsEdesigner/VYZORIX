@@ -166,6 +166,11 @@ func WireServer(deps ServerDependencies) *ServerResult {
 		DeviceSettingsService: deps.DeviceSettingsService,
 		DeviceRepo:            deps.DeviceRepo,
 		ConfirmationService:   deps.ConfirmationService,
+		// Built here rather than through the provider set: it depends only on
+		// config, and threading it through the wire graph would add a node for a
+		// value constructed once. Nil when no key is configured, which the
+		// consumers treat as "use the legacy HMAC path".
+		ServerSigner: ProvideServerSigner(deps.Config, deps.Log),
 	}
 	result.HandlerSet = WireHandlers(handlerDeps)
 

@@ -67,13 +67,17 @@ func Injector(cfg config.Config) (*Server, error) {
 		return nil, err
 	}
 	deviceDeletionWorker := ProvideDeviceDeletionWorker(deviceRepository, logger, cfg)
+	// The server's signing key. Nil when unconfigured, in which case the consumers
+	// fall back to the legacy per-device HMAC secret. ProvideServerSigner logs
+	// which path is in use.
+	serverSigner := ProvideServerSigner(cfg, logger)
 
-	commandOutbox := ProvideCommandOutbox(commandRepository, deviceRepository, hubResult.Hub, notifier, logger)
+	commandOutbox := ProvideCommandOutbox(commandRepository, deviceRepository, hubResult.Hub, notifier, serverSigner, logger)
 	middlewareFactory := ProvideMiddlewareFactory(logger, manager, authService, clientService, cfg)
 	rateLimiter := ProvideRateLimiter()
 	lockout := ProvideLockout()
 	ipIntelligence := ProvideIPIntelligence(middlewareFactory)
-	updatesService := ProvideUpdatesService(updatesStorage, service, hubResult, notifier, commandService, logger, cfg)
+	updatesService := ProvideUpdatesService(updatesStorage, service, hubResult, notifier, commandService, serverSigner, logger, cfg)
 	// Create webhook client for notifications.
 	webhookClient := ProvideWebhookClient()
 	// Create notification repository for audit logging.

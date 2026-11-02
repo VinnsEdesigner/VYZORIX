@@ -551,10 +551,11 @@ func ProvideCommandOutbox(
 	deviceRepo *storage.DeviceRepository,
 	hub *hub.Hub,
 	fcmNotifier fcm.Notifier,
+	serverSigner *cryptohmac.ServerSigner,
 	log *slog.Logger,
 ) *cmdapp.Outbox {
 	cfg := cmdapp.DefaultOutboxConfig()
-	outbox := cmdapp.NewOutbox(commandRepo, deviceRepo, hub, fcmNotifier, cfg, log)
+	outbox := cmdapp.NewOutbox(commandRepo, deviceRepo, hub, fcmNotifier, serverSigner, cfg, log)
 	outbox.Start()
 	log.Info("command outbox worker started",
 		"pollInterval", cfg.PollInterval.String(),
@@ -608,6 +609,36 @@ func ProvideHmacVerifier(factory *middleware.MiddlewareFactory) *cryptohmac.Veri
 	return factory.GetHmacVerifier()
 }
 
+// ProvideServerSigner builds the server's signing key from configuration.
+//
+// It returns nil when no key is configured rather than failing startup, so a
+// deployment that has not yet been given a key still runs — with the legacy HMAC
+// path for command signing, which the consumers fall back to. That is a
+// deliberate trade: an upgrade must not stop dispatch, and the fallback is
+// visible in the logs when a frame is signed the old way.
+func ProvideServerSigner(cfg config.Config, log *slog.Logger) *cryptohmac.ServerSigner {
+	if cfg.ServerSigningKey == "" {
+		if log != nil {
+			log.Warn("SERVER_SIGNING_KEY is not set: commands are signed with the legacy " +
+				"per-device HMAC secret. Set SERVER_SIGNING_KEY_PATH to use the keypair model.")
+		}
+
+		return nil
+	}
+
+	signer, err := cryptohmac.NewServerSigner(cfg.ServerSigningKey)
+	if err != nil {
+		if log != nil {
+			log.Error("SERVER_SIGNING_KEY is not a valid P-256 PKCS#8 PEM key; "+
+				"falling back to the legacy HMAC secret", "err", err)
+		}
+
+		return nil
+	}
+
+	return signer
+}
+
 // ProvideSessionSignVerifier creates the session signature verifier for tenant routes.
 func ProvideSessionSignVerifier(factory *middleware.MiddlewareFactory) *cryptohmac.Verifier {
 	return factory.GetSessionSignatureVerifier()
@@ -634,6 +665,7 @@ func ProvideUpdatesService(
 	hubResult *HubResult,
 	fcmNotifier fcm.Notifier,
 	commandService *cmdapp.Service,
+	serverSigner *cryptohmac.ServerSigner,
 	log *slog.Logger,
 	cfg config.Config,
 ) *updatesapp.Service {
@@ -649,7 +681,7 @@ func ProvideUpdatesService(
 		githubSyncSvc = github.NewSyncService(githubClient, updatesStorage, log)
 	}
 	syncSvc := updatesapp.NewSyncService(updatesStorage, githubSyncSvc)
-	pushSvc := updatesapp.NewPushService(updatesStorage, deviceService, hubResult.Hub, fcmNotifier, commandService, log)
+	pushSvc := updatesapp.NewPushService(updatesStorage, deviceService, hubResult.Hub, fcmNotifier, commandService, serverSigner, log)
 
 	return updatesapp.NewService(
 		updatesStorage,
@@ -817,6 +849,7 @@ var WireInjector = wire.NewSet(
 	ProvideLockout,
 	ProvideIPIntelligence,
 	ProvideHmacVerifier,
+	ProvideServerSigner,
 	ProvideCookieAuth,
 	ProvidePresenter,
 	ProvideUpdatesService,

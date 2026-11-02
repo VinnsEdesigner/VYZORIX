@@ -71,6 +71,9 @@ type HandlerDependencies struct {
 	OrgSettingsService    *orgapplication.OrganizationSettingsService
 	// PTYOperators resolves the operator endpoint for a live PTY session.
 	PTYOperators websockethandlers.PTYOperatorLookup
+	// ServerSigner signs commands and config with the server's own key. Nil when
+	// no key is configured, in which case the legacy HMAC path is used.
+	ServerSigner *cryptohmac.ServerSigner
 	// Config is the only value-typed field; keeping it last avoids padding
 	// between the pointer fields above.
 	Config config.Config
@@ -211,6 +214,7 @@ func WireHandlers(deps HandlerDependencies) *HandlerSet {
 			deps.Hub,
 			deps.FCMNotifier,
 			deps.CommandService,
+			deps.ServerSigner,
 			deps.Log,
 		)
 

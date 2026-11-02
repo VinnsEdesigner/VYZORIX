@@ -2744,6 +2744,56 @@ definitions:
       success:
         type: boolean
     type: object
+  internal_api_handlers_inbox.claimRequest:
+    properties:
+      name:
+        type: string
+      pairingCode:
+        type: string
+      tierCap:
+        type: integer
+    required:
+    - pairingCode
+    type: object
+  internal_api_handlers_inbox.enrollRequest:
+    properties:
+      appVersion:
+        type: string
+      deviceClass:
+        type: string
+      deviceUuid:
+        type: string
+      manufacturer:
+        type: string
+      model:
+        type: string
+      osVersion:
+        type: string
+      publicKey:
+        type: string
+      tierHint:
+        type: integer
+    required:
+    - deviceUuid
+    - publicKey
+    type: object
+  internal_api_handlers_inbox.enrollResponse:
+    properties:
+      deviceId:
+        type: string
+      expiresAt:
+        type: integer
+      expiresInSeconds:
+        description: |-
+          ExpiresInSeconds is what the device counts down. Sending the remaining time
+          as well as the absolute deadline means a device with a wrong clock still
+          expires its code correctly.
+        type: integer
+      pairingCode:
+        type: string
+      pairingDisplay:
+        type: string
+    type: object
 info:
   contact: {}
 paths:
@@ -10019,6 +10069,76 @@ paths:
       summary: List update versions
       tags:
       - updates
+  /v1/device/claim:
+    post:
+      consumes:
+      - application/json
+      description: Binds a pending device to the caller's organization and consumes
+        the code.
+      parameters:
+      - description: pairing code and assignment
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_handlers_inbox.claimRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: device claimed
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid request
+          schema:
+            $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse'
+        "404":
+          description: code not recognised or expired
+          schema:
+            $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse'
+        "409":
+          description: device already claimed
+          schema:
+            $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse'
+      summary: Claim a device with a pairing code
+      tags:
+      - device
+  /v1/device/enroll:
+    post:
+      consumes:
+      - application/json
+      description: Registers an unknown device as pending and returns a pairing code.
+      parameters:
+      - description: device identity and facts
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_handlers_inbox.enrollRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: device enrolled, code issued
+          schema:
+            $ref: '#/definitions/internal_api_handlers_inbox.enrollResponse'
+        "400":
+          description: invalid request or public key
+          schema:
+            $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse'
+        "409":
+          description: device already claimed
+          schema:
+            $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse'
+        "429":
+          description: rate limited
+          schema:
+            $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse'
+      summary: Enroll a new device
+      tags:
+      - device
   /version:
     get:
       consumes:

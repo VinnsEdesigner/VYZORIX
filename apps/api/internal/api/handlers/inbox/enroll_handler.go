@@ -6,10 +6,18 @@ import (
 	"time"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/responses"
 	devicesvc "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/device"
 	apperrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
 	"github.com/gin-gonic/gin"
+)
+
+// Compile-time references for swaggo-annotated openapi DTO types. swag resolves a
+// type by name from the package's imports, so an unused import would be dropped
+// by gofmt and the annotations would stop resolving.
+var (
+	_ openapi.ErrorResponse
 )
 
 // EnrollHandler serves the keypair registration endpoints.

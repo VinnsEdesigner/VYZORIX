@@ -10909,6 +10909,111 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/device/claim": {
+            "post": {
+                "description": "Binds a pending device to the caller's organization and consumes the code.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "device"
+                ],
+                "summary": "Claim a device with a pairing code",
+                "parameters": [
+                    {
+                        "description": "pairing code and assignment",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_inbox.claimRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "device claimed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "code not recognised or expired",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "device already claimed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/device/enroll": {
+            "post": {
+                "description": "Registers an unknown device as pending and returns a pairing code.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "device"
+                ],
+                "summary": "Enroll a new device",
+                "parameters": [
+                    {
+                        "description": "device identity and facts",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_inbox.enrollRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "device enrolled, code issued",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_inbox.enrollResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request or public key",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "device already claimed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "rate limited",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/version": {
             "get": {
                 "description": "Returns the current OTA version manifest for Android clients",
@@ -15158,6 +15263,77 @@ const docTemplate = `{
                 },
                 "success": {
                     "type": "boolean"
+                }
+            }
+        },
+        "internal_api_handlers_inbox.claimRequest": {
+            "type": "object",
+            "required": [
+                "pairingCode"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "pairingCode": {
+                    "type": "string"
+                },
+                "tierCap": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_inbox.enrollRequest": {
+            "type": "object",
+            "required": [
+                "deviceUuid",
+                "publicKey"
+            ],
+            "properties": {
+                "appVersion": {
+                    "type": "string"
+                },
+                "deviceClass": {
+                    "type": "string"
+                },
+                "deviceUuid": {
+                    "type": "string"
+                },
+                "manufacturer": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "osVersion": {
+                    "type": "string"
+                },
+                "publicKey": {
+                    "type": "string"
+                },
+                "tierHint": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_inbox.enrollResponse": {
+            "type": "object",
+            "properties": {
+                "deviceId": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "integer"
+                },
+                "expiresInSeconds": {
+                    "description": "ExpiresInSeconds is what the device counts down. Sending the remaining time\nas well as the absolute deadline means a device with a wrong clock still\nexpires its code correctly.",
+                    "type": "integer"
+                },
+                "pairingCode": {
+                    "type": "string"
+                },
+                "pairingDisplay": {
+                    "type": "string"
                 }
             }
         }

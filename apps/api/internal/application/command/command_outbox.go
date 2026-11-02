@@ -43,13 +43,17 @@ type Outbox struct {
 	fcmNotifier   fcm.Notifier
 	hub           *ws.Hub
 	commandSigner *cryptohmac.CommandSigner
-	log           *slog.Logger
-	stopCh        chan struct{}
-	guard         *command.DispatchGuard
-	cfg           OutboxConfig
-	wg            sync.WaitGroup
-	mu            sync.Mutex
-	running       bool
+	// serverSigner signs with the server's own key rather than a per-device
+	// shared secret. Nil when no key is configured, in which case the legacy
+	// HMAC path is used so a deployment without a key still dispatches.
+	serverSigner *cryptohmac.ServerSigner
+	log          *slog.Logger
+	stopCh       chan struct{}
+	guard        *command.DispatchGuard
+	cfg          OutboxConfig
+	wg           sync.WaitGroup
+	mu           sync.Mutex
+	running      bool
 }
 
 // NewOutbox creates a new command outbox worker.
@@ -58,6 +62,7 @@ func NewOutbox(
 	deviceRepo device.Repository,
 	hub *ws.Hub,
 	fcmNotifier fcm.Notifier,
+	serverSigner *cryptohmac.ServerSigner,
 	cfg OutboxConfig,
 	log *slog.Logger,
 ) *Outbox {
@@ -70,6 +75,7 @@ func NewOutbox(
 		hub:           hub,
 		fcmNotifier:   fcmNotifier,
 		commandSigner: cryptohmac.NewCommandSigner(),
+		serverSigner:  serverSigner,
 		cfg:           cfg,
 		log:           log,
 		guard:         command.NewDispatchGuard(1),
@@ -216,27 +222,44 @@ func (o *Outbox) deliverViaWebSocket(ctx context.Context, cmd *command.Command) 
 		Timestamp:  time.Now().UnixMilli(),
 	}
 
-	// Sign the frame with the device's command secret (Domain B: server→device).
-	dev, err := o.deviceRepo.FindByID(ctx, cmd.DeviceID)
-	if err != nil {
-		o.log.Warn("failed to load device for command signing",
-			"dispatchID", cmd.DispatchID,
-			"deviceID", cmd.DeviceID,
-			"err", err)
-		return false, err
-	}
-	if dev.CommandSecretHash == "" {
-		o.log.Warn("device has no command secret; cannot sign outbox command",
-			"dispatchID", cmd.DispatchID,
-			"deviceID", cmd.DeviceID)
-		return false, nil
-	}
-	if signErr := cryptohmac.SignCommandFrame(o.commandSigner, &frame, cmd.DeviceID, dev.CommandSecretHash); signErr != nil {
-		o.log.Warn("failed to sign outbox command frame",
-			"dispatchID", cmd.DispatchID,
-			"deviceID", cmd.DeviceID,
-			"err", signErr)
-		return false, signErr
+	// Sign the frame. The keypair path is preferred: the server signs with its own
+	// key and the device verifies against the pinned public key, so nothing
+	// per-device is transmitted. The HMAC path is the fallback for a deployment
+	// with no signing key configured, so an upgrade does not stop dispatch.
+	if o.serverSigner != nil {
+		if signErr := cryptohmac.SignCommandFrameWithKey(o.serverSigner, &frame, cmd.DeviceID); signErr != nil {
+			o.log.Warn("failed to sign outbox command frame with the server key",
+				"dispatchID", cmd.DispatchID,
+				"deviceID", cmd.DeviceID,
+				"err", signErr)
+
+			return false, signErr
+		}
+	} else {
+		dev, err := o.deviceRepo.FindByID(ctx, cmd.DeviceID)
+		if err != nil {
+			o.log.Warn("failed to load device for command signing",
+				"dispatchID", cmd.DispatchID,
+				"deviceID", cmd.DeviceID,
+				"err", err)
+
+			return false, err
+		}
+		if dev.CommandSecretHash == "" {
+			o.log.Warn("device has no command secret; cannot sign outbox command",
+				"dispatchID", cmd.DispatchID,
+				"deviceID", cmd.DeviceID)
+
+			return false, nil
+		}
+		if signErr := cryptohmac.SignCommandFrame(o.commandSigner, &frame, cmd.DeviceID, dev.CommandSecretHash); signErr != nil {
+			o.log.Warn("failed to sign outbox command frame",
+				"dispatchID", cmd.DispatchID,
+				"deviceID", cmd.DeviceID,
+				"err", signErr)
+
+			return false, signErr
+		}
 	}
 
 	// Use delivery confirmation with 5 second timeout.

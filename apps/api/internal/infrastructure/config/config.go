@@ -77,42 +77,49 @@ func LoadSigningConfig() SigningConfig {
 
 // Config holds all application configuration loaded from environment variables.
 type Config struct {
-	APIKeys                       map[string]string
-	SlackConfig                   SlackConfig
-	DeploymentMode                string
-	GitHubWebhookSecret           string
-	GitHubOAuthClientSecret       string
-	FirebaseCreds                 string
-	PublicDir                     string
-	FrontendURL                   string
-	BinDir                        string
-	Port                          string
-	BindAddr                      string
-	BaseURL                       string
-	EmailFrom                     string
-	DataDir                       string
-	GoogleOAuthClientSecret       string
-	GoogleOAuthClientID           string
-	FirebaseAppID                 string
-	GitHubReleaseToken            string
-	AuditLogPath                  string
-	MetricsToken                  string
-	JWTSecret                     string
-	GitHubOAuthClientID           string
-	Env                           string
-	DatabaseURL                   string
-	DatabaseBackend               string
-	TursoDatabaseURL              string
-	TursoAuthToken                string
-	ResendAPIKey                  string
-	ServerAPIToken                string
-	GitHubReleaseRepo             string
-	EmailFromName                 string
-	AuditLogSeparateDBPath        string
-	APIKeyPrefix                  string
-	TurnstileSecret               string
-	SessionSecret                 string
-	DeviceSecret                  string
+	APIKeys                 map[string]string
+	SlackConfig             SlackConfig
+	DeploymentMode          string
+	GitHubWebhookSecret     string
+	GitHubOAuthClientSecret string
+	FirebaseCreds           string
+	PublicDir               string
+	FrontendURL             string
+	BinDir                  string
+	Port                    string
+	BindAddr                string
+	BaseURL                 string
+	EmailFrom               string
+	DataDir                 string
+	GoogleOAuthClientSecret string
+	GoogleOAuthClientID     string
+	FirebaseAppID           string
+	GitHubReleaseToken      string
+	AuditLogPath            string
+	MetricsToken            string
+	JWTSecret               string
+	GitHubOAuthClientID     string
+	Env                     string
+	DatabaseURL             string
+	DatabaseBackend         string
+	TursoDatabaseURL        string
+	TursoAuthToken          string
+	ResendAPIKey            string
+	ServerAPIToken          string
+	GitHubReleaseRepo       string
+	EmailFromName           string
+	AuditLogSeparateDBPath  string
+	APIKeyPrefix            string
+	TurnstileSecret         string
+	SessionSecret           string
+	DeviceSecret            string
+	// ServerSigningKey is the PEM PKCS#8 private key the server signs commands and
+	// config with. Devices verify against the matching public key, pinned in the
+	// app, so nothing per-device is transmitted — which is what the keypair model
+	// buys over the old shared command secret.
+	//
+	// See doc/REGISTRATION_CONTRACT.md §5.
+	ServerSigningKey              string
 	MetricsBindAddr               string
 	AllowedOrigins                []string
 	MetricsAllowedCIDRs           []string
@@ -361,6 +368,19 @@ func Load() (Config, error) {
 	}
 
 	c.DeviceSecret = os.Getenv("DEVICE_SECRET")
+
+	// The server's signing key. Loaded from a file path rather than an env var:
+	// a PEM key is multi-line, and an env var holding one is awkward to set and
+	// easy to mangle. An unset path leaves it empty, which disables keypair signing
+	// rather than failing startup — see the note in ServerSigningKey.
+	if keyPath := os.Getenv("SERVER_SIGNING_KEY_PATH"); keyPath != "" {
+		if pem, readErr := os.ReadFile(keyPath); readErr == nil {
+			c.ServerSigningKey = string(pem)
+		}
+	}
+	if c.ServerSigningKey == "" {
+		c.ServerSigningKey = os.Getenv("SERVER_SIGNING_KEY")
+	}
 	c.FirebaseAppID = os.Getenv("FIREBASE_APP_ID")
 
 	return c, nil

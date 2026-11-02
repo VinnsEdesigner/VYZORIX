@@ -30,9 +30,12 @@ type PushService struct {
 	deviceSvc interface {
 		GetDevice(ctx context.Context, deviceID string) (*device.Device, error)
 	}
-	hub            *ws.Hub
-	fcmNotifier    fcm.Notifier
-	commandSigner  *cryptohmac.CommandSigner
+	hub           *ws.Hub
+	fcmNotifier   fcm.Notifier
+	commandSigner *cryptohmac.CommandSigner
+	// serverSigner signs with the server's own key, so nothing per-device is
+	// transmitted. Nil falls back to the legacy HMAC path.
+	serverSigner   *cryptohmac.ServerSigner
 	commandService interface {
 		SendCommand(ctx context.Context, req *dto.SendCommandRequest) (*dto.SendCommandResponse, error)
 		MarkDelivered(ctx context.Context, commandID string) error
@@ -70,6 +73,7 @@ func NewPushService(
 		SendCommand(ctx context.Context, req *dto.SendCommandRequest) (*dto.SendCommandResponse, error)
 		MarkDelivered(ctx context.Context, commandID string) error
 	},
+	serverSigner *cryptohmac.ServerSigner,
 	logger *slog.Logger,
 ) *PushService {
 	if logger == nil {
@@ -81,6 +85,7 @@ func NewPushService(
 		hub:            hub,
 		fcmNotifier:    fcmNotifier,
 		commandSigner:  cryptohmac.NewCommandSigner(),
+		serverSigner:   serverSigner,
 		commandService: commandService,
 		logger:         logger,
 	}
@@ -273,11 +278,18 @@ func (s *PushService) dispatchUpdateCommand(ctx context.Context, deviceID, pushI
 	if devErr != nil {
 		return fmt.Errorf("device not found: %w", devErr)
 	}
-	if dev.CommandSecretHash == "" {
-		return fmt.Errorf("device %s has no command secret — re-registration required", deviceID)
-	}
-	if err := cryptohmac.SignCommandFrame(s.commandSigner, &frame, deviceID, dev.CommandSecretHash); err != nil {
-		return fmt.Errorf("failed to sign update command frame: %w", err)
+	// Prefer the keypair path; fall back to HMAC when no server key is set.
+	if s.serverSigner != nil {
+		if err := cryptohmac.SignCommandFrameWithKey(s.serverSigner, &frame, deviceID); err != nil {
+			return fmt.Errorf("failed to sign update command frame with the server key: %w", err)
+		}
+	} else {
+		if dev.CommandSecretHash == "" {
+			return fmt.Errorf("device %s has no command secret - re-registration required", deviceID)
+		}
+		if err := cryptohmac.SignCommandFrame(s.commandSigner, &frame, deviceID, dev.CommandSecretHash); err != nil {
+			return fmt.Errorf("failed to sign update command frame: %w", err)
+		}
 	}
 
 	// Try WebSocket first if hub is available and device is online.
