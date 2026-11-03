@@ -156,7 +156,7 @@ func TestConnectSignatureVerifies(t *testing.T) {
 	if err != nil {
 		t.Fatalf("sign: %v", err)
 	}
-	signature := base64.StdEncoding.EncodeToString(sig)
+	signature := base64.RawURLEncoding.EncodeToString(sig)
 
 	if !VerifyConnectSignature(pubPEM, deviceID, timestamp, nonce, signature) {
 		t.Fatal("a valid connect signature must verify")

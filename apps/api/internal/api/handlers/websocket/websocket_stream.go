@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
@@ -129,6 +130,29 @@ func (u *StreamUpgrader) verifyDeviceConnect(r *http.Request, deviceID string) e
 	sig := r.URL.Query().Get("sig_signature")
 	if ts == "" || nonce == "" || sig == "" {
 		return errors.New("missing signature query parameters")
+	}
+
+	// Freshness, then replay. Without these a captured handshake would replay
+	// forever: the signature alone is valid for all time. The window matches the
+	// device HTTP path so a device with a skewed clock behaves the same on both.
+	window := 5 * time.Minute
+	if u.hmacVerifier.Window > 0 {
+		window = u.hmacVerifier.Window
+	}
+
+	milli, err := strconv.ParseInt(ts, 10, 64)
+	if err != nil {
+		return errors.New("connect timestamp is not Unix milliseconds")
+	}
+
+	now := time.Now()
+	signedAt := time.UnixMilli(milli)
+	if signedAt.Before(now.Add(-window)) || signedAt.After(now.Add(window)) {
+		return errors.New("connect timestamp outside the replay window")
+	}
+
+	if u.hmacVerifier.Nonces != nil && !u.hmacVerifier.Nonces.Use("connect:"+deviceID+":"+nonce, now) {
+		return errors.New("connect nonce replayed")
 	}
 
 	if !cryptohmac.VerifyConnectSignature(publicKey, deviceID, ts, nonce, sig) {

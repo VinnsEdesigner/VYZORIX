@@ -9,6 +9,7 @@ import type {
   ClaimRequest,
   EnrollRequest,
   EnrollResponse,
+  GetDeviceImeiConfig200,
   PostV1DeviceClaim200
 } from '../vyzorixUpdateServerAPI.schemas';
 
@@ -20,6 +21,18 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
   export const getDevice = () => {
 /**
+ * Returns the signed vyzorix.v document for the device, for a device that missed the push
+ * @summary Fetch the device's own config
+ */
+const getDeviceImeiConfig = (
+    imei: string,
+ options?: SecondParameter<typeof customAxios<GetDeviceImeiConfig200>>,) => {
+      return customAxios<GetDeviceImeiConfig200>(
+      {url: `/device/${imei}/config`, method: 'GET'
+    },
+      options);
+    }
+  /**
  * Binds a pending device to the caller's organization and consumes the code.
  * @summary Claim a device with a pairing code
  */
@@ -47,6 +60,7 @@ const postV1DeviceEnroll = (
     },
       options);
     }
-  return {postV1DeviceClaim,postV1DeviceEnroll}};
+  return {getDeviceImeiConfig,postV1DeviceClaim,postV1DeviceEnroll}};
+export type GetDeviceImeiConfigResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevice>['getDeviceImeiConfig']>>>
 export type PostV1DeviceClaimResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevice>['postV1DeviceClaim']>>>
 export type PostV1DeviceEnrollResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevice>['postV1DeviceEnroll']>>>

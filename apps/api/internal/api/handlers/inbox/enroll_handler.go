@@ -215,6 +215,60 @@ func (h *EnrollHandler) Claim(c *gin.Context) {
 	})
 }
 
+// GetConfig handles GET /v1/device/:imei/config.
+//
+// The device asks for its own config by version. This exists because the config
+// is pushed exactly once, at claim time, over the WebSocket the device is holding
+// open through onboarding — a device that was offline at that moment would
+// otherwise never receive one. It re-fetches on reconnect, and whenever the
+// version it holds differs from the one reported here.
+//
+// It is device-authenticated (requireHMAC, the keypair path): the device proves
+// possession of the key it enrolled, and can only read its own config because the
+// imei is the one it signed for.
+//
+// @Summary      Fetch the device's own config
+// @Description  Returns the signed vyzorix.v document for the device, for a device that missed the push
+// @Tags         device
+// @Produce      json
+// @Param        imei  path  string  true  "device IMEI"
+// @Success      200  {object}  map[string]any  "signed config document"
+// @Failure      401  {object}  openapi.ErrorResponse  "device signature invalid"
+// @Failure      404  {object}  openapi.ErrorResponse  "device not found or not claimed"
+// @Failure      500  {object}  openapi.ErrorResponse  "internal error"
+// @Router       /device/{imei}/config [get]
+func (h *EnrollHandler) GetConfig(c *gin.Context) {
+	deviceID := c.Param("imei")
+	if deviceID == "" {
+		_ = c.Error(apperrors.NewServerError(apperrors.CodeValidationFailed, "device imei is required"))
+
+		return
+	}
+
+	if h.signer == nil {
+		_ = c.Error(apperrors.NewServerError(apperrors.CodeInternalServerError, "no signing key configured; cannot issue a config"))
+
+		return
+	}
+
+	envelope, err := h.devices.ConfigForDevice(c.Request.Context(), h.signer.SignDocument, deviceID)
+	if err != nil {
+		// A device that has not been claimed has no org and no config. The same 404
+		// covers "unknown device", so the endpoint cannot be used to probe which
+		// device ids exist.
+		_ = c.Error(apperrors.NewServerError(apperrors.CodeResourceNotFound, "no config for this device"))
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"deviceId": envelope.DeviceID,
+		"version":  envelope.Version,
+		"issuedAt": envelope.IssuedAt,
+		"document": envelope.Document,
+	})
+}
+
 // deliverConfig signs and pushes the device's config over the WebSocket it is
 // holding open through onboarding, and reports whether it was sent.
 //
@@ -227,7 +281,7 @@ func (h *EnrollHandler) deliverConfig(c *gin.Context, deviceID string) bool {
 	}
 
 	sign := func(document string) (string, error) {
-		return h.signer.SignCanonical(document)
+		return h.signer.SignDocument(document)
 	}
 
 	envelope, err := h.devices.ConfigForDevice(c.Request.Context(), sign, deviceID)

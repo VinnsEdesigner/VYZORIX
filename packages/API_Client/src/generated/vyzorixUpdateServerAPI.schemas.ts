@@ -1932,6 +1932,8 @@ page?: number;
 limit?: number;
 };
 
+export type GetDeviceImeiConfig200 = { [key: string]: unknown };
+
 export type GetDeviceImeiTimelineParams = {
 /**
  * filter by event type

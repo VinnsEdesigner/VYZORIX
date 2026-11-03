@@ -136,6 +136,7 @@ export * from './getDashboardDevicesOperatorParams';
 export * from './getDashboardDevicesParams';
 export * from './getDashboardEventsRecentParams';
 export * from './getDashboardEventsTypesTypeParams';
+export * from './getDeviceImeiConfig200';
 export * from './getDeviceImeiTimelineParams';
 export * from './getDeviceInboxParams';
 export * from './getDevicesParams';

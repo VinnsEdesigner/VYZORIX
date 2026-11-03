@@ -7422,6 +7422,69 @@
         }
       }
     },
+    "/device/{imei}/config": {
+      "get": {
+        "summary": "Fetch the device's own config",
+        "description": "Returns the signed vyzorix.v document for the device, for a device that missed the push",
+        "tags": [
+          "device"
+        ],
+        "parameters": [
+          {
+            "name": "imei",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "device IMEI"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "signed config document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "device signature invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "device not found or not claimed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/device/{imei}/connection-status": {
       "get": {
         "summary": "Get device connection status",

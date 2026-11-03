@@ -6065,6 +6065,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/device/{imei}/config": {
+            "get": {
+                "description": "Returns the signed vyzorix.v document for the device, for a device that missed the push",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "device"
+                ],
+                "summary": "Fetch the device's own config",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "device IMEI",
+                        "name": "imei",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "signed config document",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "device signature invalid",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "device not found or not claimed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/device/{imei}/connection-status": {
             "get": {
                 "description": "Returns the WebSocket connection status for a specific device",

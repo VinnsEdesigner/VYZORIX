@@ -454,6 +454,12 @@ func (s *Server) setupDeviceManagementRoutes(r *gin.RouterGroup) {
 		s.commandHandler.Handle,
 	)
 	deviceMgmt.GET("/:imei/commands/pending", s.commandHandler.GetPending)
+	// The device fetches its own config by version. The push at claim time is the
+	// primary path; this is what a device uses when it was offline then, or when the
+	// version it holds differs from the server's. See REGISTRATION_CONTRACT.md §7.
+	if s.enrollHandler != nil {
+		deviceMgmt.GET("/:imei/config", s.enrollHandler.GetConfig)
+	}
 	// HTTP fallback for a device that finished a command while its WebSocket was
 	// down; the primary path is the command_result frame on /:imei/stream.
 	deviceMgmt.POST("/:imei/command/:dispatchId/result", s.commandHandler.ReportResult)

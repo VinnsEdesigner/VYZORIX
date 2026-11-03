@@ -151,7 +151,12 @@ func VerifyConnectSignature(
 		return false
 	}
 
-	sig, err := base64.StdEncoding.DecodeString(signature)
+	// URL-safe base64, unpadded. The signature travels as a query parameter (an
+	// upgrade cannot set headers), and standard base64 emits '+', '/' and '=', all
+	// of which a query string treats specially — '+' decodes as a space, so a
+	// standard-base64 signature would be silently corrupted on the way in. The
+	// device encodes the same way.
+	sig, err := base64.RawURLEncoding.DecodeString(signature)
 	if err != nil {
 		return false
 	}

@@ -26,6 +26,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	libv "github.com/VinnsEdesigner/libv/go"
 )
 
 var (
@@ -140,8 +142,17 @@ func VerifyDeviceSignature(
 
 // ServerSigner signs what the server sends to a device: the config and any
 // command frame. The device verifies against the public half, pinned in the app.
+//
+// It holds both the raw ECDSA key (for command frames, whose canonical string is
+// the server's own) and a libv.Signer built from the same key (for config
+// documents, whose canonical string is the format's). One key, two canonical
+// forms: the config's is defined by libv and the device verifies it with libv, so
+// signing it any other way produces a signature the device can never check.
 type ServerSigner struct {
 	key *ecdsa.PrivateKey
+	// doc is the same key behind the format's signer, built once here rather than
+	// per call so signing a config is a pure function of the key.
+	doc *libv.Signer
 }
 
 // NewServerSigner builds a signer from a PEM-encoded PKCS#8 private key, as
@@ -162,7 +173,27 @@ func NewServerSigner(privateKeyPEM string) (*ServerSigner, error) {
 		return nil, errors.New("server signing key must be an EC P-256 key")
 	}
 
-	return &ServerSigner{key: key}, nil
+	// The format's signer is built from the same PEM. If it cannot be built the key
+	// is unusable for configs, and failing here beats issuing an unverifiable one.
+	doc, err := libv.NewSignerFromPEM(privateKeyPEM)
+	if err != nil {
+		return nil, fmt.Errorf("build config signer: %w", err)
+	}
+
+	return &ServerSigner{key: key, doc: doc}, nil
+}
+
+// SignDocument signs a vyzorix.v document in the format's own shape, appending the
+// `v sig ecdsa-p256 <base64>` line the device's verifier looks for.
+//
+// This is the config's signing path. It is deliberately not SignCanonical: a
+// config is verified with libv against the canonical string libv defines, so the
+// signature must be produced over that same string. Signing the raw text (as an
+// earlier version did) yields a signature no device can ever check, and omitting
+// the signature line entirely makes the document unsigned — both leave the device
+// unable to trust the config it is handed.
+func (s *ServerSigner) SignDocument(document string) (string, error) {
+	return s.doc.Sign(document)
 }
 
 // ServerCanonicalString is what the server signs. It is deliberately distinct
