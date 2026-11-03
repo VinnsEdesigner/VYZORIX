@@ -104,18 +104,8 @@ export interface AckResult {
   approvingAt: Date | null;
   approvedAt: Date | null;
   rejectedAt: Date | null;
-  commandSecret: string | null;
   fcmPushSent: boolean;
   notes: string | null;
-}
-
-export interface ConfirmDeviceResult {
-  device_id: string;
-  imei: string;
-  confirmed: boolean;
-  online: boolean;
-  registered_at?: number;
-  server_time: number;
 }
 
 export interface CreateInboxResult {

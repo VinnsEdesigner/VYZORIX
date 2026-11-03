@@ -83,21 +83,25 @@ type ExecuteHandler struct {
 	hub            *hub.Hub
 	fcmNotifier    fcm.Notifier
 	commandSigner  *cryptohmac.CommandSigner
-	authorizer     *cmdSvc.Authorizer
-	audit          AuditLogger
-	log            *slog.Logger
+	// serverSigner signs with the server's own key. Nil means no key is
+	// configured, in which case a command cannot be signed and is not sent.
+	serverSigner *cryptohmac.ServerSigner
+	authorizer   *cmdSvc.Authorizer
+	audit        AuditLogger
+	log          *slog.Logger
 }
 
 // NewExecuteHandler creates a new ExecuteHandler. authorizer applies the shared
 // command risk gate (MFA + confirmation); a nil confirmation backing means
 // confirmation-gated commands are always blocked with 425.
-func NewExecuteHandler(commandService *cmdSvc.Service, deviceService *device.Service, hub *hub.Hub, fcmNotifier fcm.Notifier, authorizer *cmdSvc.Authorizer, auditLogger AuditLogger) *ExecuteHandler {
+func NewExecuteHandler(commandService *cmdSvc.Service, deviceService *device.Service, hub *hub.Hub, fcmNotifier fcm.Notifier, authorizer *cmdSvc.Authorizer, auditLogger AuditLogger, serverSigner *cryptohmac.ServerSigner) *ExecuteHandler {
 	return &ExecuteHandler{
 		commandService: commandService,
 		deviceService:  deviceService,
 		hub:            hub,
 		fcmNotifier:    fcmNotifier,
 		commandSigner:  cryptohmac.NewCommandSigner(),
+		serverSigner:   serverSigner,
 		authorizer:     authorizer,
 		audit:          auditLogger,
 		log:            slog.Default(),
@@ -349,27 +353,17 @@ func (h *ExecuteHandler) sendCommandAndBuildFrame(c *gin.Context, imei string, r
 	return cmdResp, frame, nil
 }
 
-// signCommandFrame retrieves the device's command secret and signs the frame.
-// in place (sets Nonce + Signature). The device's CommandSecretHash is a.
-// deterministic derivation of the plaintext secret (SHA-256), so both the.
-// server and the device can compute the same HMAC key without the server.
-// storing the plaintext.
-func (h *ExecuteHandler) signCommandFrame(ctx context.Context, imei string, frame *command.CommandFrame) error {
-	dev, err := h.deviceService.GetDevice(ctx, imei)
-	if err != nil {
-		return err
-	}
-	if dev.CommandSecretHash == "" {
-		return errors.New("device has no command secret — re-registration required")
+// signCommandFrame signs the frame with the server's key.
+//
+// The keypair path is the only one: the server signs with its own key and the
+// device verifies against the pinned public key, so nothing per-device is
+// transmitted and there is no secret to look up.
+func (h *ExecuteHandler) signCommandFrame(_ context.Context, imei string, frame *command.CommandFrame) error {
+	if h.serverSigner == nil {
+		return errors.New("server signing key is not configured; cannot sign command")
 	}
 
-	nonce, sig, err := h.commandSigner.SignCommand(frame, imei, dev.CommandSecretHash)
-	if err != nil {
-		return err
-	}
-	frame.Nonce = nonce
-	frame.Signature = sig
-	return nil
+	return cryptohmac.SignCommandFrameWithKey(h.serverSigner, frame, imei)
 }
 
 // deliverCommand delivers the command via WebSocket or FCM.

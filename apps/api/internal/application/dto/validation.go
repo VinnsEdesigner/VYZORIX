@@ -212,26 +212,6 @@ func ValidateRegisterRequest(req *RegisterRequest) error {
 	return nil
 }
 
-// ValidateDeviceRegisterRequest validates a device registration request.
-func ValidateDeviceRegisterRequest(req *RegisterDeviceRequest) error {
-	if err := ValidateDeviceID(req.DeviceID); err != nil {
-		return err
-	}
-	if err := ValidateVersion(req.AppVersion); err != nil {
-		return err
-	}
-	if err := ValidateDeviceClass(req.DeviceClass); err != nil {
-		return err
-	}
-	// FCMToken and FirebaseInstallID are optional but have length limits if provided.
-	if req.FCMToken != "" {
-		if err := ValidateFCMToken(req.FCMToken); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // ValidateSendCommandRequest validates a send command request.
 func ValidateSendCommandRequest(req *SendCommandRequest) error {
 	if err := ValidateDeviceID(req.DeviceID); err != nil {

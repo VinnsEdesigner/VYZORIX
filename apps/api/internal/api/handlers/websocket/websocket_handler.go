@@ -30,8 +30,9 @@ func NewStreamHandler(
 	h *hub.Hub,
 	hmacVerifier cryptohmac.Verifier,
 	auditLogger *audit.Logger,
+	devicePublicKeys DevicePublicKeyProvider,
 ) *StreamHandler {
-	upgrader := NewStreamUpgrader(log, cfg, hmacVerifier)
+	upgrader := NewStreamUpgrader(log, cfg, hmacVerifier, devicePublicKeys)
 	presenter := NewPresenter(auditLogger, log)
 
 	return &StreamHandler{

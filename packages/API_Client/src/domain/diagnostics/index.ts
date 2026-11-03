@@ -64,7 +64,6 @@ export interface RegistrationInfo {
   registeredAt?: Date;
   fcmTokenValid: boolean;
   fcmTokenRefreshedAt?: Date;
-  commandSecretSet: boolean;
 }
 
 export interface ConnectionInfo {

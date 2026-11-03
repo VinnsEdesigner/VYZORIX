@@ -33,10 +33,9 @@ var PathBoundaries = map[string]PathType{
 	"/health":   PathTypePublic,
 	"/v1/auth/": PathTypePublic,
 	// DEPRECATED: "/v1/device/register":  PathTypePublic // Use /v1/device/inbox,.
-	"/v1/device/inbox":   PathTypePublic,
-	"/v1/device/confirm": PathTypePublic,
-	"/v1/device/":        PathTypePublic, // /v1/device/:imei/status - device status check.
-	"/metrics":           PathTypePublic, // Prometheus scraping.
+	"/v1/device/inbox": PathTypePublic,
+	"/v1/device/":      PathTypePublic, // /v1/device/:imei/status - device status check.
+	"/metrics":         PathTypePublic, // Prometheus scraping.
 
 	// INFRASTRUCTURE - ServerAPIToken (env var) - handled at route level.
 	// /admin/*, /internal/*, /healthz.

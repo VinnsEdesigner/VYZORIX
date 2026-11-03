@@ -18,8 +18,6 @@ type InboxEntry struct {
 	ID                string      `json:"id"`
 	DeviceClass       string      `json:"deviceClass,omitempty"`
 	Status            InboxStatus `json:"status"`
-	CommandSecret     string      `json:"commandSecret,omitempty"`
-	CommandSecretHash string      `json:"-"` // Internal only, never exposed via JSON.
 	Notes             string      `json:"notes,omitempty"`
 	OperatorID        string      `json:"operatorId,omitempty"`
 	OrganizationID    string      `json:"organizationId,omitempty"`

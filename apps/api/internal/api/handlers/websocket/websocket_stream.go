@@ -2,6 +2,7 @@
 package websocket
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"time"
@@ -17,28 +18,36 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// StreamUpgrader handles WebSocket upgrade logic including origin validation and HMAC verification.
+// StreamUpgrader handles WebSocket upgrade logic including origin validation and device signature verification.
 type StreamUpgrader struct {
 	originValidator *infraauth.OriginValidator
 	log             *slog.Logger
 	upgrader        websocket.Upgrader
 	hmacVerifier    cryptohmac.Verifier
-	config          config.Config
-	allowDevAuth    bool
+	// devicePublicKeys resolves a device's registered signing key, which is what
+	// the connect handshake is verified against. See doc/REGISTRATION_CONTRACT.md §5.
+	devicePublicKeys DevicePublicKeyProvider
+	config           config.Config
+	allowDevAuth     bool
 }
+
+// DevicePublicKeyProvider resolves a device's PEM public key, or "" when the
+// device is unknown or has not enrolled.
+type DevicePublicKeyProvider func(deviceID string) string
 
 // NewStreamUpgrader creates a new StreamUpgrader.
 func NewStreamUpgrader(
 	log *slog.Logger,
 	cfg config.Config,
 	hmacVerifier cryptohmac.Verifier,
+	devicePublicKeys DevicePublicKeyProvider,
 ) *StreamUpgrader {
 	originValidator := infraauth.NewOriginValidator(cfg.AllowedOrigins)
 	originValidator.SetLogger(log)
 
 	allowDevAuth := false
 	if cfg.Env != "production" && !cfg.EnforceHMAC {
-		log.Warn("WebSocket HMAC authentication is disabled - this is insecure and should not be used in production",
+		log.Warn("WebSocket authentication is disabled - this is insecure and should not be used in production",
 			"env", cfg.Env,
 			"enforceHMAC", cfg.EnforceHMAC,
 		)
@@ -46,11 +55,12 @@ func NewStreamUpgrader(
 	}
 
 	return &StreamUpgrader{
-		originValidator: originValidator,
-		hmacVerifier:    hmacVerifier,
-		config:          cfg,
-		log:             log,
-		allowDevAuth:    allowDevAuth,
+		originValidator:  originValidator,
+		hmacVerifier:     hmacVerifier,
+		devicePublicKeys: devicePublicKeys,
+		config:           cfg,
+		log:              log,
+		allowDevAuth:     allowDevAuth,
 		upgrader: websocket.Upgrader{
 			CheckOrigin:      originValidator.CheckOrigin(),
 			HandshakeTimeout: 10 * time.Second,
@@ -66,8 +76,8 @@ func (u *StreamUpgrader) Upgrade(c *gin.Context, deviceID string) (*websocket.Co
 	// In development, only skip if allowDevAuth is true (meaning EnforceHMAC=false was set).
 	if u.config.Env == "production" || u.config.EnforceHMAC {
 		// Use query param based verification for WebSocket since headers can't be set during upgrade.
-		if err := u.verifyWebSocketHMAC(c.Request, deviceID); err != nil {
-			_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "WebSocket HMAC verification failed"))
+		if err := u.verifyDeviceConnect(c.Request, deviceID); err != nil {
+			_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "WebSocket connect signature verification failed"))
 			return nil, nil, err
 		}
 	} else if !u.allowDevAuth {
@@ -97,8 +107,33 @@ func (u *StreamUpgrader) Upgrade(c *gin.Context, deviceID string) (*websocket.Co
 	return conn, client, nil
 }
 
-// verifyWebSocketHMAC verifies the HMAC signature from query parameters.
-// This is needed because WebSocket upgrade requests cannot set custom headers.
-func (u *StreamUpgrader) verifyWebSocketHMAC(r *http.Request, deviceID string) error {
-	return u.hmacVerifier.VerifyWebSocketConnect(r, deviceID)
+// verifyDeviceConnect verifies the connect handshake against the device's
+// registered public key.
+//
+// The device signs the connect canonical string with the private key it generated
+// at first boot; the server verifies with the public half it received at enroll.
+// No shared secret, so nothing has to be delivered — which is why this replaces
+// the HMAC handshake. See doc/REGISTRATION_CONTRACT.md §5.
+func (u *StreamUpgrader) verifyDeviceConnect(r *http.Request, deviceID string) error {
+	if u.devicePublicKeys == nil {
+		return errors.New("no device public key provider configured")
+	}
+
+	publicKey := u.devicePublicKeys(deviceID)
+	if publicKey == "" {
+		return errors.New("device has no registered public key; enroll first")
+	}
+
+	ts := r.URL.Query().Get("sig_timestamp")
+	nonce := r.URL.Query().Get("sig_nonce")
+	sig := r.URL.Query().Get("sig_signature")
+	if ts == "" || nonce == "" || sig == "" {
+		return errors.New("missing signature query parameters")
+	}
+
+	if !cryptohmac.VerifyConnectSignature(publicKey, deviceID, ts, nonce, sig) {
+		return errors.New("connect signature invalid")
+	}
+
+	return nil
 }

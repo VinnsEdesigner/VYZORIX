@@ -112,8 +112,8 @@ func TestSearch_CachesResults(t *testing.T) {
 
 	now := time.Now().UnixMilli()
 	if _, err := s.DB().ExecContext(ctx,
-		`INSERT INTO devices (id, firebase_install_id, command_secret, online, registered_at, last_seen, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		"dev-1", "fcm-1", "secret", 1, now, now, now, now); err != nil {
+		`INSERT INTO devices (id, firebase_install_id, online, registered_at, last_seen, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		"dev-1", "fcm-1", 1, now, now, now, now); err != nil {
 		t.Fatalf("insert device: %v", err)
 	}
 

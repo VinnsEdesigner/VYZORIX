@@ -22,7 +22,6 @@ package vyzorix
         registeredAt?: int64
         fcmTokenRefreshedAt?: int64
         fcmTokenValid: bool
-        commandSecretSet: bool
 }
 
 // DiagnosticsTelemetryInfo.

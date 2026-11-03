@@ -28,7 +28,6 @@ func newTestDeviceDB(t *testing.T) *sql.DB {
 			fcm_token TEXT,
 			app_version TEXT,
 			device_class TEXT,
-			command_secret_hash TEXT,
 			online INTEGER NOT NULL DEFAULT 0,
 			registered_at INTEGER NOT NULL DEFAULT 0,
 			last_seen INTEGER NOT NULL DEFAULT 0,

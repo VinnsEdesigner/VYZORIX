@@ -17,7 +17,6 @@ const inspection: DeviceInspectionResult = {
     registeredAt: now - 86_400_000,
     fcmTokenValid: true,
     fcmTokenRefreshedAt: now - 3_600_000,
-    commandSecretSet: true,
   },
   connection: {
     webSocketStatus: 'connected',

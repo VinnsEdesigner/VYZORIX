@@ -61,7 +61,6 @@ type AckResponse struct {
 	ID             string `json:"id"`
 	IMEI           string `json:"imei"`
 	Status         string `json:"status"`
-	CommandSecret  string `json:"commandSecret,omitempty"`
 	Notes          string `json:"notes,omitempty"`
 	FCMPushSent    bool   `json:"fcmPushSent"`
 }

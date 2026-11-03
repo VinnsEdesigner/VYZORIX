@@ -66,7 +66,6 @@ type Device struct {
 	DeviceClass         string
 	SecurityPatch       string
 	DeviceName          string
-	CommandSecretHash   string
 	ID                  string
 	AppVersion          string
 	// PairingCode is the short code the device shows in a notification and the
@@ -237,11 +236,6 @@ func (d *Device) IsFCMTokenValid() bool {
 	}
 	refreshTime := time.UnixMilli(*d.FCMTokenRefreshedAt)
 	return time.Since(refreshTime) < 30*24*time.Hour
-}
-
-// IsCommandSecretSet returns true if command secret hash is set.
-func (d *Device) IsCommandSecretSet() bool {
-	return d.CommandSecretHash != ""
 }
 
 // GetStatus returns the device status string based on lifecycle and connection state.

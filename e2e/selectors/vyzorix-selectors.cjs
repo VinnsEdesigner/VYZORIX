@@ -191,7 +191,6 @@ const api = {
   postChannelsUnsubscribe: (params) => fill('/channels/unsubscribe', params),
   postCommandDispatchIdRetry: (params) => fill('/command/{dispatchId}/retry', params),
   postConfigVersionsResourceVersionRestore: (params) => fill('/config-versions/{resource}/{version}/restore', params),
-  postDeviceConfirm: (params) => fill('/device/confirm', params),
   postDeviceImeiCommand: (params) => fill('/device/{imei}/command', params),
   postDeviceImeiCommandDispatchIdResult: (params) => fill('/device/{imei}/command/{dispatchId}/result', params),
   postDeviceImeiDisconnect: (params) => fill('/device/{imei}/disconnect', params),
@@ -220,6 +219,8 @@ const api = {
   postUpdatesHistoryPushIdCancel: (params) => fill('/updates/history/{pushId}/cancel', params),
   postUpdatesPush: (params) => fill('/updates/push', params),
   postUpdatesSync: (params) => fill('/updates/sync', params),
+  postV1DeviceClaim: (params) => fill('/v1/device/claim', params),
+  postV1DeviceEnroll: (params) => fill('/v1/device/enroll', params),
   putDevicesImeiTags: (params) => fill('/devices/{imei}/tags', params),
 };
 
@@ -397,7 +398,6 @@ const byOperation = {
   postChannelsUnsubscribe: { method: 'POST', path: '/channels/unsubscribe' },
   postCommandDispatchIdRetry: { method: 'POST', path: '/command/{dispatchId}/retry' },
   postConfigVersionsResourceVersionRestore: { method: 'POST', path: '/config-versions/{resource}/{version}/restore' },
-  postDeviceConfirm: { method: 'POST', path: '/device/confirm' },
   postDeviceImeiCommand: { method: 'POST', path: '/device/{imei}/command' },
   postDeviceImeiCommandDispatchIdResult: { method: 'POST', path: '/device/{imei}/command/{dispatchId}/result' },
   postDeviceImeiDisconnect: { method: 'POST', path: '/device/{imei}/disconnect' },
@@ -426,6 +426,8 @@ const byOperation = {
   postUpdatesHistoryPushIdCancel: { method: 'POST', path: '/updates/history/{pushId}/cancel' },
   postUpdatesPush: { method: 'POST', path: '/updates/push' },
   postUpdatesSync: { method: 'POST', path: '/updates/sync' },
+  postV1DeviceClaim: { method: 'POST', path: '/v1/device/claim' },
+  postV1DeviceEnroll: { method: 'POST', path: '/v1/device/enroll' },
   putDevicesImeiTags: { method: 'PUT', path: '/devices/{imei}/tags' },
 };
 

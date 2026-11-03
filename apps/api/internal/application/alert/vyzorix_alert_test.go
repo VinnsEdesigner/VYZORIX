@@ -45,8 +45,8 @@ func insertDevice(t *testing.T, s *storage.SQLite, id, orgID, deviceClass string
 	t.Helper()
 	now := time.Now().UnixMilli()
 	_, err := s.DB().Exec(
-		`INSERT INTO devices (id, firebase_install_id, command_secret, device_class, online, registered_at, last_seen, created_at, updated_at, organization_id)
-		 VALUES (?, ?, 'secret', ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO devices (id, firebase_install_id, device_class, online, registered_at, last_seen, created_at, updated_at, organization_id)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		id, "fcm-"+id, deviceClass, online, now, now, now, now, orgID,
 	)
 	if err != nil {

@@ -62,10 +62,6 @@ var DeviceType = graphql.NewObject(graphql.ObjectConfig{
 			Type:        graphql.Boolean,
 			Description: "Whether FCM token is valid",
 		},
-		"commandSecretSet": &graphql.Field{
-			Type:        graphql.Boolean,
-			Description: "Whether command secret is set",
-		},
 		"version": &graphql.Field{
 			Type:        graphql.String,
 			Description: "Device app version",
@@ -161,10 +157,6 @@ var RegistrationInfoType = graphql.NewObject(graphql.ObjectConfig{
 		"fcmTokenRefreshedAt": &graphql.Field{
 			Type:        DateTimeScalar,
 			Description: "FCM token last refresh timestamp",
-		},
-		"commandSecretSet": &graphql.Field{
-			Type:        graphql.NewNonNull(graphql.Boolean),
-			Description: "Whether command secret is configured",
 		},
 	},
 })
@@ -1557,10 +1549,6 @@ var AckResultType = graphql.NewObject(graphql.ObjectConfig{
 		"rejectedAt": &graphql.Field{
 			Type:        graphql.Int,
 			Description: "When rejected (Unix ms)",
-		},
-		"commandSecret": &graphql.Field{
-			Type:        graphql.String,
-			Description: "Generated command secret (if approved)",
 		},
 		"fcmPushSent": &graphql.Field{
 			Type:        graphql.Boolean,

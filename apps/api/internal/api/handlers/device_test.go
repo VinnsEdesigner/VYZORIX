@@ -10,82 +10,6 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/dto"
 )
 
-func TestDeviceController_RegisterRequest_JSON(t *testing.T) {
-	req := dto.DeviceRegisterRequest{
-		DeviceID:          "device-001",
-		FirebaseInstallID: "firebase-abc",
-		FCMToken:          "fcm-token",
-		AppVersion:        "1.0.0",
-		DeviceClass:       "phone",
-	}
-
-	data, err := json.Marshal(req)
-	if err != nil {
-		t.Fatalf("json.Marshal() failed: %v", err)
-	}
-
-	var result map[string]interface{}
-	if err := json.Unmarshal(data, &result); err != nil {
-		t.Fatalf("json.Unmarshal() failed: %v", err)
-	}
-
-	if result["deviceId"] != "device-001" {
-		t.Errorf("deviceId = %v, want device-001", result["deviceId"])
-	}
-	if result["firebaseInstallId"] != "firebase-abc" {
-		t.Errorf("firebaseInstallId = %v, want firebase-abc", result["firebaseInstallId"])
-	}
-}
-
-func TestDeviceController_RegisterRequest_JSONUnmarshal(t *testing.T) {
-	data := []byte(`{
-		"deviceId": "device-002",
-		"firebaseInstallId": "firebase-xyz",
-		"fcmToken": "new-token",
-		"appVersion": "2.0.0",
-		"deviceClass": "tablet"
-	}`)
-
-	var req dto.DeviceRegisterRequest
-	if err := json.Unmarshal(data, &req); err != nil {
-		t.Fatalf("json.Unmarshal() failed: %v", err)
-	}
-
-	if req.DeviceID != "device-002" {
-		t.Errorf("DeviceID = %s, want device-002", req.DeviceID)
-	}
-	if req.FCMToken != "new-token" {
-		t.Errorf("FCMToken = %s, want new-token", req.FCMToken)
-	}
-	if req.DeviceClass != "tablet" {
-		t.Errorf("DeviceClass = %s, want tablet", req.DeviceClass)
-	}
-}
-
-func TestDeviceController_RegisterResponse_JSON(t *testing.T) {
-	resp := dto.DeviceRegisterResponse{
-		DeviceID:      "device-001",
-		CommandSecret: "secret123",
-	}
-
-	data, err := json.Marshal(resp)
-	if err != nil {
-		t.Fatalf("json.Marshal() failed: %v", err)
-	}
-
-	var result map[string]interface{}
-	if err := json.Unmarshal(data, &result); err != nil {
-		t.Fatalf("json.Unmarshal() failed: %v", err)
-	}
-
-	if result["deviceId"] != "device-001" {
-		t.Errorf("deviceId = %v, want device-001", result["deviceId"])
-	}
-	if result["commandSecret"] != "secret123" {
-		t.Errorf("commandSecret = %v, want secret123", result["commandSecret"])
-	}
-}
-
 func TestDeviceController_DeviceStatus_JSON(t *testing.T) {
 	status := dto.DeviceStatus{
 		DeviceID:    "device-001",
@@ -116,35 +40,6 @@ func TestDeviceController_DeviceStatus_JSON(t *testing.T) {
 	}
 }
 
-func TestDeviceController_Register_InvalidJSON(t *testing.T) {
-	// Test that invalid JSON is handled gracefully.
-	data := []byte(`{invalid json}`)
-
-	var req dto.DeviceRegisterRequest
-	err := json.Unmarshal(data, &req)
-	if err == nil {
-		t.Error("expected error for invalid JSON")
-	}
-}
-
-func TestDeviceController_Register_MissingFields(t *testing.T) {
-	// Only provide some fields.
-	data := []byte(`{"deviceId": "device-001"}`)
-
-	var req dto.DeviceRegisterRequest
-	if err := json.Unmarshal(data, &req); err != nil {
-		t.Fatalf("json.Unmarshal() failed: %v", err)
-	}
-
-	if req.DeviceID != "device-001" {
-		t.Errorf("DeviceID = %s, want device-001", req.DeviceID)
-	}
-	// Other fields should be zero values.
-	if req.FCMToken != "" {
-		t.Errorf("FCMToken = %s, want empty", req.FCMToken)
-	}
-}
-
 func TestDeviceController_HTTPRequest_Parsing(t *testing.T) {
 	body := []byte(`{"deviceId":"test-device","firebaseInstallId":"firebase-test"}`)
 	req := httptest.NewRequest(http.MethodPost, "/api/devices/register", bytes.NewReader(body))
@@ -156,9 +51,10 @@ func TestDeviceController_HTTPRequest_Parsing(t *testing.T) {
 }
 
 func TestDeviceController_HTTPResponse_JSON(t *testing.T) {
-	resp := dto.DeviceRegisterResponse{
-		DeviceID:      "device-001",
-		CommandSecret: "secret123",
+	resp := dto.DeviceStatus{
+		DeviceID:    "device-001",
+		AppVersion:  "1.0.0",
+		DeviceClass: "phone",
 	}
 
 	data, err := json.Marshal(resp)

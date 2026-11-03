@@ -13,6 +13,8 @@ import type {
   CommandHistoryResult,
   CommandPendingResult,
   CommandRequest,
+  CommandResultAck,
+  CommandResultReport,
   CommandRetryResult,
   CommandStatus,
   GetDashboardDeviceImeiCommandsParams
@@ -91,6 +93,22 @@ const postDeviceImeiCommand = (
       options);
     }
   /**
+ * Device reports the terminal outcome of a dispatched command (HTTP fallback for a dropped WebSocket)
+ * @summary Report command result
+ */
+const postDeviceImeiCommandDispatchIdResult = (
+    imei: string,
+    dispatchId: string,
+    commandResultReport: CommandResultReport,
+ options?: SecondParameter<typeof customAxios<CommandResultAck>>,) => {
+      return customAxios<CommandResultAck>(
+      {url: `/device/${imei}/command/${dispatchId}/result`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: commandResultReport
+    },
+      options);
+    }
+  /**
  * Returns commands pending delivery for a device
  * @summary List pending commands
  */
@@ -117,11 +135,12 @@ const postDevicesImeiCommandConfirm = (
     },
       options);
     }
-  return {deleteCommandDispatchId,postCommandDispatchIdRetry,getCommandDispatchIdStatus,getDashboardDeviceImeiCommands,postDeviceImeiCommand,getDeviceImeiCommandsPending,postDevicesImeiCommandConfirm}};
+  return {deleteCommandDispatchId,postCommandDispatchIdRetry,getCommandDispatchIdStatus,getDashboardDeviceImeiCommands,postDeviceImeiCommand,postDeviceImeiCommandDispatchIdResult,getDeviceImeiCommandsPending,postDevicesImeiCommandConfirm}};
 export type DeleteCommandDispatchIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommands>['deleteCommandDispatchId']>>>
 export type PostCommandDispatchIdRetryResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommands>['postCommandDispatchIdRetry']>>>
 export type GetCommandDispatchIdStatusResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommands>['getCommandDispatchIdStatus']>>>
 export type GetDashboardDeviceImeiCommandsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommands>['getDashboardDeviceImeiCommands']>>>
 export type PostDeviceImeiCommandResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommands>['postDeviceImeiCommand']>>>
+export type PostDeviceImeiCommandDispatchIdResultResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommands>['postDeviceImeiCommandDispatchIdResult']>>>
 export type GetDeviceImeiCommandsPendingResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommands>['getDeviceImeiCommandsPending']>>>
 export type PostDevicesImeiCommandConfirmResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getCommands>['postDevicesImeiCommandConfirm']>>>

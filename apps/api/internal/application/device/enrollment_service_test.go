@@ -33,7 +33,7 @@ func newEnrollmentService(t *testing.T) *Service {
 
 	if _, err := db.Exec(`CREATE TABLE devices (
 		id TEXT PRIMARY KEY, firebase_install_id TEXT, fcm_token TEXT, app_version TEXT,
-		device_class TEXT, command_secret_hash TEXT, online INTEGER NOT NULL DEFAULT 0,
+		device_class TEXT, online INTEGER NOT NULL DEFAULT 0,
 		registered_at INTEGER NOT NULL DEFAULT 0, last_seen INTEGER NOT NULL DEFAULT 0,
 		operator_id TEXT, organization_id TEXT, created_at TIMESTAMP, updated_at TIMESTAMP,
 		device_name TEXT, manufacturer TEXT, model TEXT, os_version TEXT, security_patch TEXT,
@@ -329,9 +329,6 @@ func TestEnrollStoresOnlyThePublicHalf(t *testing.T) {
 	// A PEM private key would say PRIVATE KEY; the public form must not.
 	if strings.Contains(d.PublicKey, "PRIVATE KEY") {
 		t.Error("the stored key must never be a private key")
-	}
-	if d.CommandSecretHash != "" {
-		t.Error("the keypair model must not store a shared secret")
 	}
 
 	_ = enrolled

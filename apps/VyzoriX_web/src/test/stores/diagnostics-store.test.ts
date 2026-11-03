@@ -6,7 +6,7 @@ function makeInspection(overrides: Partial<DeviceInspection> = {}): DeviceInspec
   return {
     identity: { imei: '861234567890123' },
     software: {},
-    registration: { status: 'online', fcmTokenValid: true, commandSecretSet: true },
+    registration: { status: 'online', fcmTokenValid: true },
     connection: {
       webSocketStatus: 'connected',
       connectedAt: new Date(),

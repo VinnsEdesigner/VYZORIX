@@ -104,8 +104,6 @@ export type {
   DashboardStats,
   DeleteDevicesImeiParams,
   DeletedResult,
-  DeviceConfirmRequest,
-  DeviceConfirmResult,
   DeviceCountResult,
   DeviceDetailResult,
   DeviceDisconnectResult,

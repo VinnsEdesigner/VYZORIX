@@ -66,7 +66,7 @@ describe('graphqlDeviceInspectionFromRaw', () => {
     const raw: RawDeviceInspection = {
       identity: { imei: '861234567890123', deviceName: 'Pixel 8', model: 'Pixel 8', manufacturer: 'Google' },
       software: { osVersion: 'Android 14', appVersion: '2.1.0', securityPatch: '2024-03-01', buildId: 'UP1A' },
-      registration: { status: 'registered', registeredAt: '2024-06-20T11:00:00Z', fcmTokenValid: true, commandSecretSet: true },
+      registration: { status: 'registered', registeredAt: '2024-06-20T11:00:00Z', fcmTokenValid: true },
       connection: { webSocketStatus: 'connected', connectedAt: '2024-06-20T11:30:00Z', fcmStatus: 'valid', lastSeen: '2024-06-20T11:59:00Z', clientIp: '10.0.0.1', protocol: 'WSS' },
       telemetry: { lastTimestamp: '2024-06-20T12:00:00Z', framesToday: 4521, avgLatencyMs: 45, totalBytesToday: 15728640, sessionsToday: 3 },
     };
@@ -82,7 +82,7 @@ describe('graphqlDeviceInspectionFromRaw', () => {
     const raw: RawDeviceInspection = {
       identity: { imei: '123' },
       software: {},
-      registration: { status: 'offline', fcmTokenValid: false, commandSecretSet: false },
+      registration: { status: 'offline', fcmTokenValid: false },
       connection: { webSocketStatus: 'disconnected', fcmStatus: 'not_set' },
       telemetry: { framesToday: 0, sessionsToday: 0 },
     };

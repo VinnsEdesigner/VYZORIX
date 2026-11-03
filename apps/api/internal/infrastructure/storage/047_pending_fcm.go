@@ -153,16 +153,15 @@ func migrateCreatePendingFCM(tx *sql.Tx) error {
 
 // FCMNotificationData is used to serialize the notification payload for storage.
 type FCMNotificationData struct {
-	Token         string `json:"token"`
-	Command       string `json:"command"`
-	DispatchID    string `json:"dispatchId"`
-	DeviceID      string `json:"deviceId"`
-	Priority      string `json:"priority"`
-	CommandSecret string `json:"commandSecret,omitempty"`
-	APKFilename   string `json:"apkFilename,omitempty"`
-	SHA256        string `json:"sha256,omitempty"`
-	DownloadURL   string `json:"downloadUrl,omitempty"`
-	APKSize       int64  `json:"apkSize,omitempty"`
+	Token       string `json:"token"`
+	Command     string `json:"command"`
+	DispatchID  string `json:"dispatchId"`
+	DeviceID    string `json:"deviceId"`
+	Priority    string `json:"priority"`
+	APKFilename string `json:"apkFilename,omitempty"`
+	SHA256      string `json:"sha256,omitempty"`
+	DownloadURL string `json:"downloadUrl,omitempty"`
+	APKSize     int64  `json:"apkSize,omitempty"`
 }
 
 // Serialize serializes notification data to JSON.

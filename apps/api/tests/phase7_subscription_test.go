@@ -1178,7 +1178,7 @@ func TestPhase7Sub_DeviceStreamAndSubscriptionCoexist(t *testing.T) {
 	// Create a device stream handler on a separate test server.
 	deviceCfg := config.Config{Env: "development", EnforceHMAC: false, AllowedOrigins: []string{"*"}}
 	auditLogger := newTestAuditLogger(logger)
-	deviceHandler := wsHandler.NewStreamHandler(logger, deviceCfg, state.hub, cryptohmac.Verifier{}, auditLogger)
+	deviceHandler := wsHandler.NewStreamHandler(logger, deviceCfg, state.hub, cryptohmac.Verifier{}, auditLogger, nil)
 
 	gin.SetMode(gin.TestMode)
 	deviceRouter := gin.New()

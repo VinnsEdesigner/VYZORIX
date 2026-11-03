@@ -2,27 +2,8 @@ package dto
 
 import "time"
 
-// DeviceRegisterRequest is an alias for RegisterDeviceRequest.
-type DeviceRegisterRequest = RegisterDeviceRequest
-type DeviceRegisterResponse = RegisterDeviceResponse
+// DeviceStatus is an alias for DeviceStatusResponse.
 type DeviceStatus = DeviceStatusResponse
-
-// RegisterDeviceRequest represents a device registration request.
-type RegisterDeviceRequest struct {
-	DeviceID          string `json:"deviceId"`
-	FirebaseInstallID string `json:"firebaseInstallId"`
-	FCMToken          string `json:"fcmToken"`
-	AppVersion        string `json:"appVersion"`
-	DeviceClass       string `json:"deviceClass"`
-}
-
-// RegisterDeviceResponse represents a device registration response.
-type RegisterDeviceResponse struct {
-	DeviceID      string `json:"deviceId"`
-	CommandSecret string `json:"commandSecret"`
-	Lifecycle     string `json:"lifecycle"`
-	RegisteredAt  int64  `json:"registeredAt"`
-}
 
 // DeviceStatusResponse represents device status.
 type DeviceStatusResponse struct {
@@ -79,20 +60,19 @@ type PaginationInfo struct {
 
 // DeviceDetailResponse represents detailed device info per spec.
 type DeviceDetailResponse struct {
-	Connection       *ConnectionInfo `json:"connection,omitempty"`
-	AppVersion       string          `json:"appVersion,omitempty"`
-	DeviceName       string          `json:"deviceName,omitempty"`
-	Model            string          `json:"model,omitempty"`
-	Manufacturer     string          `json:"manufacturer,omitempty"`
-	OSVersion        string          `json:"osVersion,omitempty"`
-	ID               string          `json:"id"`
-	SecurityPatch    string          `json:"securityPatch,omitempty"`
-	Status           string          `json:"status"`
-	IMEI             string          `json:"imei"`
-	RegisteredAt     int64           `json:"registeredAt,omitempty"`
-	LastSeen         int64           `json:"lastSeen,omitempty"`
-	FCMTokenValid    bool            `json:"fcmTokenValid"`
-	CommandSecretSet bool            `json:"commandSecretSet"`
+	Connection    *ConnectionInfo `json:"connection,omitempty"`
+	AppVersion    string          `json:"appVersion,omitempty"`
+	DeviceName    string          `json:"deviceName,omitempty"`
+	Model         string          `json:"model,omitempty"`
+	Manufacturer  string          `json:"manufacturer,omitempty"`
+	OSVersion     string          `json:"osVersion,omitempty"`
+	ID            string          `json:"id"`
+	SecurityPatch string          `json:"securityPatch,omitempty"`
+	Status        string          `json:"status"`
+	IMEI          string          `json:"imei"`
+	RegisteredAt  int64           `json:"registeredAt,omitempty"`
+	LastSeen      int64           `json:"lastSeen,omitempty"`
+	FCMTokenValid bool            `json:"fcmTokenValid"`
 }
 
 // ConnectionInfo represents WebSocket connection details per spec.

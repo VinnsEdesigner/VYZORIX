@@ -68,7 +68,6 @@ func (s *Server) deviceIdempotencyMiddleware() gin.HandlerFunc {
 		HeaderName: "X-Idempotency-Key",
 		Paths: []string{
 			"/v1/device/inbox",
-			"/v1/device/confirm",
 		},
 		PathPrefixes: []string{"/v1/device/", "/v1/command/"},
 		ExcludedPaths: []string{
@@ -218,10 +217,6 @@ func (s *Server) setupDevicePublicRoutes(public *gin.RouterGroup) {
 	// limiting. See doc/REGISTRATION_CONTRACT.md §4 and §9.
 	if s.enrollHandler != nil {
 		devicePublicGroup.POST("/enroll", s.enrollHandler.Enroll)
-	}
-	// Public confirm endpoint - device confirms registration after receiving commandSecret.
-	if s.deviceConfirmHandler != nil {
-		devicePublicGroup.POST("/confirm", s.deviceConfirmHandler.Handle)
 	}
 }
 

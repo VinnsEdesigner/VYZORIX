@@ -125,7 +125,6 @@ func (s *Service) GetDeviceInspection(ctx context.Context, imei, orgID string) (
 		RegisteredAt:        registeredAt,
 		FCMTokenValid:       dev.FCMToken != "" && s.isFCMTokenValid(dev),
 		FCMTokenRefreshedAt: dev.FCMTokenRefreshedAtTime(),
-		CommandSecretSet:    dev.CommandSecretHash != "",
 	}
 
 	var connectedAt *time.Time
@@ -203,9 +202,8 @@ func (s *Service) GetDeviceInspectionHTTP(ctx context.Context, imei, orgID strin
 			BuildID:       inspection.Software.BuildID,
 		},
 		Registration: HTTPRegistrationInfo{
-			Status:           inspection.Registration.Status,
-			FCMTokenValid:    inspection.Registration.FCMTokenValid,
-			CommandSecretSet: inspection.Registration.CommandSecretSet,
+			Status:        inspection.Registration.Status,
+			FCMTokenValid: inspection.Registration.FCMTokenValid,
 		},
 		Connection: HTTPConnectionInfo{
 			WebSocketStatus: inspection.Connection.WebSocketStatus,

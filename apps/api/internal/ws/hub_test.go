@@ -71,13 +71,8 @@ func (r *noopDeviceRepo) UpdateFCMToken(context.Context, string, string) error  
 func (r *noopDeviceRepo) SetOnlineByDeviceID(context.Context, device.DeviceID, bool) error {
 	return nil
 }
-func (r *noopDeviceRepo) UpdateLastSeen(context.Context, string) error        { return nil }
-func (r *noopDeviceRepo) Touch(context.Context, string) error                 { return nil }
-func (r *noopDeviceRepo) SetSecretHash(context.Context, string, string) error { return nil }
-func (r *noopDeviceRepo) GetSecretHash(context.Context, string) (string, error) {
-	return "", nil
-}
-func (r *noopDeviceRepo) HashAllSecrets(context.Context) (int, error) { return 0, nil }
+func (r *noopDeviceRepo) UpdateLastSeen(context.Context, string) error { return nil }
+func (r *noopDeviceRepo) Touch(context.Context, string) error          { return nil }
 func (r *noopDeviceRepo) List(context.Context, string, int, int) ([]*device.Device, int, error) {
 	return nil, 0, nil
 }

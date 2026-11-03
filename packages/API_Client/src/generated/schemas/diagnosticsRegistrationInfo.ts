@@ -7,7 +7,6 @@
  */
 
 export interface DiagnosticsRegistrationInfo {
-  commandSecretSet?: boolean;
   fcmTokenRefreshedAt?: number;
   fcmTokenValid?: boolean;
   registeredAt?: number;

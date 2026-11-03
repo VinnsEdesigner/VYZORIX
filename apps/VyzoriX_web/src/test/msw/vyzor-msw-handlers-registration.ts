@@ -106,7 +106,6 @@ export function createRegistrationHandlers() {
         approvingAt: now(),
         approvedAt: body.action === 'reject' ? null : now(),
         rejectedAt: body.action === 'reject' ? now() : null,
-        commandSecret: 'secret',
         fcmPushSent: true,
         notes: null,
       });

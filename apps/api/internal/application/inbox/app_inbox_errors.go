@@ -15,7 +15,6 @@ var (
 	ErrAlreadyExists             = errors.New("device already exists in inbox")
 	ErrAlreadyRegistered         = errors.New("device already registered as confirmed device")
 	ErrDeviceAlreadyExists       = errors.New("device already registered, use re-registration flow")
-	ErrSecretGeneration          = errors.New("failed to generate command secret")
 	ErrInvalidAckAction          = errors.New("invalid acknowledge action, must be 'approve' or 'reject'")
 	ErrFCMNotification           = errors.New("failed to send FCM notification")
 	ErrUnauthorized              = errors.New("operator not authorized to perform this action")
@@ -73,8 +72,6 @@ func ToServiceError(err error) *ServiceError {
 		return &ServiceError{Code: "conflict", Message: err.Error(), Status: http.StatusConflict}
 	case errors.Is(err, ErrAlreadyRegistered), errors.Is(err, ErrDeviceAlreadyExists):
 		return &ServiceError{Code: "conflict", Message: err.Error(), Status: http.StatusConflict}
-	case errors.Is(err, ErrSecretGeneration):
-		return &ServiceError{Code: "internal_error", Message: err.Error(), Status: http.StatusInternalServerError}
 	case errors.Is(err, ErrInvalidAckAction):
 		return &ServiceError{Code: "bad_request", Message: err.Error(), Status: http.StatusBadRequest}
 	case errors.Is(err, ErrFCMNotification):

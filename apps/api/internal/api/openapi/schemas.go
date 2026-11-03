@@ -610,20 +610,6 @@ type SetDeviceTagsRequest struct {
 	Tags []string `json:"tags"`
 }
 
-type DeviceConfirmResult struct {
-	DeviceID     string `json:"device_id"`
-	IMEI         string `json:"imei"`
-	RegisteredAt *int64 `json:"registered_at,omitempty"`
-	ServerTime   int64  `json:"server_time"`
-	Confirmed    bool   `json:"confirmed"`
-	Online       bool   `json:"online"`
-}
-
-type DeviceConfirmRequest struct {
-	CommandSecret string `json:"commandSecret"`
-	IMEI          string `json:"imei"`
-}
-
 type DeviceSettingsResult struct {
 	CreatedAt  string              `json:"createdAt"`
 	CustomName string              `json:"customName,omitempty"`
@@ -798,7 +784,6 @@ type DiagnosticsRegistrationInfo struct {
 	FCMTokenRefreshedAt *int64 `json:"fcmTokenRefreshedAt,omitempty"`
 	RegisteredAt        *int64 `json:"registeredAt,omitempty"`
 	Status              string `json:"status"`
-	CommandSecretSet    bool   `json:"commandSecretSet"`
 	FCMTokenValid       bool   `json:"fcmTokenValid"`
 }
 
@@ -876,7 +861,6 @@ type InboxAckResult struct {
 	AcknowledgedAt *int64 `json:"acknowledgedAt,omitempty"`
 	ApprovedAt     *int64 `json:"approvedAt,omitempty"`
 	ApprovingAt    *int64 `json:"approvingAt,omitempty"`
-	CommandSecret  string `json:"commandSecret,omitempty"`
 	ID             string `json:"id"`
 	IMEI           string `json:"imei"`
 	Notes          string `json:"notes,omitempty"`

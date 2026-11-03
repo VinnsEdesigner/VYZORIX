@@ -5365,58 +5365,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/device/confirm": {
-            "post": {
-                "description": "Confirms a device registration from an approved inbox entry",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "devices"
-                ],
-                "summary": "Confirm device registration",
-                "parameters": [
-                    {
-                        "description": "confirmation request (imei + commandSecret)",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceConfirmRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "confirmed device",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceConfirmResult"
-                        }
-                    },
-                    "400": {
-                        "description": "invalid input",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "device/inbox entry not found",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "internal error",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/device/count": {
             "get": {
                 "description": "Returns the device count for the current organization",
@@ -12302,40 +12250,6 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceConfirmRequest": {
-            "type": "object",
-            "properties": {
-                "commandSecret": {
-                    "type": "string"
-                },
-                "imei": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceConfirmResult": {
-            "type": "object",
-            "properties": {
-                "confirmed": {
-                    "type": "boolean"
-                },
-                "device_id": {
-                    "type": "string"
-                },
-                "imei": {
-                    "type": "string"
-                },
-                "online": {
-                    "type": "boolean"
-                },
-                "registered_at": {
-                    "type": "integer"
-                },
-                "server_time": {
-                    "type": "integer"
-                }
-            }
-        },
         "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceCountResult": {
             "type": "object",
             "properties": {
@@ -12739,9 +12653,6 @@ const docTemplate = `{
         "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DiagnosticsRegistrationInfo": {
             "type": "object",
             "properties": {
-                "commandSecretSet": {
-                    "type": "boolean"
-                },
                 "fcmTokenRefreshedAt": {
                     "type": "integer"
                 },
@@ -12960,9 +12871,6 @@ const docTemplate = `{
                 },
                 "approvingAt": {
                     "type": "integer"
-                },
-                "commandSecret": {
-                    "type": "string"
                 },
                 "fcmPushSent": {
                     "type": "boolean"

@@ -59,22 +59,6 @@ package vyzorix
         tags: [...string]
 }
 
-// DeviceConfirmResult.
-#DeviceConfirmResult: {
-        registered_at?: int64
-        device_id: string
-        imei: string
-        server_time: int64
-        confirmed: bool
-        online: bool
-}
-
-// DeviceConfirmRequest.
-#DeviceConfirmRequest: {
-        imei: string
-        commandSecret: string
-}
-
 // DeviceSettingsResult.
 #DeviceSettingsResult: {
         id: string

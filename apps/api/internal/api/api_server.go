@@ -186,7 +186,6 @@ type Server struct {
 	inboxHandler                *inboxhandlers.Handler
 	enrollHandler               *inboxhandlers.EnrollHandler
 	inboxService                *inbox.Service
-	deviceConfirmHandler        *devicehandlers.ConfirmHandler
 	diagnosticsHandler          *diagnosticshandlers.Handler
 	diagnosticsInspectHandler   *diagnosticshandlers.InspectHandler
 	diagnosticsTimelineHandler  *diagnosticshandlers.TimelineHandler
@@ -488,11 +487,12 @@ func (s *Server) wireInboxHandler(cfg *ServerConfig) {
 	}
 
 	// Create inbox repository.
-	inboxRepo := storage.NewInboxRepository(cfg.DB.DB())
 	regLogRepo := storage.NewRegistrationLogRepository(cfg.DB.DB())
 
 	// Create inbox service with FCM notifier (SafeNotifier for graceful degradation).
 	// and device service for creating devices on approval and device lookup.
+	inboxRepo := storage.NewInboxRepository(cfg.DB.DB())
+
 	var fcmNotifier inbox.FCMNotifier
 	if cfg.FCMNotifier != nil {
 		fcmNotifier = &fcm.SafeNotifier{Notifier: cfg.FCMNotifier}
@@ -529,12 +529,6 @@ func (s *Server) wireConfirmHandler(cfg *ServerConfig) {
 	if cfg.DeviceService == nil || cfg.DB == nil {
 		return
 	}
-
-	// Create inbox repository for cleanup after device confirmation.
-	inboxRepo := storage.NewInboxRepository(cfg.DB.DB())
-
-	// Create confirm handler with inbox cleanup capability.
-	s.deviceConfirmHandler = devicehandlers.NewConfirmHandlerWithCleanup(cfg.DeviceService, inboxRepo)
 
 	// The keypair registration endpoints. See doc/REGISTRATION_CONTRACT.md.
 	s.enrollHandler = inboxhandlers.NewEnrollHandler(cfg.DeviceService, cfg.Hub, cfg.ServerSigner)

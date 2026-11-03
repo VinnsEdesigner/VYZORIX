@@ -162,10 +162,10 @@ func WireHandlers(deps HandlerDependencies) *HandlerSet {
 	if deps.ConfirmationService != nil {
 		hs.Confirmation = confirmationhandlers.NewHandler(deps.ConfirmationService, deps.DeviceService, evaluator)
 	}
-	hs.Command = cmdhandlers.NewExecuteHandler(deps.CommandService, deps.DeviceService, deps.Hub, deps.FCMNotifier, command.NewAuthorizerFromService(deps.ConfirmationService), aud)
+	hs.Command = cmdhandlers.NewExecuteHandler(deps.CommandService, deps.DeviceService, deps.Hub, deps.FCMNotifier, command.NewAuthorizerFromService(deps.ConfirmationService), aud, deps.ServerSigner)
 
 	// WebSocket handler.
-	hs.Stream = websockethandlers.NewStreamHandler(deps.Log, deps.Config, deps.Hub, *deps.HmacVerifier, deps.AuditLogger)
+	hs.Stream = websockethandlers.NewStreamHandler(deps.Log, deps.Config, deps.Hub, *deps.HmacVerifier, deps.AuditLogger, NewDevicePublicKeyProvider(deps.DeviceRepo))
 
 	wireDeviceFrameRouting(hs, deps)
 	// Telemetry history handler.

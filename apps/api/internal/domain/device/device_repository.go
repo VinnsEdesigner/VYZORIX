@@ -75,16 +75,6 @@ type Repository interface {
 	// Touch updates the last seen timestamp (alias for UpdateLastSeen).
 	Touch(ctx context.Context, deviceID string) error
 
-	// SetSecretHash sets the command secret hash for a device.
-	SetSecretHash(ctx context.Context, deviceID, hash string) error
-
-	// GetSecretHash retrieves the command secret hash for a device.
-	GetSecretHash(ctx context.Context, deviceID string) (string, error)
-
-	// HashAllSecrets hashes all existing command secrets that don't have a hash.
-	// This is a migration helper for existing databases.
-	HashAllSecrets(ctx context.Context) (int, error)
-
 	// List returns a paginated list of devices filtered by organization.
 	List(ctx context.Context, orgID string, limit, offset int) ([]*Device, int, error)
 

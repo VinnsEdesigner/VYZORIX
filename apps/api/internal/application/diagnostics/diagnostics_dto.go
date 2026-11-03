@@ -77,7 +77,6 @@ type HTTPRegistrationInfo struct {
 	RegisteredAt        int64  `json:"registeredAt,omitempty"`
 	FCMTokenRefreshedAt int64  `json:"fcmTokenRefreshedAt,omitempty"`
 	FCMTokenValid       bool   `json:"fcmTokenValid"`
-	CommandSecretSet    bool   `json:"commandSecretSet"`
 }
 
 // HTTPConnectionInfo contains connection info for HTTP API with int64 timestamps.

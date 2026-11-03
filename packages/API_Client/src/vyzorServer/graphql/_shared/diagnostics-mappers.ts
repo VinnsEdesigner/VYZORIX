@@ -40,7 +40,6 @@ export function graphqlDeviceInspectionFromRaw(raw: RawDeviceInspection): Device
       registeredAt: parseTimestamp(raw.registration.registeredAt),
       fcmTokenValid: raw.registration.fcmTokenValid,
       fcmTokenRefreshedAt: parseTimestamp(raw.registration.fcmTokenRefreshedAt),
-      commandSecretSet: raw.registration.commandSecretSet,
     },
     connection: {
       webSocketStatus: (raw.connection.webSocketStatus ?? 'disconnected') as WebSocketStatus,

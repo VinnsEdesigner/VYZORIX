@@ -1052,7 +1052,6 @@ func (r *Resolver) GetDeviceInspection(p graphql.ResolveParams) (interface{}, er
 			"registeredAt":        registeredAt,
 			"fcmTokenValid":       inspection.Registration.FCMTokenValid,
 			"fcmTokenRefreshedAt": fcmTokenRefreshedAt,
-			"commandSecretSet":    inspection.Registration.CommandSecretSet,
 		},
 		"connection": map[string]interface{}{
 			"webSocketStatus": inspection.Connection.WebSocketStatus,

@@ -57,7 +57,6 @@ package vyzorix
         id: string
         imei: string
         status: string
-        commandSecret?: string
         notes?: string
         fcmPushSent: bool
 }

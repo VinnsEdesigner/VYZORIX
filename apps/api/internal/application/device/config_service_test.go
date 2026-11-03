@@ -28,7 +28,7 @@ func newConfigService(t *testing.T, claimed bool) *Service {
 	}
 	if _, err := db.Exec(`CREATE TABLE devices (
 		id TEXT PRIMARY KEY, firebase_install_id TEXT, fcm_token TEXT, app_version TEXT,
-		device_class TEXT, command_secret_hash TEXT, online INTEGER NOT NULL DEFAULT 0,
+		device_class TEXT, online INTEGER NOT NULL DEFAULT 0,
 		registered_at INTEGER NOT NULL DEFAULT 0, last_seen INTEGER NOT NULL DEFAULT 0,
 		operator_id TEXT, organization_id TEXT, created_at TIMESTAMP, updated_at TIMESTAMP,
 		device_name TEXT, manufacturer TEXT, model TEXT, os_version TEXT, security_patch TEXT,

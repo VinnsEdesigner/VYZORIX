@@ -51,20 +51,6 @@ export class DeviceClient {
     return headers;
   }
 
-    async registerDevice(imei: string, name: string): Promise<{ commandSecret: string }> {
-    return restClient.post<{ commandSecret: string }>('/v1/device/register', {
-      imei,
-      name,
-    });
-  }
-
-    async confirmDevice(imei: string, commandSecret: string): Promise<{ success: boolean; deviceId: string }> {
-    return restClient.post<{ success: boolean; deviceId: string }>('/v1/device/confirm', {
-      imei,
-      commandSecret,
-    });
-  }
-
     async getStatus(imei: string): Promise<{ online: boolean; lastSeen?: number }> {
     return restClient.get<{ online: boolean; lastSeen?: number }>(`/v1/device/${imei}/status`);
   }

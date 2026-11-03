@@ -17,8 +17,8 @@ type InboxStatus string
 const (
 	StatusPending      InboxStatus = "pending"      // Initial state after device registration.
 	StatusAcknowledged InboxStatus = "acknowledged" // Device has acknowledged the request.
-	StatusApproving    InboxStatus = "approving"    // Operator is approving, commandSecret being generated.
-	StatusApproved     InboxStatus = "approved"     // Fully approved, device can confirm.
+	StatusApproving    InboxStatus = "approving"    // Operator is approving; the device is being created.
+	StatusApproved     InboxStatus = "approved"     // Fully approved; the device may connect.
 	StatusRejected     InboxStatus = "rejected"     // Rejected by operator.
 	StatusExpired      InboxStatus = "expired"      // Auto-cleanup after 30 days.
 )

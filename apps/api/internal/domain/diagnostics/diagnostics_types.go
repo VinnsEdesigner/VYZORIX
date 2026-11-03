@@ -77,7 +77,6 @@ type RegistrationInfo struct {
 	FCMTokenRefreshedAt *time.Time `json:"fcmTokenRefreshedAt,omitempty"`
 	Status              string     `json:"status"`
 	FCMTokenValid       bool       `json:"fcmTokenValid"`
-	CommandSecretSet    bool       `json:"commandSecretSet"`
 }
 
 // ConnectionInfo contains device connection information.

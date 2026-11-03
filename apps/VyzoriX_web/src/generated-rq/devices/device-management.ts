@@ -30,8 +30,6 @@ import type {
 import type {
   ConnectionStatusResult,
   DeleteDevicesImeiParams,
-  DeviceConfirmRequest,
-  DeviceConfirmResult,
   DeviceCountResult,
   DeviceDetailResult,
   DeviceDisconnectResult,
@@ -1296,94 +1294,7 @@ export const invalidateGetDashboardEventsId = async (
 
 
 
-export const getPostDeviceConfirmUrl = () => {
-
-
-
-
-  return `/device/confirm`
-}
-
-/**
- * Confirms a device registration from an approved inbox entry
- * @summary Confirm device registration
- */
-export const postDeviceConfirm = async (deviceConfirmRequest: DeviceConfirmRequest, options?: Parameters<typeof customAxios>[1]): Promise<DeviceConfirmResult> => {
-
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
-  };
-return customAxios<DeviceConfirmResult>(getPostDeviceConfirmUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(deviceConfirmRequest)
-  }
-);}
-
-
-
-
-
-export const getPostDeviceConfirmMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeviceConfirm>>, TError,{data: DeviceConfirmRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
-): UseMutationOptions<Awaited<ReturnType<typeof postDeviceConfirm>>, TError,{data: DeviceConfirmRequest}, TContext> => {
-
-const mutationKey = ['postDeviceConfirm'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postDeviceConfirm>>, {data: DeviceConfirmRequest}> = (props) => {
-          const {data} = props ?? {};
-
-          return  postDeviceConfirm(data,requestOptions)
-        }
-
-  const onSuccess = (data: Awaited<ReturnType<typeof postDeviceConfirm>>, variables: {data: DeviceConfirmRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
-        if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesOperatorQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDashboardEventsRecentQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDeviceCountQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });
-        }
-        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
-      };
-
-
-
-
-  return  { ...mutationOptions, mutationFn, onSuccess }}
-
-    export type PostDeviceConfirmMutationResult = NonNullable<Awaited<ReturnType<typeof postDeviceConfirm>>>
-    export type PostDeviceConfirmMutationBody = DeviceConfirmRequest
-    export type PostDeviceConfirmMutationError = ErrorResponse
-
-    /**
- * @summary Confirm device registration
- */
-export const usePostDeviceConfirm = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeviceConfirm>>, TError,{data: DeviceConfirmRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postDeviceConfirm>>,
-        TError,
-        {data: DeviceConfirmRequest},
-        TContext
-      > => {
-      const backupQueryClient = useQueryClient();
-      return useMutation(getPostDeviceConfirmMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
-    }
-    export const getGetDeviceCountUrl = () => {
+export const getGetDeviceCountUrl = () => {
 
 
 

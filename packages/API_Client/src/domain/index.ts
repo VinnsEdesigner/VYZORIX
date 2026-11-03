@@ -27,8 +27,6 @@ export {
   type DeviceTagsResult,
   type DeviceTagAddedResult,
   type DeviceTagRemovedResult,
-  type DeviceConfirmResult,
-  type DeviceConfirmRequest,
   type DeviceFCMTokenRequest,
   type SetDeviceTagsRequest,
   type DeviceTransferRequest,

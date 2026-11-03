@@ -20,7 +20,6 @@ export interface RawRegistrationInfo {
   registeredAt?: string | null;
   fcmTokenValid: boolean;
   fcmTokenRefreshedAt?: string | null;
-  commandSecretSet: boolean;
 }
 
 export interface RawConnectionInfo {

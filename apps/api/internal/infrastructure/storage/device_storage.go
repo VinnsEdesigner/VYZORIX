@@ -57,7 +57,7 @@ func NewDeviceRepository(db *sql.DB) *DeviceRepository {
 // deviceColumns returns the list of columns to select.
 const deviceColumns = `
 	id, firebase_install_id, fcm_token, app_version, device_class,
-	command_secret_hash, online, registered_at, last_seen, operator_id,
+	online, registered_at, last_seen, operator_id,
 	organization_id,
 	created_at, updated_at, device_name, manufacturer, model, os_version, security_patch,
 	deregistered_at, deletion_scheduled_at, fcm_token_refreshed_at, tags, tier,
@@ -73,7 +73,7 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 
 	err := row.Scan(
 		&d.ID, &d.FirebaseInstallID, &fcmToken, &d.AppVersion, &d.DeviceClass,
-		&d.CommandSecretHash, &d.Online, &d.RegisteredAt, &d.LastSeen, &operatorID,
+		&d.Online, &d.RegisteredAt, &d.LastSeen, &operatorID,
 		&organizationID,
 		&d.CreatedAt, &d.UpdatedAt, &deviceName, &manufacturer, &model, &osVersion, &securityPatch,
 		&deregisteredAt, &deletionScheduledAt, &fcmTokenRefreshedAt, &tagsJSON, &tier,
@@ -137,7 +137,7 @@ func scanDevices(rows *sql.Rows) ([]*device.Device, error) {
 
 		if err := rows.Scan(
 			&d.ID, &d.FirebaseInstallID, &fcmToken, &d.AppVersion, &d.DeviceClass,
-			&d.CommandSecretHash, &d.Online, &d.RegisteredAt, &d.LastSeen, &operatorID,
+			&d.Online, &d.RegisteredAt, &d.LastSeen, &operatorID,
 			&organizationID,
 			&d.CreatedAt, &d.UpdatedAt, &deviceName, &manufacturer, &model, &osVersion, &securityPatch,
 			&deregisteredAt, &deletionScheduledAt, &fcmTokenRefreshedAt, &tagsJSON, &tier,
@@ -272,15 +272,15 @@ func (r *DeviceRepository) ClearPairingCode(ctx context.Context, id string) erro
 func (r *DeviceRepository) Create(ctx context.Context, d *device.Device) error {
 	query := `
 		INSERT INTO devices (id, firebase_install_id, fcm_token, app_version, device_class,
-		                    command_secret_hash, online, registered_at, last_seen, operator_id,
+		                    online, registered_at, last_seen, operator_id,
 		                    organization_id,
 		                    created_at, updated_at, device_name, manufacturer, model, os_version, tags, tier,
 		                    public_key, pairing_code, pairing_expires_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err := r.exec(ctx, query,
 		d.ID, d.FirebaseInstallID, nullString(d.FCMToken), d.AppVersion, d.DeviceClass,
-		d.CommandSecretHash, d.Online, d.RegisteredAt, d.LastSeen, nullString(d.OperatorID),
+		d.Online, d.RegisteredAt, d.LastSeen, nullString(d.OperatorID),
 		nullString(d.OrganizationID),
 		d.CreatedAt, d.UpdatedAt, nullString(d.DeviceName), nullString(d.Manufacturer),
 		nullString(d.Model), nullString(d.OSVersion), tagsToJSON(d.Tags), int(d.Tier),
@@ -299,7 +299,7 @@ func (r *DeviceRepository) Update(ctx context.Context, d *device.Device) error {
 	query := `
 		UPDATE devices 
 		SET firebase_install_id = ?, fcm_token = ?, app_version = ?, device_class = ?,
-		    command_secret_hash = ?, online = ?, registered_at = ?, last_seen = ?,
+		    online = ?, registered_at = ?, last_seen = ?,
 		    operator_id = ?, organization_id = ?, updated_at = ?, device_name = ?, manufacturer = ?,
 		    model = ?, os_version = ?, tags = ?, tier = ?,
 		    public_key = ?, pairing_code = ?, pairing_expires_at = ?
@@ -307,7 +307,7 @@ func (r *DeviceRepository) Update(ctx context.Context, d *device.Device) error {
 
 	result, err := r.exec(ctx, query,
 		d.FirebaseInstallID, nullString(d.FCMToken), d.AppVersion, d.DeviceClass,
-		d.CommandSecretHash, d.Online, d.RegisteredAt, d.LastSeen, nullString(d.OperatorID),
+		d.Online, d.RegisteredAt, d.LastSeen, nullString(d.OperatorID),
 		nullString(d.OrganizationID), time.Now(), nullString(d.DeviceName), nullString(d.Manufacturer),
 		nullString(d.Model), nullString(d.OSVersion), tagsToJSON(d.Tags), int(d.Tier),
 		nullString(d.PublicKey), nullString(d.PairingCode), nullInt(d.PairingExpiresAt), d.ID,
@@ -518,82 +518,6 @@ func (r *DeviceRepository) CountByOrganization(ctx context.Context, orgID string
 	).Scan(&count)
 
 	return count, err
-}
-
-// SetSecretHash sets the command secret hash for a device.
-func (r *DeviceRepository) SetSecretHash(ctx context.Context, deviceID, hash string) error {
-	result, err := r.exec(ctx,
-		"UPDATE devices SET command_secret_hash = ?, updated_at = ? WHERE id = ?",
-		hash, time.Now(), deviceID,
-	)
-	if err != nil {
-		return err
-	}
-
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if rows == 0 {
-		return device.ErrNotFound
-	}
-
-	return nil
-}
-
-// GetSecretHash retrieves the command secret hash for a device.
-func (r *DeviceRepository) GetSecretHash(ctx context.Context, deviceID string) (string, error) {
-	var hash string
-
-	err := r.queryRow(ctx,
-		"SELECT command_secret_hash FROM devices WHERE id = ?",
-		deviceID,
-	).Scan(&hash)
-	if errors.Is(err, sql.ErrNoRows) {
-		return "", device.ErrNotFound
-	}
-
-	return hash, err
-}
-
-// HashAllSecrets hashes all existing command secrets that don't have a hash.
-// This is a migration helper for existing databases.
-func (r *DeviceRepository) HashAllSecrets(ctx context.Context) (int, error) {
-	query := `
-		SELECT id, command_secret_hash 
-		FROM devices 
-		WHERE command_secret_hash IS NULL OR command_secret_hash = ''`
-
-	rows, err := r.queryRows(ctx, query)
-	if err != nil {
-		return 0, err
-	}
-
-	defer func() { _ = rows.Close() }()
-
-	count := 0
-
-	for rows.Next() {
-		var id string
-
-		var currentHash sql.NullString
-		if err := rows.Scan(&id, &currentHash); err != nil {
-			continue
-		}
-
-		if currentHash.Valid && currentHash.String != "" {
-			continue
-		}
-
-		count++
-	}
-
-	if err := rows.Err(); err != nil {
-		return 0, err
-	}
-
-	return count, nil
 }
 
 // Touch updates the last seen timestamp for a device.

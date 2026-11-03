@@ -6552,68 +6552,6 @@
         }
       }
     },
-    "/device/confirm": {
-      "post": {
-        "summary": "Confirm device registration",
-        "description": "Confirms a device registration from an approved inbox entry",
-        "tags": [
-          "devices"
-        ],
-        "requestBody": {
-          "required": true,
-          "description": "confirmation request (imei + commandSecret)",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DeviceConfirmRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "confirmed device",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeviceConfirmResult"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "invalid input",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "device/inbox entry not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "internal error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/device/count": {
       "get": {
         "summary": "Count devices",
@@ -13465,6 +13403,131 @@
         }
       }
     },
+    "/v1/device/claim": {
+      "post": {
+        "summary": "Claim a device with a pairing code",
+        "description": "Binds a pending device to the caller's organization and consumes the code.",
+        "tags": [
+          "device"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "pairing code and assignment",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/claimRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "device claimed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "code not recognised or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "device already claimed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/device/enroll": {
+      "post": {
+        "summary": "Enroll a new device",
+        "description": "Registers an unknown device as pending and returns a pairing code.",
+        "tags": [
+          "device"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "device identity and facts",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/enrollRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "device enrolled, code issued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/enrollResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid request or public key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "device already claimed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/version": {
       "get": {
         "summary": "OTA version manifest",
@@ -14756,40 +14819,6 @@
           }
         }
       },
-      "DeviceConfirmRequest": {
-        "type": "object",
-        "properties": {
-          "commandSecret": {
-            "type": "string"
-          },
-          "imei": {
-            "type": "string"
-          }
-        }
-      },
-      "DeviceConfirmResult": {
-        "type": "object",
-        "properties": {
-          "confirmed": {
-            "type": "boolean"
-          },
-          "device_id": {
-            "type": "string"
-          },
-          "imei": {
-            "type": "string"
-          },
-          "online": {
-            "type": "boolean"
-          },
-          "registered_at": {
-            "type": "integer"
-          },
-          "server_time": {
-            "type": "integer"
-          }
-        }
-      },
       "DeviceCountResult": {
         "type": "object",
         "properties": {
@@ -15193,9 +15222,6 @@
       "DiagnosticsRegistrationInfo": {
         "type": "object",
         "properties": {
-          "commandSecretSet": {
-            "type": "boolean"
-          },
           "fcmTokenRefreshedAt": {
             "type": "integer"
           },
@@ -15414,9 +15440,6 @@
           },
           "approvingAt": {
             "type": "integer"
-          },
-          "commandSecret": {
-            "type": "string"
           },
           "fcmPushSent": {
             "type": "boolean"
@@ -17717,6 +17740,77 @@
           },
           "success": {
             "type": "boolean"
+          }
+        }
+      },
+      "claimRequest": {
+        "type": "object",
+        "required": [
+          "pairingCode"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "pairingCode": {
+            "type": "string"
+          },
+          "tierCap": {
+            "type": "integer"
+          }
+        }
+      },
+      "enrollRequest": {
+        "type": "object",
+        "required": [
+          "deviceUuid",
+          "publicKey"
+        ],
+        "properties": {
+          "appVersion": {
+            "type": "string"
+          },
+          "deviceClass": {
+            "type": "string"
+          },
+          "deviceUuid": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "osVersion": {
+            "type": "string"
+          },
+          "publicKey": {
+            "type": "string"
+          },
+          "tierHint": {
+            "type": "integer"
+          }
+        }
+      },
+      "enrollResponse": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "integer"
+          },
+          "expiresInSeconds": {
+            "description": "ExpiresInSeconds is what the device counts down. Sending the remaining time\nas well as the absolute deadline means a device with a wrong clock still\nexpires its code correctly.",
+            "type": "integer"
+          },
+          "pairingCode": {
+            "type": "string"
+          },
+          "pairingDisplay": {
+            "type": "string"
           }
         }
       }

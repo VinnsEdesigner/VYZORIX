@@ -33,6 +33,28 @@ func NewPTYDeviceResolver(repo *storage.DeviceRepository) websockethandlers.PTYD
 	return &ptyDeviceResolver{repo: repo}
 }
 
+// NewDevicePublicKeyProvider resolves a device's registered signing key for the
+// WebSocket connect handshake.
+//
+// The device signs the connect with the private key it generated at first boot and
+// the server verifies with the public half it received at enroll, so no shared
+// secret is involved. A device that has not enrolled resolves to "", which the
+// handshake treats as a refusal.
+func NewDevicePublicKeyProvider(repo *storage.DeviceRepository) websockethandlers.DevicePublicKeyProvider {
+	if repo == nil {
+		return nil
+	}
+
+	return func(deviceID string) string {
+		dev, err := repo.FindByID(context.Background(), deviceID)
+		if err != nil || dev == nil {
+			return ""
+		}
+
+		return dev.PublicKey
+	}
+}
+
 // DeviceOrganization returns the org ID for a device, or "" when the device is
 // unknown. The endpoint compares it against the operator's org, so an empty
 // result fails the check closed.

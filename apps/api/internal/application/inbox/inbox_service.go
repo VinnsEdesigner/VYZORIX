@@ -16,7 +16,6 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/transaction"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/fcm"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/metrics"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security/password"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,7 +26,7 @@ type FCMNotifier interface {
 
 // DeviceCreator defines the interface for creating devices from inbox entries.
 type DeviceCreator interface {
-	CreateFromInbox(ctx context.Context, entry *inbox.InboxEntry, commandSecret string) (*device.Device, error)
+	CreateFromInbox(ctx context.Context, entry *inbox.InboxEntry) (*device.Device, error)
 	CheckDeviceQuota(ctx context.Context, orgID string, maxDevices int) error
 }
 
@@ -255,27 +254,12 @@ func (s *Service) ApproveDevice(ctx context.Context, imei string, operatorID, or
 	entry.Status = inbox.StatusApproving
 	entry.ApprovingAt = PtrToInt64(now.UnixMilli())
 
-	// Generate command secret.
-	secret, err := generateSecret(32)
-	if err != nil {
-		return nil, ErrSecretGeneration
-	}
-	// Store plaintext temporarily for FCM notification (never persisted).
-	entry.CommandSecret = secret
-
-	// Hash the secret for secure storage in DB.
-	secretHash, err := password.HashSecret(secret)
-	if err != nil {
-		return nil, fmt.Errorf("failed to hash command secret: %w", err)
-	}
-	entry.CommandSecretHash = secretHash
-
 	// Create device in devices table.
 	if s.deviceSvc != nil {
 		if err := s.deviceSvc.CheckDeviceQuota(ctx, orgID, s.deviceQuotaLimit); err != nil {
 			return nil, err
 		}
-		createdDevice, err := s.deviceSvc.CreateFromInbox(ctx, entry, secret)
+		createdDevice, err := s.deviceSvc.CreateFromInbox(ctx, entry)
 		if err != nil {
 			s.logger.Error("failed to create device from inbox entry",
 				"imei", entry.IMEI,
@@ -336,13 +320,12 @@ func (s *Service) ApproveDevice(ctx context.Context, imei string, operatorID, or
 	)
 
 	return &AckResponse{
-		ID:            entry.ID,
-		IMEI:          entry.IMEI,
-		Status:        string(entry.Status),
-		ApprovedAt:    entry.ApprovedAt,
-		CommandSecret: secret,
-		FCMPushSent:   fcmPushSent,
-		Notes:         notes,
+		ID:          entry.ID,
+		IMEI:        entry.IMEI,
+		Status:      string(entry.Status),
+		ApprovedAt:  entry.ApprovedAt,
+		FCMPushSent: fcmPushSent,
+		Notes:       notes,
 	}, nil
 }
 
@@ -629,15 +612,6 @@ func extractUserAgent(ctx context.Context) string {
 		return ginCtx.GetHeader("User-Agent")
 	}
 	return ""
-}
-
-// generateSecret generates a cryptographically secure random hex string.
-func generateSecret(length int) (string, error) {
-	bytes := make([]byte, length)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(bytes), nil
 }
 
 // generateID generates a unique ID.

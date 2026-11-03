@@ -26,7 +26,6 @@ import {
   useInboxEntry,
   useAcknowledgeInbox,
   useCreateInboxRequest,
-  useConfirmDevice,
   useDismissInbox,
   useResendInboxApproval,
   useRegisteredDevices,
@@ -214,7 +213,6 @@ describe('useAcknowledgeInbox', () => {
         approvingAt: null,
         approvedAt: null,
         rejectedAt: now,
-        commandSecret: null,
         fcmPushSent: false,
         notes: 'no',
       },
@@ -238,19 +236,6 @@ describe('useCreateInboxRequest', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.imei).toBe('123');
     expect(result.current.data?.status).toBe('pending');
-  });
-});
-
-describe('useConfirmDevice', () => {
-  beforeEach(() => setOrg('org-1'));
-
-  it('calls confirmDevice with imei, commandSecret and org', async () => {
-    const { result } = renderHookWithQueryClient(() => useConfirmDevice());
-    result.current.mutate({ imei: '123', commandSecret: 'secret' });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data?.device_id).toBe('d1');
-    expect(result.current.data?.confirmed).toBe(true);
-    expect(result.current.data?.imei).toBe('123');
   });
 });
 

@@ -1,7 +1,6 @@
 export * from './use-inbox';
 export * from './use-inbox-entry';
 export * from './use-acknowledge';
-export * from './use-confirm';
 export * from './use-create-inbox';
 export * from './use-deregister';
 export * from './use-dismiss';

@@ -8,8 +8,6 @@
 import type {
   ConnectionStatusResult,
   DeleteDevicesImeiParams,
-  DeviceConfirmRequest,
-  DeviceConfirmResult,
   DeviceCountResult,
   DeviceDetailResult,
   DeviceDisconnectResult,
@@ -182,20 +180,6 @@ const getDashboardEventsId = (
  options?: SecondParameter<typeof customAxios<DeviceEvent>>,) => {
       return customAxios<DeviceEvent>(
       {url: `/dashboard/events/${id}`, method: 'GET'
-    },
-      options);
-    }
-  /**
- * Confirms a device registration from an approved inbox entry
- * @summary Confirm device registration
- */
-const postDeviceConfirm = (
-    deviceConfirmRequest: DeviceConfirmRequest,
- options?: SecondParameter<typeof customAxios<DeviceConfirmResult>>,) => {
-      return customAxios<DeviceConfirmResult>(
-      {url: `/device/confirm`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: deviceConfirmRequest
     },
       options);
     }
@@ -448,7 +432,7 @@ const postOrganizationsIdDevicesImeiTransfer = (
     },
       options);
     }
-  return {getDashboardDeviceImeiEvents,getDashboardDeviceImeiLogs,getDashboardDeviceImeiMetrics,getDashboardDeviceImeiMetricsExport,getDashboardDeviceImeiTelemetry,getDashboardDevices,getDashboardDevicesOperator,getDashboardEventsRecent,getDashboardEventsTypesType,getDashboardEventsId,postDeviceConfirm,getDeviceCount,getDeviceImei,deleteDeviceImei,getDeviceImeiConnectionStatus,postDeviceImeiDisconnect,patchDeviceImeiFcmToken,getDevices,getDevicesImei,deleteDevicesImei,getDevicesImeiSettings,patchDevicesImeiSettings,getDevicesImeiSettingsThresholds,patchDevicesImeiSettingsThresholds,getDevicesImeiStatus,getDevicesImeiTags,putDevicesImeiTags,postDevicesImeiTagsTag,deleteDevicesImeiTagsTag,postOrganizationsIdDevicesImeiTransfer}};
+  return {getDashboardDeviceImeiEvents,getDashboardDeviceImeiLogs,getDashboardDeviceImeiMetrics,getDashboardDeviceImeiMetricsExport,getDashboardDeviceImeiTelemetry,getDashboardDevices,getDashboardDevicesOperator,getDashboardEventsRecent,getDashboardEventsTypesType,getDashboardEventsId,getDeviceCount,getDeviceImei,deleteDeviceImei,getDeviceImeiConnectionStatus,postDeviceImeiDisconnect,patchDeviceImeiFcmToken,getDevices,getDevicesImei,deleteDevicesImei,getDevicesImeiSettings,patchDevicesImeiSettings,getDevicesImeiSettingsThresholds,patchDevicesImeiSettingsThresholds,getDevicesImeiStatus,getDevicesImeiTags,putDevicesImeiTags,postDevicesImeiTagsTag,deleteDevicesImeiTagsTag,postOrganizationsIdDevicesImeiTransfer}};
 export type GetDashboardDeviceImeiEventsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardDeviceImeiEvents']>>>
 export type GetDashboardDeviceImeiLogsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardDeviceImeiLogs']>>>
 export type GetDashboardDeviceImeiMetricsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardDeviceImeiMetrics']>>>
@@ -459,7 +443,6 @@ export type GetDashboardDevicesOperatorResult = NonNullable<Awaited<ReturnType<R
 export type GetDashboardEventsRecentResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardEventsRecent']>>>
 export type GetDashboardEventsTypesTypeResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardEventsTypesType']>>>
 export type GetDashboardEventsIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardEventsId']>>>
-export type PostDeviceConfirmResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['postDeviceConfirm']>>>
 export type GetDeviceCountResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDeviceCount']>>>
 export type GetDeviceImeiResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDeviceImei']>>>
 export type DeleteDeviceImeiResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['deleteDeviceImei']>>>

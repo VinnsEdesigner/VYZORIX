@@ -70,7 +70,7 @@ describe('useDiagnosticStream', () => {
     useDiagnosticsStore.getState().setSnapshot('org-1', '123', {
       identity: { imei: '123' },
       software: {},
-      registration: { status: 'online', fcmTokenValid: true, commandSecretSet: true },
+      registration: { status: 'online', fcmTokenValid: true },
       connection: { webSocketStatus: 'connected', fcmStatus: 'valid' },
       telemetry: { framesToday: 0, sessionsToday: 0 },
     });

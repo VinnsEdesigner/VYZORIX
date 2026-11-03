@@ -10,7 +10,6 @@ export interface InboxAckResult {
   acknowledgedAt?: number;
   approvedAt?: number;
   approvingAt?: number;
-  commandSecret?: string;
   fcmPushSent?: boolean;
   id?: string;
   imei?: string;

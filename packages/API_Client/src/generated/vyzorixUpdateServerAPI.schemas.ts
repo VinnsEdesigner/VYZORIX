@@ -328,6 +328,18 @@ export interface CommandRequest {
   timestamp?: number;
 }
 
+export interface CommandResultAck {
+  dispatchId?: string;
+  recorded?: boolean;
+  serverTime?: number;
+}
+
+export interface CommandResultReport {
+  error?: string;
+  output?: string;
+  success?: boolean;
+}
+
 export interface CommandRetryResult {
   command_id?: string;
   dispatchId?: string;
@@ -497,20 +509,6 @@ export interface DeletedResult {
   deleted?: boolean;
 }
 
-export interface DeviceConfirmRequest {
-  commandSecret?: string;
-  imei?: string;
-}
-
-export interface DeviceConfirmResult {
-  confirmed?: boolean;
-  device_id?: string;
-  imei?: string;
-  online?: boolean;
-  registered_at?: number;
-  server_time?: number;
-}
-
 export interface DeviceCountResult {
   count?: number;
   serverTime?: number;
@@ -574,7 +572,6 @@ export interface DiagnosticsIdentityInfo {
 }
 
 export interface DiagnosticsRegistrationInfo {
-  commandSecretSet?: boolean;
   fcmTokenRefreshedAt?: number;
   fcmTokenValid?: boolean;
   registeredAt?: number;
@@ -803,7 +800,6 @@ export interface InboxAckResult {
   acknowledgedAt?: number;
   approvedAt?: number;
   approvingAt?: number;
-  commandSecret?: string;
   fcmPushSent?: boolean;
   id?: string;
   imei?: string;
@@ -1654,6 +1650,36 @@ export interface WebhookTestResult {
   success?: boolean;
 }
 
+export interface ClaimRequest {
+  name?: string;
+  pairingCode: string;
+  tierCap?: number;
+}
+
+export interface EnrollRequest {
+  appVersion?: string;
+  deviceClass?: string;
+  deviceUuid: string;
+  manufacturer?: string;
+  model?: string;
+  osVersion?: string;
+  publicKey: string;
+  tierHint?: number;
+}
+
+export interface EnrollResponse {
+  deviceId?: string;
+  expiresAt?: number;
+  /**
+     * ExpiresInSeconds is what the device counts down. Sending the remaining time
+     * as well as the absolute deadline means a device with a wrong clock still
+     * expires its code correctly.
+     */
+  expiresInSeconds?: number;
+  pairingCode?: string;
+  pairingDisplay?: string;
+}
+
 export type GetAdminApiKeysParams = {
 /**
  * page number (default 1)
@@ -2051,4 +2077,6 @@ page?: number;
  */
 limit?: number;
 };
+
+export type PostV1DeviceClaim200 = { [key: string]: unknown };
 

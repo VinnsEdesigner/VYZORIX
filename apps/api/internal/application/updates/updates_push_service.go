@@ -30,9 +30,8 @@ type PushService struct {
 	deviceSvc interface {
 		GetDevice(ctx context.Context, deviceID string) (*device.Device, error)
 	}
-	hub           *ws.Hub
-	fcmNotifier   fcm.Notifier
-	commandSigner *cryptohmac.CommandSigner
+	hub         *ws.Hub
+	fcmNotifier fcm.Notifier
 	// serverSigner signs with the server's own key, so nothing per-device is
 	// transmitted. Nil falls back to the legacy HMAC path.
 	serverSigner   *cryptohmac.ServerSigner
@@ -84,7 +83,6 @@ func NewPushService(
 		deviceSvc:      deviceSvc,
 		hub:            hub,
 		fcmNotifier:    fcmNotifier,
-		commandSigner:  cryptohmac.NewCommandSigner(),
 		serverSigner:   serverSigner,
 		commandService: commandService,
 		logger:         logger,
@@ -278,18 +276,14 @@ func (s *PushService) dispatchUpdateCommand(ctx context.Context, deviceID, pushI
 	if devErr != nil {
 		return fmt.Errorf("device not found: %w", devErr)
 	}
-	// Prefer the keypair path; fall back to HMAC when no server key is set.
-	if s.serverSigner != nil {
-		if err := cryptohmac.SignCommandFrameWithKey(s.serverSigner, &frame, deviceID); err != nil {
-			return fmt.Errorf("failed to sign update command frame with the server key: %w", err)
-		}
-	} else {
-		if dev.CommandSecretHash == "" {
-			return fmt.Errorf("device %s has no command secret - re-registration required", deviceID)
-		}
-		if err := cryptohmac.SignCommandFrame(s.commandSigner, &frame, deviceID, dev.CommandSecretHash); err != nil {
-			return fmt.Errorf("failed to sign update command frame: %w", err)
-		}
+	// Sign with the server's key. There is no fallback: the keypair path is
+	// the only one, so a deployment without a signing key cannot dispatch
+	// rather than quietly using a weaker scheme.
+	if s.serverSigner == nil {
+		return fmt.Errorf("server signing key is not configured; cannot sign update command")
+	}
+	if err := cryptohmac.SignCommandFrameWithKey(s.serverSigner, &frame, deviceID); err != nil {
+		return fmt.Errorf("failed to sign update command frame: %w", err)
 	}
 
 	// Try WebSocket first if hub is available and device is online.

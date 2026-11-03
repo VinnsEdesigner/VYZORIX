@@ -75,7 +75,6 @@ describe('useDeviceInspection', () => {
           registeredAt: nowIso,
           fcmTokenValid: true,
           fcmTokenRefreshedAt: null,
-          commandSecretSet: true,
         },
         connection: {
           __typename: 'ConnectionInfo',

@@ -52,7 +52,7 @@ func newTestWSState(t *testing.T) *testWSState {
 	}
 
 	auditLogger := newTestAuditLogger(logger)
-	streamHandler := websocket.NewStreamHandler(logger, cfg, h, cryptohmac.Verifier{}, auditLogger)
+	streamHandler := websocket.NewStreamHandler(logger, cfg, h, cryptohmac.Verifier{}, auditLogger, nil)
 
 	r := gin.New()
 	r.GET("/v1/device/:imei/stream", streamHandler.Handle)

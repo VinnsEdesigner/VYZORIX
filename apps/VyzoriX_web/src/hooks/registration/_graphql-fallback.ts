@@ -154,7 +154,6 @@ export async function acknowledgeViaGraphQL(
       approvingAt: null,
       approvedAt: null,
       rejectedAt: null,
-      commandSecret: null,
       fcmPushSent: false,
       notes: notes ?? null,
     };
@@ -167,7 +166,6 @@ export async function acknowledgeViaGraphQL(
     approvingAt: null,
     approvedAt: toDate(result.approvedAt),
     rejectedAt: toDate(result.rejectedAt),
-    commandSecret: result.commandSecret ?? null,
     fcmPushSent: result.fcmPushSent ?? false,
     notes: result.notes ?? null,
   };
@@ -231,7 +229,6 @@ export function normalizeAckResult(raw: {
   approvingAt?: number | null;
   approvedAt?: number | null;
   rejectedAt?: number | null;
-  commandSecret?: string | null;
   fcmPushSent?: boolean;
   notes?: string | null;
 }): AckResult {
@@ -243,7 +240,6 @@ export function normalizeAckResult(raw: {
     approvingAt: toDate(raw.approvingAt),
     approvedAt: toDate(raw.approvedAt),
     rejectedAt: toDate(raw.rejectedAt),
-    commandSecret: raw.commandSecret ?? null,
     fcmPushSent: raw.fcmPushSent ?? false,
     notes: raw.notes ?? null,
   };

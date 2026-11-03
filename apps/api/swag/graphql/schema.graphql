@@ -14,8 +14,6 @@ enum AckAction {
 type AckResult {
   """When approved (Unix ms)"""
   approvedAt: Int
-  """Generated command secret (if approved)"""
-  commandSecret: String
   """Whether FCM push was sent"""
   fcmPushSent: Boolean
   """Inbox entry ID"""
@@ -359,8 +357,6 @@ type Device {
   appVersion: String
   """Device build ID"""
   buildId: String
-  """Whether command secret is set"""
-  commandSecretSet: Boolean
   """Device connection information"""
   connection: ConnectionInfo
   """Device registration timestamp"""
@@ -1269,8 +1265,6 @@ type Query {
 
 """Device registration information"""
 type RegistrationInfo {
-  """Whether command secret is configured"""
-  commandSecretSet: Boolean!
   """FCM token last refresh timestamp"""
   fcmTokenRefreshedAt: DateTime
   """Whether FCM token is valid"""

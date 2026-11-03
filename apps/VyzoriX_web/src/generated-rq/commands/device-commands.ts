@@ -33,6 +33,8 @@ import type {
   CommandHistoryResult,
   CommandPendingResult,
   CommandRequest,
+  CommandResultAck,
+  CommandResultReport,
   CommandRetryResult,
   CommandStatus,
   ErrorResponse,
@@ -515,6 +517,86 @@ export const usePostDeviceImeiCommand = <TError = ErrorResponse,
         TContext
       > => {
       return useMutation(getPostDeviceImeiCommandMutationOptions(options), queryClient);
+    }
+    export const getPostDeviceImeiCommandDispatchIdResultUrl = (imei: string,
+    dispatchId: string,) => {
+
+
+
+
+  return `/device/${imei}/command/${dispatchId}/result`
+}
+
+/**
+ * Device reports the terminal outcome of a dispatched command (HTTP fallback for a dropped WebSocket)
+ * @summary Report command result
+ */
+export const postDeviceImeiCommandDispatchIdResult = async (imei: string,
+    dispatchId: string,
+    commandResultReport: CommandResultReport, options?: Parameters<typeof customAxios>[1]): Promise<CommandResultAck> => {
+
+    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return customAxios<CommandResultAck>(getPostDeviceImeiCommandDispatchIdResultUrl(imei,dispatchId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(commandResultReport)
+  }
+);}
+
+
+
+
+
+export const getPostDeviceImeiCommandDispatchIdResultMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeviceImeiCommandDispatchIdResult>>, TError,{imei: string;dispatchId: string;data: CommandResultReport}, TContext>, request?: SecondParameter<typeof customAxios>}
+): UseMutationOptions<Awaited<ReturnType<typeof postDeviceImeiCommandDispatchIdResult>>, TError,{imei: string;dispatchId: string;data: CommandResultReport}, TContext> => {
+
+const mutationKey = ['postDeviceImeiCommandDispatchIdResult'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postDeviceImeiCommandDispatchIdResult>>, {imei: string;dispatchId: string;data: CommandResultReport}> = (props) => {
+          const {imei,dispatchId,data} = props ?? {};
+
+          return  postDeviceImeiCommandDispatchIdResult(imei,dispatchId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostDeviceImeiCommandDispatchIdResultMutationResult = NonNullable<Awaited<ReturnType<typeof postDeviceImeiCommandDispatchIdResult>>>
+    export type PostDeviceImeiCommandDispatchIdResultMutationBody = CommandResultReport
+    export type PostDeviceImeiCommandDispatchIdResultMutationError = ErrorResponse
+
+    /**
+ * @summary Report command result
+ */
+export const usePostDeviceImeiCommandDispatchIdResult = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeviceImeiCommandDispatchIdResult>>, TError,{imei: string;dispatchId: string;data: CommandResultReport}, TContext>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postDeviceImeiCommandDispatchIdResult>>,
+        TError,
+        {imei: string;dispatchId: string;data: CommandResultReport},
+        TContext
+      > => {
+      return useMutation(getPostDeviceImeiCommandDispatchIdResultMutationOptions(options), queryClient);
     }
     export const getGetDeviceImeiCommandsPendingUrl = (imei: string,) => {
 

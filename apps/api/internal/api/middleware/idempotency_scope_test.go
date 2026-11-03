@@ -65,7 +65,7 @@ func TestIdempotencyScopeKey_PathScoped(t *testing.T) {
 		return idempotencyScopeKey(c, path, "key-1")
 	}
 
-	if build("/v1/device/inbox") == build("/v1/device/confirm") {
+	if build("/v1/device/inbox") == build("/v1/device/enroll") {
 		t.Fatal("same key on different paths must not collide")
 	}
 }

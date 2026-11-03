@@ -558,6 +558,9 @@ var migrations = []Migration{
 	// Device signing key and pairing code: the keypair registration model.
 	// See doc/REGISTRATION_CONTRACT.md.
 	{Apply: migrateAddDeviceIdentity, Name: "add_device_identity", Version: 75},
+	// The command secret is gone: the keypair model replaced it, so the column is
+	// dropped rather than left unused.
+	{Apply: migrateDropCommandSecretHash, Name: "drop_command_secret_hash", Version: 76},
 }
 
 // runMigrations applies all pending migrations.
@@ -641,11 +644,9 @@ func migrateCreateDevices(tx *sql.Tx) error {
 			fcm_token TEXT,
 			app_version TEXT,
 			device_class TEXT,
-			command_secret TEXT NOT NULL,
 			online INTEGER NOT NULL DEFAULT 0,
 			registered_at INTEGER NOT NULL,
 			last_seen INTEGER NOT NULL,
-			command_secret_hash TEXT,
 			operator_id TEXT,
 			created_at INTEGER NOT NULL,
 			updated_at INTEGER NOT NULL

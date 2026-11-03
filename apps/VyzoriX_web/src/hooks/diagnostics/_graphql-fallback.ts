@@ -79,7 +79,6 @@ export function normalizeWireInspection(raw: DeviceInspectionResult): DeviceInsp
       registeredAt: toDate(raw.registration?.registeredAt),
       fcmTokenValid: raw.registration?.fcmTokenValid ?? false,
       fcmTokenRefreshedAt: toDate(raw.registration?.fcmTokenRefreshedAt),
-      commandSecretSet: raw.registration?.commandSecretSet ?? false,
     },
     connection: {
       webSocketStatus: raw.connection?.webSocketStatus === 'connected' ? 'connected' : 'disconnected',
