@@ -480,10 +480,15 @@ func (s *Server) setupDeviceManagementRoutes(r *gin.RouterGroup) {
 	// handlers' GetOrganizationID returned empty and the routes 400'd.
 	deviceMgmt.Use(middleware.NewOrganizationContext(nil).Middleware())
 	deviceMgmt.Use(middleware.NewOrganizationMembership(s.memberHandler.MembershipChecker()).Middleware())
-	deviceMgmt.Use(middleware.RequestSigningMiddleware(s.signatureVerifier))
-	deviceMgmt.Use(middleware.MandatoryEncryptionMiddleware(s.encryptKeyFn))
 	// Apply idempotency middleware to all device management routes.
 	deviceMgmt.Use(s.deviceIdempotencyMiddleware())
+	//
+	// These are operator routes on the tenant group, which already authenticates with
+	// a session or an API key and applies the session signature middleware. They must
+	// NOT also carry the API-client request-signing middleware (X-Signature /
+	// X-Client-ID): nothing in the console sends that signature, so requiring it made
+	// every one of these routes unreachable from the dashboard. The device-signed
+	// routes have their own group (setupDeviceSignedRoutes) and their own scheme.
 
 	deviceMgmt.GET("/count", s.deviceListHandler.Count)
 	deviceMgmt.GET("/:imei", s.deviceListHandler.GetDevice)
