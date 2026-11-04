@@ -509,6 +509,15 @@ func (c *ptyOperatorClient) handleOpen(h *OperatorTerminalHandler, deviceID, ses
 	// configured. The operator's request is honoured only if both hold.
 	record := c.wantRecording && h.recordingDir != ""
 	session, err := h.relay.Registry().Open(sessionID, deviceID, c.operator, c.orgID, record)
+	// Open returns a nil session on every error path (too many sessions, a duplicate
+	// id, a bad id). Dereferencing it before this check panicked the handler — a
+	// client retrying an open with the same session id crashed the request instead of
+	// being told the id was taken.
+	if err != nil {
+		c.sendError(sessionID, err.Error())
+
+		return
+	}
 
 	// Resolve the session's capability before the device is told to open a
 	// shell. This is the boundary contract's §7 decision — role tags intersected
@@ -534,11 +543,6 @@ func (c *ptyOperatorClient) handleOpen(h *OperatorTerminalHandler, deviceID, ses
 		}
 
 		session.SetCapability(capability.APIAllowlist, capability.Tier, capability.ExpiresAt)
-	}
-	if err != nil {
-		c.sendError(sessionID, err.Error())
-
-		return
 	}
 
 	// Ask the device to allocate the PTY. The open frame carries the session ID

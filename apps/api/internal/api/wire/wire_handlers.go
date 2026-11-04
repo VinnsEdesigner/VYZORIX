@@ -322,6 +322,12 @@ func wireDeviceFrameRouting(hs *HandlerSet, deps HandlerDependencies) {
 			deps.Config.AllowedOrigins,
 			deps.Log,
 		)
+		// The device side resolves a session's operator through this lookup, which is
+		// the operator handler itself. It was declared on the dependencies but never
+		// populated, so it was nil and the device-side handler panicked on the first
+		// byte of terminal output — a shell would open and then silently deliver
+		// nothing.
+		deps.PTYOperators = hs.OperatorTerminal
 	}
 
 	if deps.Hub == nil {

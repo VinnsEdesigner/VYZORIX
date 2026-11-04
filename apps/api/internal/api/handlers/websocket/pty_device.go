@@ -36,6 +36,21 @@ func NewPTYDeviceHandler(relay *hub.PTYRelay, operators PTYOperatorLookup, log *
 	return &PTYDeviceHandler{relay: relay, operators: operators, log: log}
 }
 
+// operatorsFor resolves the operator lookup, or nil when it was not wired.
+//
+// A nil lookup is a wiring mistake, but it must not be a panic: this runs on the
+// device's read pump, so dereferencing it would drop the device's connection and
+// lose every terminal on it. Returning nil makes it a logged drop instead.
+func (h *PTYDeviceHandler) operatorsFor() PTYOperatorLookup {
+	if h.operators == nil {
+		h.log.Error("pty device handler has no operator lookup; terminal output cannot be delivered")
+
+		return nil
+	}
+
+	return h.operators
+}
+
 // HandleDeviceBinary handles one binary frame from a device. It returns whether
 // the frame was a well-formed PTY frame.
 func (h *PTYDeviceHandler) HandleDeviceBinary(deviceID string, raw []byte) bool {
@@ -90,12 +105,17 @@ func (h *PTYDeviceHandler) handleDeviceData(deviceID string, payload []byte) {
 		return
 	}
 
-	operator := h.operators.OperatorFor(sessionID)
+	operator := h.operatorsFor()
 	if operator == nil {
 		return
 	}
 
-	h.relay.RelayOutput(sessionID, operator, data)
+	op := operator.OperatorFor(sessionID)
+	if op == nil {
+		return
+	}
+
+	h.relay.RelayOutput(sessionID, op, data)
 }
 
 // handleDeviceClose ends a session the device closed (its shell exited).

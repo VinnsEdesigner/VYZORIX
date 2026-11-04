@@ -170,8 +170,14 @@ func (r *PTYRelay) CloseSession(sessionID, reason string, operator PTYOperator) 
 
 	// Best-effort close frame to the device so it can reap the PTY. The device
 	// sink may be absent (a relay built only to reap sessions), so guard it.
+	//
+	// The frame names its session: one device multiplexes several terminals over a
+	// single socket, so a close that did not say which session would be
+	// unroutable — the device could only guess, and with two terminals open it
+	// would reap the wrong one. This mirrors the data path, which prefixes the
+	// session for the same reason.
 	if r.devices != nil {
-		closeFrame := EncodePTYFrame(ChannelPTY, PTYTypeClose, nil)
+		closeFrame := EncodePTYFrame(ChannelPTY, PTYTypeClose, EncodeSessionData(session.SessionID, nil))
 		r.devices.SendEphemeral(session.DeviceID, closeFrame)
 	}
 

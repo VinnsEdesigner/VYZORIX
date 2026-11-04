@@ -98,6 +98,31 @@ func TestPTYDeviceHandlerCloseEndsSession(t *testing.T) {
 	}
 }
 
+// TestPTYDeviceHandlerWithoutOperatorLookupDoesNotPanic is the guard on the wiring
+// bug that made the terminal silently one-way: deps.PTYOperators was declared but
+// never populated, so the lookup was nil and the handler panicked on the first byte
+// of device output. The panic was recovered by the frame dispatcher, so the operator
+// saw a shell that opened and then produced nothing, with no error anywhere.
+func TestPTYDeviceHandlerWithoutOperatorLookupDoesNotPanic(t *testing.T) {
+	reg := hub.NewPTYRegistry(hub.PTYRegistryConfig{})
+	sessionID := "11111111-1111-4111-8111-111111111111"
+	if _, err := reg.Open(sessionID, "dev-1", "op-1", "org-1", false); err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+
+	relay := hub.NewPTYRelay(reg, nil, discardLogger())
+	// A nil lookup: the mis-wiring this guards against.
+	h := NewPTYDeviceHandler(relay, nil, discardLogger())
+
+	frame := hub.EncodePTYFrame(hub.ChannelPTY, hub.PTYTypeData, hub.EncodeSessionData(sessionID, []byte("hello")))
+
+	// The frame is still recognised (it is well formed), and the call returns rather
+	// than panicking.
+	if !h.HandleDeviceBinary("dev-1", frame) {
+		t.Fatal("a well-formed data frame must be recognised")
+	}
+}
+
 func TestDeviceFrameHandlerRoutesBinaryToPTYSink(t *testing.T) {
 	h, op := newPTYHandlerWithSession(t, "dev-1", "11111111-1111-4111-8111-111111111111")
 	handler := NewDeviceFrameHandler(nil, h, discardLogger())
