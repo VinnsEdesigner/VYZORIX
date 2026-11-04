@@ -247,12 +247,18 @@ func RespondConflictError(c *gin.Context, message string) {
 func RespondInternalError(c *gin.Context) {
 	traceID := GetTraceID(c)
 
-	// Log the actual error for debugging.
-	slog.Error("unhandled_internal_error",
+	// Log the actual error for debugging. The response body stays generic (an
+	// internal message must not leak to a caller), but the log has to carry the
+	// cause, or the only way to diagnose a 500 is to reproduce it under a debugger.
+	attrs := []any{
 		slog.String("trace_id", traceID),
 		slog.String("path", c.Request.URL.Path),
 		slog.String("method", c.Request.Method),
-	)
+	}
+	if errs := c.Errors.ByType(gin.ErrorTypeAny); len(errs) > 0 {
+		attrs = append(attrs, slog.String("err", errs.String()))
+	}
+	slog.Error("unhandled_internal_error", attrs...)
 
 	c.JSON(http.StatusInternalServerError, StructuredErrorResponse{
 		Error: ErrorDetail{

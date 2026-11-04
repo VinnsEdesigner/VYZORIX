@@ -55,6 +55,11 @@ type Session struct {
 type Manager struct {
 	sessionRepo   Repository
 	encryptionKey []byte
+	// cookieSecure is the Secure attribute on the session cookie. It defaults to
+	// true and only a development build turns it off: a Secure cookie is never sent
+	// over plain HTTP, so a local run against http://localhost cannot authenticate at
+	// all. Production must keep it on, or the session cookie travels in the clear.
+	cookieSecure bool
 }
 
 // NewManager creates a new session manager with the given secret.
@@ -67,7 +72,19 @@ func NewManager(secret string) *Manager {
 
 	return &Manager{
 		encryptionKey: key,
+		// Secure by default. SetInsecureCookie flips it for a development build that
+		// runs over plain HTTP.
+		cookieSecure: true,
 	}
+}
+
+// SetInsecureCookie disables the Secure attribute on the session cookie.
+//
+// It exists for local development over http://, where a Secure cookie is dropped
+// by every client and authentication is impossible. It must never be called in
+// production: without Secure, the session cookie is sent over plain HTTP.
+func (sm *Manager) SetInsecureCookie(insecure bool) {
+	sm.cookieSecure = !insecure
 }
 
 // SetRepository sets the session repository for session management.
@@ -143,7 +160,7 @@ func (sm *Manager) CreateCookie(sessionID string) (*http.Cookie, error) {
 		Path:     CookiePath,
 		MaxAge:   CookieMaxAge,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   sm.cookieSecure,
 		SameSite: http.SameSiteStrictMode,
 	}, nil
 }
@@ -162,7 +179,7 @@ func (sm *Manager) CreateCookieWithExpiry(sessionID string, maxAge int) (*http.C
 		Path:     CookiePath,
 		MaxAge:   maxAge,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   sm.cookieSecure,
 		SameSite: http.SameSiteStrictMode,
 	}, nil
 }
@@ -176,7 +193,7 @@ func (sm *Manager) ClearCookie() *http.Cookie {
 		MaxAge:   -1,
 		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   sm.cookieSecure,
 		SameSite: http.SameSiteStrictMode,
 	}
 }

@@ -70,12 +70,18 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 	var fcmToken, operatorID, organizationID, deviceName, manufacturer, model, osVersion, securityPatch, tagsJSON sql.NullString
 	var publicKey, pairingCode sql.NullString
 	var deregisteredAt, deletionScheduledAt, fcmTokenRefreshedAt, tier, pairingExpiresAt sql.NullInt64
+	// created_at/updated_at are declared TIMESTAMP but the driver hands back whatever
+	// was written, which is an ISO8601 string. Scanning them straight into time.Time
+	// fails at runtime with "unsupported Scan, storing driver.Value type string into
+	// type *time.Time", so they are read as a raw value and converted, the way
+	// operator_storage already does.
+	var createdAt, updatedAt any
 
 	err := row.Scan(
 		&d.ID, &d.FirebaseInstallID, &fcmToken, &d.AppVersion, &d.DeviceClass,
 		&d.Online, &d.RegisteredAt, &d.LastSeen, &operatorID,
 		&organizationID,
-		&d.CreatedAt, &d.UpdatedAt, &deviceName, &manufacturer, &model, &osVersion, &securityPatch,
+		&createdAt, &updatedAt, &deviceName, &manufacturer, &model, &osVersion, &securityPatch,
 		&deregisteredAt, &deletionScheduledAt, &fcmTokenRefreshedAt, &tagsJSON, &tier,
 		&publicKey, &pairingCode, &pairingExpiresAt,
 	)
@@ -88,6 +94,8 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 		return nil, err
 	}
 
+	d.CreatedAt = parseTimestamp(createdAt)
+	d.UpdatedAt = parseTimestamp(updatedAt)
 	d.Tier = device.TierFromInt(int(tier.Int64))
 	d.PublicKey = publicKey.String
 	d.PairingCode = pairingCode.String
@@ -134,18 +142,21 @@ func scanDevices(rows *sql.Rows) ([]*device.Device, error) {
 		var fcmToken, operatorID, organizationID, deviceName, manufacturer, model, osVersion, securityPatch, tagsJSON sql.NullString
 		var publicKey, pairingCode sql.NullString
 		var deregisteredAt, deletionScheduledAt, fcmTokenRefreshedAt, tier, pairingExpiresAt sql.NullInt64
+		var createdAt, updatedAt any
 
 		if err := rows.Scan(
 			&d.ID, &d.FirebaseInstallID, &fcmToken, &d.AppVersion, &d.DeviceClass,
 			&d.Online, &d.RegisteredAt, &d.LastSeen, &operatorID,
 			&organizationID,
-			&d.CreatedAt, &d.UpdatedAt, &deviceName, &manufacturer, &model, &osVersion, &securityPatch,
+			&createdAt, &updatedAt, &deviceName, &manufacturer, &model, &osVersion, &securityPatch,
 			&deregisteredAt, &deletionScheduledAt, &fcmTokenRefreshedAt, &tagsJSON, &tier,
 			&publicKey, &pairingCode, &pairingExpiresAt,
 		); err != nil {
 			return nil, err
 		}
 
+		d.CreatedAt = parseTimestamp(createdAt)
+		d.UpdatedAt = parseTimestamp(updatedAt)
 		d.Tier = device.TierFromInt(int(tier.Int64))
 		d.PublicKey = publicKey.String
 		d.PairingCode = pairingCode.String

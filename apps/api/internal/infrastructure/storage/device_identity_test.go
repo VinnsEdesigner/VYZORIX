@@ -192,3 +192,35 @@ func TestUpdateKeepsIdentityAndTier(t *testing.T) {
 		t.Errorf("public key not updated: %q", got.PublicKey)
 	}
 }
+
+// TestDeviceReadHandlesAnIsoTimestamp is the guard on the read path that made every
+// enroll fail with a 500. devices.created_at/updated_at are declared TIMESTAMP and
+// the driver stores whatever is written; a row written with a time.Time comes back
+// as an ISO8601 string, and scanning that straight into time.Time fails at runtime
+// with "unsupported Scan, storing driver.Value type string into type *time.Time".
+//
+// The app writes Unix millis, but a row can hold either, so the read must handle
+// both. This writes the string form directly and asserts the read succeeds.
+func TestDeviceReadHandlesAnIsoTimestamp(t *testing.T) {
+	db := newTestDeviceDB(t)
+	repo := NewDeviceRepository(db)
+	ctx := context.Background()
+
+	if _, err := db.Exec(
+		`INSERT INTO devices (id, firebase_install_id, fcm_token, app_version, device_class,
+		                      public_key, online, registered_at, last_seen, created_at, updated_at)
+		 VALUES ('iso-1', '', '', '', '', '', 0, ?, ?, ?, ?)`,
+		time.Now().UnixMilli(), time.Now().UnixMilli(),
+		"2026-11-04 01:08:22.455800251+00:00", "2026-11-04 01:08:22.455800311+00:00",
+	); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	got, err := repo.FindByID(ctx, "iso-1")
+	if err != nil {
+		t.Fatalf("a device row with an ISO8601 timestamp must be readable: %v", err)
+	}
+	if got.CreatedAt.IsZero() {
+		t.Error("created_at must be parsed, not left zero")
+	}
+}

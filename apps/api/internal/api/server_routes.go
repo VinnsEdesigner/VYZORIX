@@ -288,7 +288,8 @@ func (s *Server) setupAuthenticatedRoutes() {
 	// DEVICE routes: HMAC authentication only (no session/API key).
 	// These are device-initiated requests that use HMAC signatures.
 	// Note: /command and /fcm-token require HMAC, but /count and /:imei are operator endpoints.
-	s.setupDeviceManagementRoutes(r)
+	s.setupDeviceSignedRoutes(r)
+	s.setupDeviceManagementRoutes(tenantGroup)
 }
 
 func (s *Server) setupDashboardRoutes(r ...*gin.RouterGroup) {
@@ -435,36 +436,64 @@ func (s *Server) registerPprofRoutes(admin *gin.RouterGroup) {
 	s.log.Warn("pprof profiling endpoints enabled", "path", "/v1/admin/pprof", "note", "super-admin only")
 }
 
-func (s *Server) setupDeviceManagementRoutes(r *gin.RouterGroup) {
-	deviceMgmt := r.Group("/device")
-	deviceMgmt.Use(middleware.RequestSigningMiddleware(s.signatureVerifier))
-	deviceMgmt.Use(middleware.MandatoryEncryptionMiddleware(s.encryptKeyFn))
-	deviceMgmt.Use(s.requireHMAC())
-	// Apply idempotency middleware to all device management routes.
-	deviceMgmt.Use(s.deviceIdempotencyMiddleware())
-	deviceMgmt.GET("/count", s.deviceListHandler.Count)
-	deviceMgmt.GET("/:imei", s.deviceListHandler.GetDevice)
-	deviceMgmt.PATCH("/:imei/fcm-token",
+// setupDeviceSignedRoutes registers the routes a *device* calls, authenticated by
+// its own keypair signature.
+//
+// These are separate from the operator routes below because the two have different
+// credentials, and chaining both authenticators on one group broke both: a device
+// has no API-client id/secret, so RequestSigningMiddleware refused every device
+// request before requireHMAC ever ran; and an operator's session has no device
+// private key, so requireHMAC would refuse every operator request. One
+// authenticator per transport, chosen by who is calling.
+func (s *Server) setupDeviceSignedRoutes(r *gin.RouterGroup) {
+	deviceSigned := r.Group("/device")
+	deviceSigned.Use(s.requireHMAC())
+	deviceSigned.Use(s.deviceIdempotencyMiddleware())
+
+	// The device refreshes its own push token.
+	deviceSigned.PATCH("/:imei/fcm-token",
 		middleware.ValidationMiddleware(&middleware.FCMTokenUpdateSchema{}),
 		s.deviceUpdaterHandler.UpdateFCMToken,
 	)
+
+	// The device fetches its own config by version. The push at claim time is the
+	// primary path; this is what a device uses when it was offline then, or when the
+	// version it holds differs from the server's. See REGISTRATION_CONTRACT.md §7.
+	if s.enrollHandler != nil {
+		deviceSigned.GET("/:imei/config", s.enrollHandler.GetConfig)
+	}
+
+	// HTTP fallback for a device that finished a command while its WebSocket was
+	// down; the primary path is the command_result frame on /:imei/stream.
+	deviceSigned.POST("/:imei/command/:dispatchId/result", s.commandHandler.ReportResult)
+
+	// The device stream. The upgrade authenticates from query parameters in the
+	// upgrader, so requireHMAC skips it (see isWebSocketUpgrade).
+	deviceSigned.GET("/:imei/stream", s.streamHandler.Handle)
+}
+
+// setupDeviceManagementRoutes registers the routes an *operator* calls, under the
+// tenant group so they get session or API-key auth plus organization context.
+func (s *Server) setupDeviceManagementRoutes(r *gin.RouterGroup) {
+	deviceMgmt := r.Group("/device")
+	// Organization context, so every handler can scope by org. Without it the
+	// handlers' GetOrganizationID returned empty and the routes 400'd.
+	deviceMgmt.Use(middleware.NewOrganizationContext(nil).Middleware())
+	deviceMgmt.Use(middleware.NewOrganizationMembership(s.memberHandler.MembershipChecker()).Middleware())
+	deviceMgmt.Use(middleware.RequestSigningMiddleware(s.signatureVerifier))
+	deviceMgmt.Use(middleware.MandatoryEncryptionMiddleware(s.encryptKeyFn))
+	// Apply idempotency middleware to all device management routes.
+	deviceMgmt.Use(s.deviceIdempotencyMiddleware())
+
+	deviceMgmt.GET("/count", s.deviceListHandler.Count)
+	deviceMgmt.GET("/:imei", s.deviceListHandler.GetDevice)
 	deviceMgmt.POST("/:imei/command",
 		s.requireStrictHMAC(),
 		middleware.ValidationMiddleware(&middleware.CommandExecuteSchema{}),
 		s.commandHandler.Handle,
 	)
 	deviceMgmt.GET("/:imei/commands/pending", s.commandHandler.GetPending)
-	// The device fetches its own config by version. The push at claim time is the
-	// primary path; this is what a device uses when it was offline then, or when the
-	// version it holds differs from the server's. See REGISTRATION_CONTRACT.md §7.
-	if s.enrollHandler != nil {
-		deviceMgmt.GET("/:imei/config", s.enrollHandler.GetConfig)
-	}
-	// HTTP fallback for a device that finished a command while its WebSocket was
-	// down; the primary path is the command_result frame on /:imei/stream.
-	deviceMgmt.POST("/:imei/command/:dispatchId/result", s.commandHandler.ReportResult)
 	deviceMgmt.DELETE("/:imei", s.deviceUpdaterHandler.Delete)
-	deviceMgmt.GET("/:imei/stream", s.streamHandler.Handle)
 	deviceMgmt.GET("/:imei/connection-status", s.connectionStatusHandler.GetStatus)
 	deviceMgmt.POST("/:imei/disconnect", s.connectionStatusHandler.DisconnectDevice)
 }

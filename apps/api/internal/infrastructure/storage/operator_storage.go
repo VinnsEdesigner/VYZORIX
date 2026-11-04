@@ -161,6 +161,11 @@ func parseTimestamp(value interface{}) time.Time {
 		return time.Time{}
 	}
 	switch v := value.(type) {
+	case time.Time:
+		// The driver returns a time.Time for a TIMESTAMP column. Without this case the
+		// function fell through to the zero time, so every timestamp read from such a
+		// column silently became 0001-01-01.
+		return v
 	case int64:
 		return time.UnixMilli(v)
 	case int:
@@ -186,7 +191,15 @@ func parseTimestamp(value interface{}) time.Time {
 			"2006-01-02T15:04:05.999999999Z07:00",
 			"2006-01-02T15:04:05Z07:00",
 			"2006-01-02T15:04:05",
+			// The exact shape the SQLite driver writes for a time.Time value: a space
+			// separator with a numeric offset, e.g. "2026-11-04 01:08:22.4558+00:00".
+			// Without this the helper silently returned the zero time for every row
+			// written that way, which is worse than an error: a caller sees a valid
+			// (zero) time and cannot tell it was never parsed.
+			"2006-01-02 15:04:05.999999999-07:00",
+			"2006-01-02 15:04:05.999999999Z07:00",
 			"2006-01-02 15:04:05.999999999",
+			"2006-01-02 15:04:05-07:00",
 			"2006-01-02 15:04:05",
 		}
 		for _, format := range formats {

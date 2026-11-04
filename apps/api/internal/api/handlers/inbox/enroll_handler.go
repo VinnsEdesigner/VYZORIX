@@ -120,6 +120,10 @@ func (h *EnrollHandler) Enroll(c *gin.Context) {
 		case errors.Is(err, devicesvc.ErrDeviceAlreadyOwned):
 			responses.RespondConflictError(c, err.Error())
 		default:
+			// Attach the cause so RespondInternalError logs it. The response body
+			// stays generic, but without this the only way to diagnose a 500 is a
+			// debugger.
+			_ = c.Error(err)
 			responses.RespondInternalError(c)
 		}
 

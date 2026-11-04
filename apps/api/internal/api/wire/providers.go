@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/adapters/response"
@@ -160,6 +161,14 @@ func ProvidePasswordHasher() *passwordpkg.Argon2idHasher {
 func ProvideSessionManager(cfg config.Config, sessionRepo *storage.SessionRepository) *infraauth.SessionManager {
 	m := infraauth.NewSessionManager(cfg.SessionSecret)
 	m.SetRepository(newSessionRepoAdapter(sessionRepo))
+
+	// A Secure session cookie is never sent over plain HTTP, so a local run against
+	// http:// cannot authenticate at all. Allow a development build to opt out,
+	// explicitly, via COOKIE_INSECURE=true; production keeps Secure on.
+	if cfg.Env != "production" && os.Getenv("COOKIE_INSECURE") == "true" {
+		m.SetInsecureCookie(true)
+	}
+
 	return m
 }
 
