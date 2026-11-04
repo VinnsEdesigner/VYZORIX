@@ -15290,6 +15290,10 @@ const docTemplate = `{
                 },
                 "pairingDisplay": {
                     "type": "string"
+                },
+                "pollIntervalSeconds": {
+                    "description": "PollIntervalSeconds is how often the device should ask for its config while\nit waits to be claimed. The config normally arrives over the held WebSocket\nthe moment an operator claims the code, so this is the fallback for a device\nwhose socket is not up — it bounds how long a claimed device can sit\nunconfigured. The server owns the value so the cadence can be tuned without\nshipping a new APK.",
+                    "type": "integer"
                 }
             }
         }
