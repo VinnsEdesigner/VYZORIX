@@ -265,9 +265,13 @@ func TestE2ETerminalRoundTrip(t *testing.T) {
 	}
 }
 
-// TestE2ESessionClosedOnOperatorDisconnect proves a session does not outlive the
-// operator's connection.
-func TestE2ESessionClosedOnOperatorDisconnect(t *testing.T) {
+// TestE2ESessionSurvivesOperatorDisconnect proves a session now outlives the
+// operator's connection, so a browser reconnect can reattach to the same shell.
+//
+// The session is instead ended by an explicit pty_close or by the registry's idle
+// TTL (the expiry worker) — not by the transient socket drop a reconnect would
+// ride out.
+func TestE2ESessionSurvivesOperatorDisconnect(t *testing.T) {
 	rig := newE2ERig(t, t.TempDir())
 
 	openMsg, _ := json.Marshal(map[string]any{"type": "pty_open", "sessionId": "aaaaaaaa-1111-4111-8111-111111111111"})
@@ -284,17 +288,13 @@ func TestE2ESessionClosedOnOperatorDisconnect(t *testing.T) {
 
 	_ = rig.operatorConn.Close()
 
-	deadline := time.After(3 * time.Second)
-	for {
-		if rig.relay.Registry().Count() == 0 {
-			return
-		}
-
-		select {
-		case <-deadline:
-			t.Fatal("session survived the operator disconnect")
-		case <-time.After(20 * time.Millisecond):
-		}
+	// Give the disconnect handler time to run, then assert the session is still
+	// there: the whole point of the reattach model is that a dropped operator
+	// socket does not kill the shell.
+	time.Sleep(300 * time.Millisecond)
+	if rig.relay.Registry().Count() != 1 {
+		t.Fatalf("sessions = %d, want 1 (a session must outlive the operator socket)",
+			rig.relay.Registry().Count())
 	}
 }
 

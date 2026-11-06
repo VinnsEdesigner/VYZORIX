@@ -155,6 +155,26 @@ func (r *PTYRegistry) Open(sessionID, deviceID, operatorID, orgID string, record
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	// A session outlives the device socket now, so a reconnect re-opens the same id
+	// rather than minting a new one. Re-binding is allowed only for the **same
+	// operator and device**: the id is client-supplied, so letting a different
+	// operator adopt a live session by guessing its id would be a session hijack.
+	// A different operator is refused exactly as before.
+	if existing, ok := r.sessions[sessionID]; ok {
+		if existing.OperatorID != operatorID || existing.DeviceID != deviceID {
+			return nil, ErrPTYSessionExists
+		}
+
+		// Re-arm for the reconnecting operator: refresh the liveness clock so the
+		// idle TTL measures from now, and reset the credit window to a full one,
+		// because the operator is starting a fresh terminal view and the old
+		// window's acks died with the socket they were sent on.
+		existing.LastSeenAt = r.now()
+		existing.Credit = r.creditWindow
+
+		return existing, nil
+	}
+
 	if r.byDevice[deviceID] >= r.maxPerDevice {
 		return nil, ErrPTYTooManySessions
 	}
@@ -165,14 +185,6 @@ func (r *PTYRegistry) Open(sessionID, deviceID, operatorID, orgID string, record
 	// keeps that class of bug out of the recorder entirely.
 	if !IsValidPTYSessionID(sessionID) {
 		return nil, ErrPTYSessionIDInvalid
-	}
-
-	// Refusing a duplicate prevents two failure modes: overwriting a live entry
-	// (leaking the first session, which would never be closed and would keep
-	// counting against the device cap) and letting one operator adopt another's
-	// session by guessing its ID.
-	if _, exists := r.sessions[sessionID]; exists {
-		return nil, ErrPTYSessionExists
 	}
 
 	now := r.now()
@@ -351,4 +363,24 @@ func (r *PTYRegistry) CountForDevice(deviceID string) int {
 	defer r.mu.Unlock()
 
 	return r.byDevice[deviceID]
+}
+
+// ForDevice returns the live sessions for a device.
+//
+// Used when a device (re)connects to re-send an OPEN for each session, so the
+// device re-binds the shells it still holds instead of the operator having to
+// reopen them. The returned slice is a snapshot; the sessions themselves are
+// shared and must be treated as read-only by the caller.
+func (r *PTYRegistry) ForDevice(deviceID string) []*PTYSession {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	out := make([]*PTYSession, 0, r.byDevice[deviceID])
+	for _, s := range r.sessions {
+		if s.DeviceID == deviceID {
+			out = append(out, s)
+		}
+	}
+
+	return out
 }

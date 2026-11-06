@@ -163,23 +163,38 @@ func TestRelayCloseUnknownSessionIsSafe(t *testing.T) {
 	}
 }
 
-func TestRelayCloseDeviceSessions(t *testing.T) {
+func TestRelayReattachDeviceSessions(t *testing.T) {
 	sink := &fakeDeviceSink{accept: true}
 	relay, reg := newRelayWithSession(t, sink, DefaultPTYCreditWindow)
 	if _, err := reg.Open("22222222-2222-4222-8222-222222222222", "dev-1", "op-1", "org-1", false); err != nil {
 		t.Fatalf("Open s2: %v", err)
 	}
 
-	var notified []string
-	relay.CloseDeviceSessions("dev-1", func(sessionID, reason string) {
-		notified = append(notified, sessionID+":"+reason)
-	})
-
-	if len(notified) != 2 {
-		t.Fatalf("notified = %v, want both sessions", notified)
+	sink.frames = nil
+	n := relay.ReattachDeviceSessions("dev-1")
+	if n != 2 {
+		t.Fatalf("reattached = %d, want both sessions", n)
 	}
-	if reg.CountForDevice("dev-1") != 0 {
-		t.Fatal("the device must have no sessions left")
+
+	// The sessions survive the device disconnect: reattach re-sends an OPEN for
+	// each rather than reaping them.
+	if reg.CountForDevice("dev-1") != 2 {
+		t.Fatalf("sessions = %d, want 2 (a session outlives the device socket)",
+			reg.CountForDevice("dev-1"))
+	}
+
+	// Each re-sent frame is an OPEN naming a session.
+	if len(sink.frames) != 2 {
+		t.Fatalf("frames = %d, want 2 OPEN frames", len(sink.frames))
+	}
+	for _, raw := range sink.frames {
+		_, frameType, _, err := DecodePTYFrame(raw)
+		if err != nil {
+			t.Fatalf("decode reattach frame: %v", err)
+		}
+		if frameType != PTYTypeOpen {
+			t.Fatalf("frame type = %d, want PTYTypeOpen", frameType)
+		}
 	}
 }
 

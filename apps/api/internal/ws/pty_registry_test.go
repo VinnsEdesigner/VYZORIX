@@ -150,3 +150,64 @@ func TestPTYRegistryCloseIsIdempotent(t *testing.T) {
 		t.Fatalf("second close err = %v, want ErrPTYSessionNotFound", err)
 	}
 }
+
+func TestPTYRegistryReopenSameOperatorRebinds(t *testing.T) {
+	r := NewPTYRegistry(PTYRegistryConfig{})
+
+	first, err := r.Open("11111111-1111-4111-8111-111111111111", "dev-1", "op-1", "org-1", false)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	// Spend some credit so the re-open's reset is observable.
+	if err := r.TakeCredit(first.SessionID); err != nil {
+		t.Fatalf("TakeCredit: %v", err)
+	}
+
+	// The same operator re-opening the same id is a reattach, not an error.
+	again, err := r.Open("11111111-1111-4111-8111-111111111111", "dev-1", "op-1", "org-1", false)
+	if err != nil {
+		t.Fatalf("re-open must rebind, got: %v", err)
+	}
+	if again != first {
+		t.Fatal("re-open must return the existing session, not a new one")
+	}
+	if r.Count() != 1 || r.CountForDevice("dev-1") != 1 {
+		t.Fatalf("counts = %d/%d, want 1/1 (no second session)",
+			r.Count(), r.CountForDevice("dev-1"))
+	}
+	if again.Credit != DefaultPTYCreditWindow {
+		t.Fatalf("credit = %d, want a reset window %d", again.Credit, DefaultPTYCreditWindow)
+	}
+}
+
+func TestPTYRegistryReopenDifferentOperatorIsRefused(t *testing.T) {
+	// The session id is client-supplied, so a different operator re-opening a live
+	// id must be refused: allowing it would let one operator adopt another's shell
+	// by guessing the id.
+	r := NewPTYRegistry(PTYRegistryConfig{})
+
+	if _, err := r.Open("11111111-1111-4111-8111-111111111111", "dev-1", "op-1", "org-1", false); err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+
+	_, err := r.Open("11111111-1111-4111-8111-111111111111", "dev-1", "op-2", "org-1", false)
+	if !errors.Is(err, ErrPTYSessionExists) {
+		t.Fatalf("err = %v, want ErrPTYSessionExists", err)
+	}
+}
+
+func TestPTYRegistryForDeviceReturnsOnlyItsSessions(t *testing.T) {
+	r := NewPTYRegistry(PTYRegistryConfig{})
+
+	if _, err := r.Open("11111111-1111-4111-8111-111111111111", "dev-1", "op-1", "org-1", false); err != nil {
+		t.Fatalf("Open s1: %v", err)
+	}
+	if _, err := r.Open("22222222-2222-4222-8222-222222222222", "dev-2", "op-1", "org-1", false); err != nil {
+		t.Fatalf("Open s2: %v", err)
+	}
+
+	got := r.ForDevice("dev-1")
+	if len(got) != 1 || got[0].SessionID != "11111111-1111-4111-8111-111111111111" {
+		t.Fatalf("ForDevice(dev-1) = %v, want only its own session", got)
+	}
+}

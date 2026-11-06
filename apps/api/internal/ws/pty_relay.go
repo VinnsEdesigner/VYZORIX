@@ -186,15 +186,33 @@ func (r *PTYRelay) CloseSession(sessionID, reason string, operator PTYOperator) 
 	}
 }
 
-// CloseDeviceSessions ends every session for a device and notifies each
-// operator. It is called when a device disconnects: a session cannot outlive the
-// connection it runs over.
-func (r *PTYRelay) CloseDeviceSessions(deviceID string, notify func(sessionID, reason string)) {
-	for _, session := range r.registry.CloseByDevice(deviceID) {
-		if notify != nil {
-			notify(session.SessionID, "device_disconnected")
+// ReattachDeviceSessions re-sends an OPEN for every live session on a device.
+//
+// It is called when a device (re)connects. A session now outlives the socket it
+// was opened over: the device keeps the shell running across a drop and buffers
+// its output, so a reconnect must be told to re-bind the same session ids rather
+// than leaving the operator staring at a dead terminal until they re-open one by
+// hand. The device's relay treats an OPEN for a session it already holds as a
+// re-attach (it flushes buffered output), so this is idempotent.
+//
+// Sessions are keyed by the id the operator chose, and that id is the device's
+// too, so the same OPEN the operator's first request produced is what re-binds
+// the shell. The window size is not known here; the device keeps the size it had,
+// and the browser's next RESIZE corrects it if the view changed.
+func (r *PTYRelay) ReattachDeviceSessions(deviceID string) int {
+	if r.devices == nil {
+		return 0
+	}
+
+	n := 0
+	for _, session := range r.registry.ForDevice(deviceID) {
+		payload := EncodeSessionData(session.SessionID, nil)
+		if r.SendToDevice(deviceID, PTYTypeOpen, payload) {
+			n++
 		}
 	}
+
+	return n
 }
 
 // ExpireSessions closes sessions that have been idle past the TTL.

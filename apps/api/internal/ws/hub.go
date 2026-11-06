@@ -39,6 +39,10 @@ type Hub struct {
 	dashboardBroadcaster DashboardBroadcaster
 	deviceFrameHandler   DeviceFrameHandler
 	deviceDisconnectHook func(deviceID string)
+	// deviceConnectHook is the counterpart to deviceDisconnectHook: a PTY
+	// session outlives the socket, so a reconnecting device is told to
+	// re-attach the shells it still holds.
+	deviceConnectHook func(deviceID string)
 	deviceStatus         chan DeviceStatusUpdate
 	rateLimiter          *RateLimiter
 	register             chan *Client
@@ -244,6 +248,10 @@ func (h *Hub) handleClientRegistration(ctx context.Context, c *Client) {
 	h.replayQueuedMessages(c)
 	h.emitDeviceConnected(ctx, c)
 	h.log.Info("device websocket online", "deviceId", c.DeviceID)
+
+	if hook := h.deviceConnectHookFor(); hook != nil {
+		hook(c.DeviceID)
+	}
 }
 
 // replayQueuedMessages replays queued messages to a newly connected device.

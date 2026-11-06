@@ -659,31 +659,29 @@ func (h *OperatorTerminalHandler) registerClient(c *ptyOperatorClient) {
 	h.clients[c.operator+"#"+c.conn.RemoteAddr().String()] = c
 }
 
-// removeClient unregisters a client and closes its sessions.
+// removeClient unregisters a client.
+//
+// It deliberately does **not** close the operator's sessions. A session now
+// outlives the operator's connection: the browser reconnects and re-opens the
+// same session id, and the device re-binds the shell it kept running. Ending the
+// session here would defeat that — every network blip would kill the shell the
+// reattach exists to preserve.
+//
+// A session whose operator never returns is not leaked: the registry's idle TTL
+// reaps it (the expiry worker), and the device independently reaps a detached
+// shell after its own shorter TTL. This is the deliberate trade — a transient
+// disconnect must not end the session, so only time (or an explicit pty_close)
+// does.
 func (h *OperatorTerminalHandler) removeClient(c *ptyOperatorClient) {
 	h.mu.Lock()
 	delete(h.clients, c.operator+"#"+c.conn.RemoteAddr().String())
 	h.mu.Unlock()
 
+	// Drop this connection's ownership set. The sessions themselves stay in the
+	// registry; a reconnect re-populates ownership as the browser re-opens them.
 	c.mu.Lock()
-	owned := make([]string, 0, len(c.sessions))
-	for id := range c.sessions {
-		owned = append(owned, id)
-	}
 	c.sessions = make(map[string]bool)
 	c.mu.Unlock()
-
-	// An operator disconnect ends its sessions: leaving them would strand the
-	// device's shell with no way to reach it.
-	for _, id := range owned {
-		h.relay.CloseSession(id, "operator_disconnected", nil)
-		h.auditSession(context.Background(), audit.PTYSessionEvent{
-			SessionID:  id,
-			OperatorID: c.operator,
-			Reason:     "operator_disconnected",
-			Result:     audit.ResultSuccess,
-		})
-	}
 
 	c.closeOnce.Do(func() {
 		close(c.closed)

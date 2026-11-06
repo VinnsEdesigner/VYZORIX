@@ -81,6 +81,27 @@ func (h *Hub) deviceDisconnectHookFor() func(deviceID string) {
 	return h.deviceDisconnectHook
 }
 
+// SetDeviceConnectHook installs a callback invoked when a device's WebSocket
+// connection is (re)established. It is the counterpart to
+// SetDeviceDisconnectHook: because a PTY session now outlives the socket, a
+// reconnecting device must be told to re-attach the shells it still holds.
+//
+// Like the disconnect hook, it runs outside the hub lock and must not block: it
+// is called on the registration path.
+func (h *Hub) SetDeviceConnectHook(fn func(deviceID string)) {
+	h.mu.Lock()
+	h.deviceConnectHook = fn
+	h.mu.Unlock()
+}
+
+// deviceConnectHookFor returns the installed hook under the read lock.
+func (h *Hub) deviceConnectHookFor() func(deviceID string) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	return h.deviceConnectHook
+}
+
 // DispatchDeviceFrame hands a frame to the installed handler under a panic guard
 // and reports whether it was handled.
 //

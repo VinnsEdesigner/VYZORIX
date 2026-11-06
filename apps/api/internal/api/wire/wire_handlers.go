@@ -341,10 +341,18 @@ func wireDeviceFrameRouting(hs *HandlerSet, deps HandlerDependencies) {
 	if ptyRelay != nil {
 		ptySink = websockethandlers.NewPTYDeviceHandler(ptyRelay, deps.PTYOperators, deps.Log)
 
-		// A device's sessions cannot outlive its connection: reap them when it
-		// drops so a reconnect cannot inherit a stranded shell.
-		deps.Hub.SetDeviceDisconnectHook(func(deviceID string) {
-			ptyRelay.CloseDeviceSessions(deviceID, nil)
+		// A session now outlives the device socket: the device keeps each shell
+		// running across a drop and buffers its output, so the disconnect hook no
+		// longer reaps anything. The connect hook re-sends an OPEN for every live
+		// session so the reconnected device re-binds those shells, and the operator
+		// is not left on a dead terminal. Idle sessions are still reaped by the
+		// registry TTL (the expiry worker), which is now the only thing that ends a
+		// session whose operator has gone.
+		deps.Hub.SetDeviceConnectHook(func(deviceID string) {
+			if n := ptyRelay.ReattachDeviceSessions(deviceID); n > 0 {
+				deps.Log.Info("re-attached terminal sessions on device connect",
+					"deviceId", deviceID, "count", n)
+			}
 		})
 	}
 
