@@ -1,7 +1,7 @@
 {
   "version": "0.1.0",
   "version_code": 1,
-  "apk_filename": "vyzorix-app-v0.1.0.apk",
+  "apk_filename": "v010.apk",
   "apk_sha256": "87a8c51210d72cb2a9cd76d5d7ccaaaf6c93e97984a2e3ad0e4c6e9fc0c84510",
   "apk_size_bytes": 64081215,
   "release_notes": "Vyzorix device agent 0.1.0"
