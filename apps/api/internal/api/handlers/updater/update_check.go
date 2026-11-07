@@ -44,17 +44,24 @@ type Handler struct {
 	dataDir  string
 	binDir   string
 	config   config.Config
+	// progress keeps the latest download report per device, so the server can
+	// answer "how far along is this device" instead of only logging the report.
+	progress *ProgressStore
 }
 
 // NewHandler creates a new UpdaterHandler.
 func NewHandler(log *slog.Logger, cfg config.Config) *Handler {
 	return &Handler{
-		log:     log,
-		config:  cfg,
-		dataDir: cfg.DataDir,
-		binDir:  cfg.BinDir,
+		log:      log,
+		config:   cfg,
+		dataDir:  cfg.DataDir,
+		binDir:   cfg.BinDir,
+		progress: NewProgressStore(DefaultProgressTTL),
 	}
 }
+
+// ProgressStore exposes the store for the periodic sweep worker.
+func (h *Handler) ProgressStore() *ProgressStore { return h.progress }
 
 // loadManifest loads the version manifest for APK integrity verification.
 
@@ -223,8 +230,68 @@ func (h *Handler) DownloadProgress(c *gin.Context) {
 		return
 	}
 
-	h.log.Info("download progress", "deviceId", req.DeviceID, "filename", req.Filename, "progress", req.Progress)
+	// A device id is required: progress is keyed by it, so a report without one
+	// cannot be stored or read back. The byte counts are what the read endpoint
+	// reports; `progress` is accepted but the percent is derived from the bytes so
+	// the two cannot disagree.
+	if req.DeviceID == "" {
+		_ = c.Error(apperrors.NewServerError(apperrors.CodeValidationFailed, "deviceId is required"))
+		return
+	}
+
+	h.progress.Record(req.DeviceID, req.Filename, req.BytesLoaded, req.TotalBytes)
+
+	h.log.Info("download progress",
+		"deviceId", req.DeviceID,
+		"filename", req.Filename,
+		"bytesLoaded", req.BytesLoaded,
+		"totalBytes", req.TotalBytes,
+		"percent", req.Progress,
+	)
 	c.JSON(http.StatusOK, openapi.DownloadProgressResult{Recorded: true})
+}
+
+// GetDownloadProgress handles GET /v1/download-progress/:deviceId.
+//
+// The read half of the report endpoint: an operator (or the dashboard) asks how far
+// along a device's update is. Before this, `POST /download-progress` only logged the
+// report — the server accepted progress and could not answer for it, so the data had
+// no consumer.
+//
+// @Summary      Read a device's update download progress
+// @Description  Returns the latest reported OTA download progress for a device
+// @Tags         updater
+// @Produce      json
+// @Param        deviceId  path  string  true  "device id"
+// @Success      200  {object}  map[string]any  "progress, or downloading=false when none"
+// @Failure      400  {object}  openapi.ErrorResponse  "deviceId required"
+// @Router       /download-progress/{deviceId} [get]
+func (h *Handler) GetDownloadProgress(c *gin.Context) {
+	deviceID := c.Param("deviceId")
+	if deviceID == "" {
+		_ = c.Error(apperrors.NewServerError(apperrors.CodeValidationFailed, "deviceId is required"))
+		return
+	}
+
+	progress, ok := h.progress.Get(deviceID)
+	if !ok {
+		// No live download. This is a normal answer, not a 404: a device that is
+		// not updating is a valid state, and the caller wants to know that rather
+		// than to distinguish "never reported" from "finished".
+		c.JSON(http.StatusOK, gin.H{"deviceId": deviceID, "downloading": false})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"deviceId":    progress.DeviceID,
+		"downloading": true,
+		"filename":    progress.Filename,
+		"bytesLoaded": progress.BytesLoaded,
+		"totalBytes":  progress.TotalBytes,
+		"percent":     progress.Percent(),
+		"updatedAt":   progress.UpdatedAt.UnixMilli(),
+	})
 }
 
 // serveJSON serves a static JSON file with proper headers.

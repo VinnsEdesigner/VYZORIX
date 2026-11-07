@@ -150,6 +150,9 @@ func (s *Server) setupStaticRoutes() {
 	s.engine.HEAD("/bin/*name", s.binHandler)
 	s.engine.GET("/api/v1/check-update", s.updaterHandler.CheckUpdate)
 	s.engine.POST("/api/v1/download-progress", s.updaterHandler.DownloadProgress)
+	// The read half of the report endpoint, so an operator can ask how far along a
+	// device's update is rather than the server only logging it.
+	s.engine.GET("/api/v1/download-progress/:deviceId", s.updaterHandler.GetDownloadProgress)
 	// Also register at /v1/ without the /api prefix so requests forwarded.
 	// by the proxy (which strips /api) resolve to the correct handler.
 	s.engine.GET("/v1/version", s.versionHandler)
@@ -158,6 +161,7 @@ func (s *Server) setupStaticRoutes() {
 	s.engine.HEAD("/v1/apk/*name", s.apkHandler)
 	s.engine.GET("/v1/check-update", s.updaterHandler.CheckUpdate)
 	s.engine.POST("/v1/download-progress", s.updaterHandler.DownloadProgress)
+	s.engine.GET("/v1/download-progress/:deviceId", s.updaterHandler.GetDownloadProgress)
 }
 
 func (s *Server) setupPublicRoutes() {
