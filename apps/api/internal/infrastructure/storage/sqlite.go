@@ -561,6 +561,9 @@ var migrations = []Migration{
 	// The command secret is gone: the keypair model replaced it, so the column is
 	// dropped rather than left unused.
 	{Apply: migrateDropCommandSecretHash, Name: "drop_command_secret_hash", Version: 76},
+	// Enriched enroll facts: build, API level, ABIs and capacity, so the device
+	// record holds what the device already reports at enroll.
+	{Apply: migrateAddDeviceFacts, Name: "add_device_facts", Version: 77},
 }
 
 // runMigrations applies all pending migrations.

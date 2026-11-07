@@ -39,6 +39,13 @@ package vyzorix
         model?: string
         manufacturer?: string
         app_version?: string
+        os_version?: string
+        api_level?: int
+        build_id?: string
+        security_patch?: string
+        supported_abis?: string
+        ram_bytes?: int64
+        storage_bytes?: int64
         status: string
         last_seen?: int64
 }

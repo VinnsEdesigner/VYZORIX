@@ -60,6 +60,7 @@ const deviceColumns = `
 	online, registered_at, last_seen, operator_id,
 	organization_id,
 	created_at, updated_at, device_name, manufacturer, model, os_version, security_patch,
+	build_id, api_level, supported_abis, ram_bytes, storage_bytes,
 	deregistered_at, deletion_scheduled_at, fcm_token_refreshed_at, tags, tier,
 	public_key, pairing_code, pairing_expires_at
 `
@@ -68,8 +69,10 @@ const deviceColumns = `
 func scanDevice(row *sql.Row) (*device.Device, error) {
 	var d device.Device
 	var fcmToken, operatorID, organizationID, deviceName, manufacturer, model, osVersion, securityPatch, tagsJSON sql.NullString
+	var buildID, supportedABIs sql.NullString
 	var publicKey, pairingCode sql.NullString
 	var deregisteredAt, deletionScheduledAt, fcmTokenRefreshedAt, tier, pairingExpiresAt sql.NullInt64
+	var apiLevel, ramBytes, storageBytes sql.NullInt64
 	// created_at/updated_at are declared TIMESTAMP but the driver hands back whatever
 	// was written, which is an ISO8601 string. Scanning them straight into time.Time
 	// fails at runtime with "unsupported Scan, storing driver.Value type string into
@@ -82,6 +85,7 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 		&d.Online, &d.RegisteredAt, &d.LastSeen, &operatorID,
 		&organizationID,
 		&createdAt, &updatedAt, &deviceName, &manufacturer, &model, &osVersion, &securityPatch,
+		&buildID, &apiLevel, &supportedABIs, &ramBytes, &storageBytes,
 		&deregisteredAt, &deletionScheduledAt, &fcmTokenRefreshedAt, &tagsJSON, &tier,
 		&publicKey, &pairingCode, &pairingExpiresAt,
 	)
@@ -110,6 +114,11 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 	d.Model = model.String
 	d.OSVersion = osVersion.String
 	d.SecurityPatch = securityPatch.String
+	d.BuildID = buildID.String
+	d.SupportedABIs = supportedABIs.String
+	d.APIVersion = int(apiLevel.Int64)
+	d.RAMBytes = ramBytes.Int64
+	d.StorageBytes = storageBytes.Int64
 	if tagsJSON.Valid && tagsJSON.String != "" {
 		_ = json.Unmarshal([]byte(tagsJSON.String), &d.Tags)
 	}
@@ -285,16 +294,21 @@ func (r *DeviceRepository) Create(ctx context.Context, d *device.Device) error {
 		INSERT INTO devices (id, firebase_install_id, fcm_token, app_version, device_class,
 		                    online, registered_at, last_seen, operator_id,
 		                    organization_id,
-		                    created_at, updated_at, device_name, manufacturer, model, os_version, tags, tier,
+		                    created_at, updated_at, device_name, manufacturer, model, os_version,
+		                    security_patch, build_id, api_level, supported_abis, ram_bytes, storage_bytes,
+		                    tags, tier,
 		                    public_key, pairing_code, pairing_expires_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err := r.exec(ctx, query,
 		d.ID, d.FirebaseInstallID, nullString(d.FCMToken), d.AppVersion, d.DeviceClass,
 		d.Online, d.RegisteredAt, d.LastSeen, nullString(d.OperatorID),
 		nullString(d.OrganizationID),
 		d.CreatedAt, d.UpdatedAt, nullString(d.DeviceName), nullString(d.Manufacturer),
-		nullString(d.Model), nullString(d.OSVersion), tagsToJSON(d.Tags), int(d.Tier),
+		nullString(d.Model), nullString(d.OSVersion),
+		nullString(d.SecurityPatch), nullString(d.BuildID), d.APIVersion,
+		nullString(d.SupportedABIs), d.RAMBytes, d.StorageBytes,
+		tagsToJSON(d.Tags), int(d.Tier),
 		nullString(d.PublicKey), nullString(d.PairingCode), nullInt(d.PairingExpiresAt),
 	)
 
@@ -312,7 +326,9 @@ func (r *DeviceRepository) Update(ctx context.Context, d *device.Device) error {
 		SET firebase_install_id = ?, fcm_token = ?, app_version = ?, device_class = ?,
 		    online = ?, registered_at = ?, last_seen = ?,
 		    operator_id = ?, organization_id = ?, updated_at = ?, device_name = ?, manufacturer = ?,
-		    model = ?, os_version = ?, tags = ?, tier = ?,
+		    model = ?, os_version = ?, security_patch = ?, build_id = ?, api_level = ?,
+		    supported_abis = ?, ram_bytes = ?, storage_bytes = ?,
+		    tags = ?, tier = ?,
 		    public_key = ?, pairing_code = ?, pairing_expires_at = ?
 		WHERE id = ?`
 
@@ -320,7 +336,10 @@ func (r *DeviceRepository) Update(ctx context.Context, d *device.Device) error {
 		d.FirebaseInstallID, nullString(d.FCMToken), d.AppVersion, d.DeviceClass,
 		d.Online, d.RegisteredAt, d.LastSeen, nullString(d.OperatorID),
 		nullString(d.OrganizationID), time.Now(), nullString(d.DeviceName), nullString(d.Manufacturer),
-		nullString(d.Model), nullString(d.OSVersion), tagsToJSON(d.Tags), int(d.Tier),
+		nullString(d.Model), nullString(d.OSVersion),
+		nullString(d.SecurityPatch), nullString(d.BuildID), d.APIVersion,
+		nullString(d.SupportedABIs), d.RAMBytes, d.StorageBytes,
+		tagsToJSON(d.Tags), int(d.Tier),
 		nullString(d.PublicKey), nullString(d.PairingCode), nullInt(d.PairingExpiresAt), d.ID,
 	)
 	if err != nil {

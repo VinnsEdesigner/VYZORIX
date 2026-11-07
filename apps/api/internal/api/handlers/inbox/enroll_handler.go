@@ -64,9 +64,23 @@ type enrollRequest struct {
 	Model        string `json:"model"`
 	Manufacturer string `json:"manufacturer"`
 	OSVersion    string `json:"osVersion"`
-	AppVersion   string `json:"appVersion"`
-	DeviceClass  string `json:"deviceClass"`
-	TierHint     int    `json:"tierHint"`
+	// APIVersion is the Android API level (Build.VERSION.SDK_INT). Named APIVersion
+	// in Go because the wire field is `apiLevel`; the device sends it so the server
+	// can show what a device runs without inferring it from osVersion.
+	APIVersion  int    `json:"apiLevel"`
+	AppVersion  string `json:"appVersion"`
+	DeviceClass string `json:"deviceClass"`
+	// BuildID is the build fingerprint, identifying the exact build.
+	BuildID string `json:"buildId"`
+	// SecurityPatch is the patch level ("2024-03-01"), so staleness is visible.
+	SecurityPatch string `json:"securityPatch"`
+	// SupportedABIs is the device's ABI list, most preferred first.
+	SupportedABIs []string `json:"supportedAbis"`
+	// RAMBytes and StorageBytes are the device's capacity, so an operator can see
+	// what it can run before assigning work to it.
+	RAMBytes     int64 `json:"ramBytes"`
+	StorageBytes int64 `json:"storageBytes"`
+	TierHint     int   `json:"tierHint"`
 }
 
 // enrollResponse is what the device shows in its notification. Nothing secret.
@@ -116,14 +130,20 @@ func (h *EnrollHandler) Enroll(c *gin.Context) {
 	}
 
 	result, err := h.devices.Enroll(c.Request.Context(), devicesvc.EnrollRequest{
-		DeviceUUID:   req.DeviceUUID,
-		PublicKeyPEM: req.PublicKey,
-		Model:        req.Model,
-		Manufacturer: req.Manufacturer,
-		OSVersion:    req.OSVersion,
-		AppVersion:   req.AppVersion,
-		DeviceClass:  req.DeviceClass,
-		TierHint:     req.TierHint,
+		DeviceUUID:     req.DeviceUUID,
+		PublicKeyPEM:   req.PublicKey,
+		Model:          req.Model,
+		Manufacturer:   req.Manufacturer,
+		OSVersion:      req.OSVersion,
+		APIVersion:     req.APIVersion,
+		AppVersion:     req.AppVersion,
+		DeviceClass:    req.DeviceClass,
+		BuildID:        req.BuildID,
+		SecurityPatch:  req.SecurityPatch,
+		SupportedABIs:  req.SupportedABIs,
+		RAMBytes:       req.RAMBytes,
+		StorageBytes:   req.StorageBytes,
+		TierHint:       req.TierHint,
 	})
 	if err != nil {
 		switch {
@@ -221,12 +241,20 @@ func (h *EnrollHandler) Claim(c *gin.Context) {
 		return
 	}
 
+	// The operator sees these facts and confirms the device is theirs (REGISTRATION_CONTRACT.md
+	// §3), so the whole set the device reported is returned, not just the name and model.
 	c.JSON(http.StatusOK, gin.H{
 		"deviceId":        d.ID,
 		"name":            d.DeviceName,
 		"model":           d.Model,
 		"manufacturer":    d.Manufacturer,
 		"osVersion":       d.OSVersion,
+		"apiLevel":        d.APIVersion,
+		"buildId":         d.BuildID,
+		"securityPatch":   d.SecurityPatch,
+		"supportedAbis":   d.SupportedABIs,
+		"ramBytes":        d.RAMBytes,
+		"storageBytes":    d.StorageBytes,
 		"organizationId":  d.OrganizationID,
 		"tier":            int(d.Tier),
 		"configDelivered": h.deliverConfig(c, d.ID),

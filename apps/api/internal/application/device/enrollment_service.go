@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
@@ -33,8 +34,20 @@ type EnrollRequest struct {
 	Model        string
 	Manufacturer string
 	OSVersion    string
-	AppVersion   string
-	DeviceClass  string
+	// APIVersion is the Android API level. Recorded so the server can show what a
+	// device runs without parsing osVersion.
+	APIVersion  int
+	AppVersion  string
+	DeviceClass string
+	// BuildID is the build fingerprint.
+	BuildID string
+	// SecurityPatch is the patch level, so staleness is visible to an operator.
+	SecurityPatch string
+	// SupportedABIs is the device's ABI list, joined for storage.
+	SupportedABIs []string
+	// RAMBytes and StorageBytes are the device's capacity as reported at enroll.
+	RAMBytes     int64
+	StorageBytes int64
 	// TierHint is the device's self-reported state. It is used only to cap what
 	// is granted, never to grant more than the policy allows: the server cannot
 	// verify root.
@@ -96,8 +109,14 @@ func (s *Service) Enroll(ctx context.Context, req EnrollRequest) (*EnrollResult,
 	d.Model = req.Model
 	d.Manufacturer = req.Manufacturer
 	d.OSVersion = req.OSVersion
+	d.APIVersion = req.APIVersion
 	d.AppVersion = req.AppVersion
 	d.DeviceClass = req.DeviceClass
+	d.BuildID = req.BuildID
+	d.SecurityPatch = req.SecurityPatch
+	d.SupportedABIs = strings.Join(req.SupportedABIs, ",")
+	d.RAMBytes = req.RAMBytes
+	d.StorageBytes = req.StorageBytes
 	d.Tier = device.TierFromInt(req.TierHint)
 
 	if existing != nil {

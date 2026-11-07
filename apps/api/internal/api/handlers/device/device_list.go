@@ -266,15 +266,22 @@ func (h *ListHandler) GetDevice(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, openapi.DeviceDetailResult{
-		ID:           d.ID,
-		IMEI:         d.ID,
-		DeviceName:   d.DeviceName,
-		Model:        d.Model,
-		Manufacturer: d.Manufacturer,
-		AppVersion:   d.AppVersion,
-		Status:       status,
-		LastSeen:     int64Ptr(d.LastSeen),
-		RegisteredAt: int64Ptr(d.RegisteredAt),
+		ID:            d.ID,
+		IMEI:          d.ID,
+		DeviceName:    d.DeviceName,
+		Model:         d.Model,
+		Manufacturer:  d.Manufacturer,
+		OSVersion:     d.OSVersion,
+		APILevel:      d.APIVersion,
+		BuildID:       d.BuildID,
+		SecurityPatch: d.SecurityPatch,
+		SupportedAbis: d.SupportedABIs,
+		RamBytes:      int64Ptr(d.RAMBytes),
+		StorageBytes:  int64Ptr(d.StorageBytes),
+		AppVersion:    d.AppVersion,
+		Status:        status,
+		LastSeen:      int64Ptr(d.LastSeen),
+		RegisteredAt:  int64Ptr(d.RegisteredAt),
 	})
 }
 

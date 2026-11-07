@@ -37,6 +37,8 @@ func newEnrollmentService(t *testing.T) *Service {
 		registered_at INTEGER NOT NULL DEFAULT 0, last_seen INTEGER NOT NULL DEFAULT 0,
 		operator_id TEXT, organization_id TEXT, created_at TIMESTAMP, updated_at TIMESTAMP,
 		device_name TEXT, manufacturer TEXT, model TEXT, os_version TEXT, security_patch TEXT,
+			build_id TEXT, api_level INTEGER NOT NULL DEFAULT 0, supported_abis TEXT,
+			ram_bytes INTEGER NOT NULL DEFAULT 0, storage_bytes INTEGER NOT NULL DEFAULT 0,
 		deregistered_at INTEGER, deletion_scheduled_at INTEGER, fcm_token_refreshed_at INTEGER,
 		tags TEXT, tier INTEGER NOT NULL DEFAULT 1, public_key TEXT, pairing_code TEXT,
 		pairing_expires_at INTEGER)`); err != nil {
@@ -68,12 +70,20 @@ func TestEnrollCreatesPendingDeviceWithCode(t *testing.T) {
 	ctx := context.Background()
 
 	result, err := svc.Enroll(ctx, EnrollRequest{
-		DeviceUUID:   "dev-1",
-		PublicKeyPEM: testPublicKey(t),
-		Model:        "C22",
-		Manufacturer: "Nokia",
-		OSVersion:    "13",
-		TierHint:     1,
+		DeviceUUID:    "dev-1",
+		PublicKeyPEM:  testPublicKey(t),
+		Model:         "C22",
+		Manufacturer:  "Nokia",
+		OSVersion:     "13",
+		APIVersion:    33,
+		AppVersion:    "0.1.0",
+		DeviceClass:   "phone",
+		BuildID:       "nokia/C22/C22:13/TP1A/123:user/release-keys",
+		SecurityPatch: "2024-03-01",
+		SupportedABIs: []string{"arm64-v8a", "armeabi-v7a"},
+		RAMBytes:      4_000_000_000,
+		StorageBytes:  64_000_000_000,
+		TierHint:      1,
 	})
 	if err != nil {
 		t.Fatalf("enroll: %v", err)
@@ -98,6 +108,23 @@ func TestEnrollCreatesPendingDeviceWithCode(t *testing.T) {
 	}
 	if d.OrganizationID != "" {
 		t.Error("an enrolled device must have no organization until claimed")
+	}
+	// The enriched facts must survive the round trip to the store, not just be
+	// accepted by the request struct.
+	if d.APIVersion != 33 {
+		t.Errorf("api level = %d, want 33", d.APIVersion)
+	}
+	if d.BuildID == "" || d.SecurityPatch == "" {
+		t.Errorf("build id and security patch must be stored, got %q/%q", d.BuildID, d.SecurityPatch)
+	}
+	if d.SupportedABIs != "arm64-v8a,armeabi-v7a" {
+		t.Errorf("abis = %q, want the joined list", d.SupportedABIs)
+	}
+	if d.RAMBytes != 4_000_000_000 || d.StorageBytes != 64_000_000_000 {
+		t.Errorf("capacity = %d/%d, want the reported values", d.RAMBytes, d.StorageBytes)
+	}
+	if d.DeviceClass != "phone" {
+		t.Errorf("device class = %q, want phone", d.DeviceClass)
 	}
 }
 

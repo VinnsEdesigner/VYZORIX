@@ -12312,7 +12312,13 @@ const docTemplate = `{
         "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceDetailResult": {
             "type": "object",
             "properties": {
+                "api_level": {
+                    "type": "integer"
+                },
                 "app_version": {
+                    "type": "string"
+                },
+                "build_id": {
                     "type": "string"
                 },
                 "device_name": {
@@ -12333,10 +12339,25 @@ const docTemplate = `{
                 "model": {
                     "type": "string"
                 },
+                "os_version": {
+                    "type": "string"
+                },
+                "ram_bytes": {
+                    "type": "integer"
+                },
                 "registered_at": {
                     "type": "integer"
                 },
+                "security_patch": {
+                    "type": "string"
+                },
                 "status": {
+                    "type": "string"
+                },
+                "storage_bytes": {
+                    "type": "integer"
+                },
+                "supported_abis": {
                     "type": "string"
                 }
             }
@@ -15246,7 +15267,15 @@ const docTemplate = `{
                 "publicKey"
             ],
             "properties": {
+                "apiLevel": {
+                    "description": "APIVersion is the Android API level (Build.VERSION.SDK_INT). Named APIVersion\nin Go because the wire field is ` + "`" + `apiLevel` + "`" + `; the device sends it so the server\ncan show what a device runs without inferring it from osVersion.",
+                    "type": "integer"
+                },
                 "appVersion": {
+                    "type": "string"
+                },
+                "buildId": {
+                    "description": "BuildID is the build fingerprint, identifying the exact build.",
                     "type": "string"
                 },
                 "deviceClass": {
@@ -15266,6 +15295,24 @@ const docTemplate = `{
                 },
                 "publicKey": {
                     "type": "string"
+                },
+                "ramBytes": {
+                    "description": "RAMBytes and StorageBytes are the device's capacity, so an operator can see\nwhat it can run before assigning work to it.",
+                    "type": "integer"
+                },
+                "securityPatch": {
+                    "description": "SecurityPatch is the patch level (\"2024-03-01\"), so staleness is visible.",
+                    "type": "string"
+                },
+                "storageBytes": {
+                    "type": "integer"
+                },
+                "supportedAbis": {
+                    "description": "SupportedABIs is the device's ABI list, most preferred first.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "tierHint": {
                     "type": "integer"

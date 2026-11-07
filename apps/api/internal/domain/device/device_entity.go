@@ -66,8 +66,16 @@ type Device struct {
 	DeviceClass         string
 	SecurityPatch       string
 	DeviceName          string
+	BuildID             string
+	SupportedABIs       string
 	ID                  string
 	AppVersion          string
+	// APIVersion is the Android API level (Build.VERSION.SDK_INT). Zero on a row
+	// written before this was collected.
+	APIVersion int
+	// RAMBytes and StorageBytes are the device's capacity, as reported at enroll.
+	RAMBytes     int64
+	StorageBytes int64
 	// PairingCode is the short code the device shows in a notification and the
 	// operator types into the web app. Empty once claimed.
 	PairingCode string

@@ -586,15 +586,22 @@ type DeviceListResult struct {
 }
 
 type DeviceDetailResult struct {
-	AppVersion   string `json:"app_version,omitempty"`
-	DeviceName   string `json:"device_name,omitempty"`
-	ID           string `json:"id"`
-	IMEI         string `json:"imei,omitempty"`
-	LastSeen     *int64 `json:"last_seen,omitempty"`
-	Manufacturer string `json:"manufacturer,omitempty"`
-	Model        string `json:"model,omitempty"`
-	RegisteredAt *int64 `json:"registered_at,omitempty"`
-	Status       string `json:"status"`
+	AppVersion    string `json:"app_version,omitempty"`
+	BuildID       string `json:"build_id,omitempty"`
+	DeviceName    string `json:"device_name,omitempty"`
+	ID            string `json:"id"`
+	IMEI          string `json:"imei,omitempty"`
+	LastSeen      *int64 `json:"last_seen,omitempty"`
+	Manufacturer  string `json:"manufacturer,omitempty"`
+	Model         string `json:"model,omitempty"`
+	OSVersion     string `json:"os_version,omitempty"`
+	RamBytes      *int64 `json:"ram_bytes,omitempty"`
+	RegisteredAt  *int64 `json:"registered_at,omitempty"`
+	SecurityPatch string `json:"security_patch,omitempty"`
+	Status        string `json:"status"`
+	StorageBytes  *int64 `json:"storage_bytes,omitempty"`
+	SupportedAbis string `json:"supported_abis,omitempty"`
+	APILevel      int    `json:"api_level,omitempty"`
 }
 
 type DeviceCountResult struct {

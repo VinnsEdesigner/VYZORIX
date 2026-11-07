@@ -827,7 +827,11 @@ definitions:
     type: object
   github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceDetailResult:
     properties:
+      api_level:
+        type: integer
       app_version:
+        type: string
+      build_id:
         type: string
       device_name:
         type: string
@@ -841,9 +845,19 @@ definitions:
         type: string
       model:
         type: string
+      os_version:
+        type: string
+      ram_bytes:
+        type: integer
       registered_at:
         type: integer
+      security_patch:
+        type: string
       status:
+        type: string
+      storage_bytes:
+        type: integer
+      supported_abis:
         type: string
     type: object
   github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceDisconnectResult:
@@ -2731,7 +2745,16 @@ definitions:
     type: object
   internal_api_handlers_inbox.enrollRequest:
     properties:
+      apiLevel:
+        description: |-
+          APIVersion is the Android API level (Build.VERSION.SDK_INT). Named APIVersion
+          in Go because the wire field is `apiLevel`; the device sends it so the server
+          can show what a device runs without inferring it from osVersion.
+        type: integer
       appVersion:
+        type: string
+      buildId:
+        description: BuildID is the build fingerprint, identifying the exact build.
         type: string
       deviceClass:
         type: string
@@ -2745,6 +2768,22 @@ definitions:
         type: string
       publicKey:
         type: string
+      ramBytes:
+        description: |-
+          RAMBytes and StorageBytes are the device's capacity, so an operator can see
+          what it can run before assigning work to it.
+        type: integer
+      securityPatch:
+        description: SecurityPatch is the patch level ("2024-03-01"), so staleness
+          is visible.
+        type: string
+      storageBytes:
+        type: integer
+      supportedAbis:
+        description: SupportedABIs is the device's ABI list, most preferred first.
+        items:
+          type: string
+        type: array
       tierHint:
         type: integer
     required:
