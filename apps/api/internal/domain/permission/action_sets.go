@@ -186,6 +186,28 @@ var DeviceAPICatalog = map[string]ApiRequirement{
 		Tags:    Requirement{All: []Tag{HwUsb, DataHardware, OpWrite, ProtectionSignature}},
 		MinTier: TierRooted,
 	},
+	// The concrete USB APIs the device serves. Each is read-or-write as the device
+	// declares it: usb_state reads the attachment list, usb_attach/usb_detach claim
+	// and release a device (the write half). All three carry the hardware tags, so
+	// the role that holds usb.manage reaches them and no other role does.
+	"usb_state": {
+		Action:  ActionUsb,
+		Scope:   ScopeDevices,
+		Tags:    Requirement{All: []Tag{HwUsb, DataHardware, OpRead, ProtectionSignature, VisibilityPrivate}},
+		MinTier: TierUnrooted,
+	},
+	"usb_attach": {
+		Action:  ActionUsb,
+		Scope:   ScopeDevices,
+		Tags:    Requirement{All: []Tag{HwUsb, DataHardware, OpWrite, ProtectionSignature, VisibilityPrivate}},
+		MinTier: TierUnrooted,
+	},
+	"usb_detach": {
+		Action:  ActionUsb,
+		Scope:   ScopeDevices,
+		Tags:    Requirement{All: []Tag{HwUsb, DataHardware, OpWrite, ProtectionSignature, VisibilityPrivate}},
+		MinTier: TierUnrooted,
+	},
 	// Full filesystem read: advanced devices only.
 	"filesystem": {
 		Action:  ActionDeviceRead,

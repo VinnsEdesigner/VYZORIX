@@ -142,7 +142,12 @@ func (s *Server) setupStaticRoutes() {
 	s.engine.GET("/api/v1/version", s.versionHandler)
 	s.engine.GET("/api/v1/changelog", s.changelogHandler)
 	s.engine.GET("/api/v1/apk/*name", s.apkHandler)
+	// HEAD too: the handler supports it, and a client uses it to learn an APK's
+	// size before downloading tens of megabytes. Registering only GET left the
+	// HEAD branch in serveAPK unreachable and answered HEAD with 400.
+	s.engine.HEAD("/api/v1/apk/*name", s.apkHandler)
 	s.engine.GET("/bin/*name", s.binHandler)
+	s.engine.HEAD("/bin/*name", s.binHandler)
 	s.engine.GET("/api/v1/check-update", s.updaterHandler.CheckUpdate)
 	s.engine.POST("/api/v1/download-progress", s.updaterHandler.DownloadProgress)
 	// Also register at /v1/ without the /api prefix so requests forwarded.
@@ -150,6 +155,7 @@ func (s *Server) setupStaticRoutes() {
 	s.engine.GET("/v1/version", s.versionHandler)
 	s.engine.GET("/v1/changelog", s.changelogHandler)
 	s.engine.GET("/v1/apk/*name", s.apkHandler)
+	s.engine.HEAD("/v1/apk/*name", s.apkHandler)
 	s.engine.GET("/v1/check-update", s.updaterHandler.CheckUpdate)
 	s.engine.POST("/v1/download-progress", s.updaterHandler.DownloadProgress)
 }

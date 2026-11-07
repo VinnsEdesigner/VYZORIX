@@ -125,6 +125,52 @@ func TestAllowlistIsAMonotoneLadder(t *testing.T) {
 	}
 }
 
+// TestUSBAPIsRequireTheHardwareTags proves the concrete USB APIs resolve only for
+// a role that holds the hardware capability. usb_state is a read; usb_attach and
+// usb_detach are the write half. All three are gated on hw:usb + data:hardware,
+// which only admin/super_admin hold — so a viewer or operator reaches none of them.
+func TestUSBAPIsRequireTheHardwareTags(t *testing.T) {
+	usbAPIs := []string{"usb_state", "usb_attach", "usb_detach"}
+
+	for _, role := range []string{"viewer", "operator"} {
+		allow := allowlistFor(role, permission.TierAdvanced)
+		for _, api := range usbAPIs {
+			if contains(allow, api) {
+				t.Errorf("%s must not reach %s (no hw:usb tag)", role, api)
+			}
+		}
+	}
+
+	admin := allowlistFor("admin", permission.TierAdvanced)
+	for _, api := range usbAPIs {
+		if !contains(admin, api) {
+			t.Errorf("admin must reach %s", api)
+		}
+	}
+
+	// Tier does not substitute for the tag: a viewer on an advanced device still
+	// reaches no USB API, because tier only *caps* the allowlist.
+	viewerAdvanced := allowlistFor("viewer", permission.TierAdvanced)
+	for _, api := range usbAPIs {
+		if contains(viewerAdvanced, api) {
+			t.Errorf("tier must not grant %s to a viewer", api)
+		}
+	}
+}
+
+// TestUSBTrioIsServedOnAnUnrootedDevice proves the UsbManager path reaches the
+// concrete APIs at tier 1 — the whole point of the fd route, since /dev/bus/usb is
+// unreachable there.
+func TestUSBTrioIsServedOnAnUnrootedDevice(t *testing.T) {
+	unrooted := allowlistFor("admin", permission.TierUnrooted)
+
+	for _, api := range []string{"usb_state", "usb_attach", "usb_detach"} {
+		if !contains(unrooted, api) {
+			t.Errorf("tier 1 must reach %s through the UsbManager path", api)
+		}
+	}
+}
+
 // TestViewerCannotReachShellOrUsb is the least-privilege guard: the two
 // arbitrary-access APIs must not appear in a viewer's allowlist at any tier.
 func TestViewerCannotReachShellOrUsb(t *testing.T) {
