@@ -3,6 +3,7 @@ package deploy
 import (
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -77,7 +78,7 @@ func (fixedSettings) ForDevice(_ context.Context, _ *device.Device) Injection {
 }
 
 // serviceFixture builds a DeployService over in-memory stores.
-func serviceFixture(t *testing.T, caller *Caller) (*DeployService, *memConfigs) {
+func serviceFixture(t *testing.T, caller *Caller) (*DeployService, *memConfigs, *Caller) {
 	t.Helper()
 
 	sign, _ := signer(t)
@@ -89,14 +90,13 @@ func serviceFixture(t *testing.T, caller *Caller) (*DeployService, *memConfigs) 
 
 	svc := NewDeployService(
 		configs,
-		func(_ context.Context, _ string) (*Caller, error) { return caller, nil },
 		devices,
 		sign,
 		fixedSettings{},
 	)
 	svc.now = func() time.Time { return time.UnixMilli(1_700_000_000_000) }
 
-	return svc, configs
+	return svc, configs, caller
 }
 
 func deployCaller() *Caller {
@@ -113,9 +113,10 @@ func deployCaller() *Caller {
 func TestDeployPersistsAndReturnsTheVersion(t *testing.T) {
 	t.Parallel()
 
-	svc, configs := serviceFixture(t, deployCaller())
+	svc, configs, caller := serviceFixture(t, deployCaller())
 
 	result, err := svc.Deploy(context.Background(), DeployRequest{
+		Caller:   caller,
 		Manifest: []byte(twoAppManifest),
 		OrgID:    "org_01H",
 		DeviceID: "d_01H",
@@ -151,10 +152,10 @@ func TestDeployPersistsAndReturnsTheVersion(t *testing.T) {
 func TestDeployVersionIsMonotonic(t *testing.T) {
 	t.Parallel()
 
-	svc, _ := serviceFixture(t, deployCaller())
+	svc, _, caller := serviceFixture(t, deployCaller())
 	ctx := context.Background()
 
-	req := DeployRequest{Manifest: []byte(twoAppManifest), OrgID: "org_01H", DeviceID: "d_01H", MemberID: "op_01H"}
+	req := DeployRequest{Caller: caller, Manifest: []byte(twoAppManifest), OrgID: "org_01H", DeviceID: "d_01H", MemberID: "op_01H"}
 
 	first, err := svc.Deploy(ctx, req)
 	if err != nil {
@@ -175,9 +176,10 @@ func TestDeployVersionIsMonotonic(t *testing.T) {
 func TestDryRunStoresNothing(t *testing.T) {
 	t.Parallel()
 
-	svc, configs := serviceFixture(t, deployCaller())
+	svc, configs, caller := serviceFixture(t, deployCaller())
 
 	result, err := svc.Deploy(context.Background(), DeployRequest{
+		Caller:   caller,
 		Manifest: []byte(twoAppManifest),
 		OrgID:    "org_01H",
 		DeviceID: "d_01H",
@@ -196,6 +198,12 @@ func TestDryRunStoresNothing(t *testing.T) {
 		t.Fatal("a dry run must return the document for inspection")
 	}
 
+	// The version the operator is shown must be the one in the document they were
+	// shown, or the preview describes a different deploy than the one it prints.
+	if want := "v version " + strconv.Itoa(result.Version); !strings.Contains(result.Document, want) {
+		t.Fatalf("the dry-run version %d is not the one in the document", result.Version)
+	}
+
 	if _, err := configs.Current(context.Background(), "d_01H"); !errors.Is(err, deployconfig.ErrNotFound) {
 		t.Fatal("a dry run must not persist")
 	}
@@ -208,9 +216,10 @@ func TestUnauthorizedCallerNeverReachesTheCompiler(t *testing.T) {
 	t.Parallel()
 
 	caller := &Caller{Authenticated: true, OrgID: "org_01H"} // no grant
-	svc, _ := serviceFixture(t, caller)
+	svc, _, _ := serviceFixture(t, caller)
 
 	_, err := svc.Deploy(context.Background(), DeployRequest{
+		Caller:   caller,
 		Manifest: []byte("this is not valid toml [[["),
 		OrgID:    "org_01H",
 		DeviceID: "d_01H",
@@ -226,9 +235,10 @@ func TestCrossOrgDeployIsRefused(t *testing.T) {
 	t.Parallel()
 
 	caller := deployCaller()
-	svc, _ := serviceFixture(t, caller)
+	svc, _, _ := serviceFixture(t, caller)
 
 	_, err := svc.Deploy(context.Background(), DeployRequest{
+		Caller:   caller,
 		Manifest: []byte(twoAppManifest),
 		OrgID:    "org_other",
 		DeviceID: "d_01H",
@@ -243,11 +253,12 @@ func TestCrossOrgDeployIsRefused(t *testing.T) {
 func TestManifestNamingAnotherDeviceIsRefused(t *testing.T) {
 	t.Parallel()
 
-	svc, _ := serviceFixture(t, deployCaller())
+	svc, _, caller := serviceFixture(t, deployCaller())
 
 	other := strings.Replace(twoAppManifest, `id  = "d_01H"`, `id  = "d_OTHER"`, 1)
 
 	_, err := svc.Deploy(context.Background(), DeployRequest{
+		Caller:   caller,
 		Manifest: []byte(other),
 		OrgID:    "org_01H",
 		DeviceID: "d_01H",
@@ -266,11 +277,12 @@ func TestManifestNamingAnotherDeviceIsRefused(t *testing.T) {
 func TestDeployRefusesAManifestCarryingASecret(t *testing.T) {
 	t.Parallel()
 
-	svc, _ := serviceFixture(t, deployCaller())
+	svc, _, caller := serviceFixture(t, deployCaller())
 
 	bad := strings.Replace(twoAppManifest, `MI_PORT = "8080"`, `API_TOKEN = "short"`, 1)
 
 	_, err := svc.Deploy(context.Background(), DeployRequest{
+		Caller:   caller,
 		Manifest: []byte(bad),
 		OrgID:    "org_01H",
 		DeviceID: "d_01H",

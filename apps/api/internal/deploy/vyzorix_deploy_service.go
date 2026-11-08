@@ -14,8 +14,11 @@ import (
 // thin adapter over this, so the sequence and its ordering live in one place and
 // are testable without HTTP.
 
-// DeployRequest is one operator's deploy.
+// DeployRequest is one operator's deploy. The caller is resolved by the handler,
+// which is the authentication boundary, and passed in so the service never has to
+// reach back into a request context it does not own.
 type DeployRequest struct {
+	Caller   *Caller
 	OrgID    string
 	DeviceID string
 	MemberID string
@@ -36,7 +39,6 @@ type DeployResult struct {
 // DeployService orchestrates a deploy end to end.
 type DeployService struct {
 	configs  deployconfig.Repository
-	caller   func(ctx context.Context, orgID string) (*Caller, error)
 	lookup   DeviceLookup
 	sign     DocumentSigner
 	settings SettingsSource
@@ -53,14 +55,12 @@ type SettingsSource interface {
 // NewDeployService builds a DeployService.
 func NewDeployService(
 	configs deployconfig.Repository,
-	caller func(ctx context.Context, orgID string) (*Caller, error),
 	lookup DeviceLookup,
 	sign DocumentSigner,
 	settings SettingsSource,
 ) *DeployService {
 	return &DeployService{
 		configs:  configs,
-		caller:   caller,
 		lookup:   lookup,
 		sign:     sign,
 		settings: settings,
@@ -70,10 +70,7 @@ func NewDeployService(
 
 // Deploy runs the sequence for one request.
 func (s *DeployService) Deploy(ctx context.Context, req DeployRequest) (*DeployResult, error) {
-	caller, err := s.caller(ctx, req.OrgID)
-	if err != nil {
-		return nil, err
-	}
+	caller := req.Caller
 
 	// The caller is resolved for the requested org, but the org it is actually
 	// in is the authority. A resolver that returned a caller for a different
@@ -129,7 +126,6 @@ func (s *DeployService) Deploy(ctx context.Context, req DeployRequest) (*DeployR
 	result := resultFromConfig(cfg, injection.Version, req.DryRun)
 
 	if req.DryRun {
-		result.Version = current
 		result.Document = document
 
 		return result, nil
@@ -141,6 +137,29 @@ func (s *DeployService) Deploy(ctx context.Context, req DeployRequest) (*DeployR
 
 	return result, nil
 }
+
+// Current returns the config a device should be running, after the same
+// authorization a deploy requires: a caller who may not deploy to a device may
+// not read its config either, since the config names its apps and their secrets.
+func (s *DeployService) Current(ctx context.Context, caller *Caller, orgID, deviceID string) (*deployconfig.Record, error) {
+	if caller == nil || caller.OrgID != orgID {
+		return nil, &DeniedError{Denial: DenialNotInOrg}
+	}
+
+	if _, err := AuthorizeDeploy(ctx, s.lookup, caller, deviceID); err != nil {
+		return nil, err
+	}
+
+	record, err := s.configs.Current(ctx, deviceID)
+	if errors.Is(err, deployconfig.ErrNotFound) {
+		return nil, ErrNoConfig
+	}
+
+	return record, err
+}
+
+// ErrNoConfig is returned when a device has never been deployed to.
+var ErrNoConfig = errors.New("device has no config")
 
 // persist stores the new current config, which demotes the previous one.
 func (s *DeployService) persist(ctx context.Context, deviceID string, version int, document string) error {
