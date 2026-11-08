@@ -706,7 +706,7 @@ received. It is delivered on demand, and re-delivered on every reconnect.
 ```
  vyzorix secrets set vfd DATABASE_URL=... --device d_01H...
    │
-   ├─ server: encrypt to the DEVICE's public key      (RSA-OAEP-SHA256)
+   ├─ server: encrypt to the DEVICE's public key      (RSA-OAEP-SHA1)
    │           store the CIPHERTEXT at rest            (secretstore, AES-GCM)
    │           record key, app, device — never the plaintext
    ▼
@@ -756,6 +756,34 @@ So: a **second Keystore entry**, `vyzorix.secret`, `PURPOSE_DECRYPT`, generated 
 first run alongside the identity key, whose public half is sent at enroll exactly as
 the identity key's is. The agent never exposes it over the bridge; there is no
 `SecretApi`.
+
+**The OAEP digest is SHA-1, and that is a constraint the Keystore imposes.** The
+probe run for this spike established it on API 28:
+
+```
+OAEP-SHA256/MGF1-SHA256  REJECTED  InvalidAlgorithmParameterException:
+                                   Unsupported MGF1 digest: SHA-256. Only SHA-1 supported
+OAEP-SHA256/MGF1-SHA1    SUPPORTED (no stdlib producer — see below)
+OAEP-SHA1/MGF1-SHA1      SUPPORTED
+```
+
+Two consequences, and neither is a preference:
+
+1. **The Keystore accepts only MGF1-SHA1.** A spec with `MGF1ParameterSpec.SHA256`
+   is refused outright, so "SHA-256 OAEP" is not an option on a non-exportable
+   Keystore key.
+2. **Go cannot produce the mixed pair.** `rsa.EncryptOAEP` uses the supplied hash
+   for both the OAEP digest and MGF1, so the only pair both Go and the Keystore can
+   agree on is SHA-1 for both — which is also OAEP's default and what
+   `EncryptOAEP(sha1.New())` emits.
+
+So the envelope is `RSA-OAEP-SHA1`, and the constant the two sides compare is
+`"RSA-OAEP-SHA1"`. This was **verified on the emulator, not inferred**: Go wrapped a
+secret to the device's Keystore public key and the Keystore returned it —
+`DECRYPTED=postgres://vyzorix:s3cr3t@db.internal:5432/app`. SHA-1 in OAEP is the
+standard default and is not a practical weakness here (the 3072-bit modulus is the
+protection), but it is recorded because the obvious "harden it to SHA-256" edit
+breaks every device, and a comment is cheaper than that outage.
 
 ### 9b.4 What lands on disk, and why not `apps.json`
 
@@ -941,7 +969,7 @@ must earn its name, so existing files are modified in place wherever possible.
 | `apps/api/internal/deploy/authz.go` | 110 | The §7.1 predicate: role, grant, org binding, lifecycle. |
 | `apps/api/internal/api/handlers/deploy/deploy_handler.go` | 170 | `POST /v1/deploy`, `GET /v1/deploy/{device}`, dry-run. |
 | `apps/api/internal/api/handlers/deploy/credential_handler.go` | 110 | Mint/list/revoke a device-scoped deploy credential. |
-| `apps/api/internal/deploy/secrets.go` | 200 | RSA-OAEP wrap to the device key; store ciphertext via `secretstore`; generation counter; the "only keys the config names" check. |
+| `apps/api/internal/deploy/secrets.go` | 200 | RSA-OAEP-SHA1 wrap to the device key (§9b.3); store ciphertext via `secretstore`; generation counter; the "only keys the config names" check. |
 | `apps/api/internal/api/handlers/deploy/secrets_handler.go` | 130 | `GET` names+generation; `GET` ciphertext to an authenticated device. |
 | `apps/api/cmd/api/provisioning_adapters.go` | +40 | The `catalog_apps` section. |
 | `apps/api/internal/domain/permission/scoped.go` | +6 | `ActionDeviceDeploy`. |
@@ -979,6 +1007,7 @@ a regression in any of them is silent.
 | `cloud/ConfigStore.kt` | +80 | Retain current + last-good; restore on failure. |
 | `cloud/DeployReporter.kt` | 90 | Report `device_ready {version}` and every refusal reason. |
 | `cloud/SecretKey.kt` | 110 | The second Keystore entry: `vyzorix.secret`, RSA-3072, `PURPOSE_DECRYPT`, generated on first run. Never exposed over the bridge. |
+| `cloud/SecretEnvelope.kt` | 90 | RSA-OAEP-SHA1 unwrap (§9b.3). **Written and proven in the spike**, on the JVM against a Go vector and on-device against a real Keystore key. |
 | `cloud/SecretStore.kt` | 140 | Fetch ciphertext, decrypt, write `files/apps/<app>/.env` at 0600, report `secrets_ready`; refuse to start an app whose secret will not open. |
 | `cloud/ConfigVerifier.kt` | +60 | Replace the line scanner in `assertNoSecrets` with the structural walk of §5.2. The one change to a shipped file that this contract cannot ship without. |
 
@@ -1032,7 +1061,10 @@ The envelope is in the spike for the same reason and at the same cost: RSA-OAEP 
 in Go, unwrap in Kotlin, is a handful of lines, and it is the one piece of new
 cryptography this feature introduces. Getting it wrong is silent — a secret that
 decrypts to garbage is worse than one that refuses — so it is worth proving before
-anything is built on top of it.
+anything is built on top of it. **It has been run, and it changed the design**: the
+Android Keystore accepts only MGF1-SHA1, so the envelope is `RSA-OAEP-SHA1` rather
+than the SHA-256 the first draft specified (§9b.3). That is exactly the kind of thing
+this spike is for.
 
 Specifically, the spike is done when:
 
@@ -1050,7 +1082,9 @@ Specifically, the spike is done when:
 8. The same tests run on both sides — Go signs, Kotlin verifies — because a signature
    that only verifies in one language is not a signature.
 9. **A secret wrapped in Go unwraps in Kotlin**, and a ciphertext wrapped to key A
-   fails to unwrap with key B.
+   fails to unwrap with key B. **And unwraps with a real Android Keystore key** — the
+   host JVM is not the Keystore, and only the device answers whether the parameters
+   are accepted. This item is why the digest is SHA-1.
 
 Only then is it worth fetching an artifact. The fetch is the part everyone wants to
 build first and the part that teaches the least.
