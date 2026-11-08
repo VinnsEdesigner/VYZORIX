@@ -1,0 +1,645 @@
+# Vyzorix Deploy Contract
+
+**Status:** design, agreed in outline. Nothing built.
+**Parent:** `VYZORIX_DEPLOY_REQUIREMENTS.md` (this repo, `documents/`) — the requirements
+and the resolved decisions. This document is the *contract*: the exact shapes, the
+rules that must not bend, and what is written where.
+**Sibling:** `vyzorix-android/doc/REGISTRATION_CONTRACT.md` — how a device joins an
+account. This contract begins where that one ends: the device is `registered`, holds a
+keypair, and can verify a signed config.
+**Dependency:** §9 of the registration contract is an **open decision** (retire HMAC
+for the keypair, or keep HMAC with envelope-encrypted delivery). This contract assumes
+the keypair, which is that document's recommendation, and says in §10 what changes if
+the other is chosen.
+
+This document defines one thing: **how a `vyzorix.toml` becomes apps running on a
+device, and what makes that trustworthy.**
+
+---
+
+## 1. The problem the model must not repeat
+
+The first shape of this feature was "deploy Vfd". That is wrong in a way that would
+have been expensive to discover late: it makes the manifest a *config for one program*,
+and every generalisation after that is a migration.
+
+The correction is small to state and large in effect: **the manifest describes apps,
+and Vfd is one of them.** The test is mechanical — a second app must be deployable with
+no change to anything under `apps/api/`. If that is not true, the feature is hardcoded
+and pretending otherwise.
+
+There is a second trap, and it is the one that decides the whole design. The obvious
+model is Fly's: a CLI talks to an authoritative control plane, the control plane
+decides, and the change lands. That model does not transfer, because **a device is
+intermittent.** Fly's server is the gate at deploy time; a phone that has been offline
+for a week cannot ask. So the authority cannot be a check the server performs when it
+delivers. It has to be **something the device can verify alone, later, with no network.**
+
+That single constraint produces the three rules in §2, and everything else follows.
+
+---
+
+## 2. The one idea
+
+**The operator declares; the server signs; the device verifies alone.**
+
+Three rules, and they are not negotiable — each one closes a specific hole:
+
+1. **A config is signed by the server and verified by the device** against a pinned
+   public key. A device never acts on an unsigned document, and never on an instruction
+   that arrived on a live socket. The socket *delivers* the config; it does not
+   *authorise* it.
+2. **A config carries references, never bytes.** Every artifact is `{url, sha256}`.
+   The signature covers the digest, so the *transport* is untrusted by construction: an
+   artifact may be fetched over plain HTTP and still be known-good.
+3. **A config carries no secret.** If it could, the delivery channel would inherit the
+   problem the keypair model exists to remove. The server refuses to issue one; the
+   device refuses to store one. Both sides check, because one bad deploy must not be
+   able to break the invariant.
+
+Three consequences worth stating plainly, because they are why the rules earn their
+keep:
+
+- **Nothing secret is ever transmitted.** Same property the registration contract
+  established for enrollment, now held for deploy.
+- **The device can be offline for a week and still decide correctly.** It holds a
+  signature and a pinned key; both are local.
+- **The server stays authoritative.** The device reports facts and refusals; the
+  operator decides what runs.
+
+---
+
+## 3. The flow
+
+```
+ operator                     server                        device
+ ────────                     ──────                        ──────
+ vyzorix.toml
+   │ vyzorix deploy
+   ├──────────────────────────► POST /v1/deploy
+   │                            authenticate  (session)
+   │                            authorise     (super_admin | grant)
+   │                            bind          (device ∈ org)
+   │                            compile       (toml → config)
+   │                            refuse        (secret, unhashed ref, cmd escape)
+   │                            sign          (server key, version++)
+   │                            persist       (current + last good)
+   │◄────────────────────────── 202 {version, artifacts, authorizedBy}
+   │
+   │                            ── device_config frame ─────────►  verify signature
+   │                                                               reject if secret
+   │                                                               fetch artifacts
+   │                                                               verify each sha256
+   │                                                               apply atomically
+   │                                                               write apps.json
+   │                                                               generate manifest
+   │◄──────────────────────────  device_ready {version} ────────────  start apps
+   │                            record applied version
+```
+
+A device that was offline re-fetches on reconnect: it compares the `version` it holds
+to the one the server reports and asks for the config when they differ (§7).
+
+---
+
+## 4. The manifest — `vyzorix.toml`
+
+The operator's file, and the only artifact a human writes.
+
+```toml
+[device]
+id   = "d_01H..."            # required — the target
+org  = "org_01H..."          # required — the owning organization
+name = "field-ops-07"        # optional — a display name override
+
+# One or more apps. Order is not significant.
+[[app]]
+name      = "vfd"                    # required, unique within the file
+cmd       = "/home/apps/vfd/run.sh"  # required (see §8 for the rule)
+port      = 8080                     # optional — the port the app listens on
+autostart = true                     # optional, default true
+expose    = "loopback"               # optional — loopback | lan | cloud
+purge     = false                    # optional, default false — see below
+
+  # Artifacts are references. `sha256` is mandatory.
+  [[app.artifact]]
+  name   = "engine"
+  url    = "https://github.com/VinnsEdesigner/vyzorix-engine-assets/releases/latest/download/vyzor-${abi}.tar.gz"
+  sha256 = "9f2c..."
+  size   = 1882104                   # optional, informational
+
+  [[app.artifact]]
+  name   = "console"
+  url    = "https://.../console.tar.gz"
+  sha256 = "41ab..."
+  kind   = "webroot"                 # optional — "webroot" unpacks and is served
+
+  # A webroot may be installable, and that is a decision, not a default.
+  pwa = true
+
+    [app.pwa]                        # optional — overrides the generated defaults
+    name             = "Vyzorix"
+    short_name       = "Vyzorix"
+    description      = "Download, transcode and deliver media."
+    theme_color      = "#be123c"
+    background_color = "#ededed"
+    display          = "standalone"
+    orientation      = "portrait"
+    start_url        = "/"
+
+  [app.env]
+  MI_PORT = "8080"
+
+[[app]]                              # a second app — this is what makes it a platform
+name = "wiki"
+cmd  = "/home/apps/wiki/run.sh"
+port = 9000
+expose = "lan"
+
+  [[app.artifact]]
+  name   = "site"
+  url    = "https://.../wiki.tar.gz"
+  sha256 = "7b3d..."
+  kind   = "webroot"
+
+  pwa = true
+```
+
+### 4.1 Field rules
+
+| Field | Type | Required | Default | Notes |
+|:--|:--|:--|:--|:--|
+| `device.id` | string | yes | — | Must match a device the caller's org owns. |
+| `device.org` | string | yes | — | Checked against the caller's org. |
+| `device.name` | string | no | server's name | Display only. |
+| `app.name` | string | yes | — | `[a-z0-9-]{1,32}`, unique in the file. Becomes the directory name. |
+| `app.cmd` | string | yes | — | §8. |
+| `app.port` | int | no | none | 1–65535. Required when `expose != "loopback"`. |
+| `app.autostart` | bool | no | `true` | Whether the supervisor starts it. |
+| `app.expose` | enum | no | `loopback` | `loopback` \| `lan` \| `cloud`. `cloud` is refused in v1 (§10). |
+| `app.purge` | bool | no | `false` | The only thing that deletes an app's data. |
+| `app.env` | map | no | `{}` | String→string. A value that looks like a secret is refused (§5.2). |
+| `app.artifact[].name` | string | yes | — | Unique within the app. |
+| `app.artifact[].url` | string | yes | — | `https` only. |
+| `app.artifact[].sha256` | string | **yes** | — | 64 hex. Mandatory — see §5.3. |
+| `app.artifact[].size` | int | no | — | Informational; a mismatch is not an error. |
+| `app.artifact[].kind` | enum | no | `dir` | `dir` \| `webroot`. |
+| `app.pwa` | bool or table | no | **`false`** | See §6. |
+
+**An unknown key is a hard error.** A typo'd setting must not silently do nothing —
+`autostart` misspelled as `auto_start` would otherwise produce an app that never
+starts and no message saying why.
+
+**`app.name` is the directory name and the registry key.** It is constrained so it
+cannot be a path, and it cannot be changed without removing and re-adding the app —
+renaming an app is not a supported operation in v1, because the data directory would
+have to move and that is a data-loss surface.
+
+---
+
+## 5. The compiled config
+
+### 5.1 What the server produces
+
+The manifest compiles to a **config** — the existing `vyzorix.v` shape
+(`REGISTRATION_CONTRACT.md` §6), extended with an `apps` array. It is the thing that
+is signed, delivered and stored; the `.toml` never leaves the operator's machine.
+
+```json
+{
+  "version": 7,
+  "deviceId": "d_01H...",
+  "organizationId": "org_01H...",
+  "memberId": "op_01H...",
+  "name": "field-ops-07",
+  "tierCap": 2,
+  "features": { "terminal": true, "usb": false, "apps": true },
+  "apps": [
+    {
+      "name": "vfd",
+      "dir": "/home/apps/vfd",
+      "cmd": "/home/apps/vfd/run.sh",
+      "port": 8080,
+      "autostart": true,
+      "expose": "loopback",
+      "purge": false,
+      "env": { "MI_PORT": "8080" },
+      "artifacts": [
+        { "name": "engine",  "url": "https://...", "sha256": "9f2c...", "kind": "dir" },
+        { "name": "console", "url": "https://...", "sha256": "41ab...", "kind": "webroot" }
+      ],
+      "pwa": { "enabled": true, "theme_color": "#be123c", "display": "standalone", "...": "..." }
+    }
+  ]
+}
+```
+
+Three fields are **injected by the server and may not be set by the file**:
+`memberId` (who authorised it — see §7), `version`, and each `dir`. A file that sets
+`memberId` is refused, because a config that names its own authoriser proves nothing.
+
+`features.apps` is `true` in any config that carries an `apps` array. It is present in
+the config shape the registration contract defines (`REGISTRATION_CONTRACT.md` §6) but
+has no Go type yet — this is the first feature to give it meaning, so the field is
+introduced here.
+
+### 5.2 The no-secret rule
+
+The compiler refuses a config that would carry a secret, and **names the offending
+key**. The check is not a denylist of field names — a secret can be smuggled through
+`env` — so it inspects values as well as keys:
+
+- a key matching `(?i)(password|passwd|secret|token|api[_-]?key|private[_-]?key|credential)` is refused;
+- a value in `env` that is a PEM block, a JWT (`eyJ...`), a 40+ char hex/base64 run, or
+  a URL carrying `user:pass@` is refused.
+
+The device re-checks the same rule before storing, and reports `config_carries_secret`
+with the key. Both sides check because the invariant is load-bearing: a config that can
+carry a token collapses the model back to "a secret travels over the wire".
+
+A caller that genuinely needs a secret has no place to put it here, by design. The
+answer is the existing keypair/OTA model, or an app that reads its own credential from
+somewhere that is not this config.
+
+### 5.3 The no-unhashed-reference rule
+
+**Every artifact reference carries a `sha256`.** A reference without one is refused,
+and the message names the artifact.
+
+The reason is precise: the signature covers the *document*. A `{url}` with no digest
+means the bytes at that URL are trusted because the URL was signed — which is only
+true if the URL is immutable and the host is honest. A digest makes the transport
+irrelevant, so an artifact can be served from anywhere.
+
+### 5.4 Why references and not bytes
+
+Config is policy — about a kilobyte, changes often, needs an atomic apply. An artifact
+is content — tens to hundreds of megabytes, changes rarely, needs a resumable
+transfer. Different sizes, different lifetimes, different failure modes, so different
+channels. This is the same split Fly uses (the control plane receives a digest; the
+registry receives the image) and the same rule the existing OTA path already follows.
+
+---
+
+## 6. The PWA rule
+
+**A webroot is not a PWA unless it says so.**
+
+| `pwa` | What happens |
+|:--|:--|
+| absent | **no** `site.webmanifest` is generated |
+| `false` | **no** `site.webmanifest` is generated |
+| `true` | a manifest is generated from defaults |
+| table | a manifest is generated, with every declared field overriding the default |
+
+The negative case is the important one. A manifest changes how a browser presents and
+installs a page — an app that is not a PWA must not be handed one by accident, and the
+default is therefore `false`.
+
+Generated defaults, modelled on the console's own working manifest:
+
+```json
+{
+  "name": "<app.name>",
+  "short_name": "<app.name>",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111111",
+  "icons": []
+}
+```
+
+`display` accepts only `standalone | fullscreen | minimal-ui | browser`; anything else
+is a hard error, because an invalid value silently degrades to `browser` and the
+operator would never know why the app is not installable.
+
+**Icons are not generated.** An icon is an image, and the platform does not invent
+one. If `[app.pwa].icons` is absent the manifest carries an empty list and the app is
+installable with a default icon — the honest outcome, and it keeps the generator from
+emitting a reference to a file that does not exist.
+
+The generated manifest is written into the webroot **before the app starts**, so the
+app serves it as a static file. Nothing about the app's own bytes changes; the same
+artifact serves every device.
+
+### 6.1 Why this is a file write and not a build
+
+The console already proves it: a build with no `VITE_API_BASE_URL` falls back to
+`location.origin` (`Vfd/web/src/stores/connection-store.ts`). A console served *by the
+device* therefore reaches that device's own engine with no build-time configuration at
+all. Serving same-origin also removes CORS entirely and makes `127.0.0.1` a secure
+context, so the service worker and the install prompt work without TLS.
+
+So: ship the console once, generate the manifest per device, serve it same-origin.
+
+---
+
+## 7. Authorisation
+
+### 7.1 The predicate
+
+An operator may deploy to device `D` in org `O` when:
+
+```
+  caller is authenticated                                        (session, Domain A)
+    AND D ∈ O                                                    (binding)
+    AND D.lifecycle == registered                                (not pending/deregistered)
+    AND ( caller.role == super_admin IN O
+          OR  ∃ grant g : g.subject == caller
+                          ∧ g.action  ⊇ device.deploy
+                          ∧ g.scope   ⊇ devices:D )
+```
+
+Both halves are required: an unauthenticated caller is not helped by a grant, and a
+`super_admin` of a *different* org is not an operator of this one.
+
+**A device in another org returns `404`, not `403`.** A 403 would confirm the device
+exists, which is an existence leak across tenants.
+
+### 7.2 Why `device.deploy` and not `apps.write`
+
+Every existing action is a per-resource verb — `device.read`, `device.write`,
+`device.assign`, `apps.read`, `apps.write` — and `apps.*` is about *querying what an
+app is doing*, not about changing what runs. Folding deploy into `apps.write` would
+mean the permission that lets an operator see an app's state also lets them install
+one: a strictly larger grant than the name implies, on the highest-consequence action
+in the system.
+
+`device.deploy` is a new action. It is granted explicitly, or not at all.
+
+### 7.3 What the device is told
+
+The config carries `memberId` — who authorised it — and the device records it. The
+console shows it (§10 of the requirements). A config that names its own authoriser is
+refused (§5.1), so the field can only be set by the server, from the authenticated
+session.
+
+This is what makes "lower roles need permission from super admin" *verifiable after
+the fact*: not a claim in a log the server could edit, but a field inside a document
+the device signed a receipt for.
+
+### 7.4 The deploy credential
+
+A long-lived deploy credential may be minted scoped to a **single device**, and
+revoked. It exists so CI can deploy without an operator session.
+
+- scoped to one device — refused for any other, even in the same org;
+- revocable, and a revoked credential is refused immediately;
+- never logged, never returned by any `GET`.
+
+This is the same reasoning as an app-scoped Fly token: a compromised credential should
+reach one device's config, not the fleet.
+
+---
+
+## 8. The `cmd` rule
+
+**`cmd` must resolve to a real file inside the app's own directory, and it is executed
+without a shell.**
+
+A manifest that can name any command is remote code execution with a signature. The
+signature proves *who* asked; it says nothing about whether the thing asked for is
+safe. So the rule is mechanical, and it is checked at compile time *and* at apply time:
+
+1. The path must be **absolute** and start with `/home/apps/<app.name>/`.
+2. It must contain **no shell metacharacters** (`; | & $ \` > < ( ) { } * ? ~ !` and
+   newline).
+3. After resolving symlinks, it must **still** be inside `/home/apps/<app.name>/`. A
+   symlink pointing outside is refused — this is the check that makes rule 1 hold.
+4. It must exist and be executable at apply time. The server cannot know this (the
+   artifact has not been fetched yet), so the device checks it and reports
+   `cmd_not_executable` rather than starting something that will fail.
+
+The command is executed by `fork`/`exec` with the argv split on whitespace — no shell,
+so a metacharacter that slipped past rule 2 has nothing to be interpreted by.
+
+**`cmd` is checked twice on purpose.** The server refuses at compile time so the
+operator gets a fast, clear error. The device re-checks at apply time because the
+device is the thing that runs it, and a config could have been signed by a server that
+was compromised, or by an older server that lacked the check.
+
+### 8.1 The catalog
+
+A `catalog_apps` section in the existing `provisioning` file names known apps. A
+manifest naming an app in the catalog is ordinary; one naming anything else is
+permitted but marked **custom** in the console.
+
+The catalog is a convenience and a review aid, not a gate. It is seeded from the same
+file that already seeds organizations and api keys, so it is reviewable in one place
+and needs no new store.
+
+---
+
+## 9. Apply, and what happens when it fails
+
+### 9.1 The apply sequence
+
+1. **Verify** the signature against the pinned key. Refuse `unsigned`,
+   `bad_signature`, `carries_secret`, `unhashed_reference`, `cmd_escape`.
+2. **Fetch** each artifact to a temporary path, resuming a partial where one exists.
+3. **Verify** each against its `sha256` — over the *whole* file, not just the new part
+   of a resumed transfer.
+4. **Install** atomically: unpack to `<dir>.new`, then `rename` over `<dir>`.
+5. **Write** `apps.json` atomically (temp-then-rename), with `name`, `dir`, `cmd`,
+   `port`, `env`, `autostart` per app.
+6. **Generate** `site.webmanifest` for each `webroot` with `pwa` enabled.
+7. **Signal** the supervisor (its `inotify` path picks the change up without a restart).
+8. **Report** `device_ready {version}`.
+
+### 9.2 Failure leaves the device working
+
+A failed apply changes **nothing**:
+
+- the current config and the previous known-good one are both retained (`keep_last = 2`);
+- an artifact that fails its digest aborts *that artifact*, leaves the previous copy in
+  place, and reports `digest_mismatch` naming the artifact;
+- an interrupted install cannot leave a half-written app, because the install is a
+  rename;
+- a config that fails verification is refused before anything is fetched.
+
+The device keeps running what it was running and reports the refusal with a distinct
+reason. **The refusal is the product** — "your deploy did not apply, and here is
+exactly why" is worth more than a silent retry.
+
+Two is the right retention, not N: the recovery path that matters is "put back what
+worked", one prior version answers it, and disk is the scarce resource on a phone.
+
+### 9.3 What is removed
+
+An app present in the old config and absent from the new one is **stopped and
+deregistered**; its directory and data remain. Only `purge = true` in the manifest that
+removes it deletes the data, and the deletion is therefore recorded in a document the
+operator wrote and the server signed.
+
+There is no `vyzorix undeploy`. A destructive verb with no reviewable artifact is how
+data gets deleted by accident.
+
+---
+
+## 10. Honest limits
+
+- **Offline first-deploy is not supported.** A device that has never been online has no
+  pinned config and no artifacts. Enrollment already costs one round trip
+  (`REGISTRATION_CONTRACT.md` §3 Phase A); every deploy after that is verifiable
+  offline. This is a product limit, not an oversight, and a user will hit it.
+- **`cmd` is still a code-execution surface.** §8 constrains it to something the
+  manifest also shipped, which is a real reduction — but a signed manifest still runs
+  code on someone's phone. The remaining control is *who may sign* (super_admin or an
+  explicit grant), and that is a policy, not a sandbox.
+- **No automatic rollback.** The last good config is retained and restorable; restoring
+  it automatically when an app crash-loops is a later feature. A device can therefore
+  be left running a config whose app immediately dies, and it will report the crash
+  loop rather than heal itself.
+- **The signature decision is inherited, not made here.** If the registration contract
+  keeps HMAC (§9 there) instead of the keypair, then the config is signed with a shared
+  secret and delivered envelope-encrypted to the device's public key. Everything else
+  in this contract is unchanged; §2's rule 1 becomes "signed with a shared secret the
+  device holds", which is weaker — the secret must exist on both sides — and that is
+  the trade that document weighs.
+- **`expose = "cloud"` is refused in v1.** It needs the wildcard-DNS/TLS proxy that
+  Layer 3 decision D7 defers. `loopback` and `lan` are supported; `lan` requires a
+  token (Layer 3 §4.4 P2 — `0.0.0.0` without a token fails closed).
+- **No group or fleet deploy.** One device per deploy. Org-level defaults are read but
+  not applied fleet-wide; a second device is a second deploy.
+- **Version history is two, so "roll back three deploys" is not possible.** Stated
+  because it is a reasonable thing to want and it is not here.
+- **Key rotation needs an overlap window.** A device offline for months may only know an
+  older pinned key; the server must accept a signature from any key in the set until
+  the device has re-fetched.
+
+---
+
+## 11. State machine
+
+Per **app**, not per device — one device runs several, and they fail independently.
+The supervisor already models this; the states below are what the registry holds.
+
+```
+ (absent)
+     │  appears in a signed config
+     ▼
+  STOPPED ─────────── autostart ─────────► STARTING ──► RUNNING
+     │                                        │            │
+     │                                        │ crash      │ exit 0 (one-shot)
+     │                                        ▼            ▼
+     │                                     BACKOFF      STOPPED
+     │                                        │
+     │                                        │ failures > N
+     │                                        ▼
+     │                                     FAILED ──────► (reported; no auto-heal)
+     │
+     │  absent from the next signed config
+     ▼
+ (stopped, deregistered; data retained unless purge)
+```
+
+`BACKOFF` is the supervisor's existing exponential restart (Layer 3 §4.1 S3), capped.
+`FAILED` is reported to the server so the console can show it; nothing restarts it
+automatically (§10).
+
+---
+
+## 12. Definition of done
+
+1. A `vyzorix.toml` with two apps compiles, and both run on one device, with no change
+   under `apps/api/`.
+2. A config is signed and the device verifies it; an unsigned config is refused.
+3. A config carrying a secret is refused **by a test on both sides** — the invariant,
+   not a promise.
+4. An artifact with a wrong `sha256` is refused, and the previous copy is untouched.
+5. A `cmd` outside the app's own directory is refused, including via a symlink.
+6. A lower role without a grant is refused; `super_admin` is not; another org's device
+   is `404`.
+7. A device that was offline re-fetches on reconnect and applies the newer version.
+8. `pwa = false` generates **no** manifest; `pwa = true` generates a valid one; a
+   `[app.pwa]` override changes the served file.
+9. A failed apply leaves the device running its previous config, demonstrated by
+   inducing an artifact failure and observing the device still answer.
+10. `./gradlew gate` passes; the server gate passes; the flow is exercised end to end
+    against the real server on the emulator.
+
+---
+
+## 13. Inventory — what gets written, and how much
+
+Counts are estimates, sized so the work is plannable. The repo's rule holds: a new file
+must earn its name, so existing files are modified in place wherever possible.
+
+### 13.1 Server (`vyzorix-update-server`)
+
+| File | ~LOC | Purpose |
+|:--|--:|:--|
+| `tooling/schema/deploy.cue` | 120 | The manifest schema. Source of truth; Go generated from it, JSON Schema published. |
+| `apps/api/internal/deploy/manifest.go` | 160 | Parse and validate `vyzorix.toml` against the generated types. Unknown key ⇒ error. |
+| `apps/api/internal/deploy/compile.go` | 190 | Manifest → config. Injects `memberId`/`version`/`dir`; refuses secrets and unhashed refs; enforces the `cmd` rule. |
+| `apps/api/internal/deploy/sign.go` | 90 | Sign the compiled config; version increment. |
+| `apps/api/internal/deploy/store.go` | 130 | Persist current + last-good per device (`keep_last = 2`). |
+| `apps/api/internal/deploy/authz.go` | 110 | The §7.1 predicate: role, grant, org binding, lifecycle. |
+| `apps/api/internal/api/handlers/deploy/deploy_handler.go` | 170 | `POST /v1/deploy`, `GET /v1/deploy/{device}`, dry-run. |
+| `apps/api/internal/api/handlers/deploy/credential_handler.go` | 110 | Mint/list/revoke a device-scoped deploy credential. |
+| `apps/api/cmd/api/provisioning_adapters.go` | +40 | The `catalog_apps` section. |
+| `apps/api/internal/domain/permission/scoped.go` | +6 | `ActionDeviceDeploy`. |
+| `apps/cli/main.go` + `internal/deploy/*` | 320 | The CLI: read the file, validate, upload, stream progress, `--dry-run`. |
+
+**New package: one** (`internal/deploy`). Everything else is a file in an existing
+package, or an addition to one.
+
+**Tests: ~7 files, ~55 cases.** The load-bearing ones are the refusals — secret,
+unhashed ref, `cmd` escape, cross-org, no-grant — because those are the invariants and
+a regression in any of them is silent.
+
+### 13.2 Device (`Vyzorix-android`)
+
+| File | ~LOC | Purpose |
+|:--|--:|:--|
+| `cloud/DeployApplier.kt` | 240 | Verify, fetch, verify, install atomically, write the registry. The whole apply sequence of §9.1. |
+| `cloud/ArtifactFetcher.kt` | 180 | Resumable fetch + whole-file digest check. Generalises the OTA fetcher rather than replacing it. |
+| `cloud/PwaManifest.kt` | 120 | Generate `site.webmanifest` from the config; refuse an invalid `display`. |
+| `cloud/ConfigStore.kt` | +80 | Retain current + last-good; restore on failure. |
+| `cloud/DeployReporter.kt` | 90 | Report `device_ready {version}` and every refusal reason. |
+| `engine/ProotLauncher.kt` | +20 | Bind `/home/apps` (Layer 3 D2) — the gap this depends on. |
+
+**Tests: ~5 files, ~35 cases.** The important ones: a tampered digest leaves the
+previous copy; `pwa = false` writes no file; a `cmd` symlink escape is refused; a
+failed apply keeps the running config.
+
+### 13.3 Not in this contract
+
+Layer 3's own gaps — the supervisor's start, the control socket, the app proxy,
+`APP_START`/`APP_STOP` wiring, the `app-*` CLI verbs — are specified in
+`doc/LAYER_3_REQUIREMENTS.md` and are a **dependency**. They are listed here only where
+this feature cannot start without them (`/home/apps` bind, supervisor start).
+
+### 13.4 Rough size
+
+Server ~1,300 LOC + CLI 320 + tests; device ~650 LOC + tests. Comparable to the
+registration contract's own estimate, and the same shape: most of the value is in the
+refusals, which are cheap to write and expensive to omit.
+
+---
+
+## 14. The spike, and why it is first
+
+**Build the compiler, the signer, and the verifier round-trip — and nothing else.**
+
+It is first because it is the load-bearing invariant. Every other part of this contract
+can be wrong in a way that is visible and fixable; a config that verifies when it
+should not is the failure that makes the rest pointless. A round-trip test — compile a
+manifest, sign it, verify it, then tamper with one byte and verify again — exercises
+the whole trust model in a few hundred lines, with no device, no network and no
+artifacts.
+
+Specifically, the spike is done when:
+
+1. A manifest compiles to a deterministic config.
+2. The config is signed, and the signature verifies against the pinned key.
+3. Flipping one byte anywhere in the config fails verification.
+4. A config carrying a secret is refused at compile time **and** at verify time.
+5. A reference without `sha256` is refused.
+6. A `cmd` outside `/home/apps/<app>/` is refused, including through a symlink.
+7. The same tests run on both sides — Go signs, Kotlin verifies — because a signature
+   that only verifies in one language is not a signature.
+
+Only then is it worth fetching an artifact. The fetch is the part everyone wants to
+build first and the part that teaches the least.
