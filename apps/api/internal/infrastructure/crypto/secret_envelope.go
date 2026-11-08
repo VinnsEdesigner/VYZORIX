@@ -156,8 +156,8 @@ func WrapSecret(recipientPublicKeyPEM string, plaintext []byte) (string, error) 
 	// A 3072-bit modulus leaves ~318 bytes for OAEP-SHA1. Refusing over-long
 	// plaintext here names the limit instead of letting EncryptOAEP return a
 	// bare "message too long", which reads like a bug rather than a bound.
-	if max := pub.Size() - 2*sha1.Size - 2; len(plaintext) > max {
-		return "", fmt.Errorf("secret is %d bytes; the envelope holds at most %d", len(plaintext), max)
+	if capacity := pub.Size() - 2*sha1.Size - 2; len(plaintext) > capacity {
+		return "", fmt.Errorf("secret is %d bytes; the envelope holds at most %d", len(plaintext), capacity)
 	}
 
 	ciphertext, err := rsa.EncryptOAEP(sha1.New(), rand.Reader, pub, plaintext, nil)

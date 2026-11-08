@@ -5,7 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 	"io"
 	"log/slog"
 	"net/http"

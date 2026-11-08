@@ -9,10 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
 	svcapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/serviceaccount"
 	apperrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/serviceaccount"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 )
 
 // Compile-time references for swaggo-annotated openapi DTO types.

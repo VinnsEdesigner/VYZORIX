@@ -5,10 +5,10 @@ import (
 	"net/http"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
 	appdiagnostics "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/diagnostics"
 	domaindiagnostics "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/diagnostics"
 	apperrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 	"github.com/gin-gonic/gin"
 )
 

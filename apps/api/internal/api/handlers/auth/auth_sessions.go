@@ -5,9 +5,9 @@ import (
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/adapters/response"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
 	appauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/auth"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 
 	"github.com/gin-gonic/gin"
 )

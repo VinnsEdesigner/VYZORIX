@@ -9,8 +9,8 @@ import (
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/adapters/response"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
 	wschannel "github.com/VinnsEdesigner/vyzorix/apps/api/internal/ws/channel"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 )
 
 // Compile-time references for swaggo-annotated openapi DTO types.

@@ -2,7 +2,7 @@
 """Generate the Go wire-type package from CUE schema files.
 
 Reads .cue files from tooling/schema/ and emits Go structs into
-apps/api/internal/api/openapi/schemas.go — the package `swag init` reads.
+apps/api/openapi/schemas.go — the package `swag init` reads.
 
 CUE is the single source of truth for the wire DTOs. The TypeScript types are
 NOT generated here: they come from the OpenAPI spec via orval (CUE -> Go structs
@@ -37,7 +37,7 @@ SCHEMA_DIR = os.environ.get("SCHEMA_DIR", "tooling/schema")
 # build_schemas.py emits the `openapi` package directly, so `swag init` reads
 # generated structs and there is no second hand-maintained copy.
 GO_OUT = os.environ.get(
-    "GO_OUT", "apps/api/internal/api/openapi/schemas.go"
+    "GO_OUT", "apps/api/openapi/schemas.go"
 )
 GO_PKG = os.environ.get("GO_PKG", "openapi")
 

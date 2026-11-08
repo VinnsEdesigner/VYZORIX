@@ -43,10 +43,18 @@ func (c *CookieAuth) Middleware() gin.HandlerFunc {
 		// Read the session cookie.
 		cookieValue, err := ctx.Cookie(CookieName)
 		if err != nil {
-			// No session cookie. If an API key is present, defer to the.
-			// tenant API key middleware (registered after this one) instead.
-			// of aborting, so tenant endpoints accept either credential.
+			// No session cookie. If another credential is present, defer to the
+			// middleware that owns it (registered after this one) instead of aborting,
+			// so tenant endpoints accept any of the credentials they support.
 			if apiKey := ctx.GetHeader("X-API-Key"); apiKey != "" {
+				ctx.Next()
+				return
+			}
+			// A deploy credential authenticates one device for CI, with no session. It
+			// is only accepted on the deploy surface, so the deferral is scoped to that
+			// path rather than to the header: an unknown header value must not suppress
+			// the session check on every other tenant route.
+			if IsDeployPath(ctx.Request.URL.Path) && ctx.GetHeader(HeaderDeployCredential) != "" {
 				ctx.Next()
 				return
 			}

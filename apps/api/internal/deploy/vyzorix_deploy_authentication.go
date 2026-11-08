@@ -118,7 +118,10 @@ func AuthorizeDeploy(ctx context.Context, lookup DeviceLookup, caller *Caller, d
 
 	dev, err := lookup.FindForOrg(ctx, deviceID, caller.OrgID)
 	if err != nil {
-		if errors.Is(err, ErrDeviceNotInOrg) {
+		// Both the lookup's own sentinel and the device repository's ErrNotFound read
+		// as not-in-org, so a device in another tenant is indistinguishable from an
+		// absent one whichever layer reported it.
+		if errors.Is(err, ErrDeviceNotInOrg) || errors.Is(err, device.ErrNotFound) {
 			return nil, &DeniedError{Denial: DenialNotInOrg}
 		}
 

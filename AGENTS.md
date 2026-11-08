@@ -59,12 +59,12 @@
   `suspend`/`reinstate`/`transfer` are now annotated. The `/v1/me/thresholds` +
   `/v1/me/notifications*` routes are newly MOUNTED (handlers existed but were never wired).
 - **Codegen pipeline** (run from repo root): `python3 tooling/codegen/build_schemas.py`
-  (CUE `tooling/schema/*.cue` → the generated `internal/api/openapi` package; TypeScript
+  (CUE `tooling/schema/*.cue` → the generated `apps/api/openapi` package; TypeScript
   comes from the spec via orval, NOT from CUE) →
   `swag init -g cmd/api/api_main.go --parseDependency --output apps/api/swag` (cwd: apps/api)
   → `python3 tooling/codegen/build_openapi3.py` → `python3 tooling/codegen/build_zod.py` →
   `npx orval --config orval.config.js`. **The DTOs are generated — do NOT hand-edit
-  `internal/api/openapi/schemas.go`.** Add/change a DTO in `tooling/schema/*.cue` and re-run
+  `apps/api/openapi/schemas.go`.** Add/change a DTO in `tooling/schema/*.cue` and re-run
   build_schemas.py; handlers reference them as `openapi.X` in `@Success`/`@Param body`
   annotations and need a `var _ openapi.X` compile-time reference when the package doesn't
   otherwise import openapi. Timestamps are int64 Unix millis.

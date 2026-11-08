@@ -106,7 +106,7 @@ jobs:
         run: |
           TMP=$(mktemp -d)
           GO_OUT="$TMP/schemas.go" python3 tooling/codegen/build_schemas.py
-          if ! cmp -s "$TMP/schemas.go" apps/api/internal/api/openapi/schemas.go; then
+          if ! cmp -s "$TMP/schemas.go" apps/api/openapi/schemas.go; then
             echo "openapi/schemas.go drift — run: python3 tooling/codegen/build_schemas.py"
             exit 1
           fi

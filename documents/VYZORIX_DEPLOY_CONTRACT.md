@@ -1023,7 +1023,7 @@ level up. It is granted explicitly, per §7.2.
 | `apps/api/cmd/api/provisioning_adapters.go` | The `catalog_apps` section adapter. | FR-19, §8.1 |
 | `apps/api/internal/application/provisioning/vyzorix_boot_provisioning.go` | Add `CatalogApps []CatalogAppConfig` to `Config` and apply it at boot. | FR-19 |
 | `provisioning.example.yaml` | Document the `catalog_apps` section; move the example grant to `device.deploy` on a specific device. | FR-19, §7.1 |
-| `apps/api/internal/api/openapi/schemas.go` | **Generated** from `tooling/schema/deploy.cue` by `tooling/codegen/build_schemas.py`; never hand-edited. | FR-22 |
+| `apps/api/openapi/schemas.go` | **Generated** from `tooling/schema/deploy.cue` by `tooling/codegen/build_schemas.py`; never hand-edited. | FR-22 |
 | `apps/api/swag/*` (`docs.go`, `swagger.json`, `openapi3.json`, `swagger.yaml`) | **Generated** by `swag init` after the handlers land; the swagger drift gate compares them. | FR-22 |
 | `e2e/selectors/vyzorix-selectors.cjs` | **Generated** by `tooling/codegen/build_selectors.py`; new deploy endpoints add selectors. | US-010 |
 | `packages/API_Client/src/generated/**` | **Generated** by orval (`pnpm codegen:api`, `codegen:hooks`); the CLI and console consume the deploy types rather than re-declaring them. | FR-23 |

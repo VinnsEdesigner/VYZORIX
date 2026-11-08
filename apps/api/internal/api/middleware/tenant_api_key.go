@@ -169,21 +169,8 @@ func (t *TenantAPIKeyAuth) Middleware() gin.HandlerFunc {
 		// Extract API key from header.
 		apiKey := extractAPIKeyFromHeader(c)
 		if apiKey == "" {
-			// Log missing API key attempt.
-			if t.auditLogger != nil {
-				t.auditLogger.APIKeyFailed(
-					c.Request.Context(),
-					"",
-					"",
-					c.ClientIP(),
-					c.GetHeader("User-Agent"),
-					"missing",
-				)
-			}
-			responses.RespondStructuredAbort(c, http.StatusUnauthorized,
+			t.refuseMissingCredential(c)
 
-				"X-API-Key header or session required",
-			)
 			return
 		}
 
@@ -274,6 +261,36 @@ func (t *TenantAPIKeyAuth) Middleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// acceptsDeployCredential reports whether the request carries a deploy credential
+// on a deploy path, in which case the deploy middleware owns authentication.
+func (t *TenantAPIKeyAuth) acceptsDeployCredential(c *gin.Context) bool {
+	return IsDeployPath(c.Request.URL.Path) && c.GetHeader(HeaderDeployCredential) != ""
+}
+
+// refuseMissingCredential handles a request that carries no API key and no deploy
+// credential: it audits the attempt and aborts with 401.
+func (t *TenantAPIKeyAuth) refuseMissingCredential(c *gin.Context) {
+	// A deploy credential is a third credential the deploy surface accepts; its
+	// own middleware owns the request and has already set the org.
+	if t.acceptsDeployCredential(c) {
+		c.Next()
+
+		return
+	}
+
+	if t.auditLogger != nil {
+		t.auditLogger.APIKeyFailed(
+			c.Request.Context(),
+			"",
+			"",
+			c.ClientIP(),
+			c.GetHeader("User-Agent"),
+			"missing",
+		)
+	}
+	responses.RespondStructuredAbort(c, http.StatusUnauthorized, "X-API-Key header or session required")
 }
 
 // extractAPIKeyFromHeader extracts the API key from the X-API-Key header.

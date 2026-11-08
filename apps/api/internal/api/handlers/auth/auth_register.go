@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/adapters/response"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/auth"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/dto"
@@ -16,6 +15,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/redaction"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/storage"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 
 	"github.com/gin-gonic/gin"
 )

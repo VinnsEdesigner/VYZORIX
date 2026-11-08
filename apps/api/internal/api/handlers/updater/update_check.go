@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
 	apperrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/config"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 
 	"github.com/gin-gonic/gin"
 )
@@ -41,12 +41,10 @@ type VersionManifest struct {
 type Handler struct {
 	log      *slog.Logger
 	manifest *VersionManifest
+	progress *ProgressStore
 	dataDir  string
 	binDir   string
 	config   config.Config
-	// progress keeps the latest download report per device, so the server can
-	// answer "how far along is this device" instead of only logging the report.
-	progress *ProgressStore
 }
 
 // NewHandler creates a new UpdaterHandler.

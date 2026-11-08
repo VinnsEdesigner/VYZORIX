@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/responses"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application"
 	cmdSvc "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/command"
@@ -17,6 +16,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/dto"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 
 	domainerrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
 	cryptohmac "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/crypto"

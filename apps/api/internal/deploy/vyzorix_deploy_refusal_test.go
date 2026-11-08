@@ -463,7 +463,7 @@ func TestUnsignedResultIsRefused(t *testing.T) {
 
 	identity := func(document string) (string, error) { return document, nil }
 
-	if _, err := CompileAndSign(m, injection(), identity); !errors.Is(err, errNotSigned) {
+	if _, err := CompileAndSign(m, injection(), identity); !errors.Is(err, ErrNotSigned) {
 		t.Fatalf("a signer that returns the input unchanged must be refused, got %v", err)
 	}
 }

@@ -3,10 +3,10 @@ package updates
 import (
 	"net/http"
 
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/updates"
 	apperrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
 	domainupdates "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/updates"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 	"github.com/gin-gonic/gin"
 )
 

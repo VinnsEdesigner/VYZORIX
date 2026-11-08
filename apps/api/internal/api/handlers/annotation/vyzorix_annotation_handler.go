@@ -10,10 +10,10 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
 	appannotation "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/annotation"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/annotation"
 	apperrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 )
 
 func int64Ptr(v int64) *int64 { return &v }

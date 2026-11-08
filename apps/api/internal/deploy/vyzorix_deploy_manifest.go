@@ -5,6 +5,7 @@
 package deploy
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"regexp"
@@ -164,6 +165,23 @@ func ParseManifest(data []byte) (*Manifest, error) {
 	}
 
 	return &m, nil
+}
+
+// PeekDeviceID reads the target device id from a manifest without validating the
+// rest of it. The deploy endpoint's device is named by the manifest (§3), and the
+// caller must be authorised for that device *before* the manifest is validated —
+// an unauthorised caller must not be told which keys are wrong. So the id is read
+// on its own, tolerantly; ParseManifest is the strict pass that follows.
+func PeekDeviceID(data []byte) (string, error) {
+	var probe struct {
+		Device DeviceSpec `toml:"device"`
+	}
+
+	if err := toml.NewDecoder(bytes.NewReader(data)).Decode(&probe); err != nil {
+		return "", &ManifestError{Field: "device.id", Message: "could not be read from the manifest"}
+	}
+
+	return strings.TrimSpace(probe.Device.ID), nil
 }
 
 // unknownKeyError names each unknown key. The decoder's own message ("fields in
@@ -486,9 +504,9 @@ func sortStrings(s []string) {
 	}
 }
 
-// errNoSigner is returned when a compile is asked to sign with no signer.
-var errNoSigner = errors.New("deploy: no signer configured")
+// ErrNoSigner is returned when a compile is asked to sign with no signer.
+var ErrNoSigner = errors.New("deploy: no signer configured")
 
-// errNotSigned is returned when a signer produces a document with no signature
+// ErrNotSigned is returned when a signer produces a document with no signature
 // line. The device would refuse it, so storing it would only fail later.
-var errNotSigned = errors.New("deploy: signer returned an unsigned document")
+var ErrNotSigned = errors.New("deploy: signer returned an unsigned document")

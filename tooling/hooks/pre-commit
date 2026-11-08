@@ -92,7 +92,7 @@ if command -v python3 &>/dev/null; then
   CUE_TMP=$(mktemp -d)
   if (cd "$REPO_ROOT" && GO_OUT="$CUE_TMP/schemas.go" \
         python3 tooling/codegen/build_schemas.py >/dev/null 2>&1); then
-    if ! cmp -s "$CUE_TMP/schemas.go" "$API_DIR/internal/api/openapi/schemas.go" 2>/dev/null; then
+    if ! cmp -s "$CUE_TMP/schemas.go" "$API_DIR/openapi/schemas.go" 2>/dev/null; then
       rm -rf "$CUE_TMP"
       fail "openapi/schemas.go drift detected — run 'python3 tooling/codegen/build_schemas.py' from the repo root."
     fi

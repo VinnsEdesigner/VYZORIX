@@ -257,6 +257,13 @@ func (r *DeviceRepository) FindByIDAndOrganization(ctx context.Context, id, orgI
 	return scanDevice(r.queryRow(ctx, query, id, orgID))
 }
 
+// FindForOrg is FindByIDAndOrganization under the name the deploy predicate's
+// DeviceLookup uses. It is the same org-scoped query, so a device in another
+// tenant is ErrNotFound and the predicate reads that as not-in-org.
+func (r *DeviceRepository) FindForOrg(ctx context.Context, id, orgID string) (*device.Device, error) {
+	return r.FindByIDAndOrganization(ctx, id, orgID)
+}
+
 // FindByPairingCode looks a device up by the code an operator types to claim it.
 //
 // It matches only a live code: an expired one is not returned, so an operator

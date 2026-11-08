@@ -24,7 +24,7 @@ func CompileAndSign(m *Manifest, in Injection, sign DocumentSigner) (string, err
 // before the signature, so an unsigned refusal is what an operator sees.
 func SignConfig(cfg *Config, sign DocumentSigner) (string, error) {
 	if sign == nil {
-		return "", errNoSigner
+		return "", ErrNoSigner
 	}
 
 	document, err := RenderConfig(*cfg)
@@ -51,7 +51,7 @@ func SignConfig(cfg *Config, sign DocumentSigner) (string, error) {
 	}
 
 	if !parsed.Signed {
-		return "", errNotSigned
+		return "", ErrNotSigned
 	}
 
 	return signed, nil

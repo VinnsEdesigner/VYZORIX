@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/responses"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/confirmation"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/device"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 
 	"github.com/gin-gonic/gin"
 )

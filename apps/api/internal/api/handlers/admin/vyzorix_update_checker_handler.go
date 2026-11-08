@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 	"github.com/gin-gonic/gin"
 
 	usagestats "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/usagestats"

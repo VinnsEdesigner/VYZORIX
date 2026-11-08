@@ -292,3 +292,78 @@ func TestDeployRefusesAManifestCarryingASecret(t *testing.T) {
 		t.Fatal("a manifest whose env names a secret must be refused")
 	}
 }
+
+// TestDeployTakesTheDeviceFromTheManifest covers `POST /v1/deploy`, whose path
+// names no device. The request leaves DeviceID empty and the manifest's
+// `device.id` is the target — the regression that made the endpoint 404 for every
+// call, because the handler passed an empty path parameter to AuthorizeDeploy.
+func TestDeployTakesTheDeviceFromTheManifest(t *testing.T) {
+	t.Parallel()
+
+	svc, configs, caller := serviceFixture(t, deployCaller())
+
+	result, err := svc.Deploy(context.Background(), DeployRequest{
+		Caller:   caller,
+		Manifest: []byte(twoAppManifest),
+		OrgID:    "org_01H",
+		MemberID: "op_01H",
+		// DeviceID deliberately empty: the path has no device segment.
+	})
+	if err != nil {
+		t.Fatalf("a deploy with no path device must use the manifest's device.id: %v", err)
+	}
+
+	if result.Version != 1 {
+		t.Fatalf("first deploy must be version 1, got %d", result.Version)
+	}
+
+	record, err := configs.Current(context.Background(), "d_01H")
+	if err != nil {
+		t.Fatalf("the deploy must persist under the manifest's device, got %v", err)
+	}
+
+	if record.Version != result.Version {
+		t.Fatalf("persisted version %d must match the reported %d", record.Version, result.Version)
+	}
+}
+
+// TestDeployWithoutAnyDeviceIsRefused covers a manifest with no device.id and no
+// path device: there is nothing to authorise against, so it is a manifest error
+// rather than a 404 on the empty string.
+func TestDeployWithoutAnyDeviceIsRefused(t *testing.T) {
+	t.Parallel()
+
+	svc, _, caller := serviceFixture(t, deployCaller())
+
+	_, err := svc.Deploy(context.Background(), DeployRequest{
+		Caller:   caller,
+		Manifest: []byte("[device]\norg = \"org_01H\"\n\n[[app]]\nname = \"vfd\"\ncmd = \"/home/apps/vfd/run.sh\"\n"),
+		OrgID:    "org_01H",
+		MemberID: "op_01H",
+	})
+
+	var manifestErr *ManifestError
+	if !errors.As(err, &manifestErr) || manifestErr.Field != "device.id" {
+		t.Fatalf("a manifest with no device.id must be refused on that field, got %v", err)
+	}
+}
+
+// TestDeployToADifferentDeviceThanTheManifestNamesIsRefused keeps the cross-check:
+// a path device and a manifest device that disagree is a mistake, not a merge.
+func TestDeployToADifferentDeviceThanTheManifestNamesIsRefused(t *testing.T) {
+	t.Parallel()
+
+	svc, _, caller := serviceFixture(t, deployCaller())
+
+	_, err := svc.Deploy(context.Background(), DeployRequest{
+		Caller:   caller,
+		Manifest: []byte(twoAppManifest), // names d_01H
+		OrgID:    "org_01H",
+		DeviceID: "d_other",
+		MemberID: "op_01H",
+	})
+
+	if err == nil {
+		t.Fatal("a path device that disagrees with the manifest must be refused")
+	}
+}

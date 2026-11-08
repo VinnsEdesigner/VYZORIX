@@ -11,10 +11,10 @@ import (
 	"strconv"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/inbox"
 	apperrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/appcheck"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 	"github.com/gin-gonic/gin"
 )
 

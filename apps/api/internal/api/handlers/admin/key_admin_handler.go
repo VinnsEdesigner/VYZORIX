@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
 	apikeyapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/keys"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
 	apikeydomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 	"github.com/gin-gonic/gin"
 )
 

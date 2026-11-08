@@ -84,7 +84,7 @@ linters:
       # Machine-generated schema structs (build_schemas.py) — field order is
       # generator-controlled and re-emitted on every regen; hand-tuning
       # fieldalignment here is futile.
-      - path: "internal/api/openapi/schemas\\.go"
+      - path: "openapi/schemas\\.go"
         linters:
           - govet
   settings:

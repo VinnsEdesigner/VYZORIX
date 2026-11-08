@@ -65,19 +65,19 @@ const docTemplate = `{
                     "200": {
                         "description": "API keys with operator identity",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminAPIKeyListResult"
+                            "$ref": "#/definitions/openapi.AdminAPIKeyListResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -128,19 +128,19 @@ const docTemplate = `{
                     "200": {
                         "description": "operator API keys",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminAPIKeyListResult"
+                            "$ref": "#/definitions/openapi.AdminAPIKeyListResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -172,19 +172,19 @@ const docTemplate = `{
                     "200": {
                         "description": "global stats",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.GlobalAPIKeyStatsResult"
+                            "$ref": "#/definitions/openapi.GlobalAPIKeyStatsResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -223,19 +223,19 @@ const docTemplate = `{
                     "200": {
                         "description": "operator stats",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OperatorAPIKeyStatsResult"
+                            "$ref": "#/definitions/openapi.OperatorAPIKeyStatsResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -274,25 +274,25 @@ const docTemplate = `{
                     "200": {
                         "description": "key revoked",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "key not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -324,25 +324,25 @@ const docTemplate = `{
                     "200": {
                         "description": "clients",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminClientListResult"
+                            "$ref": "#/definitions/openapi.AdminClientListResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -381,37 +381,37 @@ const docTemplate = `{
                     "200": {
                         "description": "client",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminClientResult"
+                            "$ref": "#/definitions/openapi.AdminClientResult"
                         }
                     },
                     "400": {
                         "description": "clientId required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "client not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -448,31 +448,31 @@ const docTemplate = `{
                     "200": {
                         "description": "client deleted",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
                         "description": "clientId required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -510,7 +510,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateAdminClientRequest"
+                            "$ref": "#/definitions/openapi.UpdateAdminClientRequest"
                         }
                     }
                 ],
@@ -518,31 +518,31 @@ const docTemplate = `{
                     "200": {
                         "description": "updated client",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminClientResult"
+                            "$ref": "#/definitions/openapi.AdminClientResult"
                         }
                     },
                     "400": {
                         "description": "clientId required / invalid body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -581,37 +581,37 @@ const docTemplate = `{
                     "200": {
                         "description": "client with rotated key",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminClientResult"
+                            "$ref": "#/definitions/openapi.AdminClientResult"
                         }
                     },
                     "400": {
                         "description": "clientId required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "client not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -634,19 +634,19 @@ const docTemplate = `{
                     "200": {
                         "description": "support bundle",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SupportBundleResult"
+                            "$ref": "#/definitions/openapi.SupportBundleResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -678,7 +678,7 @@ const docTemplate = `{
                     "200": {
                         "description": "update check result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateCheckerResult"
+                            "$ref": "#/definitions/openapi.UpdateCheckerResult"
                         }
                     }
                 }
@@ -710,19 +710,19 @@ const docTemplate = `{
                     "200": {
                         "description": "alert rules with instances",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertRuleListResult"
+                            "$ref": "#/definitions/openapi.AlertRuleListResult"
                         }
                     },
                     "400": {
                         "description": "org context missing",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -753,7 +753,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertRuleRequest"
+                            "$ref": "#/definitions/openapi.AlertRuleRequest"
                         }
                     }
                 ],
@@ -761,19 +761,19 @@ const docTemplate = `{
                     "201": {
                         "description": "created rule with instances",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertRule"
+                            "$ref": "#/definitions/openapi.AlertRule"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -812,19 +812,19 @@ const docTemplate = `{
                     "200": {
                         "description": "rule with instances",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertRule"
+                            "$ref": "#/definitions/openapi.AlertRule"
                         }
                     },
                     "400": {
                         "description": "not found / forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -861,19 +861,19 @@ const docTemplate = `{
                     "200": {
                         "description": "deleted confirmation",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeletedResult"
+                            "$ref": "#/definitions/openapi.DeletedResult"
                         }
                     },
                     "400": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -911,7 +911,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertRuleRequest"
+                            "$ref": "#/definitions/openapi.AlertRuleRequest"
                         }
                     }
                 ],
@@ -919,19 +919,19 @@ const docTemplate = `{
                     "200": {
                         "description": "updated rule with instances",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertRule"
+                            "$ref": "#/definitions/openapi.AlertRule"
                         }
                     },
                     "400": {
                         "description": "invalid input / not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -970,13 +970,13 @@ const docTemplate = `{
                     "200": {
                         "description": "evaluation result (transitioned index)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertEvaluateResult"
+                            "$ref": "#/definitions/openapi.AlertEvaluateResult"
                         }
                     },
                     "500": {
                         "description": "evaluation failed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1020,13 +1020,13 @@ const docTemplate = `{
                     "200": {
                         "description": "event entries",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertHistoryResult"
+                            "$ref": "#/definitions/openapi.AlertHistoryResult"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1082,13 +1082,13 @@ const docTemplate = `{
                     "200": {
                         "description": "annotations",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AnnotationListResult"
+                            "$ref": "#/definitions/openapi.AnnotationListResult"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1119,7 +1119,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AnnotationRequest"
+                            "$ref": "#/definitions/openapi.AnnotationRequest"
                         }
                     }
                 ],
@@ -1127,19 +1127,19 @@ const docTemplate = `{
                     "201": {
                         "description": "created annotation",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Annotation"
+                            "$ref": "#/definitions/openapi.Annotation"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1178,19 +1178,19 @@ const docTemplate = `{
                     "200": {
                         "description": "annotation",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Annotation"
+                            "$ref": "#/definitions/openapi.Annotation"
                         }
                     },
                     "400": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1227,19 +1227,19 @@ const docTemplate = `{
                     "200": {
                         "description": "deleted confirmation",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeletedResult"
+                            "$ref": "#/definitions/openapi.DeletedResult"
                         }
                     },
                     "400": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1277,7 +1277,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AnnotationRequest"
+                            "$ref": "#/definitions/openapi.AnnotationRequest"
                         }
                     }
                 ],
@@ -1285,19 +1285,19 @@ const docTemplate = `{
                     "200": {
                         "description": "updated annotation",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Annotation"
+                            "$ref": "#/definitions/openapi.Annotation"
                         }
                     },
                     "400": {
                         "description": "invalid input / not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1332,13 +1332,13 @@ const docTemplate = `{
                     "400": {
                         "description": "filename required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "file not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1377,31 +1377,31 @@ const docTemplate = `{
                     "200": {
                         "description": "account unlocked",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
                         "description": "operator_id required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "operator not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1433,25 +1433,25 @@ const docTemplate = `{
                     "200": {
                         "description": "operators",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminOperatorListResult"
+                            "$ref": "#/definitions/openapi.AdminOperatorListResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1482,7 +1482,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CreateOperatorRequest"
+                            "$ref": "#/definitions/openapi.CreateOperatorRequest"
                         }
                     }
                 ],
@@ -1490,37 +1490,37 @@ const docTemplate = `{
                     "201": {
                         "description": "created operator",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminOperator"
+                            "$ref": "#/definitions/openapi.AdminOperator"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "email already in use",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1559,31 +1559,31 @@ const docTemplate = `{
                     "200": {
                         "description": "operator",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminOperator"
+                            "$ref": "#/definitions/openapi.AdminOperator"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1620,43 +1620,43 @@ const docTemplate = `{
                     "200": {
                         "description": "operator deleted",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
                         "description": "operator id required / cannot delete self",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "cannot delete last super_admin",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1694,7 +1694,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateOperatorRequest"
+                            "$ref": "#/definitions/openapi.UpdateOperatorRequest"
                         }
                     }
                 ],
@@ -1702,43 +1702,43 @@ const docTemplate = `{
                     "200": {
                         "description": "updated operator",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminOperator"
+                            "$ref": "#/definitions/openapi.AdminOperator"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "super_admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "email already in use",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1782,19 +1782,19 @@ const docTemplate = `{
                     "200": {
                         "description": "API keys with pagination",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.APIKeyListResult"
+                            "$ref": "#/definitions/openapi.APIKeyListResult"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1825,7 +1825,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CreateAPIKeyRequest"
+                            "$ref": "#/definitions/openapi.CreateAPIKeyRequest"
                         }
                     }
                 ],
@@ -1833,25 +1833,25 @@ const docTemplate = `{
                     "201": {
                         "description": "created API key with full secret",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.APIKeyWithSecret"
+                            "$ref": "#/definitions/openapi.APIKeyWithSecret"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1890,25 +1890,25 @@ const docTemplate = `{
                     "200": {
                         "description": "API key",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.APIKey"
+                            "$ref": "#/definitions/openapi.APIKey"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1948,19 +1948,19 @@ const docTemplate = `{
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -1998,7 +1998,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateAPIKeyRequest"
+                            "$ref": "#/definitions/openapi.UpdateAPIKeyRequest"
                         }
                     }
                 ],
@@ -2006,31 +2006,31 @@ const docTemplate = `{
                     "200": {
                         "description": "updated API key",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.APIKey"
+                            "$ref": "#/definitions/openapi.APIKey"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2069,25 +2069,25 @@ const docTemplate = `{
                     "200": {
                         "description": "rotated API key with full secret",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.APIKeyWithSecret"
+                            "$ref": "#/definitions/openapi.APIKeyWithSecret"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2113,7 +2113,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CancelVerificationRequest"
+                            "$ref": "#/definitions/openapi.CancelVerificationRequest"
                         }
                     }
                 ],
@@ -2121,19 +2121,19 @@ const docTemplate = `{
                     "200": {
                         "description": "cancelled",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
                         "description": "email required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2156,19 +2156,19 @@ const docTemplate = `{
                     "200": {
                         "description": "clients",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ClientCredentialListResult"
+                            "$ref": "#/definitions/openapi.ClientCredentialListResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2192,7 +2192,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CreateClientCredentialRequest"
+                            "$ref": "#/definitions/openapi.CreateClientCredentialRequest"
                         }
                     }
                 ],
@@ -2200,25 +2200,25 @@ const docTemplate = `{
                     "200": {
                         "description": "created client with secret",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ClientCredential"
+                            "$ref": "#/definitions/openapi.ClientCredential"
                         }
                     },
                     "400": {
                         "description": "invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2250,31 +2250,31 @@ const docTemplate = `{
                     "200": {
                         "description": "client",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ClientCredential"
+                            "$ref": "#/definitions/openapi.ClientCredential"
                         }
                     },
                     "400": {
                         "description": "clientId required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "client not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2304,31 +2304,31 @@ const docTemplate = `{
                     "200": {
                         "description": "client revoked",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
                         "description": "clientId required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "client not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2359,7 +2359,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateClientCredentialRequest"
+                            "$ref": "#/definitions/openapi.UpdateClientCredentialRequest"
                         }
                     }
                 ],
@@ -2367,31 +2367,31 @@ const docTemplate = `{
                     "200": {
                         "description": "updated client",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ClientCredential"
+                            "$ref": "#/definitions/openapi.ClientCredential"
                         }
                     },
                     "400": {
                         "description": "clientId required / invalid body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "client not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2423,31 +2423,31 @@ const docTemplate = `{
                     "200": {
                         "description": "client with new secret",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ClientCredential"
+                            "$ref": "#/definitions/openapi.ClientCredential"
                         }
                     },
                     "400": {
                         "description": "clientId required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "client not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2473,7 +2473,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ForgotPasswordRequest"
+                            "$ref": "#/definitions/openapi.ForgotPasswordRequest"
                         }
                     }
                 ],
@@ -2481,19 +2481,19 @@ const docTemplate = `{
                     "200": {
                         "description": "reset link sent (if email exists)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MessageResult"
+                            "$ref": "#/definitions/openapi.MessageResult"
                         }
                     },
                     "400": {
                         "description": "email required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2516,13 +2516,13 @@ const docTemplate = `{
                     "200": {
                         "description": "lockout status",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.LockoutStatusResult"
+                            "$ref": "#/definitions/openapi.LockoutStatusResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2548,7 +2548,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.LoginRequest"
+                            "$ref": "#/definitions/openapi.LoginRequest"
                         }
                     }
                 ],
@@ -2556,25 +2556,25 @@ const docTemplate = `{
                     "200": {
                         "description": "login result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.LoginResult"
+                            "$ref": "#/definitions/openapi.LoginResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "invalid credentials",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "423": {
                         "description": "account locked",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2600,7 +2600,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.LoginRequest"
+                            "$ref": "#/definitions/openapi.LoginRequest"
                         }
                     }
                 ],
@@ -2608,19 +2608,19 @@ const docTemplate = `{
                     "200": {
                         "description": "login result with tokens",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.LoginWithTokensResult"
+                            "$ref": "#/definitions/openapi.LoginWithTokensResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "invalid credentials",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2645,7 +2645,7 @@ const docTemplate = `{
                         "name": "body",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.LogoutRequest"
+                            "$ref": "#/definitions/openapi.LogoutRequest"
                         }
                     }
                 ],
@@ -2653,19 +2653,19 @@ const docTemplate = `{
                     "200": {
                         "description": "logged out",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MessageResult"
+                            "$ref": "#/definitions/openapi.MessageResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "logout failed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2688,19 +2688,19 @@ const docTemplate = `{
                     "200": {
                         "description": "current operator",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MeResult"
+                            "$ref": "#/definitions/openapi.MeResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "failed to get organizations",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2724,7 +2724,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateNameRequest"
+                            "$ref": "#/definitions/openapi.UpdateNameRequest"
                         }
                     }
                 ],
@@ -2732,25 +2732,25 @@ const docTemplate = `{
                     "200": {
                         "description": "updated operator",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OperatorSettingsResultLegacy"
+                            "$ref": "#/definitions/openapi.OperatorSettingsResultLegacy"
                         }
                     },
                     "400": {
                         "description": "name required / invalid body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2776,7 +2776,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFADisableRequest"
+                            "$ref": "#/definitions/openapi.MFADisableRequest"
                         }
                     }
                 ],
@@ -2784,25 +2784,25 @@ const docTemplate = `{
                     "200": {
                         "description": "disabled",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
                         "description": "code required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated / invalid code",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2828,7 +2828,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAEnableRequest"
+                            "$ref": "#/definitions/openapi.MFAEnableRequest"
                         }
                     }
                 ],
@@ -2836,25 +2836,25 @@ const docTemplate = `{
                     "200": {
                         "description": "enabled with backup codes",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAEnableResult"
+                            "$ref": "#/definitions/openapi.MFAEnableResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated / invalid code",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2877,19 +2877,19 @@ const docTemplate = `{
                     "200": {
                         "description": "MFA secret and URI",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAEnrollResult"
+                            "$ref": "#/definitions/openapi.MFAEnrollResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2912,19 +2912,19 @@ const docTemplate = `{
                     "200": {
                         "description": "new backup codes",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFARegenerateResult"
+                            "$ref": "#/definitions/openapi.MFARegenerateResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2947,19 +2947,19 @@ const docTemplate = `{
                     "200": {
                         "description": "MFA status",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAStatusResult"
+                            "$ref": "#/definitions/openapi.MFAStatusResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -2985,7 +2985,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAVerifyRequest"
+                            "$ref": "#/definitions/openapi.MFAVerifyRequest"
                         }
                     }
                 ],
@@ -2993,25 +2993,25 @@ const docTemplate = `{
                     "200": {
                         "description": "session with tokens",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAVerifyResult"
+                            "$ref": "#/definitions/openapi.MFAVerifyResult"
                         }
                     },
                     "400": {
                         "description": "operator_id and code required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "invalid MFA code / operator invalid",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3037,7 +3037,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFABackupCodeRequest"
+                            "$ref": "#/definitions/openapi.MFABackupCodeRequest"
                         }
                     }
                 ],
@@ -3045,25 +3045,25 @@ const docTemplate = `{
                     "200": {
                         "description": "valid",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFABackupCodeResult"
+                            "$ref": "#/definitions/openapi.MFABackupCodeResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated / invalid code",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "MFA not enabled",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3089,7 +3089,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAVerifySetupRequest"
+                            "$ref": "#/definitions/openapi.MFAVerifySetupRequest"
                         }
                     }
                 ],
@@ -3097,19 +3097,19 @@ const docTemplate = `{
                     "200": {
                         "description": "verified",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated / invalid code",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3146,7 +3146,7 @@ const docTemplate = `{
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3183,7 +3183,7 @@ const docTemplate = `{
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3213,19 +3213,19 @@ const docTemplate = `{
                     "200": {
                         "description": "operator's organizations",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationListResult"
+                            "$ref": "#/definitions/openapi.OrganizationListResult"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3258,7 +3258,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SelectOrganizationRequest"
+                            "$ref": "#/definitions/openapi.SelectOrganizationRequest"
                         }
                     }
                 ],
@@ -3266,25 +3266,25 @@ const docTemplate = `{
                     "200": {
                         "description": "selection result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SelectOrganizationResult"
+                            "$ref": "#/definitions/openapi.SelectOrganizationResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3316,19 +3316,19 @@ const docTemplate = `{
                     "200": {
                         "description": "verification status",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.PollVerificationResult"
+                            "$ref": "#/definitions/openapi.PollVerificationResult"
                         }
                     },
                     "400": {
                         "description": "token required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "verification check failed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3354,7 +3354,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.RefreshTokenRequest"
+                            "$ref": "#/definitions/openapi.RefreshTokenRequest"
                         }
                     }
                 ],
@@ -3362,25 +3362,25 @@ const docTemplate = `{
                     "200": {
                         "description": "new token pair",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.RefreshTokenResult"
+                            "$ref": "#/definitions/openapi.RefreshTokenResult"
                         }
                     },
                     "400": {
                         "description": "invalid request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "invalid or expired refresh token",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3406,7 +3406,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.RegisterRequest"
+                            "$ref": "#/definitions/openapi.RegisterRequest"
                         }
                     }
                 ],
@@ -3414,25 +3414,25 @@ const docTemplate = `{
                     "201": {
                         "description": "created operator",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.RegisterResult"
+                            "$ref": "#/definitions/openapi.RegisterResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "account exists",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3458,7 +3458,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ForgotPasswordRequest"
+                            "$ref": "#/definitions/openapi.ForgotPasswordRequest"
                         }
                     }
                 ],
@@ -3466,25 +3466,25 @@ const docTemplate = `{
                     "200": {
                         "description": "reset link sent",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
                         "description": "email required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "429": {
                         "description": "rate limited",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3516,19 +3516,19 @@ const docTemplate = `{
                     "200": {
                         "description": "verification email sent (if email exists)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MessageResult"
+                            "$ref": "#/definitions/openapi.MessageResult"
                         }
                     },
                     "400": {
                         "description": "email required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3552,7 +3552,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ResendVerificationRequest"
+                            "$ref": "#/definitions/openapi.ResendVerificationRequest"
                         }
                     }
                 ],
@@ -3560,19 +3560,19 @@ const docTemplate = `{
                     "200": {
                         "description": "verification email sent (if email exists)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MessageResult"
+                            "$ref": "#/definitions/openapi.MessageResult"
                         }
                     },
                     "400": {
                         "description": "email required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3598,7 +3598,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ResetPasswordRequest"
+                            "$ref": "#/definitions/openapi.ResetPasswordRequest"
                         }
                     }
                 ],
@@ -3606,25 +3606,25 @@ const docTemplate = `{
                     "200": {
                         "description": "password reset",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
                         "description": "token and newPassword required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "invalid or expired reset token",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3647,19 +3647,19 @@ const docTemplate = `{
                     "200": {
                         "description": "sessions",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SessionListResult"
+                            "$ref": "#/definitions/openapi.SessionListResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3680,19 +3680,19 @@ const docTemplate = `{
                     "200": {
                         "description": "sessions revoked",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.RevokeResult"
+                            "$ref": "#/definitions/openapi.RevokeResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3715,19 +3715,19 @@ const docTemplate = `{
                     "200": {
                         "description": "concurrent session info",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConcurrentSessionsResult"
+                            "$ref": "#/definitions/openapi.ConcurrentSessionsResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3750,19 +3750,19 @@ const docTemplate = `{
                     "200": {
                         "description": "all sessions revoked",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.RevokeResult"
+                            "$ref": "#/definitions/openapi.RevokeResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3794,31 +3794,31 @@ const docTemplate = `{
                     "200": {
                         "description": "session",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SessionInfo"
+                            "$ref": "#/definitions/openapi.SessionInfo"
                         }
                     },
                     "400": {
                         "description": "session id required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "session not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3848,31 +3848,31 @@ const docTemplate = `{
                     "200": {
                         "description": "session revoked",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
                         "description": "session id required / cannot revoke current",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "session not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3904,19 +3904,19 @@ const docTemplate = `{
                     "200": {
                         "description": "verified",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.EmailVerifyResult"
+                            "$ref": "#/definitions/openapi.EmailVerifyResult"
                         }
                     },
                     "400": {
                         "description": "token required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "invalid or expired token",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3940,7 +3940,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.EmailVerifyRequest"
+                            "$ref": "#/definitions/openapi.EmailVerifyRequest"
                         }
                     }
                 ],
@@ -3948,19 +3948,19 @@ const docTemplate = `{
                     "200": {
                         "description": "verified",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.EmailVerifyResult"
+                            "$ref": "#/definitions/openapi.EmailVerifyResult"
                         }
                     },
                     "400": {
                         "description": "token required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "invalid or expired token",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -3995,13 +3995,13 @@ const docTemplate = `{
                     "400": {
                         "description": "filename required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "file not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4024,13 +4024,13 @@ const docTemplate = `{
                     "200": {
                         "description": "changelog",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateChangelogResult"
+                            "$ref": "#/definitions/openapi.UpdateChangelogResult"
                         }
                     },
                     "404": {
                         "description": "changelog not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4062,13 +4062,13 @@ const docTemplate = `{
                     "200": {
                         "description": "channel status",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ChannelStatusResult"
+                            "$ref": "#/definitions/openapi.ChannelStatusResult"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4101,7 +4101,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ChannelSubscribeRequest"
+                            "$ref": "#/definitions/openapi.ChannelSubscribeRequest"
                         }
                     }
                 ],
@@ -4109,19 +4109,19 @@ const docTemplate = `{
                     "200": {
                         "description": "subscription result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ChannelSubscribeResult"
+                            "$ref": "#/definitions/openapi.ChannelSubscribeResult"
                         }
                     },
                     "400": {
                         "description": "scope required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4160,19 +4160,19 @@ const docTemplate = `{
                     "200": {
                         "description": "unsubscription result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ChannelUnsubscribeResult"
+                            "$ref": "#/definitions/openapi.ChannelUnsubscribeResult"
                         }
                     },
                     "400": {
                         "description": "scope required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4203,13 +4203,13 @@ const docTemplate = `{
                     "200": {
                         "description": "update check result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdaterCheckResult"
+                            "$ref": "#/definitions/openapi.UpdaterCheckResult"
                         }
                     },
                     "500": {
                         "description": "manifest not loaded",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4248,31 +4248,31 @@ const docTemplate = `{
                     "200": {
                         "description": "cancel result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandCancelResult"
+                            "$ref": "#/definitions/openapi.CommandCancelResult"
                         }
                     },
                     "400": {
                         "description": "dispatch id required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "command not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4311,25 +4311,25 @@ const docTemplate = `{
                     "200": {
                         "description": "retry result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandRetryResult"
+                            "$ref": "#/definitions/openapi.CommandRetryResult"
                         }
                     },
                     "400": {
                         "description": "dispatch id required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "command not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4368,25 +4368,25 @@ const docTemplate = `{
                     "200": {
                         "description": "command status",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandStatus"
+                            "$ref": "#/definitions/openapi.CommandStatus"
                         }
                     },
                     "400": {
                         "description": "dispatch id required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "command not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4431,19 +4431,19 @@ const docTemplate = `{
                     "200": {
                         "description": "versions",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConfigVersionListResult"
+                            "$ref": "#/definitions/openapi.ConfigVersionListResult"
                         }
                     },
                     "400": {
                         "description": "invalid resource type",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4489,19 +4489,19 @@ const docTemplate = `{
                     "200": {
                         "description": "config version",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConfigVersion"
+                            "$ref": "#/definitions/openapi.ConfigVersion"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4547,19 +4547,19 @@ const docTemplate = `{
                     "200": {
                         "description": "restore result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConfigVersionRestoreResult"
+                            "$ref": "#/definitions/openapi.ConfigVersionRestoreResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4591,13 +4591,13 @@ const docTemplate = `{
                     "200": {
                         "description": "connections",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConnectionListResult"
+                            "$ref": "#/definitions/openapi.ConnectionListResult"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4629,13 +4629,13 @@ const docTemplate = `{
                     "200": {
                         "description": "connection metrics",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConnectionMetricsResult"
+                            "$ref": "#/definitions/openapi.ConnectionMetricsResult"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4706,25 +4706,25 @@ const docTemplate = `{
                     "200": {
                         "description": "command history",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandHistoryResult"
+                            "$ref": "#/definitions/openapi.CommandHistoryResult"
                         }
                     },
                     "401": {
                         "description": "operator context required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "device not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4775,19 +4775,19 @@ const docTemplate = `{
                     "200": {
                         "description": "events",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceEventListResult"
+                            "$ref": "#/definitions/openapi.DeviceEventListResult"
                         }
                     },
                     "400": {
                         "description": "device not found / forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4844,19 +4844,19 @@ const docTemplate = `{
                     "200": {
                         "description": "logs",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceLogEventListResult"
+                            "$ref": "#/definitions/openapi.DeviceLogEventListResult"
                         }
                     },
                     "400": {
                         "description": "device not found / forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4901,19 +4901,19 @@ const docTemplate = `{
                     "200": {
                         "description": "device metrics",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.GetTelemetryResponse"
+                            "$ref": "#/definitions/openapi.GetTelemetryResponse"
                         }
                     },
                     "400": {
                         "description": "IMEI required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -4958,19 +4958,19 @@ const docTemplate = `{
                     "200": {
                         "description": "exported metrics",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.GetTelemetryResponse"
+                            "$ref": "#/definitions/openapi.GetTelemetryResponse"
                         }
                     },
                     "400": {
                         "description": "IMEI required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5015,19 +5015,19 @@ const docTemplate = `{
                     "200": {
                         "description": "device telemetry",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.GetTelemetryResponse"
+                            "$ref": "#/definitions/openapi.GetTelemetryResponse"
                         }
                     },
                     "400": {
                         "description": "IMEI required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5083,19 +5083,19 @@ const docTemplate = `{
                     "200": {
                         "description": "devices",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceListResult"
+                            "$ref": "#/definitions/openapi.DeviceListResult"
                         }
                     },
                     "400": {
                         "description": "organization context required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5133,19 +5133,19 @@ const docTemplate = `{
                     "200": {
                         "description": "devices",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceListResult"
+                            "$ref": "#/definitions/openapi.DeviceListResult"
                         }
                     },
                     "400": {
                         "description": "organization context required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5183,19 +5183,19 @@ const docTemplate = `{
                     "200": {
                         "description": "events",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceEventListResult"
+                            "$ref": "#/definitions/openapi.DeviceEventListResult"
                         }
                     },
                     "401": {
                         "description": "operator context required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5246,19 +5246,19 @@ const docTemplate = `{
                     "200": {
                         "description": "events",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceEventListResult"
+                            "$ref": "#/definitions/openapi.DeviceEventListResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5297,25 +5297,25 @@ const docTemplate = `{
                     "200": {
                         "description": "event",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceEvent"
+                            "$ref": "#/definitions/openapi.DeviceEvent"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "event not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5347,19 +5347,572 @@ const docTemplate = `{
                     "200": {
                         "description": "dashboard stats",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DashboardStats"
+                            "$ref": "#/definitions/openapi.DashboardStats"
                         }
                     },
                     "401": {
                         "description": "operator context required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/deploy": {
+            "post": {
+                "description": "Compiles, authorises, signs and persists a device config. With\n?dry_run=true it compiles and signs but stores nothing.",
+                "consumes": [
+                    "application/toml"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deploy"
+                ],
+                "summary": "Deploy a manifest to a device",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "compile and sign without persisting",
+                        "name": "dry_run",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "deployed",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_deploy.deployResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "manifest invalid",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "device.deploy required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "device not in organization",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "device not registered",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/deploy/{imei}": {
+            "get": {
+                "description": "Returns the signed config the device should be running.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deploy"
+                ],
+                "summary": "Get a device's current config",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "device id",
+                        "name": "imei",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "current config",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_deploy.currentResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "device.deploy required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "device or config not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/deploy/{imei}/credentials": {
+            "get": {
+                "description": "Names, prefixes and revocation state. Never a token.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deploy"
+                ],
+                "summary": "List a device's deploy credentials",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "device id",
+                        "name": "imei",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "credentials",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_deploy.credentialListResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "device.deploy required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "device not in organization",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Returns the token once. It is never returned by any GET.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deploy"
+                ],
+                "summary": "Mint a device-scoped deploy credential",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "device id",
+                        "name": "imei",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "credential name",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_deploy.mintCredentialRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "credential minted",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_deploy.mintCredentialResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "device.deploy required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "device not in organization",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/deploy/{imei}/credentials/{id}": {
+            "delete": {
+                "description": "A revoked credential is refused on its next use.",
+                "tags": [
+                    "deploy"
+                ],
+                "summary": "Revoke a deploy credential",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "device id",
+                        "name": "imei",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "credential id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "revoked"
+                    },
+                    "403": {
+                        "description": "device.deploy required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "device not in organization",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/deploy/{imei}/document": {
+            "get": {
+                "description": "Returns the signed vyzorix.v text verbatim.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "deploy"
+                ],
+                "summary": "Get a device's signed config document",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "device id",
+                        "name": "imei",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "signed config",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "device.deploy required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "device or config not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/deploy/{imei}/secrets/{app}": {
+            "get": {
+                "description": "Returns key names and generations. Never a value.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deploy"
+                ],
+                "summary": "List an app's secret names",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "device id",
+                        "name": "imei",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "app name",
+                        "name": "app",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "secret names",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_deploy.secretListResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "device.deploy required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "device not in organization",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Wraps the value to the device's key and stores the ciphertext.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deploy"
+                ],
+                "summary": "Set an app secret",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "device id",
+                        "name": "imei",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "app name",
+                        "name": "app",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "key and value",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_deploy.setSecretRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "stored",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_deploy.setSecretResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid name or value",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "device.deploy required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "device not in organization",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/deploy/{imei}/secrets/{app}/{key}": {
+            "get": {
+                "description": "Returns the value wrapped to the device's key. Only for a key the\ncurrent signed config names.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deploy"
+                ],
+                "summary": "Fetch a secret's ciphertext (device)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "device id",
+                        "name": "imei",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "app name",
+                        "name": "app",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "secret key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "wrapped secret",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_deploy.ciphertextResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "config does not name this secret",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "no config, or secret not set",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "deploy"
+                ],
+                "summary": "Remove an app secret",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "device id",
+                        "name": "imei",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "app name",
+                        "name": "app",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "secret key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "removed"
+                    },
+                    "403": {
+                        "description": "device.deploy required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "device not in organization",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5391,19 +5944,19 @@ const docTemplate = `{
                     "200": {
                         "description": "device count",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceCountResult"
+                            "$ref": "#/definitions/openapi.DeviceCountResult"
                         }
                     },
                     "400": {
                         "description": "organization context required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5453,19 +6006,19 @@ const docTemplate = `{
                     "200": {
                         "description": "inbox entries",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InboxListResult"
+                            "$ref": "#/definitions/openapi.InboxListResult"
                         }
                     },
                     "400": {
                         "description": "organization context required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5507,7 +6060,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InboxRequest"
+                            "$ref": "#/definitions/openapi.InboxRequest"
                         }
                     }
                 ],
@@ -5515,25 +6068,25 @@ const docTemplate = `{
                     "201": {
                         "description": "created inbox entry",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InboxEntryResponse"
+                            "$ref": "#/definitions/openapi.InboxEntryResponse"
                         }
                     },
                     "400": {
                         "description": "invalid request body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "attestation failed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5572,25 +6125,25 @@ const docTemplate = `{
                     "200": {
                         "description": "inbox entry",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InboxEntryResponse"
+                            "$ref": "#/definitions/openapi.InboxEntryResponse"
                         }
                     },
                     "400": {
                         "description": "IMEI required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5628,7 +6181,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateInboxEntryRequest"
+                            "$ref": "#/definitions/openapi.UpdateInboxEntryRequest"
                         }
                     }
                 ],
@@ -5636,19 +6189,19 @@ const docTemplate = `{
                     "200": {
                         "description": "updated inbox entry",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InboxEntryResponse"
+                            "$ref": "#/definitions/openapi.InboxEntryResponse"
                         }
                     },
                     "400": {
                         "description": "IMEI required / invalid body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5688,7 +6241,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InboxAckRequest"
+                            "$ref": "#/definitions/openapi.InboxAckRequest"
                         }
                     }
                 ],
@@ -5696,19 +6249,19 @@ const docTemplate = `{
                     "200": {
                         "description": "ack result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InboxAckResult"
+                            "$ref": "#/definitions/openapi.InboxAckResult"
                         }
                     },
                     "400": {
                         "description": "invalid action / IMEI required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5747,19 +6300,19 @@ const docTemplate = `{
                     "200": {
                         "description": "resend result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InboxResendResult"
+                            "$ref": "#/definitions/openapi.InboxResendResult"
                         }
                     },
                     "400": {
                         "description": "IMEI required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5798,25 +6351,25 @@ const docTemplate = `{
                     "200": {
                         "description": "device",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceDetailResult"
+                            "$ref": "#/definitions/openapi.DeviceDetailResult"
                         }
                     },
                     "400": {
                         "description": "IMEI required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "device not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5846,19 +6399,19 @@ const docTemplate = `{
                     "200": {
                         "description": "device deleted",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
                         "description": "device ID required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5898,7 +6451,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandRequest"
+                            "$ref": "#/definitions/openapi.CommandRequest"
                         }
                     }
                 ],
@@ -5906,31 +6459,31 @@ const docTemplate = `{
                     "202": {
                         "description": "dispatch result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandDispatchResult"
+                            "$ref": "#/definitions/openapi.CommandDispatchResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "device not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "425": {
                         "description": "confirmation required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -5970,7 +6523,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandResultReport"
+                            "$ref": "#/definitions/openapi.CommandResultReport"
                         }
                     }
                 ],
@@ -5978,25 +6531,25 @@ const docTemplate = `{
                     "200": {
                         "description": "result recorded",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandResultAck"
+                            "$ref": "#/definitions/openapi.CommandResultAck"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "command not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6035,31 +6588,31 @@ const docTemplate = `{
                     "200": {
                         "description": "pending commands",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandPendingResult"
+                            "$ref": "#/definitions/openapi.CommandPendingResult"
                         }
                     },
                     "400": {
                         "description": "device imei required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "device not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6095,19 +6648,19 @@ const docTemplate = `{
                     "401": {
                         "description": "device signature invalid",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "device not found or not claimed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6146,19 +6699,19 @@ const docTemplate = `{
                     "200": {
                         "description": "connection status",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConnectionStatusResult"
+                            "$ref": "#/definitions/openapi.ConnectionStatusResult"
                         }
                     },
                     "400": {
                         "description": "device ID required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6197,25 +6750,25 @@ const docTemplate = `{
                     "200": {
                         "description": "disconnect result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceDisconnectResult"
+                            "$ref": "#/definitions/openapi.DeviceDisconnectResult"
                         }
                     },
                     "400": {
                         "description": "device ID required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "device not connected",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6248,7 +6801,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceFCMTokenRequest"
+                            "$ref": "#/definitions/openapi.DeviceFCMTokenRequest"
                         }
                     }
                 ],
@@ -6256,19 +6809,19 @@ const docTemplate = `{
                     "200": {
                         "description": "token updated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
                         "description": "invalid IMEI / body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6307,37 +6860,37 @@ const docTemplate = `{
                     "200": {
                         "description": "device inspection",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceInspectionResult"
+                            "$ref": "#/definitions/openapi.DeviceInspectionResult"
                         }
                     },
                     "400": {
                         "description": "IMEI required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "device not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6408,25 +6961,25 @@ const docTemplate = `{
                     "200": {
                         "description": "timeline events",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TimelineResult"
+                            "$ref": "#/definitions/openapi.TimelineResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "device not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6476,19 +7029,19 @@ const docTemplate = `{
                     "200": {
                         "description": "devices",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceListResult"
+                            "$ref": "#/definitions/openapi.DeviceListResult"
                         }
                     },
                     "400": {
                         "description": "organization_id required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6527,25 +7080,25 @@ const docTemplate = `{
                     "200": {
                         "description": "device detail",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceDetailResult"
+                            "$ref": "#/definitions/openapi.DeviceDetailResult"
                         }
                     },
                     "400": {
                         "description": "IMEI required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "device not found in organization",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6588,25 +7141,25 @@ const docTemplate = `{
                     "200": {
                         "description": "device deregistered",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
                         "description": "IMEI required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "device not found in organization",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6646,7 +7199,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandConfirmRequest"
+                            "$ref": "#/definitions/openapi.CommandConfirmRequest"
                         }
                     }
                 ],
@@ -6654,31 +7207,31 @@ const docTemplate = `{
                     "200": {
                         "description": "confirmation not required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandConfirmResult"
+                            "$ref": "#/definitions/openapi.CommandConfirmResult"
                         }
                     },
                     "201": {
                         "description": "confirmation token issued",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandConfirmResult"
+                            "$ref": "#/definitions/openapi.CommandConfirmResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6717,37 +7270,37 @@ const docTemplate = `{
                     "200": {
                         "description": "device settings",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceSettingsResult"
+                            "$ref": "#/definitions/openapi.DeviceSettingsResult"
                         }
                     },
                     "400": {
                         "description": "IMEI required / org context required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "device not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6785,7 +7338,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateDeviceSettingsRequest"
+                            "$ref": "#/definitions/openapi.UpdateDeviceSettingsRequest"
                         }
                     }
                 ],
@@ -6793,37 +7346,37 @@ const docTemplate = `{
                     "200": {
                         "description": "updated device settings",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceSettingsResult"
+                            "$ref": "#/definitions/openapi.DeviceSettingsResult"
                         }
                     },
                     "400": {
                         "description": "IMEI required / invalid body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "settings not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6862,31 +7415,31 @@ const docTemplate = `{
                     "200": {
                         "description": "thresholds",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ThresholdsResult"
+                            "$ref": "#/definitions/openapi.ThresholdsResult"
                         }
                     },
                     "400": {
                         "description": "IMEI required / org context required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6924,7 +7477,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ThresholdUpdateRequest"
+                            "$ref": "#/definitions/openapi.ThresholdUpdateRequest"
                         }
                     }
                 ],
@@ -6932,31 +7485,31 @@ const docTemplate = `{
                     "200": {
                         "description": "updated thresholds",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ThresholdsResult"
+                            "$ref": "#/definitions/openapi.ThresholdsResult"
                         }
                     },
                     "400": {
                         "description": "IMEI required / invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -6995,19 +7548,19 @@ const docTemplate = `{
                     "200": {
                         "description": "device status",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceStatus"
+                            "$ref": "#/definitions/openapi.DeviceStatus"
                         }
                     },
                     "400": {
                         "description": "device not found / forbidden",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7039,13 +7592,13 @@ const docTemplate = `{
                     "200": {
                         "description": "tags",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceTagsResult"
+                            "$ref": "#/definitions/openapi.DeviceTagsResult"
                         }
                     },
                     "404": {
                         "description": "device not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7076,7 +7629,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SetDeviceTagsRequest"
+                            "$ref": "#/definitions/openapi.SetDeviceTagsRequest"
                         }
                     }
                 ],
@@ -7084,19 +7637,19 @@ const docTemplate = `{
                     "200": {
                         "description": "tags",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceTagsResult"
+                            "$ref": "#/definitions/openapi.DeviceTagsResult"
                         }
                     },
                     "400": {
                         "description": "invalid body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7135,13 +7688,13 @@ const docTemplate = `{
                     "200": {
                         "description": "added",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceTagAddedResult"
+                            "$ref": "#/definitions/openapi.DeviceTagAddedResult"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7178,13 +7731,13 @@ const docTemplate = `{
                     "200": {
                         "description": "removed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceTagRemovedResult"
+                            "$ref": "#/definitions/openapi.DeviceTagRemovedResult"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7210,7 +7763,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DownloadProgressRequest"
+                            "$ref": "#/definitions/openapi.DownloadProgressRequest"
                         }
                     }
                 ],
@@ -7218,13 +7771,49 @@ const docTemplate = `{
                     "200": {
                         "description": "recorded",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DownloadProgressResult"
+                            "$ref": "#/definitions/openapi.DownloadProgressResult"
                         }
                     },
                     "400": {
                         "description": "invalid request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/download-progress/{deviceId}": {
+            "get": {
+                "description": "Returns the latest reported OTA download progress for a device",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "updater"
+                ],
+                "summary": "Read a device's update download progress",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "device id",
+                        "name": "deviceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "progress, or downloading=false when none",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "deviceId required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7247,19 +7836,19 @@ const docTemplate = `{
                     "200": {
                         "description": "invitations",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InvitationListResult"
+                            "$ref": "#/definitions/openapi.InvitationListResult"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7290,7 +7879,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CreateInvitationRequest"
+                            "$ref": "#/definitions/openapi.CreateInvitationRequest"
                         }
                     }
                 ],
@@ -7298,43 +7887,43 @@ const docTemplate = `{
                     "201": {
                         "description": "created invitation",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Invitation"
+                            "$ref": "#/definitions/openapi.Invitation"
                         }
                     },
                     "400": {
                         "description": "invalid input / cannot invite self",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied / max invitations",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "organization not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "invitation already exists",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7373,43 +7962,43 @@ const docTemplate = `{
                     "200": {
                         "description": "invitation deleted",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MessageResult"
+                            "$ref": "#/definitions/openapi.MessageResult"
                         }
                     },
                     "400": {
                         "description": "invitation id required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "only inviter or admin can delete",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "invitation not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "only pending invitations can be deleted",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7441,25 +8030,25 @@ const docTemplate = `{
                     "200": {
                         "description": "invitation",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InvitationByTokenResult"
+                            "$ref": "#/definitions/openapi.InvitationByTokenResult"
                         }
                     },
                     "400": {
                         "description": "token required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "invitation not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7491,31 +8080,31 @@ const docTemplate = `{
                     "200": {
                         "description": "invitation accepted",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MessageResult"
+                            "$ref": "#/definitions/openapi.MessageResult"
                         }
                     },
                     "400": {
                         "description": "token required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "email mismatch / org at capacity",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "invitation not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7547,31 +8136,31 @@ const docTemplate = `{
                     "200": {
                         "description": "invitation rejected",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MessageResult"
+                            "$ref": "#/definitions/openapi.MessageResult"
                         }
                     },
                     "400": {
                         "description": "token required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "email does not match",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "invitation not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7594,19 +8183,19 @@ const docTemplate = `{
                     "200": {
                         "description": "pending invitations",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InvitationListResult"
+                            "$ref": "#/definitions/openapi.InvitationListResult"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7629,19 +8218,19 @@ const docTemplate = `{
                     "200": {
                         "description": "notification settings",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.NotificationSettings"
+                            "$ref": "#/definitions/openapi.NotificationSettings"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7665,7 +8254,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.NotificationUpdateRequest"
+                            "$ref": "#/definitions/openapi.NotificationUpdateRequest"
                         }
                     }
                 ],
@@ -7673,25 +8262,25 @@ const docTemplate = `{
                     "200": {
                         "description": "updated notification settings",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.NotificationSettings"
+                            "$ref": "#/definitions/openapi.NotificationSettings"
                         }
                     },
                     "400": {
                         "description": "invalid body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7714,19 +8303,19 @@ const docTemplate = `{
                     "200": {
                         "description": "new webhook secret",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.WebhookSecretResult"
+                            "$ref": "#/definitions/openapi.WebhookSecretResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7752,7 +8341,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.WebhookTestRequest"
+                            "$ref": "#/definitions/openapi.WebhookTestRequest"
                         }
                     }
                 ],
@@ -7760,19 +8349,19 @@ const docTemplate = `{
                     "200": {
                         "description": "webhook test result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.WebhookTestResult"
+                            "$ref": "#/definitions/openapi.WebhookTestResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7795,19 +8384,19 @@ const docTemplate = `{
                     "200": {
                         "description": "preferences",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.PreferencesResult"
+                            "$ref": "#/definitions/openapi.PreferencesResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7831,7 +8420,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.PreferencesResult"
+                            "$ref": "#/definitions/openapi.PreferencesResult"
                         }
                     }
                 ],
@@ -7839,25 +8428,25 @@ const docTemplate = `{
                     "200": {
                         "description": "updated preferences",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.PreferencesResult"
+                            "$ref": "#/definitions/openapi.PreferencesResult"
                         }
                     },
                     "400": {
                         "description": "invalid body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7880,19 +8469,19 @@ const docTemplate = `{
                     "200": {
                         "description": "operator settings",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OperatorSettingsResult"
+                            "$ref": "#/definitions/openapi.OperatorSettingsResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "failed to get settings",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7916,7 +8505,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateSettingsRequest"
+                            "$ref": "#/definitions/openapi.UpdateSettingsRequest"
                         }
                     }
                 ],
@@ -7924,25 +8513,25 @@ const docTemplate = `{
                     "200": {
                         "description": "updated settings",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SettingsResponseResult"
+                            "$ref": "#/definitions/openapi.SettingsResponseResult"
                         }
                     },
                     "400": {
                         "description": "invalid body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -7965,19 +8554,19 @@ const docTemplate = `{
                     "200": {
                         "description": "thresholds",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ThresholdsResult"
+                            "$ref": "#/definitions/openapi.ThresholdsResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8001,7 +8590,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ThresholdUpdateRequest"
+                            "$ref": "#/definitions/openapi.ThresholdUpdateRequest"
                         }
                     }
                 ],
@@ -8009,25 +8598,25 @@ const docTemplate = `{
                     "200": {
                         "description": "updated thresholds",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ThresholdsResult"
+                            "$ref": "#/definitions/openapi.ThresholdsResult"
                         }
                     },
                     "400": {
                         "description": "invalid body",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8059,13 +8648,13 @@ const docTemplate = `{
                     "200": {
                         "description": "contact points",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ContactPointListResult"
+                            "$ref": "#/definitions/openapi.ContactPointListResult"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8096,7 +8685,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ContactPointRequest"
+                            "$ref": "#/definitions/openapi.ContactPointRequest"
                         }
                     }
                 ],
@@ -8104,19 +8693,19 @@ const docTemplate = `{
                     "201": {
                         "description": "created contact point",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ContactPoint"
+                            "$ref": "#/definitions/openapi.ContactPoint"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8155,19 +8744,19 @@ const docTemplate = `{
                     "200": {
                         "description": "contact point",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ContactPoint"
+                            "$ref": "#/definitions/openapi.ContactPoint"
                         }
                     },
                     "400": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8204,19 +8793,19 @@ const docTemplate = `{
                     "200": {
                         "description": "deleted confirmation",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeletedResult"
+                            "$ref": "#/definitions/openapi.DeletedResult"
                         }
                     },
                     "400": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8254,7 +8843,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ContactPointRequest"
+                            "$ref": "#/definitions/openapi.ContactPointRequest"
                         }
                     }
                 ],
@@ -8262,19 +8851,19 @@ const docTemplate = `{
                     "200": {
                         "description": "updated contact point",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ContactPoint"
+                            "$ref": "#/definitions/openapi.ContactPoint"
                         }
                     },
                     "400": {
                         "description": "invalid input / not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8313,19 +8902,19 @@ const docTemplate = `{
                     "200": {
                         "description": "test result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ContactPointTestResult"
+                            "$ref": "#/definitions/openapi.ContactPointTestResult"
                         }
                     },
                     "400": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "delivery failed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8357,19 +8946,19 @@ const docTemplate = `{
                     "200": {
                         "description": "organizations",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationListResult"
+                            "$ref": "#/definitions/openapi.OrganizationListResult"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8400,7 +8989,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CreateOrganizationRequest"
+                            "$ref": "#/definitions/openapi.CreateOrganizationRequest"
                         }
                     }
                 ],
@@ -8408,25 +8997,25 @@ const docTemplate = `{
                     "201": {
                         "description": "created organization",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Organization"
+                            "$ref": "#/definitions/openapi.Organization"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8465,31 +9054,31 @@ const docTemplate = `{
                     "200": {
                         "description": "organization",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Organization"
+                            "$ref": "#/definitions/openapi.Organization"
                         }
                     },
                     "400": {
                         "description": "org id required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8526,37 +9115,37 @@ const docTemplate = `{
                     "200": {
                         "description": "deletion result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MessageResult"
+                            "$ref": "#/definitions/openapi.MessageResult"
                         }
                     },
                     "400": {
                         "description": "organization id required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "organization not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8594,7 +9183,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateOrganizationRequest"
+                            "$ref": "#/definitions/openapi.UpdateOrganizationRequest"
                         }
                     }
                 ],
@@ -8602,31 +9191,31 @@ const docTemplate = `{
                     "200": {
                         "description": "updated organization",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Organization"
+                            "$ref": "#/definitions/openapi.Organization"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied / insufficient role",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8673,7 +9262,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceTransferRequest"
+                            "$ref": "#/definitions/openapi.DeviceTransferRequest"
                         }
                     }
                 ],
@@ -8681,37 +9270,37 @@ const docTemplate = `{
                     "200": {
                         "description": "transfer result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceTransferResult"
+                            "$ref": "#/definitions/openapi.DeviceTransferResult"
                         }
                     },
                     "400": {
                         "description": "invalid input / same org",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied / not member of target",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "device not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8756,25 +9345,25 @@ const docTemplate = `{
                     "200": {
                         "description": "invitations",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InvitationListResult"
+                            "$ref": "#/definitions/openapi.InvitationListResult"
                         }
                     },
                     "400": {
                         "description": "org id required / invalid status",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8813,25 +9402,25 @@ const docTemplate = `{
                     "200": {
                         "description": "members",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationMemberListResult"
+                            "$ref": "#/definitions/openapi.OrganizationMemberListResult"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8877,37 +9466,37 @@ const docTemplate = `{
                     "200": {
                         "description": "member",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationMember"
+                            "$ref": "#/definitions/openapi.OrganizationMember"
                         }
                     },
                     "400": {
                         "description": "org id and member id required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "member not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -8951,37 +9540,37 @@ const docTemplate = `{
                     "200": {
                         "description": "member removed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MessageResult"
+                            "$ref": "#/definitions/openapi.MessageResult"
                         }
                     },
                     "400": {
                         "description": "org id and member id required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "cannot remove last super_admin / self / higher role",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "member not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9027,37 +9616,37 @@ const docTemplate = `{
                     "200": {
                         "description": "reinstate member result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MessageResult"
+                            "$ref": "#/definitions/openapi.MessageResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "member not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9104,7 +9693,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateMemberRoleRequest"
+                            "$ref": "#/definitions/openapi.UpdateMemberRoleRequest"
                         }
                     }
                 ],
@@ -9112,37 +9701,37 @@ const docTemplate = `{
                     "200": {
                         "description": "updated member",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationMember"
+                            "$ref": "#/definitions/openapi.OrganizationMember"
                         }
                     },
                     "400": {
                         "description": "invalid role / input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied / insufficient role",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "member not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9188,37 +9777,37 @@ const docTemplate = `{
                     "200": {
                         "description": "suspend member result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MessageResult"
+                            "$ref": "#/definitions/openapi.MessageResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "member not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9264,37 +9853,37 @@ const docTemplate = `{
                     "200": {
                         "description": "transfer ownership result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MessageResult"
+                            "$ref": "#/definitions/openapi.MessageResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "member not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9333,31 +9922,31 @@ const docTemplate = `{
                     "200": {
                         "description": "organization settings",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationSettingsResult"
+                            "$ref": "#/definitions/openapi.OrganizationSettingsResult"
                         }
                     },
                     "400": {
                         "description": "org id required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9395,7 +9984,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateOrganizationSettingsRequest"
+                            "$ref": "#/definitions/openapi.UpdateOrganizationSettingsRequest"
                         }
                     }
                 ],
@@ -9403,37 +9992,37 @@ const docTemplate = `{
                     "200": {
                         "description": "updated organization settings",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationSettingsResult"
+                            "$ref": "#/definitions/openapi.OrganizationSettingsResult"
                         }
                     },
                     "400": {
                         "description": "org id required / invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "settings not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9472,31 +10061,31 @@ const docTemplate = `{
                     "200": {
                         "description": "thresholds",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ThresholdsResult"
+                            "$ref": "#/definitions/openapi.ThresholdsResult"
                         }
                     },
                     "400": {
                         "description": "org id required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9534,7 +10123,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ThresholdUpdateRequest"
+                            "$ref": "#/definitions/openapi.ThresholdUpdateRequest"
                         }
                     }
                 ],
@@ -9542,31 +10131,31 @@ const docTemplate = `{
                     "200": {
                         "description": "updated thresholds",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ThresholdsResult"
+                            "$ref": "#/definitions/openapi.ThresholdsResult"
                         }
                     },
                     "400": {
                         "description": "org id required / invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "authentication required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "access denied",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9598,13 +10187,13 @@ const docTemplate = `{
                     "200": {
                         "description": "service accounts",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ServiceAccountListResult"
+                            "$ref": "#/definitions/openapi.ServiceAccountListResult"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9635,7 +10224,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CreateServiceAccountRequest"
+                            "$ref": "#/definitions/openapi.CreateServiceAccountRequest"
                         }
                     }
                 ],
@@ -9643,19 +10232,19 @@ const docTemplate = `{
                     "201": {
                         "description": "created service account",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ServiceAccount"
+                            "$ref": "#/definitions/openapi.ServiceAccount"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9694,19 +10283,19 @@ const docTemplate = `{
                     "200": {
                         "description": "deleted confirmation",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeletedResult"
+                            "$ref": "#/definitions/openapi.DeletedResult"
                         }
                     },
                     "400": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9746,7 +10335,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.RotateServiceAccountTokenRequest"
+                            "$ref": "#/definitions/openapi.RotateServiceAccountTokenRequest"
                         }
                     }
                 ],
@@ -9754,19 +10343,19 @@ const docTemplate = `{
                     "201": {
                         "description": "rotated token with full key",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ServiceAccountTokenRotated"
+                            "$ref": "#/definitions/openapi.ServiceAccountTokenRotated"
                         }
                     },
                     "400": {
                         "description": "invalid input / not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9805,19 +10394,19 @@ const docTemplate = `{
                     "200": {
                         "description": "tokens",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ServiceAccountTokenListResult"
+                            "$ref": "#/definitions/openapi.ServiceAccountTokenListResult"
                         }
                     },
                     "400": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9855,7 +10444,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CreateServiceAccountTokenRequest"
+                            "$ref": "#/definitions/openapi.CreateServiceAccountTokenRequest"
                         }
                     }
                 ],
@@ -9863,19 +10452,19 @@ const docTemplate = `{
                     "201": {
                         "description": "created token with full key",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ServiceAccountTokenCreated"
+                            "$ref": "#/definitions/openapi.ServiceAccountTokenCreated"
                         }
                     },
                     "400": {
                         "description": "invalid input / not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9921,19 +10510,19 @@ const docTemplate = `{
                     "200": {
                         "description": "revoked confirmation",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.RevokedResult"
+                            "$ref": "#/definitions/openapi.RevokedResult"
                         }
                     },
                     "400": {
                         "description": "not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -9965,19 +10554,19 @@ const docTemplate = `{
                     "200": {
                         "description": "cleanup result",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10040,25 +10629,25 @@ const docTemplate = `{
                     "200": {
                         "description": "telemetry history",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TelemetryHistoryQueryResult"
+                            "$ref": "#/definitions/openapi.TelemetryHistoryQueryResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "device not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10117,25 +10706,25 @@ const docTemplate = `{
                     "200": {
                         "description": "telemetry history export",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TelemetryHistoryQueryResult"
+                            "$ref": "#/definitions/openapi.TelemetryHistoryQueryResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "export disabled",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10174,25 +10763,25 @@ const docTemplate = `{
                     "200": {
                         "description": "latest telemetry",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TelemetryEntry"
+                            "$ref": "#/definitions/openapi.TelemetryEntry"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "device not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10231,25 +10820,25 @@ const docTemplate = `{
                     "200": {
                         "description": "telemetry stats",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TelemetryStatsResult"
+                            "$ref": "#/definitions/openapi.TelemetryStatsResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "device not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10287,13 +10876,13 @@ const docTemplate = `{
                     "200": {
                         "description": "changelog",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateChangelogResult"
+                            "$ref": "#/definitions/openapi.UpdateChangelogResult"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10319,7 +10908,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceUpdateStatusRequest"
+                            "$ref": "#/definitions/openapi.DeviceUpdateStatusRequest"
                         }
                     }
                 ],
@@ -10327,25 +10916,25 @@ const docTemplate = `{
                     "200": {
                         "description": "acknowledged",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceUpdateStatusResponse"
+                            "$ref": "#/definitions/openapi.DeviceUpdateStatusResponse"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "push/device not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10401,19 +10990,19 @@ const docTemplate = `{
                     "200": {
                         "description": "exported versions",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateExportResult"
+                            "$ref": "#/definitions/openapi.UpdateExportResult"
                         }
                     },
                     "400": {
                         "description": "invalid format",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10457,19 +11046,19 @@ const docTemplate = `{
                     "200": {
                         "description": "push history",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushHistoryListResult"
+                            "$ref": "#/definitions/openapi.UpdatePushHistoryListResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10508,31 +11097,31 @@ const docTemplate = `{
                     "200": {
                         "description": "push detail",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushDetailResult"
+                            "$ref": "#/definitions/openapi.UpdatePushDetailResult"
                         }
                     },
                     "400": {
                         "description": "pushId required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "push not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10571,37 +11160,37 @@ const docTemplate = `{
                     "200": {
                         "description": "push cancelled",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateCancelPushResult"
+                            "$ref": "#/definitions/openapi.UpdateCancelPushResult"
                         }
                     },
                     "400": {
                         "description": "pushId required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "push not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "push cannot be cancelled",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10634,7 +11223,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushRequest"
+                            "$ref": "#/definitions/openapi.UpdatePushRequest"
                         }
                     }
                 ],
@@ -10642,31 +11231,31 @@ const docTemplate = `{
                     "202": {
                         "description": "push accepted",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushResult"
+                            "$ref": "#/definitions/openapi.UpdatePushResult"
                         }
                     },
                     "400": {
                         "description": "invalid input",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10698,13 +11287,13 @@ const docTemplate = `{
                     "200": {
                         "description": "sync status",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateStatusResult"
+                            "$ref": "#/definitions/openapi.UpdateStatusResult"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10736,25 +11325,25 @@ const docTemplate = `{
                     "202": {
                         "description": "sync started",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateSyncResponse"
+                            "$ref": "#/definitions/openapi.UpdateSyncResponse"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "admin required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10786,19 +11375,19 @@ const docTemplate = `{
                     "200": {
                         "description": "sync status",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateSyncStatusResult"
+                            "$ref": "#/definitions/openapi.UpdateSyncStatusResult"
                         }
                     },
                     "401": {
                         "description": "not authenticated",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10848,13 +11437,13 @@ const docTemplate = `{
                     "200": {
                         "description": "versions",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateVersionListResult"
+                            "$ref": "#/definitions/openapi.UpdateVersionListResult"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10893,13 +11482,13 @@ const docTemplate = `{
                     "200": {
                         "description": "sync status",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateStatusResult"
+                            "$ref": "#/definitions/openapi.UpdateStatusResult"
                         }
                     },
                     "500": {
                         "description": "internal error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10940,19 +11529,19 @@ const docTemplate = `{
                     "400": {
                         "description": "invalid request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "code not recognised or expired",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "device already claimed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -10992,19 +11581,19 @@ const docTemplate = `{
                     "400": {
                         "description": "invalid request or public key",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "device already claimed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "429": {
                         "description": "rate limited",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -11027,13 +11616,13 @@ const docTemplate = `{
                     "200": {
                         "description": "version manifest",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdaterVersionManifestResult"
+                            "$ref": "#/definitions/openapi.UpdaterVersionManifestResult"
                         }
                     },
                     "404": {
                         "description": "manifest not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     }
                 }
@@ -11041,7 +11630,306 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.APIKey": {
+        "internal_api_handlers_deploy.ciphertextResponse": {
+            "type": "object",
+            "properties": {
+                "app": {
+                    "type": "string"
+                },
+                "ciphertext": {
+                    "type": "string"
+                },
+                "envelope": {
+                    "type": "string"
+                },
+                "generation": {
+                    "type": "integer"
+                },
+                "key": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_deploy.credentialListResponse": {
+            "type": "object",
+            "properties": {
+                "credentials": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_handlers_deploy.credentialResponse"
+                    }
+                }
+            }
+        },
+        "internal_api_handlers_deploy.credentialResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "integer"
+                },
+                "createdBy": {
+                    "type": "string"
+                },
+                "deviceId": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastUsedAt": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "prefix": {
+                    "type": "string"
+                },
+                "revokedAt": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_deploy.currentResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "integer"
+                },
+                "deviceId": {
+                    "type": "string"
+                },
+                "document": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_deploy.deployResponse": {
+            "type": "object",
+            "properties": {
+                "apps": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "artifacts": {
+                    "type": "integer"
+                },
+                "authorizedBy": {
+                    "type": "string"
+                },
+                "document": {
+                    "type": "string"
+                },
+                "dryRun": {
+                    "type": "boolean"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_deploy.mintCredentialRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_deploy.mintCredentialResponse": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "integer"
+                },
+                "createdBy": {
+                    "type": "string"
+                },
+                "deviceId": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastUsedAt": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "prefix": {
+                    "type": "string"
+                },
+                "revokedAt": {
+                    "type": "integer"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_deploy.secretListResponse": {
+            "type": "object",
+            "properties": {
+                "app": {
+                    "type": "string"
+                },
+                "secrets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_handlers_deploy.secretNameResponse"
+                    }
+                }
+            }
+        },
+        "internal_api_handlers_deploy.secretNameResponse": {
+            "type": "object",
+            "properties": {
+                "generation": {
+                    "type": "integer"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_deploy.setSecretRequest": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_deploy.setSecretResponse": {
+            "type": "object",
+            "properties": {
+                "app": {
+                    "type": "string"
+                },
+                "generation": {
+                    "type": "integer"
+                },
+                "key": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_inbox.claimRequest": {
+            "type": "object",
+            "required": [
+                "pairingCode"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "pairingCode": {
+                    "type": "string"
+                },
+                "tierCap": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_inbox.enrollRequest": {
+            "type": "object",
+            "required": [
+                "deviceUuid",
+                "publicKey"
+            ],
+            "properties": {
+                "apiLevel": {
+                    "type": "integer"
+                },
+                "appVersion": {
+                    "type": "string"
+                },
+                "buildId": {
+                    "type": "string"
+                },
+                "deviceClass": {
+                    "type": "string"
+                },
+                "deviceUuid": {
+                    "type": "string"
+                },
+                "manufacturer": {
+                    "type": "string"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "osVersion": {
+                    "type": "string"
+                },
+                "publicKey": {
+                    "type": "string"
+                },
+                "ramBytes": {
+                    "type": "integer"
+                },
+                "secretKey": {
+                    "description": "SecretKey is the device's second public key (PURPOSE_DECRYPT), which a\nsecret is wrapped to. Optional: a device that does not support secrets\nomits it, and setting a secret for such a device fails rather than\nwrapping to nothing.",
+                    "type": "string"
+                },
+                "securityPatch": {
+                    "type": "string"
+                },
+                "storageBytes": {
+                    "type": "integer"
+                },
+                "supportedAbis": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "tierHint": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_inbox.enrollResponse": {
+            "type": "object",
+            "properties": {
+                "deviceId": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "integer"
+                },
+                "expiresInSeconds": {
+                    "description": "ExpiresInSeconds is what the device counts down. Sending the remaining time\nas well as the absolute deadline means a device with a wrong clock still\nexpires its code correctly.",
+                    "type": "integer"
+                },
+                "pairingCode": {
+                    "type": "string"
+                },
+                "pairingDisplay": {
+                    "type": "string"
+                },
+                "pollIntervalSeconds": {
+                    "description": "PollIntervalSeconds is how often the device should ask for its config while\nit waits to be claimed. The config normally arrives over the held WebSocket\nthe moment an operator claims the code, so this is the fallback for a device\nwhose socket is not up — it bounds how long a claimed device can sit\nunconfigured. The server owns the value so the cadence can be tuned without\nshipping a new APK.",
+                    "type": "integer"
+                }
+            }
+        },
+        "openapi.APIKey": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -11082,13 +11970,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.APIKeyListResult": {
+        "openapi.APIKeyListResult": {
             "type": "object",
             "properties": {
                 "keys": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.APIKey"
+                        "$ref": "#/definitions/openapi.APIKey"
                     }
                 },
                 "keys_created_this_month": {
@@ -11098,11 +11986,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "pagination": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Pagination"
+                    "$ref": "#/definitions/openapi.Pagination"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.APIKeyWithSecret": {
+        "openapi.APIKeyWithSecret": {
             "type": "object",
             "properties": {
                 "api_key": {
@@ -11146,7 +12034,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminAPIKey": {
+        "openapi.AdminAPIKey": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -11190,13 +12078,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminAPIKeyListResult": {
+        "openapi.AdminAPIKeyListResult": {
             "type": "object",
             "properties": {
                 "keys": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminAPIKey"
+                        "$ref": "#/definitions/openapi.AdminAPIKey"
                     }
                 },
                 "keys_created_this_month": {
@@ -11206,11 +12094,11 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "pagination": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Pagination"
+                    "$ref": "#/definitions/openapi.Pagination"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminClient": {
+        "openapi.AdminClient": {
             "type": "object",
             "properties": {
                 "allowed_origins": {
@@ -11257,13 +12145,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminClientListResult": {
+        "openapi.AdminClientListResult": {
             "type": "object",
             "properties": {
                 "clients": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminClient"
+                        "$ref": "#/definitions/openapi.AdminClient"
                     }
                 },
                 "total": {
@@ -11271,15 +12159,15 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminClientResult": {
+        "openapi.AdminClientResult": {
             "type": "object",
             "properties": {
                 "client": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminClient"
+                    "$ref": "#/definitions/openapi.AdminClient"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminOperator": {
+        "openapi.AdminOperator": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -11308,13 +12196,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminOperatorListResult": {
+        "openapi.AdminOperatorListResult": {
             "type": "object",
             "properties": {
                 "operators": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AdminOperator"
+                        "$ref": "#/definitions/openapi.AdminOperator"
                     }
                 },
                 "total": {
@@ -11322,7 +12210,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertEvaluateResult": {
+        "openapi.AlertEvaluateResult": {
             "type": "object",
             "properties": {
                 "rule_id": {
@@ -11333,7 +12221,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertHistoryEvent": {
+        "openapi.AlertHistoryEvent": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -11356,18 +12244,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertHistoryResult": {
+        "openapi.AlertHistoryResult": {
             "type": "object",
             "properties": {
                 "events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertHistoryEvent"
+                        "$ref": "#/definitions/openapi.AlertHistoryEvent"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertInstance": {
+        "openapi.AlertInstance": {
             "type": "object",
             "properties": {
                 "evaluated_at": {
@@ -11387,7 +12275,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertRule": {
+        "openapi.AlertRule": {
             "type": "object",
             "properties": {
                 "condition": {
@@ -11408,7 +12296,7 @@ const docTemplate = `{
                 "instances": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertInstance"
+                        "$ref": "#/definitions/openapi.AlertInstance"
                     }
                 },
                 "metric": {
@@ -11440,18 +12328,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertRuleListResult": {
+        "openapi.AlertRuleListResult": {
             "type": "object",
             "properties": {
                 "rules": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertRule"
+                        "$ref": "#/definitions/openapi.AlertRule"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AlertRuleRequest": {
+        "openapi.AlertRuleRequest": {
             "type": "object",
             "properties": {
                 "condition": {
@@ -11486,7 +12374,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Annotation": {
+        "openapi.Annotation": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -11524,18 +12412,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AnnotationListResult": {
+        "openapi.AnnotationListResult": {
             "type": "object",
             "properties": {
                 "annotations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Annotation"
+                        "$ref": "#/definitions/openapi.Annotation"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.AnnotationRequest": {
+        "openapi.AnnotationRequest": {
             "type": "object",
             "properties": {
                 "end_time": {
@@ -11561,7 +12449,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CancelVerificationRequest": {
+        "openapi.CancelVerificationRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -11569,7 +12457,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ChannelStatusResult": {
+        "openapi.ChannelStatusResult": {
             "type": "object",
             "properties": {
                 "active_streams": {
@@ -11580,7 +12468,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ChannelSubscribeRequest": {
+        "openapi.ChannelSubscribeRequest": {
             "type": "object",
             "properties": {
                 "scope": {
@@ -11588,7 +12476,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ChannelSubscribeResult": {
+        "openapi.ChannelSubscribeResult": {
             "type": "object",
             "properties": {
                 "subscribed": {
@@ -11596,7 +12484,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ChannelUnsubscribeResult": {
+        "openapi.ChannelUnsubscribeResult": {
             "type": "object",
             "properties": {
                 "unsubscribed": {
@@ -11604,7 +12492,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ClientCredential": {
+        "openapi.ClientCredential": {
             "type": "object",
             "properties": {
                 "allowed_origins": {
@@ -11660,18 +12548,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ClientCredentialListResult": {
+        "openapi.ClientCredentialListResult": {
             "type": "object",
             "properties": {
                 "clients": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ClientCredential"
+                        "$ref": "#/definitions/openapi.ClientCredential"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ClientSettings": {
+        "openapi.ClientSettings": {
             "type": "object",
             "properties": {
                 "autoReconnect": {
@@ -11700,7 +12588,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandCancelResult": {
+        "openapi.CommandCancelResult": {
             "type": "object",
             "properties": {
                 "cancelled": {
@@ -11714,7 +12602,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandConfirmRequest": {
+        "openapi.CommandConfirmRequest": {
             "type": "object",
             "properties": {
                 "command": {
@@ -11722,7 +12610,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandConfirmResult": {
+        "openapi.CommandConfirmResult": {
             "type": "object",
             "properties": {
                 "confirmation_required": {
@@ -11745,7 +12633,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandDispatchResult": {
+        "openapi.CommandDispatchResult": {
             "type": "object",
             "properties": {
                 "command_id": {
@@ -11765,7 +12653,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandHistoryEntry": {
+        "openapi.CommandHistoryEntry": {
             "type": "object",
             "properties": {
                 "command": {
@@ -11803,32 +12691,32 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandHistoryResult": {
+        "openapi.CommandHistoryResult": {
             "type": "object",
             "properties": {
                 "commands": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandHistoryEntry"
+                        "$ref": "#/definitions/openapi.CommandHistoryEntry"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Pagination"
+                    "$ref": "#/definitions/openapi.Pagination"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandPendingResult": {
+        "openapi.CommandPendingResult": {
             "type": "object",
             "properties": {
                 "commands": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandResponse"
+                        "$ref": "#/definitions/openapi.CommandResponse"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandRequest": {
+        "openapi.CommandRequest": {
             "type": "object",
             "properties": {
                 "args": {
@@ -11855,7 +12743,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandResponse": {
+        "openapi.CommandResponse": {
             "type": "object",
             "properties": {
                 "args": {
@@ -11887,7 +12775,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandResultAck": {
+        "openapi.CommandResultAck": {
             "type": "object",
             "properties": {
                 "dispatchId": {
@@ -11901,7 +12789,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandResultReport": {
+        "openapi.CommandResultReport": {
             "type": "object",
             "properties": {
                 "error": {
@@ -11915,7 +12803,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandRetryResult": {
+        "openapi.CommandRetryResult": {
             "type": "object",
             "properties": {
                 "command_id": {
@@ -11932,7 +12820,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CommandStatus": {
+        "openapi.CommandStatus": {
             "type": "object",
             "properties": {
                 "command": {
@@ -11955,7 +12843,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConcurrentSessionsResult": {
+        "openapi.ConcurrentSessionsResult": {
             "type": "object",
             "properties": {
                 "count": {
@@ -11967,12 +12855,12 @@ const docTemplate = `{
                 "sessions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SessionInfo"
+                        "$ref": "#/definitions/openapi.SessionInfo"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConfigVersion": {
+        "openapi.ConfigVersion": {
             "type": "object",
             "properties": {
                 "changed_by": {
@@ -11998,18 +12886,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConfigVersionListResult": {
+        "openapi.ConfigVersionListResult": {
             "type": "object",
             "properties": {
                 "versions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConfigVersion"
+                        "$ref": "#/definitions/openapi.ConfigVersion"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConfigVersionRestoreResult": {
+        "openapi.ConfigVersionRestoreResult": {
             "type": "object",
             "properties": {
                 "restored_to_version": {
@@ -12021,18 +12909,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConnectionListResult": {
+        "openapi.ConnectionListResult": {
             "type": "object",
             "properties": {
                 "connections": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConnectionStatusResult"
+                        "$ref": "#/definitions/openapi.ConnectionStatusResult"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConnectionMetricsResult": {
+        "openapi.ConnectionMetricsResult": {
             "type": "object",
             "properties": {
                 "aggregate_metrics": {
@@ -12060,7 +12948,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ConnectionStatusResult": {
+        "openapi.ConnectionStatusResult": {
             "type": "object",
             "properties": {
                 "device_id": {
@@ -12074,7 +12962,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ContactPoint": {
+        "openapi.ContactPoint": {
             "type": "object",
             "properties": {
                 "channel": {
@@ -12112,18 +13000,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ContactPointListResult": {
+        "openapi.ContactPointListResult": {
             "type": "object",
             "properties": {
                 "contact_points": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ContactPoint"
+                        "$ref": "#/definitions/openapi.ContactPoint"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ContactPointRequest": {
+        "openapi.ContactPointRequest": {
             "type": "object",
             "properties": {
                 "channel": {
@@ -12149,7 +13037,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ContactPointTestResult": {
+        "openapi.ContactPointTestResult": {
             "type": "object",
             "properties": {
                 "deliveries": {},
@@ -12161,7 +13049,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CreateAPIKeyRequest": {
+        "openapi.CreateAPIKeyRequest": {
             "type": "object",
             "properties": {
                 "expires_in_days": {
@@ -12175,7 +13063,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CreateClientCredentialRequest": {
+        "openapi.CreateClientCredentialRequest": {
             "type": "object",
             "properties": {
                 "name": {
@@ -12183,7 +13071,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CreateInvitationRequest": {
+        "openapi.CreateInvitationRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -12197,7 +13085,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CreateOperatorRequest": {
+        "openapi.CreateOperatorRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -12214,7 +13102,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CreateOrganizationRequest": {
+        "openapi.CreateOrganizationRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -12231,7 +13119,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CreateServiceAccountRequest": {
+        "openapi.CreateServiceAccountRequest": {
             "type": "object",
             "properties": {
                 "name": {
@@ -12239,7 +13127,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CreateServiceAccountTokenRequest": {
+        "openapi.CreateServiceAccountTokenRequest": {
             "type": "object",
             "properties": {
                 "expires_at": {
@@ -12259,7 +13147,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CursorPaginationResult": {
+        "openapi.CursorPaginationResult": {
             "type": "object",
             "properties": {
                 "hasMore": {
@@ -12273,7 +13161,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DashboardStats": {
+        "openapi.DashboardStats": {
             "type": "object",
             "properties": {
                 "offline_devices": {
@@ -12290,7 +13178,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeletedResult": {
+        "openapi.DeletedResult": {
             "type": "object",
             "properties": {
                 "deleted": {
@@ -12298,7 +13186,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceCountResult": {
+        "openapi.DeviceCountResult": {
             "type": "object",
             "properties": {
                 "count": {
@@ -12309,7 +13197,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceDetailResult": {
+        "openapi.DeviceDetailResult": {
             "type": "object",
             "properties": {
                 "api_level": {
@@ -12362,7 +13250,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceDisconnectResult": {
+        "openapi.DeviceDisconnectResult": {
             "type": "object",
             "properties": {
                 "deviceId": {
@@ -12376,7 +13264,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceEvent": {
+        "openapi.DeviceEvent": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -12406,7 +13294,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceEventListResult": {
+        "openapi.DeviceEventListResult": {
             "type": "object",
             "properties": {
                 "count": {
@@ -12415,7 +13303,7 @@ const docTemplate = `{
                 "events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceEvent"
+                        "$ref": "#/definitions/openapi.DeviceEvent"
                     }
                 },
                 "has_more": {
@@ -12423,7 +13311,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceFCMTokenRequest": {
+        "openapi.DeviceFCMTokenRequest": {
             "type": "object",
             "properties": {
                 "fcmToken": {
@@ -12431,27 +13319,27 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceInspectionResult": {
+        "openapi.DeviceInspectionResult": {
             "type": "object",
             "properties": {
                 "connection": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DiagnosticsConnectionInfo"
+                    "$ref": "#/definitions/openapi.DiagnosticsConnectionInfo"
                 },
                 "identity": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DiagnosticsIdentityInfo"
+                    "$ref": "#/definitions/openapi.DiagnosticsIdentityInfo"
                 },
                 "registration": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DiagnosticsRegistrationInfo"
+                    "$ref": "#/definitions/openapi.DiagnosticsRegistrationInfo"
                 },
                 "software": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DiagnosticsSoftwareInfo"
+                    "$ref": "#/definitions/openapi.DiagnosticsSoftwareInfo"
                 },
                 "telemetry": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DiagnosticsTelemetryInfo"
+                    "$ref": "#/definitions/openapi.DiagnosticsTelemetryInfo"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceListItem": {
+        "openapi.DeviceListItem": {
             "type": "object",
             "properties": {
                 "app_version": {
@@ -12486,13 +13374,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceListResult": {
+        "openapi.DeviceListResult": {
             "type": "object",
             "properties": {
                 "devices": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceListItem"
+                        "$ref": "#/definitions/openapi.DeviceListItem"
                     }
                 },
                 "nextCursor": {
@@ -12503,7 +13391,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceLogEvent": {
+        "openapi.DeviceLogEvent": {
             "type": "object",
             "properties": {
                 "data": {
@@ -12521,21 +13409,21 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceLogEventListResult": {
+        "openapi.DeviceLogEventListResult": {
             "type": "object",
             "properties": {
                 "events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceLogEvent"
+                        "$ref": "#/definitions/openapi.DeviceLogEvent"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CursorPaginationResult"
+                    "$ref": "#/definitions/openapi.CursorPaginationResult"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceSettingsResult": {
+        "openapi.DeviceSettingsResult": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -12560,14 +13448,14 @@ const docTemplate = `{
                     }
                 },
                 "thresholds": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OperatorThresholds"
+                    "$ref": "#/definitions/openapi.OperatorThresholds"
                 },
                 "updatedAt": {
                     "type": "string"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceStatus": {
+        "openapi.DeviceStatus": {
             "type": "object",
             "properties": {
                 "app_version": {
@@ -12587,7 +13475,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceTagAddedResult": {
+        "openapi.DeviceTagAddedResult": {
             "type": "object",
             "properties": {
                 "added": {
@@ -12595,7 +13483,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceTagRemovedResult": {
+        "openapi.DeviceTagRemovedResult": {
             "type": "object",
             "properties": {
                 "removed": {
@@ -12603,7 +13491,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceTagsResult": {
+        "openapi.DeviceTagsResult": {
             "type": "object",
             "properties": {
                 "tags": {
@@ -12614,7 +13502,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceTransferRequest": {
+        "openapi.DeviceTransferRequest": {
             "type": "object",
             "properties": {
                 "target_organization_id": {
@@ -12622,7 +13510,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceTransferResult": {
+        "openapi.DeviceTransferResult": {
             "type": "object",
             "properties": {
                 "device_id": {
@@ -12651,7 +13539,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceUpdateStatusRequest": {
+        "openapi.DeviceUpdateStatusRequest": {
             "type": "object",
             "properties": {
                 "deviceId": {
@@ -12668,7 +13556,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DeviceUpdateStatusResponse": {
+        "openapi.DeviceUpdateStatusResponse": {
             "type": "object",
             "properties": {
                 "acknowledged": {
@@ -12679,7 +13567,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DiagnosticsConnectionInfo": {
+        "openapi.DiagnosticsConnectionInfo": {
             "type": "object",
             "properties": {
                 "clientIp": {
@@ -12702,7 +13590,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DiagnosticsIdentityInfo": {
+        "openapi.DiagnosticsIdentityInfo": {
             "type": "object",
             "properties": {
                 "deviceName": {
@@ -12719,7 +13607,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DiagnosticsRegistrationInfo": {
+        "openapi.DiagnosticsRegistrationInfo": {
             "type": "object",
             "properties": {
                 "fcmTokenRefreshedAt": {
@@ -12736,7 +13624,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DiagnosticsSoftwareInfo": {
+        "openapi.DiagnosticsSoftwareInfo": {
             "type": "object",
             "properties": {
                 "appVersion": {
@@ -12753,7 +13641,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DiagnosticsTelemetryInfo": {
+        "openapi.DiagnosticsTelemetryInfo": {
             "type": "object",
             "properties": {
                 "avgLatencyMs": {
@@ -12773,7 +13661,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DownloadProgressRequest": {
+        "openapi.DownloadProgressRequest": {
             "type": "object",
             "properties": {
                 "device_id": {
@@ -12787,7 +13675,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.DownloadProgressResult": {
+        "openapi.DownloadProgressResult": {
             "type": "object",
             "properties": {
                 "recorded": {
@@ -12795,7 +13683,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.EmailNotifications": {
+        "openapi.EmailNotifications": {
             "type": "object",
             "properties": {
                 "commandFailed": {
@@ -12818,7 +13706,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.EmailVerifyRequest": {
+        "openapi.EmailVerifyRequest": {
             "type": "object",
             "properties": {
                 "token": {
@@ -12826,7 +13714,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.EmailVerifyResult": {
+        "openapi.EmailVerifyResult": {
             "type": "object",
             "properties": {
                 "email": {
@@ -12837,7 +13725,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ErrorResponse": {
+        "openapi.ErrorResponse": {
             "type": "object",
             "properties": {
                 "docs": {
@@ -12860,7 +13748,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ForgotPasswordRequest": {
+        "openapi.ForgotPasswordRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -12868,21 +13756,21 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.GetTelemetryResponse": {
+        "openapi.GetTelemetryResponse": {
             "type": "object",
             "properties": {
                 "frames": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TelemetryFrameDTO"
+                        "$ref": "#/definitions/openapi.TelemetryFrameDTO"
                     }
                 },
                 "stats": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TelemetryStatsDTO"
+                    "$ref": "#/definitions/openapi.TelemetryStatsDTO"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.GlobalAPIKeyStatsResult": {
+        "openapi.GlobalAPIKeyStatsResult": {
             "type": "object",
             "properties": {
                 "active_keys": {
@@ -12904,7 +13792,7 @@ const docTemplate = `{
                 "top_operators": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TopOperatorStat"
+                        "$ref": "#/definitions/openapi.TopOperatorStat"
                     }
                 },
                 "total_keys": {
@@ -12918,7 +13806,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InboxAckRequest": {
+        "openapi.InboxAckRequest": {
             "type": "object",
             "properties": {
                 "action": {
@@ -12929,7 +13817,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InboxAckResult": {
+        "openapi.InboxAckResult": {
             "type": "object",
             "properties": {
                 "acknowledgedAt": {
@@ -12961,7 +13849,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InboxEntryResponse": {
+        "openapi.InboxEntryResponse": {
             "type": "object",
             "properties": {
                 "acknowledgedAt": {
@@ -13020,21 +13908,21 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InboxListResult": {
+        "openapi.InboxListResult": {
             "type": "object",
             "properties": {
                 "pagination": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Pagination"
+                    "$ref": "#/definitions/openapi.Pagination"
                 },
                 "requests": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InboxEntryResponse"
+                        "$ref": "#/definitions/openapi.InboxEntryResponse"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InboxRequest": {
+        "openapi.InboxRequest": {
             "type": "object",
             "properties": {
                 "appVersion": {
@@ -13069,7 +13957,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InboxResendResult": {
+        "openapi.InboxResendResult": {
             "type": "object",
             "properties": {
                 "fcmPushSent": {
@@ -13086,7 +13974,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Invitation": {
+        "openapi.Invitation": {
             "type": "object",
             "properties": {
                 "email": {
@@ -13130,7 +14018,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InvitationByTokenResult": {
+        "openapi.InvitationByTokenResult": {
             "type": "object",
             "properties": {
                 "email": {
@@ -13162,18 +14050,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.InvitationListResult": {
+        "openapi.InvitationListResult": {
             "type": "object",
             "properties": {
                 "invitations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Invitation"
+                        "$ref": "#/definitions/openapi.Invitation"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.LockoutStatusResult": {
+        "openapi.LockoutStatusResult": {
             "type": "object",
             "properties": {
                 "attempts": {
@@ -13196,7 +14084,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.LoginRequest": {
+        "openapi.LoginRequest": {
             "type": "object",
             "properties": {
                 "device_fingerprint": {
@@ -13213,7 +14101,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.LoginResult": {
+        "openapi.LoginResult": {
             "type": "object",
             "properties": {
                 "device_fingerprint": {
@@ -13252,7 +14140,7 @@ const docTemplate = `{
                 "organizations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationInfo"
+                        "$ref": "#/definitions/openapi.OrganizationInfo"
                     }
                 },
                 "requires_mfa": {
@@ -13262,14 +14150,14 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "selected_organization": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationInfo"
+                    "$ref": "#/definitions/openapi.OrganizationInfo"
                 },
                 "signing_key": {
                     "type": "string"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.LoginWithTokensResult": {
+        "openapi.LoginWithTokensResult": {
             "type": "object",
             "properties": {
                 "access_token": {
@@ -13314,7 +14202,7 @@ const docTemplate = `{
                 "organizations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationInfo"
+                        "$ref": "#/definitions/openapi.OrganizationInfo"
                     }
                 },
                 "refresh_token": {
@@ -13327,7 +14215,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "selected_organization": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationInfo"
+                    "$ref": "#/definitions/openapi.OrganizationInfo"
                 },
                 "session_id": {
                     "type": "string"
@@ -13337,7 +14225,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.LogoutRequest": {
+        "openapi.LogoutRequest": {
             "type": "object",
             "properties": {
                 "all_devices": {
@@ -13345,7 +14233,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFABackupCodeRequest": {
+        "openapi.MFABackupCodeRequest": {
             "type": "object",
             "properties": {
                 "code": {
@@ -13353,7 +14241,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFABackupCodeResult": {
+        "openapi.MFABackupCodeResult": {
             "type": "object",
             "properties": {
                 "valid": {
@@ -13361,7 +14249,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFADisableRequest": {
+        "openapi.MFADisableRequest": {
             "type": "object",
             "properties": {
                 "code": {
@@ -13369,7 +14257,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAEnableRequest": {
+        "openapi.MFAEnableRequest": {
             "type": "object",
             "properties": {
                 "code": {
@@ -13380,7 +14268,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAEnableResult": {
+        "openapi.MFAEnableResult": {
             "type": "object",
             "properties": {
                 "backup_codes": {
@@ -13394,7 +14282,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAEnrollResult": {
+        "openapi.MFAEnrollResult": {
             "type": "object",
             "properties": {
                 "secret": {
@@ -13405,7 +14293,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAOperator": {
+        "openapi.MFAOperator": {
             "type": "object",
             "properties": {
                 "email": {
@@ -13425,7 +14313,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFARegenerateResult": {
+        "openapi.MFARegenerateResult": {
             "type": "object",
             "properties": {
                 "backup_codes": {
@@ -13436,7 +14324,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAStatusResult": {
+        "openapi.MFAStatusResult": {
             "type": "object",
             "properties": {
                 "mfa_enabled": {
@@ -13444,7 +14332,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAVerifyRequest": {
+        "openapi.MFAVerifyRequest": {
             "type": "object",
             "properties": {
                 "code": {
@@ -13455,7 +14343,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAVerifyResult": {
+        "openapi.MFAVerifyResult": {
             "type": "object",
             "properties": {
                 "access_token": {
@@ -13465,7 +14353,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "operator": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAOperator"
+                    "$ref": "#/definitions/openapi.MFAOperator"
                 },
                 "refresh_token": {
                     "type": "string"
@@ -13481,7 +14369,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MFAVerifySetupRequest": {
+        "openapi.MFAVerifySetupRequest": {
             "type": "object",
             "properties": {
                 "code": {
@@ -13492,7 +14380,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MeResult": {
+        "openapi.MeResult": {
             "type": "object",
             "properties": {
                 "email": {
@@ -13519,15 +14407,15 @@ const docTemplate = `{
                 "organizations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationInfo"
+                        "$ref": "#/definitions/openapi.OrganizationInfo"
                     }
                 },
                 "selected_organization": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationInfo"
+                    "$ref": "#/definitions/openapi.OrganizationInfo"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MessageResult": {
+        "openapi.MessageResult": {
             "type": "object",
             "properties": {
                 "message": {
@@ -13535,7 +14423,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MetricAggregateResult": {
+        "openapi.MetricAggregateResult": {
             "type": "object",
             "properties": {
                 "avg": {
@@ -13549,7 +14437,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MetricStatsDTO": {
+        "openapi.MetricStatsDTO": {
             "type": "object",
             "properties": {
                 "avg": {
@@ -13566,7 +14454,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.NotificationSettings": {
+        "openapi.NotificationSettings": {
             "type": "object",
             "properties": {
                 "channels": {
@@ -13576,20 +14464,20 @@ const docTemplate = `{
                     }
                 },
                 "email": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.EmailNotifications"
+                    "$ref": "#/definitions/openapi.EmailNotifications"
                 },
                 "enabled": {
                     "type": "boolean"
                 },
                 "push": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.PushNotifications"
+                    "$ref": "#/definitions/openapi.PushNotifications"
                 },
                 "webhook": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.WebhookNotifications"
+                    "$ref": "#/definitions/openapi.WebhookNotifications"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.NotificationUpdateRequest": {
+        "openapi.NotificationUpdateRequest": {
             "type": "object",
             "properties": {
                 "channels": {
@@ -13599,20 +14487,20 @@ const docTemplate = `{
                     }
                 },
                 "email": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.EmailNotifications"
+                    "$ref": "#/definitions/openapi.EmailNotifications"
                 },
                 "enabled": {
                     "type": "boolean"
                 },
                 "push": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.PushNotifications"
+                    "$ref": "#/definitions/openapi.PushNotifications"
                 },
                 "webhook": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.WebhookNotifications"
+                    "$ref": "#/definitions/openapi.WebhookNotifications"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OperatorAPIKeyStatsResult": {
+        "openapi.OperatorAPIKeyStatsResult": {
             "type": "object",
             "properties": {
                 "active_keys": {
@@ -13635,25 +14523,25 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OperatorSettingsResult": {
+        "openapi.OperatorSettingsResult": {
             "type": "object",
             "properties": {
                 "client": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ClientSettings"
+                    "$ref": "#/definitions/openapi.ClientSettings"
                 },
                 "notifications": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.NotificationSettings"
+                    "$ref": "#/definitions/openapi.NotificationSettings"
                 },
                 "thresholds": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OperatorThresholds"
+                    "$ref": "#/definitions/openapi.OperatorThresholds"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OperatorSettingsResultLegacy": {
+        "openapi.OperatorSettingsResultLegacy": {
             "type": "object",
             "properties": {
                 "client": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ClientSettings"
+                    "$ref": "#/definitions/openapi.ClientSettings"
                 },
                 "email": {
                     "type": "string"
@@ -13675,7 +14563,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OperatorThresholds": {
+        "openapi.OperatorThresholds": {
             "type": "object",
             "properties": {
                 "bufferCrit": {
@@ -13698,7 +14586,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Organization": {
+        "openapi.Organization": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -13730,7 +14618,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationInfo": {
+        "openapi.OrganizationInfo": {
             "type": "object",
             "properties": {
                 "id": {
@@ -13744,18 +14632,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationListResult": {
+        "openapi.OrganizationListResult": {
             "type": "object",
             "properties": {
                 "organizations": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Organization"
+                        "$ref": "#/definitions/openapi.Organization"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationMember": {
+        "openapi.OrganizationMember": {
             "type": "object",
             "properties": {
                 "id": {
@@ -13790,18 +14678,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationMemberListResult": {
+        "openapi.OrganizationMemberListResult": {
             "type": "object",
             "properties": {
                 "members": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationMember"
+                        "$ref": "#/definitions/openapi.OrganizationMember"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OrganizationSettingsResult": {
+        "openapi.OrganizationSettingsResult": {
             "type": "object",
             "properties": {
                 "alertCooldownMinutes": {
@@ -13814,7 +14702,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "defaultThresholds": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OperatorThresholds"
+                    "$ref": "#/definitions/openapi.OperatorThresholds"
                 },
                 "id": {
                     "type": "string"
@@ -13830,7 +14718,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Pagination": {
+        "openapi.Pagination": {
             "type": "object",
             "properties": {
                 "limit": {
@@ -13847,7 +14735,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.PollVerificationResult": {
+        "openapi.PollVerificationResult": {
             "type": "object",
             "properties": {
                 "email": {
@@ -13861,7 +14749,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.PreferencesResult": {
+        "openapi.PreferencesResult": {
             "type": "object",
             "properties": {
                 "preferences": {
@@ -13870,7 +14758,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.PushNotifications": {
+        "openapi.PushNotifications": {
             "type": "object",
             "properties": {
                 "commandFailed": {
@@ -13893,7 +14781,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.RefreshTokenRequest": {
+        "openapi.RefreshTokenRequest": {
             "type": "object",
             "properties": {
                 "refresh_token": {
@@ -13901,7 +14789,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.RefreshTokenResult": {
+        "openapi.RefreshTokenResult": {
             "type": "object",
             "properties": {
                 "access_token": {
@@ -13918,7 +14806,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.RegisterRequest": {
+        "openapi.RegisterRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -13935,7 +14823,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.RegisterResult": {
+        "openapi.RegisterResult": {
             "type": "object",
             "properties": {
                 "email": {
@@ -13949,7 +14837,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ResendVerificationRequest": {
+        "openapi.ResendVerificationRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -13957,7 +14845,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ResetPasswordRequest": {
+        "openapi.ResetPasswordRequest": {
             "type": "object",
             "properties": {
                 "newPassword": {
@@ -13968,7 +14856,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.RevokeResult": {
+        "openapi.RevokeResult": {
             "type": "object",
             "properties": {
                 "message": {
@@ -13982,7 +14870,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.RevokedResult": {
+        "openapi.RevokedResult": {
             "type": "object",
             "properties": {
                 "revoked": {
@@ -13990,7 +14878,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.RotateServiceAccountTokenRequest": {
+        "openapi.RotateServiceAccountTokenRequest": {
             "type": "object",
             "properties": {
                 "expires_at": {
@@ -14007,7 +14895,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SelectOrganizationRequest": {
+        "openapi.SelectOrganizationRequest": {
             "type": "object",
             "properties": {
                 "organization_id": {
@@ -14015,7 +14903,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SelectOrganizationResult": {
+        "openapi.SelectOrganizationResult": {
             "type": "object",
             "properties": {
                 "organization_id": {
@@ -14029,7 +14917,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ServiceAccount": {
+        "openapi.ServiceAccount": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -14052,18 +14940,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ServiceAccountListResult": {
+        "openapi.ServiceAccountListResult": {
             "type": "object",
             "properties": {
                 "service_accounts": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ServiceAccount"
+                        "$ref": "#/definitions/openapi.ServiceAccount"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ServiceAccountToken": {
+        "openapi.ServiceAccountToken": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -14098,7 +14986,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ServiceAccountTokenCreated": {
+        "openapi.ServiceAccountTokenCreated": {
             "type": "object",
             "properties": {
                 "secret": {
@@ -14106,18 +14994,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ServiceAccountTokenListResult": {
+        "openapi.ServiceAccountTokenListResult": {
             "type": "object",
             "properties": {
                 "tokens": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ServiceAccountToken"
+                        "$ref": "#/definitions/openapi.ServiceAccountToken"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ServiceAccountTokenRotated": {
+        "openapi.ServiceAccountTokenRotated": {
             "type": "object",
             "properties": {
                 "secret": {
@@ -14125,7 +15013,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SessionInfo": {
+        "openapi.SessionInfo": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -14151,13 +15039,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SessionListResult": {
+        "openapi.SessionListResult": {
             "type": "object",
             "properties": {
                 "sessions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SessionInfo"
+                        "$ref": "#/definitions/openapi.SessionInfo"
                     }
                 },
                 "total": {
@@ -14165,7 +15053,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SetDeviceTagsRequest": {
+        "openapi.SetDeviceTagsRequest": {
             "type": "object",
             "properties": {
                 "tags": {
@@ -14176,14 +15064,14 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SettingsResponseResult": {
+        "openapi.SettingsResponseResult": {
             "type": "object",
             "properties": {
                 "client": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ClientSettings"
+                    "$ref": "#/definitions/openapi.ClientSettings"
                 },
                 "notifications": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.NotificationSettings"
+                    "$ref": "#/definitions/openapi.NotificationSettings"
                 },
                 "preferences": {
                     "type": "object",
@@ -14191,7 +15079,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SuccessResult": {
+        "openapi.SuccessResult": {
             "type": "object",
             "properties": {
                 "message": {
@@ -14202,7 +15090,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.SupportBundleResult": {
+        "openapi.SupportBundleResult": {
             "type": "object",
             "properties": {
                 "device_count": {
@@ -14237,7 +15125,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TelemetryEntry": {
+        "openapi.TelemetryEntry": {
             "type": "object",
             "properties": {
                 "buffer_level": {
@@ -14270,7 +15158,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TelemetryFrameDTO": {
+        "openapi.TelemetryFrameDTO": {
             "type": "object",
             "properties": {
                 "bufferLevel": {
@@ -14290,7 +15178,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TelemetryHistoryEntry": {
+        "openapi.TelemetryHistoryEntry": {
             "type": "object",
             "properties": {
                 "bufferLevel": {
@@ -14316,7 +15204,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TelemetryHistoryQueryResult": {
+        "openapi.TelemetryHistoryQueryResult": {
             "type": "object",
             "properties": {
                 "count": {
@@ -14331,7 +15219,7 @@ const docTemplate = `{
                 "entries": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TelemetryHistoryEntry"
+                        "$ref": "#/definitions/openapi.TelemetryHistoryEntry"
                     }
                 },
                 "exported_at": {
@@ -14348,25 +15236,25 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TelemetryStatsDTO": {
+        "openapi.TelemetryStatsDTO": {
             "type": "object",
             "properties": {
                 "bufferLevel": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MetricStatsDTO"
+                    "$ref": "#/definitions/openapi.MetricStatsDTO"
                 },
                 "riskScore": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MetricStatsDTO"
+                    "$ref": "#/definitions/openapi.MetricStatsDTO"
                 },
                 "thermalTemp": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MetricStatsDTO"
+                    "$ref": "#/definitions/openapi.MetricStatsDTO"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TelemetryStatsResult": {
+        "openapi.TelemetryStatsResult": {
             "type": "object",
             "properties": {
                 "bufferLevel": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MetricAggregateResult"
+                    "$ref": "#/definitions/openapi.MetricAggregateResult"
                 },
                 "deviceId": {
                     "type": "string"
@@ -14378,17 +15266,17 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "riskScore": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MetricAggregateResult"
+                    "$ref": "#/definitions/openapi.MetricAggregateResult"
                 },
                 "sampleCount": {
                     "type": "integer"
                 },
                 "thermalTemp": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.MetricAggregateResult"
+                    "$ref": "#/definitions/openapi.MetricAggregateResult"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ThresholdUpdateRequest": {
+        "openapi.ThresholdUpdateRequest": {
             "type": "object",
             "properties": {
                 "bufferCrit": {
@@ -14411,15 +15299,15 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ThresholdsResult": {
+        "openapi.ThresholdsResult": {
             "type": "object",
             "properties": {
                 "thresholds": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OperatorThresholds"
+                    "$ref": "#/definitions/openapi.OperatorThresholds"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TimelineEventResult": {
+        "openapi.TimelineEventResult": {
             "type": "object",
             "properties": {
                 "data": {
@@ -14437,21 +15325,21 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TimelineResult": {
+        "openapi.TimelineResult": {
             "type": "object",
             "properties": {
                 "events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TimelineEventResult"
+                        "$ref": "#/definitions/openapi.TimelineEventResult"
                     }
                 },
                 "pagination": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.CursorPaginationResult"
+                    "$ref": "#/definitions/openapi.CursorPaginationResult"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.TopOperatorStat": {
+        "openapi.TopOperatorStat": {
             "type": "object",
             "properties": {
                 "active_key_count": {
@@ -14468,7 +15356,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateAPIKeyRequest": {
+        "openapi.UpdateAPIKeyRequest": {
             "type": "object",
             "properties": {
                 "name": {
@@ -14479,7 +15367,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateAdminClientRequest": {
+        "openapi.UpdateAdminClientRequest": {
             "type": "object",
             "properties": {
                 "allowed_origins": {
@@ -14505,7 +15393,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateCancelPushResult": {
+        "openapi.UpdateCancelPushResult": {
             "type": "object",
             "properties": {
                 "cancelledAt": {
@@ -14522,7 +15410,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateChangelogEntryResult": {
+        "openapi.UpdateChangelogEntryResult": {
             "type": "object",
             "properties": {
                 "date": {
@@ -14539,18 +15427,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateChangelogResult": {
+        "openapi.UpdateChangelogResult": {
             "type": "object",
             "properties": {
                 "changelog": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateChangelogEntryResult"
+                        "$ref": "#/definitions/openapi.UpdateChangelogEntryResult"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateCheckerResult": {
+        "openapi.UpdateCheckerResult": {
             "type": "object",
             "properties": {
                 "current_version": {
@@ -14572,11 +15460,11 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "usage_stats": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UsageStatsSnapshot"
+                    "$ref": "#/definitions/openapi.UsageStatsSnapshot"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateClientCredentialRequest": {
+        "openapi.UpdateClientCredentialRequest": {
             "type": "object",
             "properties": {
                 "name": {
@@ -14584,7 +15472,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateDeviceSettingsRequest": {
+        "openapi.UpdateDeviceSettingsRequest": {
             "type": "object",
             "properties": {
                 "customName": {
@@ -14600,11 +15488,11 @@ const docTemplate = `{
                     }
                 },
                 "thresholds": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OperatorThresholds"
+                    "$ref": "#/definitions/openapi.OperatorThresholds"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateDeviceStatusInfo": {
+        "openapi.UpdateDeviceStatusInfo": {
             "type": "object",
             "properties": {
                 "currentVersion": {
@@ -14615,13 +15503,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateExportResult": {
+        "openapi.UpdateExportResult": {
             "type": "object",
             "properties": {
                 "changelog": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateChangelogEntryResult"
+                        "$ref": "#/definitions/openapi.UpdateChangelogEntryResult"
                     }
                 },
                 "exportedAt": {
@@ -14633,12 +15521,12 @@ const docTemplate = `{
                 "versions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateVersionResponse"
+                        "$ref": "#/definitions/openapi.UpdateVersionResponse"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateFailedDevice": {
+        "openapi.UpdateFailedDevice": {
             "type": "object",
             "properties": {
                 "deviceId": {
@@ -14649,7 +15537,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateInboxEntryRequest": {
+        "openapi.UpdateInboxEntryRequest": {
             "type": "object",
             "properties": {
                 "notes": {
@@ -14660,7 +15548,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateLatestVersionInfo": {
+        "openapi.UpdateLatestVersionInfo": {
             "type": "object",
             "properties": {
                 "apkFilename": {
@@ -14683,7 +15571,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateMemberRoleRequest": {
+        "openapi.UpdateMemberRoleRequest": {
             "type": "object",
             "properties": {
                 "role": {
@@ -14691,7 +15579,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateNameRequest": {
+        "openapi.UpdateNameRequest": {
             "type": "object",
             "properties": {
                 "name": {
@@ -14699,7 +15587,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateOperatorRequest": {
+        "openapi.UpdateOperatorRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -14719,7 +15607,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateOrganizationRequest": {
+        "openapi.UpdateOrganizationRequest": {
             "type": "object",
             "properties": {
                 "isActive": {
@@ -14733,7 +15621,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateOrganizationSettingsRequest": {
+        "openapi.UpdateOrganizationSettingsRequest": {
             "type": "object",
             "properties": {
                 "alertCooldownMinutes": {
@@ -14743,14 +15631,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "defaultThresholds": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.OperatorThresholds"
+                    "$ref": "#/definitions/openapi.OperatorThresholds"
                 },
                 "timezone": {
                     "type": "string"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushDetailDevice": {
+        "openapi.UpdatePushDetailDevice": {
             "type": "object",
             "properties": {
                 "acknowledgedAt": {
@@ -14776,7 +15664,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushDetailResult": {
+        "openapi.UpdatePushDetailResult": {
             "type": "object",
             "properties": {
                 "cancelledAt": {
@@ -14788,7 +15676,7 @@ const docTemplate = `{
                 "devices": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushDetailDevice"
+                        "$ref": "#/definitions/openapi.UpdatePushDetailDevice"
                     }
                 },
                 "id": {
@@ -14814,7 +15702,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushDeviceCounts": {
+        "openapi.UpdatePushDeviceCounts": {
             "type": "object",
             "properties": {
                 "acknowledged": {
@@ -14834,7 +15722,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushHistoryDeviceCounts": {
+        "openapi.UpdatePushHistoryDeviceCounts": {
             "type": "object",
             "properties": {
                 "acknowledged": {
@@ -14851,7 +15739,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushHistoryEntry": {
+        "openapi.UpdatePushHistoryEntry": {
             "type": "object",
             "properties": {
                 "cancelledAt": {
@@ -14864,7 +15752,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "devices": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushHistoryDeviceCounts"
+                    "$ref": "#/definitions/openapi.UpdatePushHistoryDeviceCounts"
                 },
                 "id": {
                     "type": "string"
@@ -14889,21 +15777,21 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushHistoryListResult": {
+        "openapi.UpdatePushHistoryListResult": {
             "type": "object",
             "properties": {
                 "pagination": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Pagination"
+                    "$ref": "#/definitions/openapi.Pagination"
                 },
                 "pushes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushHistoryEntry"
+                        "$ref": "#/definitions/openapi.UpdatePushHistoryEntry"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushRequest": {
+        "openapi.UpdatePushRequest": {
             "type": "object",
             "properties": {
                 "deviceIds": {
@@ -14923,7 +15811,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushResult": {
+        "openapi.UpdatePushResult": {
             "type": "object",
             "properties": {
                 "deviceIds": {
@@ -14933,12 +15821,12 @@ const docTemplate = `{
                     }
                 },
                 "devices": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdatePushDeviceCounts"
+                    "$ref": "#/definitions/openapi.UpdatePushDeviceCounts"
                 },
                 "failedDevices": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateFailedDevice"
+                        "$ref": "#/definitions/openapi.UpdateFailedDevice"
                     }
                 },
                 "initiatedAt": {
@@ -14964,11 +15852,11 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateSettingsRequest": {
+        "openapi.UpdateSettingsRequest": {
             "type": "object",
             "properties": {
                 "client": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.ClientSettings"
+                    "$ref": "#/definitions/openapi.ClientSettings"
                 },
                 "name": {
                     "type": "string"
@@ -14978,21 +15866,21 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateStatusResult": {
+        "openapi.UpdateStatusResult": {
             "type": "object",
             "properties": {
                 "device": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateDeviceStatusInfo"
+                    "$ref": "#/definitions/openapi.UpdateDeviceStatusInfo"
                 },
                 "latest": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateLatestVersionInfo"
+                    "$ref": "#/definitions/openapi.UpdateLatestVersionInfo"
                 },
                 "sync": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateSyncStatusInfo"
+                    "$ref": "#/definitions/openapi.UpdateSyncStatusInfo"
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateSyncResponse": {
+        "openapi.UpdateSyncResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -15009,7 +15897,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateSyncStatusInfo": {
+        "openapi.UpdateSyncStatusInfo": {
             "type": "object",
             "properties": {
                 "error": {
@@ -15029,7 +15917,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateSyncStatusResult": {
+        "openapi.UpdateSyncStatusResult": {
             "type": "object",
             "properties": {
                 "error": {
@@ -15049,21 +15937,21 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateVersionListResult": {
+        "openapi.UpdateVersionListResult": {
             "type": "object",
             "properties": {
                 "pagination": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.Pagination"
+                    "$ref": "#/definitions/openapi.Pagination"
                 },
                 "versions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateVersionResponse"
+                        "$ref": "#/definitions/openapi.UpdateVersionResponse"
                     }
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdateVersionResponse": {
+        "openapi.UpdateVersionResponse": {
             "type": "object",
             "properties": {
                 "apkFilename": {
@@ -15095,7 +15983,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdaterCheckResult": {
+        "openapi.UpdaterCheckResult": {
             "type": "object",
             "properties": {
                 "apk_filename": {
@@ -15121,7 +16009,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UpdaterVersionManifestResult": {
+        "openapi.UpdaterVersionManifestResult": {
             "type": "object",
             "properties": {
                 "apk_filename": {
@@ -15144,7 +16032,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UsageStatsCounts": {
+        "openapi.UsageStatsCounts": {
             "type": "object",
             "properties": {
                 "alert_rules": {
@@ -15170,14 +16058,14 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UsageStatsSnapshot": {
+        "openapi.UsageStatsSnapshot": {
             "type": "object",
             "properties": {
                 "collected_at": {
                     "type": "integer"
                 },
                 "counts": {
-                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.UsageStatsCounts"
+                    "$ref": "#/definitions/openapi.UsageStatsCounts"
                 },
                 "toggles": {
                     "type": "object",
@@ -15187,7 +16075,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.WebhookNotifications": {
+        "openapi.WebhookNotifications": {
             "type": "object",
             "properties": {
                 "enabled": {
@@ -15207,7 +16095,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.WebhookSecretResult": {
+        "openapi.WebhookSecretResult": {
             "type": "object",
             "properties": {
                 "secret": {
@@ -15215,7 +16103,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.WebhookTestRequest": {
+        "openapi.WebhookTestRequest": {
             "type": "object",
             "properties": {
                 "url": {
@@ -15223,7 +16111,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_api_openapi.WebhookTestResult": {
+        "openapi.WebhookTestResult": {
             "type": "object",
             "properties": {
                 "error": {
@@ -15240,107 +16128,6 @@ const docTemplate = `{
                 },
                 "success": {
                     "type": "boolean"
-                }
-            }
-        },
-        "internal_api_handlers_inbox.claimRequest": {
-            "type": "object",
-            "required": [
-                "pairingCode"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "pairingCode": {
-                    "type": "string"
-                },
-                "tierCap": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_api_handlers_inbox.enrollRequest": {
-            "type": "object",
-            "required": [
-                "deviceUuid",
-                "publicKey"
-            ],
-            "properties": {
-                "apiLevel": {
-                    "description": "APIVersion is the Android API level (Build.VERSION.SDK_INT). Named APIVersion\nin Go because the wire field is ` + "`" + `apiLevel` + "`" + `; the device sends it so the server\ncan show what a device runs without inferring it from osVersion.",
-                    "type": "integer"
-                },
-                "appVersion": {
-                    "type": "string"
-                },
-                "buildId": {
-                    "description": "BuildID is the build fingerprint, identifying the exact build.",
-                    "type": "string"
-                },
-                "deviceClass": {
-                    "type": "string"
-                },
-                "deviceUuid": {
-                    "type": "string"
-                },
-                "manufacturer": {
-                    "type": "string"
-                },
-                "model": {
-                    "type": "string"
-                },
-                "osVersion": {
-                    "type": "string"
-                },
-                "publicKey": {
-                    "type": "string"
-                },
-                "ramBytes": {
-                    "description": "RAMBytes and StorageBytes are the device's capacity, so an operator can see\nwhat it can run before assigning work to it.",
-                    "type": "integer"
-                },
-                "securityPatch": {
-                    "description": "SecurityPatch is the patch level (\"2024-03-01\"), so staleness is visible.",
-                    "type": "string"
-                },
-                "storageBytes": {
-                    "type": "integer"
-                },
-                "supportedAbis": {
-                    "description": "SupportedABIs is the device's ABI list, most preferred first.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "tierHint": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_api_handlers_inbox.enrollResponse": {
-            "type": "object",
-            "properties": {
-                "deviceId": {
-                    "type": "string"
-                },
-                "expiresAt": {
-                    "type": "integer"
-                },
-                "expiresInSeconds": {
-                    "description": "ExpiresInSeconds is what the device counts down. Sending the remaining time\nas well as the absolute deadline means a device with a wrong clock still\nexpires its code correctly.",
-                    "type": "integer"
-                },
-                "pairingCode": {
-                    "type": "string"
-                },
-                "pairingDisplay": {
-                    "type": "string"
-                },
-                "pollIntervalSeconds": {
-                    "description": "PollIntervalSeconds is how often the device should ask for its config while\nit waits to be claimed. The config normally arrives over the held WebSocket\nthe moment an operator claims the code, so this is the fallback for a device\nwhose socket is not up — it bounds how long a claimed device can sit\nunconfigured. The server owns the value so the cadence can be tuned without\nshipping a new APK.",
-                    "type": "integer"
                 }
             }
         }

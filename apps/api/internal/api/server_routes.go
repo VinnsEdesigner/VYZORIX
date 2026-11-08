@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"net/http/pprof"
 	"path/filepath"
@@ -300,6 +301,63 @@ func (s *Server) setupAuthenticatedRoutes() {
 	// Note: /command and /fcm-token require HMAC, but /count and /:imei are operator endpoints.
 	s.setupDeviceSignedRoutes(r)
 	s.setupDeviceManagementRoutes(tenantGroup)
+
+	s.setupDeployRoutes(tenantGroup)
+}
+
+// setupDeployRoutes registers the deploy surface (VYZORIX_DEPLOY_CONTRACT.md
+// §3, §9b.6, §7.4).
+//
+// The operator endpoints live on the tenant group, so they take a session or an
+// API key plus the org context. The device's own secret fetch is registered on
+// the device-signed group in setupDeviceSignedRoutes, because it is the device,
+// not an operator, that asks for its ciphertext.
+func (s *Server) setupDeployRoutes(tenantGroup *gin.RouterGroup) {
+	if s.deployHandler == nil {
+		return
+	}
+
+	// A deploy credential authenticates a CI client with no session. It is applied
+	// to the operator group only, and it sets the org from the credential so the
+	// client cannot move it with a header.
+	deployGroup := tenantGroup.Group("/deploy")
+	deployGroup.Use(middleware.DeployCredentialAuth(s.resolveDeployCredential))
+	// After the credential middleware, so the org a credential carries is the
+	// server-resolved org a client header is checked against rather than a value
+	// the client chose.
+	deployGroup.Use(middleware.NewOrganizationContext(nil).Middleware())
+
+	deployGroup.POST("", s.deployHandler.Deploy)
+	deployGroup.GET("/:imei", s.deployHandler.Current)
+	deployGroup.GET("/:imei/document", s.deployHandler.Document)
+
+	deployGroup.POST("/:imei/credentials", s.deployHandler.MintCredential)
+	deployGroup.GET("/:imei/credentials", s.deployHandler.ListCredentials)
+	deployGroup.DELETE("/:imei/credentials/:id", s.deployHandler.RevokeCredential)
+
+	deployGroup.POST("/:imei/secrets/:app", s.deployHandler.SetSecret)
+	deployGroup.GET("/:imei/secrets/:app", s.deployHandler.ListSecrets)
+	deployGroup.DELETE("/:imei/secrets/:app/:key", s.deployHandler.UnsetSecret)
+}
+
+// resolveDeployCredential resolves a presented deploy credential to the device
+// and org it is scoped to. It is a thin adapter over the credential service so
+// the middleware does not import the deploy package.
+func (s *Server) resolveDeployCredential(ctx context.Context, secret string) (middleware.DeployCredentialIdentity, bool) {
+	if s.deployCredentials == nil {
+		return middleware.DeployCredentialIdentity{}, false
+	}
+
+	credential, err := s.deployCredentials.Authenticate(ctx, secret)
+	if err != nil {
+		return middleware.DeployCredentialIdentity{}, false
+	}
+
+	return middleware.DeployCredentialIdentity{
+		DeviceID:  credential.DeviceID,
+		OrgID:     credential.OrgID,
+		CreatedBy: credential.CreatedBy,
+	}, true
 }
 
 func (s *Server) setupDashboardRoutes(r ...*gin.RouterGroup) {
@@ -480,6 +538,13 @@ func (s *Server) setupDeviceSignedRoutes(r *gin.RouterGroup) {
 	// The device stream. The upgrade authenticates from query parameters in the
 	// upgrader, so requireHMAC skips it (see isWebSocketUpgrade).
 	deviceSigned.GET("/:imei/stream", s.streamHandler.Handle)
+
+	// The device fetches a secret's ciphertext. It is on this group because it is
+	// the device, not an operator, that asks; requireHMAC has already bound the
+	// request to :imei, and the handler gates the key against the current config.
+	if s.deployHandler != nil {
+		deviceSigned.GET("/:imei/secrets/:app/:key", s.deployHandler.FetchSecret)
+	}
 }
 
 // setupDeviceManagementRoutes registers the routes an *operator* calls, under the

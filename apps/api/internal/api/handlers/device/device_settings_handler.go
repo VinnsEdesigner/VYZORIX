@@ -6,9 +6,9 @@ import (
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/adapters/response"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
 	appdevice "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/device"
 	devicedomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 
 	"github.com/gin-gonic/gin"
 )

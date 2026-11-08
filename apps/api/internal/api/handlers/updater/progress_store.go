@@ -7,16 +7,11 @@ import (
 
 // DownloadProgress is one device's in-flight OTA download.
 type DownloadProgress struct {
-	// DeviceID is who is downloading. The key of the store.
-	DeviceID string
-	// Filename is the APK being fetched, as the manifest named it.
-	Filename string
-	// BytesLoaded and TotalBytes are the byte counts. Percent is derived, so the
-	// two cannot disagree with it.
+	UpdatedAt   time.Time
+	DeviceID    string
+	Filename    string
 	BytesLoaded int64
 	TotalBytes  int64
-	// UpdatedAt is when this record was last written, for the TTL sweep.
-	UpdatedAt time.Time
 }
 
 // Percent is the download's completion, 0..100. A zero TotalBytes (the size was
@@ -44,10 +39,10 @@ func (p DownloadProgress) Percent() int {
 // stale "downloading 40%" entry forever, so records are swept by age: a read older
 // than [ttl] is reported as not-downloading rather than as frozen progress.
 type ProgressStore struct {
-	mu   sync.Mutex
 	byID map[string]DownloadProgress
-	ttl  time.Duration
 	now  func() time.Time
+	ttl  time.Duration
+	mu   sync.Mutex
 }
 
 // NewProgressStore creates a store. A zero ttl takes the default.

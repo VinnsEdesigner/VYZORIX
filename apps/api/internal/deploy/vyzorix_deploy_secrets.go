@@ -35,6 +35,11 @@ func (e *SecretError) Error() string {
 	return fmt.Sprintf("secret %s: %s", e.App, e.Message)
 }
 
+// ErrSecretNotSet is returned when a config names a secret the device has not
+// been given. It is separate from a plain SecretError so the handler can answer
+// 404 rather than 400: the request is well-formed, the value simply is not there.
+var ErrSecretNotSet = errors.New("secret is not set")
+
 // SecretService sets, lists and removes app secrets.
 type SecretService struct {
 	secrets  appsecret.Repository
@@ -72,7 +77,9 @@ func (s *SecretService) Set(ctx context.Context, deviceID, app, key, value strin
 
 	ciphertext, err := crypto.WrapSecret(publicKey, []byte(value))
 	if err != nil {
-		return 0, &SecretError{App: app, Key: key, Message: err.Error()}
+		// The wrap failure names the device's key material, not anything the caller
+		// controls, so the detail goes to the log and the caller gets the reason.
+		return 0, &SecretError{App: app, Key: key, Message: "the device's key could not wrap the value"}
 	}
 
 	record := &appsecret.Record{
@@ -120,7 +127,7 @@ func (s *SecretService) FetchForDevice(ctx context.Context, deviceID, app, key, 
 
 	record, err := s.secrets.Get(ctx, appsecret.Name{DeviceID: deviceID, App: app, Key: key})
 	if errors.Is(err, appsecret.ErrNotFound) {
-		return nil, &SecretError{App: app, Key: key, Message: "not set"}
+		return nil, fmt.Errorf("%w: %s/%s", ErrSecretNotSet, app, key)
 	}
 
 	if err != nil {

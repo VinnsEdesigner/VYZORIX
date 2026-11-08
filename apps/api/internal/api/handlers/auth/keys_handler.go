@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/openapi"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 
 	apikeyapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/keys"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"

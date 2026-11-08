@@ -6552,6 +6552,712 @@
         }
       }
     },
+    "/deploy": {
+      "post": {
+        "summary": "Deploy a manifest to a device",
+        "description": "Compiles, authorises, signs and persists a device config. With\n?dry_run=true it compiles and signs but stores nothing.",
+        "tags": [
+          "deploy"
+        ],
+        "parameters": [
+          {
+            "name": "X-Organization-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "name": "dry_run",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "compile and sign without persisting"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "deployed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/deployResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "manifest invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "device.deploy required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "device not in organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "device not registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deploy/{imei}": {
+      "get": {
+        "summary": "Get a device's current config",
+        "description": "Returns the signed config the device should be running.",
+        "tags": [
+          "deploy"
+        ],
+        "parameters": [
+          {
+            "name": "X-Organization-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "name": "imei",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "device id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "current config",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/currentResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "device.deploy required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "device or config not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deploy/{imei}/credentials": {
+      "get": {
+        "summary": "List a device's deploy credentials",
+        "description": "Names, prefixes and revocation state. Never a token.",
+        "tags": [
+          "deploy"
+        ],
+        "parameters": [
+          {
+            "name": "X-Organization-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "name": "imei",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "device id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/credentialListResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "device.deploy required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "device not in organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Mint a device-scoped deploy credential",
+        "description": "Returns the token once. It is never returned by any GET.",
+        "tags": [
+          "deploy"
+        ],
+        "parameters": [
+          {
+            "name": "X-Organization-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "name": "imei",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "device id"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "credential name",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/mintCredentialRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "credential minted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/mintCredentialResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "device.deploy required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "device not in organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deploy/{imei}/credentials/{id}": {
+      "delete": {
+        "summary": "Revoke a deploy credential",
+        "description": "A revoked credential is refused on its next use.",
+        "tags": [
+          "deploy"
+        ],
+        "parameters": [
+          {
+            "name": "X-Organization-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "name": "imei",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "device id"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "credential id"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "revoked"
+          },
+          "403": {
+            "description": "device.deploy required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "device not in organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deploy/{imei}/document": {
+      "get": {
+        "summary": "Get a device's signed config document",
+        "description": "Returns the signed vyzorix.v text verbatim.",
+        "tags": [
+          "deploy"
+        ],
+        "parameters": [
+          {
+            "name": "X-Organization-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "name": "imei",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "device id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "signed config",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "device.deploy required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "device or config not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deploy/{imei}/secrets/{app}": {
+      "get": {
+        "summary": "List an app's secret names",
+        "description": "Returns key names and generations. Never a value.",
+        "tags": [
+          "deploy"
+        ],
+        "parameters": [
+          {
+            "name": "X-Organization-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "name": "imei",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "device id"
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "app name"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "secret names",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/secretListResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "device.deploy required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "device not in organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Set an app secret",
+        "description": "Wraps the value to the device's key and stores the ciphertext.",
+        "tags": [
+          "deploy"
+        ],
+        "parameters": [
+          {
+            "name": "X-Organization-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "name": "imei",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "device id"
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "app name"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "key and value",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/setSecretRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/setSecretResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid name or value",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "device.deploy required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "device not in organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deploy/{imei}/secrets/{app}/{key}": {
+      "get": {
+        "summary": "Fetch a secret's ciphertext (device)",
+        "description": "Returns the value wrapped to the device's key. Only for a key the\ncurrent signed config names.",
+        "tags": [
+          "deploy"
+        ],
+        "parameters": [
+          {
+            "name": "imei",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "device id"
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "app name"
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "secret key"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "wrapped secret",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ciphertextResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "config does not name this secret",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "no config, or secret not set",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove an app secret",
+        "description": "",
+        "tags": [
+          "deploy"
+        ],
+        "parameters": [
+          {
+            "name": "X-Organization-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "name": "imei",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "device id"
+          },
+          {
+            "name": "app",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "app name"
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "secret key"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "removed"
+          },
+          "403": {
+            "description": "device.deploy required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "device not in organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/device/count": {
       "get": {
         "summary": "Count devices",
@@ -8866,6 +9572,49 @@
           },
           "400": {
             "description": "invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/download-progress/{deviceId}": {
+      "get": {
+        "summary": "Read a device's update download progress",
+        "description": "Returns the latest reported OTA download progress for a device",
+        "tags": [
+          "updater"
+        ],
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "device id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "progress, or downloading=false when none",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "deviceId required",
             "content": {
               "application/json": {
                 "schema": {
@@ -13625,6 +14374,305 @@
   },
   "components": {
     "schemas": {
+      "ciphertextResponse": {
+        "type": "object",
+        "properties": {
+          "app": {
+            "type": "string"
+          },
+          "ciphertext": {
+            "type": "string"
+          },
+          "envelope": {
+            "type": "string"
+          },
+          "generation": {
+            "type": "integer"
+          },
+          "key": {
+            "type": "string"
+          }
+        }
+      },
+      "credentialListResponse": {
+        "type": "object",
+        "properties": {
+          "credentials": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/credentialResponse"
+            }
+          }
+        }
+      },
+      "credentialResponse": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "integer"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "deviceId": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "lastUsedAt": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          },
+          "revokedAt": {
+            "type": "integer"
+          }
+        }
+      },
+      "currentResponse": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "integer"
+          },
+          "deviceId": {
+            "type": "string"
+          },
+          "document": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          }
+        }
+      },
+      "deployResponse": {
+        "type": "object",
+        "properties": {
+          "apps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "artifacts": {
+            "type": "integer"
+          },
+          "authorizedBy": {
+            "type": "string"
+          },
+          "document": {
+            "type": "string"
+          },
+          "dryRun": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer"
+          }
+        }
+      },
+      "mintCredentialRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "mintCredentialResponse": {
+        "type": "object",
+        "properties": {
+          "createdAt": {
+            "type": "integer"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "deviceId": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "lastUsedAt": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "prefix": {
+            "type": "string"
+          },
+          "revokedAt": {
+            "type": "integer"
+          },
+          "token": {
+            "type": "string"
+          }
+        }
+      },
+      "secretListResponse": {
+        "type": "object",
+        "properties": {
+          "app": {
+            "type": "string"
+          },
+          "secrets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/secretNameResponse"
+            }
+          }
+        }
+      },
+      "secretNameResponse": {
+        "type": "object",
+        "properties": {
+          "generation": {
+            "type": "integer"
+          },
+          "key": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "integer"
+          }
+        }
+      },
+      "setSecretRequest": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "setSecretResponse": {
+        "type": "object",
+        "properties": {
+          "app": {
+            "type": "string"
+          },
+          "generation": {
+            "type": "integer"
+          },
+          "key": {
+            "type": "string"
+          }
+        }
+      },
+      "claimRequest": {
+        "type": "object",
+        "required": [
+          "pairingCode"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "pairingCode": {
+            "type": "string"
+          },
+          "tierCap": {
+            "type": "integer"
+          }
+        }
+      },
+      "enrollRequest": {
+        "type": "object",
+        "required": [
+          "deviceUuid",
+          "publicKey"
+        ],
+        "properties": {
+          "apiLevel": {
+            "type": "integer"
+          },
+          "appVersion": {
+            "type": "string"
+          },
+          "buildId": {
+            "type": "string"
+          },
+          "deviceClass": {
+            "type": "string"
+          },
+          "deviceUuid": {
+            "type": "string"
+          },
+          "manufacturer": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "osVersion": {
+            "type": "string"
+          },
+          "publicKey": {
+            "type": "string"
+          },
+          "ramBytes": {
+            "type": "integer"
+          },
+          "secretKey": {
+            "description": "SecretKey is the device's second public key (PURPOSE_DECRYPT), which a\nsecret is wrapped to. Optional: a device that does not support secrets\nomits it, and setting a secret for such a device fails rather than\nwrapping to nothing.",
+            "type": "string"
+          },
+          "securityPatch": {
+            "type": "string"
+          },
+          "storageBytes": {
+            "type": "integer"
+          },
+          "supportedAbis": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tierHint": {
+            "type": "integer"
+          }
+        }
+      },
+      "enrollResponse": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "integer"
+          },
+          "expiresInSeconds": {
+            "description": "ExpiresInSeconds is what the device counts down. Sending the remaining time\nas well as the absolute deadline means a device with a wrong clock still\nexpires its code correctly.",
+            "type": "integer"
+          },
+          "pairingCode": {
+            "type": "string"
+          },
+          "pairingDisplay": {
+            "type": "string"
+          },
+          "pollIntervalSeconds": {
+            "description": "PollIntervalSeconds is how often the device should ask for its config while\nit waits to be claimed. The config normally arrives over the held WebSocket\nthe moment an operator claims the code, so this is the fallback for a device\nwhose socket is not up \u2014 it bounds how long a claimed device can sit\nunconfigured. The server owns the value so the cadence can be tuned without\nshipping a new APK.",
+            "type": "integer"
+          }
+        }
+      },
       "APIKey": {
         "type": "object",
         "properties": {
@@ -14896,7 +15944,13 @@
       "DeviceDetailResult": {
         "type": "object",
         "properties": {
+          "api_level": {
+            "type": "integer"
+          },
           "app_version": {
+            "type": "string"
+          },
+          "build_id": {
             "type": "string"
           },
           "device_name": {
@@ -14917,10 +15971,25 @@
           "model": {
             "type": "string"
           },
+          "os_version": {
+            "type": "string"
+          },
+          "ram_bytes": {
+            "type": "integer"
+          },
           "registered_at": {
             "type": "integer"
           },
+          "security_patch": {
+            "type": "string"
+          },
           "status": {
+            "type": "string"
+          },
+          "storage_bytes": {
+            "type": "integer"
+          },
+          "supported_abis": {
             "type": "string"
           }
         }
@@ -17803,77 +18872,6 @@
           },
           "success": {
             "type": "boolean"
-          }
-        }
-      },
-      "claimRequest": {
-        "type": "object",
-        "required": [
-          "pairingCode"
-        ],
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "pairingCode": {
-            "type": "string"
-          },
-          "tierCap": {
-            "type": "integer"
-          }
-        }
-      },
-      "enrollRequest": {
-        "type": "object",
-        "required": [
-          "deviceUuid",
-          "publicKey"
-        ],
-        "properties": {
-          "appVersion": {
-            "type": "string"
-          },
-          "deviceClass": {
-            "type": "string"
-          },
-          "deviceUuid": {
-            "type": "string"
-          },
-          "manufacturer": {
-            "type": "string"
-          },
-          "model": {
-            "type": "string"
-          },
-          "osVersion": {
-            "type": "string"
-          },
-          "publicKey": {
-            "type": "string"
-          },
-          "tierHint": {
-            "type": "integer"
-          }
-        }
-      },
-      "enrollResponse": {
-        "type": "object",
-        "properties": {
-          "deviceId": {
-            "type": "string"
-          },
-          "expiresAt": {
-            "type": "integer"
-          },
-          "expiresInSeconds": {
-            "description": "ExpiresInSeconds is what the device counts down. Sending the remaining time\nas well as the absolute deadline means a device with a wrong clock still\nexpires its code correctly.",
-            "type": "integer"
-          },
-          "pairingCode": {
-            "type": "string"
-          },
-          "pairingDisplay": {
-            "type": "string"
           }
         }
       }

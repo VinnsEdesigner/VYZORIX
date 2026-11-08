@@ -43,21 +43,21 @@ type Hub struct {
 	// session outlives the socket, so a reconnecting device is told to
 	// re-attach the shells it still holds.
 	deviceConnectHook func(deviceID string)
-	deviceStatus         chan DeviceStatusUpdate
-	rateLimiter          *RateLimiter
-	register             chan *Client
-	unreg                chan *Client
-	broadcast            chan []byte
-	log                  *slog.Logger
-	messageQueue         *MessageQueue
-	clients              map[string]*Client
-	telemetryFilter      *TelemetryFilter
-	compression          *Compression
-	latencyConfig        *LatencyConfig
-	deviceLatency        map[string]*LatencyMetrics
-	metrics              HubMetrics
-	mu                   sync.RWMutex
-	metricsMu            sync.RWMutex
+	deviceStatus      chan DeviceStatusUpdate
+	rateLimiter       *RateLimiter
+	register          chan *Client
+	unreg             chan *Client
+	broadcast         chan []byte
+	log               *slog.Logger
+	messageQueue      *MessageQueue
+	clients           map[string]*Client
+	telemetryFilter   *TelemetryFilter
+	compression       *Compression
+	latencyConfig     *LatencyConfig
+	deviceLatency     map[string]*LatencyMetrics
+	metrics           HubMetrics
+	mu                sync.RWMutex
+	metricsMu         sync.RWMutex
 }
 
 // DeviceStatusUpdate represents a device online/offline status change.

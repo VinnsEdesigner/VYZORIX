@@ -573,6 +573,9 @@ var migrations = []Migration{
 	// The device's second public key: the PURPOSE_DECRYPT key a secret is wrapped
 	// to, separate from the identity key.
 	{Apply: migrateAddDeviceSecretKey, Name: "add_device_secret_key", Version: 80},
+	// Device-scoped deploy credentials: a long-lived token for CI, stored only as
+	// a hash so a database copy yields no usable credential.
+	{Apply: migrateCreateDeployCredential, Name: "create_device_deploy_credentials", Version: 81},
 }
 
 // runMigrations applies all pending migrations.

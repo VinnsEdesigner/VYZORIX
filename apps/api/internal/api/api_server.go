@@ -20,6 +20,7 @@ import (
 	cvhandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/configversion"
 	confirmationhandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/confirmation"
 	dashboardhandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/dashboard"
+	deployhandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/deploy"
 	devicehandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/device"
 	diagnosticshandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/diagnostics"
 	inboxhandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/inbox"
@@ -53,6 +54,7 @@ import (
 	updatesapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/updates"
 	usagestats "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/usagestats"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/deploy"
 	devicedomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/featuremgmt"
 	notificationdomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/notification"
@@ -199,10 +201,14 @@ type Server struct {
 	invitationHandler           *organizationhandlers.InvitationHandler
 	memberHandler               *organizationhandlers.MemberHandler
 	transferHandler             *devicehandlers.TransferHandler
-	DeviceRepo                  *storage.DeviceRepository
-	InvitationService           *orgapplication.InvitationService
-	idempotencyRepo             *storage.IdempotencyRepository
-	config                      config.Config
+	// DeviceRepo is the org-scoped device lookup the deploy predicate and the
+	// device-scoped credential check both use.
+	DeviceRepo        *storage.DeviceRepository
+	deployHandler     *deployhandlers.Handler
+	deployCredentials *deploy.CredentialService
+	InvitationService *orgapplication.InvitationService
+	idempotencyRepo   *storage.IdempotencyRepository
+	config            config.Config
 }
 
 // Routes returns the Gin engine for serving.
@@ -248,6 +254,56 @@ func (s *Server) wireOperationalHandlers(cfg *ServerConfig) {
 	if cfg.DB != nil {
 		s.initUpdateChecker(cfg)
 	}
+}
+
+// wireDeployHandler builds the deploy feature: its stores, its three services and
+// the HTTP handler. It is wired here rather than through the provider set because
+// it needs the DB, the signer and the authorization plumbing, all of which exist
+// only after the server's own wiring has run.
+//
+// The signer is the server's one key. When no key is configured the deploy
+// service still refuses to produce an unsigned config (ErrNoSigner), so a deploy
+// fails loudly rather than storing something the device would reject.
+func (s *Server) wireDeployHandler(cfg *ServerConfig) {
+	if cfg.DB == nil {
+		return
+	}
+
+	db := cfg.DB.DB()
+
+	configs := storage.NewDeployConfigRepository(db)
+	secrets := storage.NewAppSecretRepository(db)
+	secretKeys := storage.NewDeviceSecretKeyRepository(db)
+	credentials := storage.NewDeployCredentialRepository(db)
+
+	var sign deploy.DocumentSigner
+	if cfg.ServerSigner != nil {
+		sign = cfg.ServerSigner.SignDocument
+	}
+
+	deployService := deploy.NewDeployService(configs, s.DeviceRepo, sign, deploy.DeviceSettings{})
+	secretService := deploy.NewSecretService(secrets, secretKeys)
+	credentialService := deploy.NewCredentialService(credentials)
+
+	var membershipChecker deployhandlers.MembershipChecker
+	var grants deployhandlers.GrantLister
+	if s.memberHandler != nil {
+		membershipChecker = s.memberHandler.MembershipChecker()
+	}
+	if s.grantRepo != nil {
+		grants = s.grantRepo
+	}
+
+	s.deployCredentials = credentialService
+	s.deployHandler = deployhandlers.NewHandler(
+		deployService,
+		secretService,
+		credentialService,
+		s.DeviceRepo,
+		membershipChecker,
+		grants,
+		cfg.Log,
+	)
 }
 
 // wireAuthorizationWiring initializes the shared authorization plumbing used by
@@ -722,6 +778,10 @@ func NewServerWithDeps(cfg *ServerConfigWithDeps) *Server {
 	if cfg.Hub != nil {
 		go cfg.Hub.Run(context.Background())
 	}
+
+	// The deploy feature is wired last: it needs the DB, the signer, the member
+	// handler and the grant repository, all of which are set above.
+	s.wireDeployHandler(serverCfg)
 
 	s.setupRoutes()
 
