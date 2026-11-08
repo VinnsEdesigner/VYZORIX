@@ -35,6 +35,12 @@ const (
 	ActionAppsRead  Action = "apps.read"
 	ActionAppsWrite Action = "apps.write"
 
+	// Declarative deployment of what runs on a device. Deliberately separate
+	// from apps.read/apps.write and in no action set: deploy changes what code
+	// runs, so the grant that lets an operator observe an app must not also let
+	// them install one. Granted explicitly, or not at all.
+	ActionDeviceDeploy Action = "device.deploy"
+
 	// Telemetry: query device telemetry history, latest, stats, export.
 	ActionTelemetryRead  Action = "telemetry.read"
 	ActionTelemetryWrite Action = "telemetry.write"

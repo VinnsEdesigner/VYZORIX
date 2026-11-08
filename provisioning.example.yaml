@@ -37,6 +37,15 @@ permission_grants:
     scope: "devices:*"
     actions:
       - device.manage
+  # Declarative deployment is granted on its own, scoped to one device: the
+  # permission that lets an operator observe an app must not let them install
+  # one. `device.manage` deliberately does not imply `device.deploy`.
+  - subject_type: operator
+    subject_id: deployer@vyzorix.local
+    org_name: Default Org
+    scope: "devices:d_01H"
+    actions:
+      - device.deploy
 
 # Notification destinations. `channel` is email | webhook | slack; `config`
 # holds the channel-specific keys (email: `to`; webhook: `url`; slack: `webhook`).

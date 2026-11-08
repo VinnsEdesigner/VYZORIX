@@ -988,7 +988,7 @@ Two facts the first draft of this section got wrong, because it never opened the
 | `apps/api/internal/deploy/vyzorix_deploy_secret_scan.go` | 90 | FR-8, §5.2 | The structural no-secret walk: exempt schema paths, inspect every other value, inspect `env` keys. |
 | `apps/api/internal/deploy/vyzorix_deploy_signer.go` | 90 | US-002, FR-4, FR-5 | Sign the compiled config with `ServerSigner.SignDocument`; increment the version. |
 | `apps/api/internal/deploy/vyzorix_deploy_store.go` | 130 | FR-21, §13 note | Persist current + last-good per device (`keep_last = 2`). **Not** the `configversion` store. |
-| `apps/api/internal/deploy/vyzorix_deploy_authz.go` | 110 | US-003, FR-11, §7.1 | The predicate: super-admin, or a `device.deploy` grant whose scope covers the device. |
+| `apps/api/internal/deploy/vyzorix_deploy_authentication.go` | 110 | US-003, FR-11, §7.1 | The predicate: super-admin, or a `device.deploy` grant whose scope covers the device. |
 | `apps/api/internal/deploy/vyzorix_deploy_secrets.go` | 200 | US-013, FR-24–27, §9b | `crypto.WrapSecret` to the device key; store ciphertext via `secretstore`; generation counter; the "only keys the config names" check. |
 | `apps/api/internal/deploy/vyzorix_deploy_catalog.go` | 80 | FR-10, FR-19 | The `catalog_apps` model and the "custom vs known" marking. |
 | `apps/api/internal/api/handlers/deploy/vyzorix_deploy_config_handler.go` | 170 | US-003, US-005, US-009 | `POST /v1/deploy`, `GET /v1/deploy/{device}`, `GET /v1/deploy/schema/{version}`, dry-run. |
@@ -1076,7 +1076,7 @@ secret_keys" would have produced a file the supervisor silently ignores those fi
 |:--|:--|:--|
 | US-001 manifest + compiler | `deploy.cue`, `vyzorix_deploy_manifest.go`, `vyzorix_deploy_compile.go`, `vyzorix_deploy_render.go` | — |
 | US-002 signing | `vyzorix_deploy_signer.go` (`ServerSigner`) | `ConfigVerifier` (verify) |
-| US-003 `POST /v1/deploy` | `vyzorix_deploy_config_handler.go`, `vyzorix_deploy_authz.go`, `server_routes.go` | — |
+| US-003 `POST /v1/deploy` | `vyzorix_deploy_config_handler.go`, `vyzorix_deploy_authentication.go`, `server_routes.go` | — |
 | US-004 deploy credential | `vyzorix_deploy_credential_handler.go`, `079_device_deploy_credential.go` | — |
 | US-005 delivery + drift | `vyzorix_deploy_config_handler.go`, `enroll_handler.go` | `ConfigStore`, `DeployReporter`, `CloudConnectionFactory` |
 | US-006 fetch/verify/install | — | `ArtifactFetcher`, `DeployApplier` |
@@ -1092,7 +1092,7 @@ secret_keys" would have produced a file the supervisor silently ignores those fi
 | FR-9 `cmd` rule | `vyzorix_deploy_compile.go` | `DeployApplier` (re-checks) |
 | FR-16 refusals | `vyzorix_deploy_config_handler.go` | `DeployReporter` |
 | FR-17/FR-24 never logged | every deploy file (a test greps) | `SecretStore` (a test greps) |
-| FR-18 `device.deploy` | `scoped.go`, `vyzorix_deploy_authz.go` | — |
+| FR-18 `device.deploy` | `scoped.go`, `vyzorix_deploy_authentication.go` | — |
 | FR-19 catalog | `vyzorix_deploy_catalog.go`, `provisioning_adapters.go`, `vyzorix_boot_provisioning.go` | — |
 | FR-20 `purge` | `vyzorix_deploy_compile.go` | `DeployApplier` |
 | FR-21 `keep_last = 2` | `vyzorix_deploy_store.go`, `078_device_deploy_config.go` | `ConfigStore` |
