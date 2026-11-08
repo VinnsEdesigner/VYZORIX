@@ -98,7 +98,11 @@ device agent                      verify signature → fetch → verify digest �
 **Description:** As the platform, I want to sign the config so a device can verify it offline.
 
 **Acceptance Criteria:**
-- [ ] The compiled config is signed with the server's signing key per `documents/SIGNING_ARCHITECTURE.md`.
+- [ ] The compiled config is signed with the server's signing key — ECDSA P-256 over the
+      `vyzorix.v` canonical string, via `ServerSigner.SignDocument`
+      (`apps/api/internal/infrastructure/crypto/device_signing.go`). Not
+      `documents/SIGNING_ARCHITECTURE.md`, which covers the three HMAC request/frame
+      domains (A/B/C) and not the config.
 - [ ] The signature covers the whole document, including every artifact digest.
 - [ ] `deviceId`, `organizationId` and `memberId` are injected by the server and cannot be set by the file.
 - [ ] A config signed for device A fails verification on device B (device binding is inside the signed payload).
@@ -220,13 +224,14 @@ device agent                      verify signature → fetch → verify digest �
 ## 5. Functional Requirements
 
 - **FR-1** `vyzorix.toml` is parsed and validated **server-side**; the server is authoritative.
-- **FR-2** The schema is published (a versioned JSON Schema at a stable URL) and the CLI validates against it before upload.
+- **FR-2** The schema is published as a versioned JSON Schema at a stable, versioned URL
+  (`GET /v1/deploy/schema/{version}`), and the CLI validates against it before upload.
 - **FR-3** `deviceId`, `organizationId`, `memberId` are server-injected; the file may not set them.
 - **FR-4** The compiled config is signed; the signature covers every field including artifact digests.
 - **FR-5** The config carries a monotonic `version` per device.
 - **FR-6** The config is delivered over the existing `device_config` frame; a reconnecting device re-fetches when versions differ.
-- **FR-7** Every artifact reference is `{name, url, sha256, size?, kind?}`; `sha256` is mandatory.
-- **FR-8** The compiler refuses a config carrying anything secret, and the device refuses to store one. Both sides check.
+- **FR-7** Every artifact reference is `{name, url, sha256, size?, kind?, arch?}`; `sha256` is mandatory. A URL is literal, never a template; the same binary for several ABIs is several references, each with its own digest and an `arch`.
+- **FR-8** The compiler refuses a config carrying anything secret, and the device refuses to store one. Both sides check. The check is **structural** — it exempts the schema's own keys, including the `secret NAME` nodes that name a secret without carrying one — so a config that *names* a secret is accepted while one that *carries* a value is refused.
 - **FR-9** `cmd` is confined to the target app's own directory under `/home/apps`; shell metacharacters and paths that escape it are refused.
 - **FR-10** A curated catalog of known apps is offered in the console; a manifest naming an app outside the catalog is still permitted, but is marked as custom.
 - **FR-11** Authorisation: `super_admin`, or a member with a `device.deploy` grant whose scope covers the device.
@@ -242,7 +247,7 @@ device agent                      verify signature → fetch → verify digest �
 - **FR-21** The device retains the current config and the previous known-good one (`keep_last = 2`), and restores the latter when an apply fails.
 - **FR-22** The manifest schema is authored in CUE at `tooling/schema/deploy.cue`, generated for Go, and covered by the existing pre-commit drift gate.
 - **FR-23** The deploy CLI is a new binary at `apps/cli`, sharing the API's generated types rather than re-declaring the wire shape.
-- **FR-24** A secret value is never carried in a signed config; `[app.env]` is configuration and `[app.secrets]` is a list of **names**. Values travel on their own channel, encrypted to the device's key.
+- **FR-24** A secret value is never carried in a signed config; `[app.env]` is configuration and `[app.secrets]` is a table of **names** (a name is a key; the value is always empty). Values travel on their own channel, encrypted to the device's key. The table form is what lets the no-secret check (FR-8) exempt the node structurally instead of pattern-matching a field defined to hold secret names.
 - **FR-25** The device holds a **second** Keystore key (`PURPOSE_DECRYPT`, RSA-3072) for secrets — separate from the identity key, never exposed over the bridge.
 - **FR-26** A decrypted secret is written to `files/apps/<app>/.env` at mode `0600` and **never** into `apps.json`, which is readable by every app in the container.
 - **FR-27** A device may fetch a secret's ciphertext only for a key the current signed config names for that app.
@@ -296,10 +301,11 @@ case safe by construction.
 - **Trust anchor:** the device's pinned server public key (`PinnedServerKeys`, a
   rotatable set). Key rotation needs an overlap window — a device offline for months
   may only know an older key.
-- **Signing:** follows `documents/SIGNING_ARCHITECTURE.md`; libv is the verifier on the
-  device side.
-- **Storage:** `/home/apps` from the overlay, per Layer 3 D2. The supervisor's state
-  must not live in the rootfs.
+- **Signing:** ECDSA P-256 via `ServerSigner` over the `vyzorix.v` canonical string
+  (`device_signing.go`); libv is the verifier on the device side. `SIGNING_ARCHITECTURE.md`
+  describes the three HMAC domains for requests and frames, not this one.
+- **Storage:** `files/apps` bound to `/home/apps` (Layer 3 decision D2, already
+  implemented in `ProotLauncher.binds`). The supervisor's state must not live in the rootfs.
 - **Artifact host:** GitHub releases, as the rootfs and the APK already use — public,
   so an unauthenticated device can fetch it.
 - **Schema:** one shared schema; the CLI validates against it, the server enforces it.
@@ -371,7 +377,8 @@ These were open; each is now settled, with the evidence it rests on.
    from it, and a **pre-commit gate fails on drift**. Adding
    `tooling/schema/deploy.cue` means the manifest schema gets the same treatment as
    every other schema in the repo, including the drift check. The CLI does not read
-   CUE: the server publishes the generated JSON Schema at a stable URL and the CLI
+   CUE: the server publishes the generated JSON Schema at a stable, versioned URL
+   (`/v1/deploy/schema/{version}`) and the CLI
    validates against that (FR-2), so the CLI needs no CUE toolchain.
 
 7. **Deploy CLI location — `apps/cli`, a new binary.**
@@ -391,11 +398,17 @@ directory. It was never wired up, and it is useful precisely for what it proves 
 what it does not.
 
 **What it proves.** Its `index.html` contains **no baked engine URL** — only font
-links. It does not need one: the console's `connection-store` falls back to
-`location.origin` when `VITE_API_BASE_URL` is unset. So a console served *by the
-device* reaches the device's own engine **with no build-time configuration at all**.
-That is the whole device-served-PWA idea working, and it is why US-008 is a file
-write rather than a build system.
+links. It does not need one: the env schema defaults `VITE_API_BASE_URL` to
+`http://localhost:3000` (`packages/config/src/env/index.ts`), which is where the
+device's engine listens. So a console served *by the device* reaches the device's own
+engine **with no build-time configuration at all**. That is the whole
+device-served-PWA idea working, and it is why US-008 is a file write rather than a
+build system.
+
+> The draft attributed the fallback to `connection-store` resolving
+> `location.origin`. That file is not in this repo — it belonged to the untracked
+> experiment — so the mechanism could not be checked here. The default above is in
+> the repo, it lands on the same engine, and it is what this section now rests on.
 
 **What it does not prove.** Nothing serves `public/` — no `http.FileServer`, no
 `embed`, and no reference to the path anywhere in the Go tree. The files are inert.

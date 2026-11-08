@@ -1,6 +1,7 @@
 # Vyzorix Deploy Contract
 
-**Status:** design, agreed in outline. Nothing built.
+**Status:** design, agreed in outline. Nothing built except the secrets channel (§9b),
+committed on a branch and not on `main`.
 **Parent:** `VYZORIX_DEPLOY_REQUIREMENTS.md` (this repo, `documents/`) — the requirements
 and the resolved decisions. This document is the *contract*: the exact shapes, the
 rules that must not bend, and what is written where.
@@ -121,12 +122,20 @@ autostart = true                     # optional, default true
 expose    = "loopback"               # optional — loopback | lan | cloud
 purge     = false                    # optional, default false — see below
 
-  # Artifacts are references. `sha256` is mandatory.
+  # Artifacts are references. `sha256` is mandatory. `arch` is optional and,
+  # when present, restricts the artifact to one ABI — see §4.2.
   [[app.artifact]]
   name   = "engine"
-  url    = "https://github.com/VinnsEdesigner/vyzorix-engine-assets/releases/latest/download/vyzor-${abi}.tar.gz"
-  sha256 = "9f2c..."
+  arch   = "arm64-v8a"
+  url    = "https://github.com/VinnsEdesigner/vyzorix-engine-assets/releases/latest/download/vyzor-arm64.tar.gz"
+  sha256 = "9f2c..."                 # arm64-v8a digest
   size   = 1882104                   # optional, informational
+
+  [[app.artifact]]
+  name   = "engine"
+  arch   = "x86_64"
+  url    = "https://github.com/VinnsEdesigner/vyzorix-engine-assets/releases/latest/download/vyzor-x86_64.tar.gz"
+  sha256 = "b71e..."                 # x86_64 digest — same name, different arch
 
   [[app.artifact]]
   name   = "console"
@@ -150,9 +159,14 @@ purge     = false                    # optional, default false — see below
   [app.env]
   MI_PORT = "8080"                   # configuration — safe to commit
 
-  # Secrets are NAMES only. The values are set out of band (vyzorix secrets set)
-  # and never appear in this file. See §9b.
-  secrets = ["DATABASE_URL", "S3_SECRET_KEY"]
+  # Secrets are NAMES only, and the names are the KEYS of this table. The values
+  # are set out of band (vyzorix secrets set) and never appear in this file. The
+  # table form is deliberate: it is what lets the no-secret scan (§5.2) exempt
+  # this one node by its position in the document, instead of pattern-matching a
+  # field that is defined to hold secret names. See §9b.
+  [app.secrets]
+  DATABASE_URL = ""
+  S3_SECRET_KEY = ""
 
 [[app]]                              # a second app — this is what makes it a platform
 name = "wiki"
@@ -183,10 +197,11 @@ expose = "lan"
 | `app.expose` | enum | no | `loopback` | `loopback` \| `lan` \| `cloud`. `cloud` is refused in v1 (§10). |
 | `app.purge` | bool | no | `false` | The only thing that deletes an app's data. |
 | `app.env` | map | no | `{}` | String→string. **Configuration only** — a value that looks like a secret is refused (§5.2); a secret goes through `vyzorix secrets` (§9b). |
-| `app.secrets` | list of string | no | `[]` | The **names** of secrets this app expects. Names only — never a value (§9b). |
-| `app.artifact[].name` | string | yes | — | Unique within the app. |
-| `app.artifact[].url` | string | yes | — | `https` only. |
+| `app.secrets` | table | no | `{}` | A table whose **keys** are the secret names this app expects; every value must be the empty string. Names only — never a value (§9b). The table form is required so the scan in §5.2 can exempt this node structurally. |
+| `app.artifact[].name` | string | yes | — | Unique within the app **per `arch`** (an unqualified artifact is unique per app). |
+| `app.artifact[].url` | string | yes | — | `https` only. No template variables: the URL is literal and the digest pins its bytes (§4.2). |
 | `app.artifact[].sha256` | string | **yes** | — | 64 hex. Mandatory — see §5.3. |
+| `app.artifact[].arch` | enum | no | — | `arm64-v8a` \| `armeabi-v7a` \| `x86_64`. When present, the artifact applies only to that ABI (§4.2). |
 | `app.artifact[].size` | int | no | — | Informational; a mismatch is not an error. |
 | `app.artifact[].kind` | enum | no | `dir` | `dir` \| `webroot`. |
 | `app.pwa` | bool or table | no | **`false`** | See §6. |
@@ -200,68 +215,202 @@ cannot be a path, and it cannot be changed without removing and re-adding the ap
 renaming an app is not a supported operation in v1, because the data directory would
 have to move and that is a data-loss surface.
 
+### 4.2 Per-architecture artifacts
+
+An artifact may be restricted to one ABI with `arch`. The device fetches only the
+artifacts that apply to it — an artifact with no `arch` applies to every device; one
+with an `arch` applies only when it equals the device's ABI (`arm64-v8a`,
+`armeabi-v7a`, or `x86_64`).
+
+**A URL is never a template.** An earlier draft wrote
+`vyzor-${abi}.tar.gz` with one digest, which cannot work: if the device expands
+`${abi}` the expanded URL is not what the server signed, and if it does not, the URL
+is wrong. The digest is the whole reason the transport can be untrusted (§5.3), so
+the URL must be literal and the digest must pin exactly those bytes. The same binary
+for several ABIs is therefore *several* `[[app.artifact]]` entries — same `name`,
+different `arch`, each with its own URL and digest.
+
+Two consequences the compiler must enforce:
+
+- **Uniqueness is per `(name, arch)`.** `engine` for `arm64-v8a` and `engine` for
+  `x86_64` are the same artifact in two builds, not a duplicate. Two entries with the
+  same `(name, arch)` — or two unqualified entries with the same `name` — are an
+  error naming the artifact.
+- **A device with no matching artifact is refused**, with `no_artifact_for_arch`, at
+  apply time. It is a device-side check because only the device knows its ABI; the
+  server cannot know whether the fleet it is deploying to holds an `armeabi-v7a`
+  handset. Compiling a manifest whose every `engine` is `arm64-v8a` is legal — it is
+  simply not deployable to a 32-bit device, and the refusal says so.
+
 ---
 
 ## 5. The compiled config
 
 ### 5.1 What the server produces
 
-The manifest compiles to a **config** — the existing `vyzorix.v` shape
-(`REGISTRATION_CONTRACT.md` §6), extended with an `apps` array. It is the thing that
+The manifest compiles to a **config** — the existing `vyzorix.v` document shape the
+registration contract defines (`REGISTRATION_CONTRACT.md` §6, as rendered by
+`RenderConfig`), extended with the apps the manifest declares. It is the thing that
 is signed, delivered and stored; the `.toml` never leaves the operator's machine.
 
-```json
-{
-  "version": 7,
-  "deviceId": "d_01H...",
-  "organizationId": "org_01H...",
-  "memberId": "op_01H...",
-  "name": "field-ops-07",
-  "tierCap": 2,
-  "features": { "terminal": true, "usb": false, "apps": true },
-  "apps": [
-    {
-      "name": "vfd",
-      "dir": "/home/apps/vfd",
-      "cmd": "/home/apps/vfd/run.sh",
-      "port": 8080,
-      "autostart": true,
-      "expose": "loopback",
-      "purge": false,
-      "env": { "MI_PORT": "8080" },
-      "secrets": ["DATABASE_URL", "S3_SECRET_KEY"],
-      "artifacts": [
-        { "name": "engine",  "url": "https://...", "sha256": "9f2c...", "kind": "dir" },
-        { "name": "console", "url": "https://...", "sha256": "41ab...", "kind": "webroot" }
-      ],
-      "pwa": { "enabled": true, "theme_color": "#be123c", "display": "standalone", "...": "..." }
-    }
-  ]
-}
+**The config is a `vyzorix.v` document, not JSON.** The registration contract's §6
+shows the config as JSON for readability, but the shipped format — and the only one
+libv signs and verifies — is the line format below. The JSON in that section is an
+illustration of the *fields*; it is not a wire shape and nothing serialises it.
+
+```text
+' vyzorix.v — device configuration
+' Generated by the server. Signed; a tampered field fails verification.
+v device d_01H...
+vv org org_01H...
+vv name field-ops-07
+vv tier 2
+vv member op_01H...
+vv cloud
+vvv stream /v1/device/d_01H.../stream
+vvv hb 60s
+vvv backoff 1s>30s
+vv features
+vvv terminal true
+vvv usb false
+vvv apps true
+vv apps
+vvv app vfd
+vvvv dir /home/apps/vfd
+vvvv cmd /home/apps/vfd/run.sh
+vvvv port 8080
+vvvv autostart true
+vvvv expose loopback
+vvvv purge false
+vvvv env MI_PORT=8080
+vvvv secret DATABASE_URL
+vvvv secret S3_SECRET_KEY
+vvvv artifact engine
+vvvvv arch arm64-v8a
+vvvvv url https://.../vyzor-arm64.tar.gz
+vvvvv sha256 9f2c...
+vvvvv kind dir
+vvvv artifact console
+vvvvv url https://.../console.tar.gz
+vvvvv sha256 41ab...
+vvvvv kind webroot
+vvvv pwa true
+vvvvv theme_color #be123c
+vvvvv display standalone
+vvv app wiki
+vvvv dir /home/apps/wiki
+vvvv cmd /home/apps/wiki/run.sh
+vvvv port 9000
+vvvv expose lan
+vvvv artifact site
+vvvvv url https://.../wiki.tar.gz
+vvvvv sha256 7b3d...
+vvvvv kind webroot
+vvvv pwa true
+v version 7
+v sig ecdsa-p256 <base64>
 ```
+
+The nodes above are `key value`; `member`, `dir` and the two `secret` values are
+injected by the server, not the file. **Comments are whole-line only and start with
+`'`** — a `'` or `#` *after* a value is data, not a comment (libv keeps it as a token,
+so `port 8080 # x` would carry `#` and `x` into the node). The renderer writes no
+inline comments, which is why the example has none.
+
+**How a list is expressed.** The format is a strict depth-based tree: depth is the
+number of leading `v` characters, and a node is `key value` (or just `key` for a
+container). It has no dedicated list syntax, so **a list is a repeated node of the
+same key under one parent, and its order is document order.** This is verified, not
+assumed: libv parses `vvv app vfd` / `vvv app wiki` as two sibling `app` children of
+`apps`, both preserved, and `find("device.apps.app")` returns them in order. The
+documented encoding for each repeated collection is:
+
+| Collection | Encoding | Read as |
+|:--|:--|:--|
+| apps | repeated `app` under `apps`, name in the value token | `find("device.apps.app")` |
+| artifacts | repeated `artifact` under one `app` | that app node's `artifact` children |
+| env | repeated `env KEY=VALUE` under one `app` | that app node's `env` children |
+| secrets | repeated `secret NAME` under one `app` | that app node's `secret` children |
+
+**A reader must iterate the app nodes, not flatten.** `VNode.find` walks one level
+per path segment, so `find("device.apps.app.port")` crosses *every* app and returns
+all of their ports together. Reading an app's fields by absolute path would therefore
+mix apps up. The rule is: `find("device.apps.app")` once, then read each child by
+relative key within that node.
+
+**Determinism.** The document is byte-identical for the same manifest: apps are
+written in manifest order, and within an app the children are written in a fixed
+field order (the order above), not map order. This is what makes "the same file
+compiles to byte-identical output" (US-001) testable.
+
+**Compatibility note — the one libv change this needs.** libv's `VNode` already
+carries `children`, so repeated nodes parse and are addressable with no format
+change. What does **not** exist yet is a reader that returns a collection for a
+repeated node: the Android side has `VNode.find` but no `children(key)` helper, and
+Go's generated reader is built for the flat registration config. §13.1 budgets for
+that reader; the format itself does not change, so there is no version bump and no
+risk to the existing registration config.
 
 Three fields are **injected by the server and may not be set by the file**:
 `memberId` (who authorised it — see §7), `version`, and each `dir`. A file that sets
 `memberId` is refused, because a config that names its own authoriser proves nothing.
 
-`features.apps` is `true` in any config that carries an `apps` array. It is present in
-the config shape the registration contract defines (`REGISTRATION_CONTRACT.md` §6) but
-has no Go type yet — this is the first feature to give it meaning, so the field is
-introduced here.
+`features.apps` is `true` in any config that carries apps. The field
+already exists as `DeviceConfig.AppsEnabled` in Go and `DeviceConfig.appsEnabled` on
+the device; it is simply `false` today because nothing sets it. This is the feature
+that gives it meaning, so the only change is that it becomes `true`.
 
 ### 5.2 The no-secret rule
 
 The compiler refuses a config that would carry a secret, and **names the offending
-key**. The check is not a denylist of field names — a secret can be smuggled through
-`env` — so it inspects values as well as keys:
+key**. The rule is enforced by the check that already ships
+(`ValidateConfigHasNoSecrets` in Go, `ConfigVerifier.assertNoSecrets` on the device),
+and this section exists because the naive form of that check refuses a field this
+contract requires.
 
-- a key matching `(?i)(password|passwd|secret|token|api[_-]?key|private[_-]?key|credential)` is refused;
-- a value in `env` that is a PEM block, a JWT (`eyJ...`), a 40+ char hex/base64 run, or
-  a URL carrying `user:pass@` is refused.
+**The check is structural, not a substring scan of every line.** A scan for the
+tokens `secret`, `token`, `key`, … across the whole document is exactly what the
+shipped code does today, and it cannot survive an `apps` section: the schema's own
+keys — the `apps` container, the `secret NAME` node that names a secret *without*
+carrying one, a `secret_keys` list in the registry — contain those words by
+definition. A rule that refuses its own field names is not a rule; it is a bug with a
+security rationale attached. So the check changes from "does any line contain a
+forbidden word" to the following, and this is the definition both sides implement:
 
-The device re-checks the same rule before storing, and reports `config_carries_secret`
-with the key. Both sides check because the invariant is load-bearing: a config that can
-carry a token collapses the model back to "a secret travels over the wire".
+1. **Schema keys are exempt by path, not by pattern.** The compiler walks the parsed
+   document. The nodes it *writes* — `apps`, `app`, `artifact`, `env`, `secret`,
+   `pwa` and the fixed settings keys — are known keys and are never themselves
+   inspected for a forbidden word. The exemption is a closed set of paths the
+   compiler owns; it is not "any key that happens to look safe".
+2. **Every `env` value is inspected** for the shapes a secret takes: a PEM block, a
+   JWT (`eyJ…`), a 40+ char hex/base64 run, or a URL carrying `user:pass@`. An `env`
+   value that looks like a secret is refused and the key is named.
+3. **Every `env` key is inspected** against
+   `(?i)(password|passwd|secret|token|api[_-]?key|private[_-]?key|credential)`, and a
+   match is refused. This is the case the rule exists for: `TOKEN = "…"` in `env`.
+4. **Every other node's value is inspected** for the shapes in (2), so a secret
+   smuggled into an unexpected field is still caught.
+5. **The `secret NAME` nodes are exempt** — but only their *value*, and only because
+   a name is a name. A `secret` node whose value is one of the shapes in (2) — a JWT,
+   a hex run, a PEM block — is refused, because a secret *name* is not 40 hex
+   characters. The device re-checks this: it will not accept a node that carries
+   what looks like a value.
+
+The consequence is that `[app.secrets]` may name `DATABASE_URL` or `S3_SECRET_KEY`
+freely — those are names, which is the whole point of the field — while
+`[app.env] S3_SECRET_KEY = "AKIA…"` is still refused, because that is a value.
+
+**This is a change to the shipped check, on both sides, and it is the load-bearing
+part of this contract.** The current scanner would refuse the compiled document in
+§5.1 outright. §13 lists the change on both sides; §12's definition of done adds the
+case "a config naming a secret is accepted, and a config carrying one is refused" —
+both, because a rule that refuses too much is as wrong as one that refuses too
+little, and only testing both distinguishes them.
+
+The device re-checks the same rule before storing, and reports
+`config_carries_secret` with the key. Both sides check because the invariant is
+load-bearing: a config that can carry a token collapses the model back to "a secret
+travels over the wire".
 
 A caller that genuinely needs a secret has **somewhere else to put it** — §9b defines it —
 and that is the point of the refusal being absolute here. The answer is not "put it in the
@@ -321,6 +470,24 @@ Generated defaults, modelled on the console's own working manifest:
 is a hard error, because an invalid value silently degrades to `browser` and the
 operator would never know why the app is not installable.
 
+**How `pwa` is carried in the config.** In the manifest it is `bool or table`; in the
+compiled `vyzorix.v` it is written only when the webroot is a PWA, as one node whose
+value is `true` or `false`, with the overriding fields as its children (§5.1):
+
+```text
+vvvv pwa true
+vvvvv theme_color #be123c
+vvvvv display standalone
+```
+
+A webroot with `pwa` absent or `false` has **no `pwa` node at all** — the compiler
+does not write `pwa false`. That is deliberate: the absence is the negative case, and
+a reader that sees no node must generate nothing. Only fields that *override* a
+default are written, so the compiled document does not restate `start_url = "/"` when
+the operator did not set it; the generator's defaults (§6) fill the rest. The `enabled`
+boolean an earlier draft showed is not part of the shape — the node's presence is the
+enablement, and there is no `enabled` key to disagree with it.
+
 **Icons are not generated.** An icon is an image, and the platform does not invent
 one. If `[app.pwa].icons` is absent the manifest carries an empty list and the app is
 installable with a default icon — the honest outcome, and it keeps the generator from
@@ -332,11 +499,19 @@ artifact serves every device.
 
 ### 6.1 Why this is a file write and not a build
 
-The console already proves it: a build with no `VITE_API_BASE_URL` falls back to
-`location.origin` (`Vfd/web/src/stores/connection-store.ts`). A console served *by the
-device* therefore reaches that device's own engine with no build-time configuration at
-all. Serving same-origin also removes CORS entirely and makes `127.0.0.1` a secure
-context, so the service worker and the install prompt work without TLS.
+The console reaches the device's own engine with no build-time configuration, and the
+evidence is in this repo rather than in a build artefact: the env schema defaults
+`VITE_API_BASE_URL` to `http://localhost:3000` (`packages/config/src/env/index.ts`).
+The device's engine listens on `127.0.0.1:3000`, so a console served *by the device*
+and a console whose base URL is unset both resolve to the same place. Serving
+same-origin additionally removes CORS entirely and makes `127.0.0.1` a secure context,
+so the service worker and the install prompt work without TLS.
+
+> An earlier draft cited `Vfd/web/src/stores/connection-store.ts` falling back to
+> `location.origin`. That file is not in this repo — it was part of the untracked
+> experiment (§11 of the requirements) — so the claim cannot be checked here. It does
+> not matter which mechanism holds: the default above already lands on the engine, so
+> the conclusion is the same and rests on a file that exists.
 
 So: ship the console once, generate the manifest per device, serve it same-origin.
 
@@ -352,17 +527,37 @@ An operator may deploy to device `D` in org `O` when:
   caller is authenticated                                        (session, Domain A)
     AND D ∈ O                                                    (binding)
     AND D.lifecycle == registered                                (not pending/deregistered)
-    AND ( caller.role == super_admin IN O
+    AND ( caller is a platform super_admin
           OR  ∃ grant g : g.subject == caller
                           ∧ g.action  ⊇ device.deploy
                           ∧ g.scope   ⊇ devices:D )
 ```
 
 Both halves are required: an unauthenticated caller is not helped by a grant, and a
-`super_admin` of a *different* org is not an operator of this one.
+super-admin with no grant is still bound by `D ∈ O`.
+
+**`super_admin` is platform-global, and the predicate says so.** An earlier draft
+wrote `caller.role == super_admin IN O`, which the role model does not express:
+`RoleSuperAdmin` is level 100 and "System-wide ownership" (`operator/role.go`), and
+`risk_evaluator.go` documents it as bypassing org checks. There is no per-org
+super-admin. So the first clause is "the caller is a super-admin, full stop", and the
+org binding is what keeps it honest — a super-admin may deploy to any org's device,
+which is what "system-wide ownership" means, and the `D ∈ O` conjunct is still
+enforced rather than skipped. If a future release adds per-org admins, the clause
+becomes a role check scoped to `O`; until then it is not, and pretending otherwise
+would leave the predicate unimplementable.
 
 **A device in another org returns `404`, not `403`.** A 403 would confirm the device
 exists, which is an existence leak across tenants.
+
+**How this lands in code.** The scoped engine already answers the grant half —
+`ScopedPermissions.Grants(Action, scope)` with `MatchScope`'s trailing-`:*` wildcard,
+so a grant on `devices:*` covers `devices:D` and one on `devices:D` covers only `D`.
+The change is one new constant, `ActionDeviceDeploy = "device.deploy"`, in
+`permission/scoped.go`, and a handler that calls `Grants` with scope `devices:<id>`.
+The example grant in `provisioning.example.yaml` should move from `device.manage` on
+`devices:*` to `device.deploy` on the specific device, so the file documents the
+narrower grant this feature introduces.
 
 ### 7.2 Why `device.deploy` and not `apps.write`
 
@@ -525,9 +720,12 @@ received. It is delivered on demand, and re-delivered on every reconnect.
         └─ report secrets_ready {app, keys[]}
 ```
 
-The config carries a **list of secret key names** per app — `"secrets": ["DATABASE_URL"]`
-— and never a value. That is what lets the device know it is missing one, and what lets
-the console show *which* secrets an app expects without showing any of them.
+The config carries the **names of the secrets** each app expects — one `secret NAME`
+node per name (§5.1), e.g. `vvvv secret DATABASE_URL` — and never a value. That is
+what lets the device know it is missing one, and what lets the console show *which*
+secrets an app expects without showing any of them. The node's value is a name, which
+is why §5.2 exempts it from the forbidden-word scan while still refusing a node whose
+value *looks* like a secret.
 
 ### 9b.3 The envelope, and why this key and not the other
 
@@ -600,8 +798,8 @@ vyzorix secrets unset <app> KEY    --device <id>
   cannot ask for a secret its config does not reference.
 - `set`/`unset` are authorised by `device.deploy` (§7.1) — the same grant, because
   writing a credential is the same kind of act as writing what runs.
-- **A value is never logged, never returned by any `GET`, and never written to
-  `VYZORIX_DEPLOY_CONTRACT`-adjacent state.** `list` shows names, which is what an
+- **A value is never logged, never returned by any `GET`, and never written into any
+  state the deploy feature reads back.** `list` shows names, which is what an
   operator needs to confirm the right thing is set.
 
 ### 9b.7 What this does and does not protect
@@ -700,8 +898,11 @@ automatically (§10).
 1. A `vyzorix.toml` with two apps compiles, and both run on one device, with no change
    under `apps/api/`.
 2. A config is signed and the device verifies it; an unsigned config is refused.
-3. A config carrying a secret is refused **by a test on both sides** — the invariant,
-   not a promise.
+3. A config carrying a secret is refused, **and a config naming one is accepted** — by
+   a test on both sides. The second half is the one the shipped scanner fails today:
+   it refuses the word `secret` anywhere, which refuses the schema's own `secret NAME`
+   node. Both cases are asserted, because a rule that refuses too much is as wrong as
+   one that refuses too little.
 4. An artifact with a wrong `sha256` is refused, and the previous copy is untouched.
 5. A `cmd` outside the app's own directory is refused, including via a symlink.
 6. A lower role without a grant is refused; `super_admin` is not; another org's device
@@ -732,7 +933,9 @@ must earn its name, so existing files are modified in place wherever possible.
 |:--|--:|:--|
 | `tooling/schema/deploy.cue` | 120 | The manifest schema. Source of truth; Go generated from it, JSON Schema published. |
 | `apps/api/internal/deploy/manifest.go` | 160 | Parse and validate `vyzorix.toml` against the generated types. Unknown key ⇒ error. |
-| `apps/api/internal/deploy/compile.go` | 190 | Manifest → config. Injects `memberId`/`version`/`dir`; refuses secrets and unhashed refs; enforces the `cmd` rule. |
+| `apps/api/internal/deploy/compile.go` | 190 | Manifest → config. Injects `memberId`/`version`/`dir`; writes the `vyzorix.v` document of §5.1 deterministically; enforces the structural no-secret rule (§5.2), the unhashed-ref rule (§5.3) and the `cmd` rule (§8). |
+| `apps/api/internal/deploy/render.go` | 120 | The `vyzorix.v` writer: repeated `app`/`artifact`/`env`/`secret` nodes in fixed field order (§5.1). Split from `compile.go` because the writer is the determinism surface and is tested on its own. |
+| `apps/api/internal/deploy/secretcheck.go` | 90 | The structural no-secret walk (§5.2): exempt schema paths, inspect every other value, inspect `env` keys. Replaces the line scanner in `config_service.go` for the apps path. |
 | `apps/api/internal/deploy/sign.go` | 90 | Sign the compiled config; version increment. |
 | `apps/api/internal/deploy/store.go` | 130 | Persist current + last-good per device (`keep_last = 2`). |
 | `apps/api/internal/deploy/authz.go` | 110 | The §7.1 predicate: role, grant, org binding, lifecycle. |
@@ -747,6 +950,20 @@ must earn its name, so existing files are modified in place wherever possible.
 **New package: one** (`internal/deploy`). Everything else is a file in an existing
 package, or an addition to one.
 
+**Two stores, and they are not the same store.** `deploy/store.go` holds the signed
+config per device with `keep_last = 2`. The existing `configversion` package
+(`ResourceTypeSettings`, `ResourceTypeThresholds`) versions *org-scoped* settings and
+thresholds and has no device dimension. Deploy does **not** reuse it: a device config
+is per-device and signed, and its retention is a count of two, not a restorable
+history. They are separate on purpose; a reader who finds `config_versions` first
+should not wire deploy into it.
+
+**Two reader/writer changes that are not new files but are easy to miss:**
+`config_service.go`'s `ValidateConfigHasNoSecrets` is replaced by the structural walk
+(§5.2) for configs that carry apps, and the JSON Schema of FR-2 is published at
+`GET /v1/deploy/schema` with a versioned path (`/v1/deploy/schema/{version}`) so the
+CLI can pin what it validates against.
+
 **Tests: ~7 files, ~55 cases.** The load-bearing ones are the refusals — secret,
 unhashed ref, `cmd` escape, cross-org, no-grant — because those are the invariants and
 a regression in any of them is silent.
@@ -758,23 +975,38 @@ a regression in any of them is silent.
 | `cloud/DeployApplier.kt` | 240 | Verify, fetch, verify, install atomically, write the registry. The whole apply sequence of §9.1. |
 | `cloud/ArtifactFetcher.kt` | 180 | Resumable fetch + whole-file digest check. Generalises the OTA fetcher rather than replacing it. |
 | `cloud/PwaManifest.kt` | 120 | Generate `site.webmanifest` from the config; refuse an invalid `display`. |
+| `cloud/AppConfigReader.kt` | 130 | Read the repeated `app`/`artifact`/`env`/`secret` nodes of §5.1 out of the verified `VDocument`, iterating app nodes rather than flattening (§5.1). The libv-side addition this contract needs. |
 | `cloud/ConfigStore.kt` | +80 | Retain current + last-good; restore on failure. |
 | `cloud/DeployReporter.kt` | 90 | Report `device_ready {version}` and every refusal reason. |
 | `cloud/SecretKey.kt` | 110 | The second Keystore entry: `vyzorix.secret`, RSA-3072, `PURPOSE_DECRYPT`, generated on first run. Never exposed over the bridge. |
 | `cloud/SecretStore.kt` | 140 | Fetch ciphertext, decrypt, write `files/apps/<app>/.env` at 0600, report `secrets_ready`; refuse to start an app whose secret will not open. |
-| `engine/ProotLauncher.kt` | +20 | Bind `/home/apps` (Layer 3 D2) — the gap this depends on. |
+| `cloud/ConfigVerifier.kt` | +60 | Replace the line scanner in `assertNoSecrets` with the structural walk of §5.2. The one change to a shipped file that this contract cannot ship without. |
 
 **Tests: ~7 files, ~45 cases.** The important ones: a tampered digest leaves the
 previous copy; `pwa = false` writes no file; a `cmd` symlink escape is refused; a
 failed apply keeps the running config; a ciphertext will not decrypt with the wrong key;
-a secret never reaches `apps.json` or a log.
+a secret never reaches `apps.json` or a log; **the compiled §5.1 document parses and
+verifies** (the fixture that proves the format extension, and the one that would have
+caught the `secret`-token collision).
 
 ### 13.3 Not in this contract
 
-Layer 3's own gaps — the supervisor's start, the control socket, the app proxy,
-`APP_START`/`APP_STOP` wiring, the `app-*` CLI verbs — are specified in
-`doc/LAYER_3_REQUIREMENTS.md` and are a **dependency**. They are listed here only where
-this feature cannot start without them (`/home/apps` bind, supervisor start).
+Layer 3's remaining work — the supervisor, the control socket, the app proxy, the
+`app-*` CLI verbs — is specified in `doc/LAYER_3_REQUIREMENTS.md` and is a
+**dependency**. Two pieces that document lists as gaps are **already closed in the
+code** and must not be re-listed as blockers:
+
+- **`APP_START` / `APP_STOP` are registered.** `CloudConnectionFactory` registers
+  `APP_START`, `APP_STOP` and `APP_RESTART` (`AppCommands.Start/Stop/Restart`). The
+  Layer 3 doc's §3 table and its decision C1 say otherwise; the table is stale.
+- **`/home/apps` is bound.** `ProotLauncher.binds` already adds
+  `files/apps:/home/apps` (`APPS_IN_CONTAINER`), which *is* Layer 3 decision D2. The
+  Layer 3 doc's §3 and §5.1 say it is missing; that is stale too.
+
+So the only Layer 3 dependency this feature still carries is the **supervisor
+existing** — a signed config can be delivered and applied without it, but the apps
+will not be *started* until it reads the registry. That is a real dependency and is
+stated in §11 of the requirements; the other two are not.
 
 ### 13.4 Rough size
 
@@ -807,13 +1039,22 @@ Specifically, the spike is done when:
 1. A manifest compiles to a deterministic config.
 2. The config is signed, and the signature verifies against the pinned key.
 3. Flipping one byte anywhere in the config fails verification.
-4. A config carrying a secret is refused at compile time **and** at verify time.
+4. A config carrying a secret is refused at compile time **and** at verify time, **and
+   a config naming a secret is accepted** — the second half is what the shipped scanner
+   fails, and it is the half that decides whether §5.2's rewrite is correct.
 5. A reference without `sha256` is refused.
 6. A `cmd` outside `/home/apps/<app>/` is refused, including through a symlink.
-7. The same tests run on both sides — Go signs, Kotlin verifies — because a signature
+7. **A two-app document parses with libv and reads back as two apps with their own
+   fields** — the round trip that proves the §5.1 encoding, and the one an earlier
+   draft of this contract could not pass because it had no encoding at all.
+8. The same tests run on both sides — Go signs, Kotlin verifies — because a signature
    that only verifies in one language is not a signature.
-8. **A secret wrapped in Go unwraps in Kotlin**, and a ciphertext wrapped to key A
+9. **A secret wrapped in Go unwraps in Kotlin**, and a ciphertext wrapped to key A
    fails to unwrap with key B.
 
 Only then is it worth fetching an artifact. The fetch is the part everyone wants to
 build first and the part that teaches the least.
+
+Two of these were added after a review found the first draft could not pass them
+(items 4 and 7). They are in the spike rather than the test suite because both are
+format decisions, and a format decision discovered late is a migration.
