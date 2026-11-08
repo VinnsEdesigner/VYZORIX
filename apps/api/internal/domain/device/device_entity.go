@@ -55,8 +55,8 @@ type Device struct {
 	DeletionScheduledAt *int64
 	PairingExpiresAt    *int64
 	Metadata            map[string]string
-	OperatorID          string
-	Manufacturer        string
+	SecurityPatch       string
+	ID                  string
 	OrganizationID      string
 	Model               string
 	OSVersion           string
@@ -64,30 +64,23 @@ type Device struct {
 	Lifecycle           Lifecycle
 	FirebaseInstallID   string
 	DeviceClass         string
-	SecurityPatch       string
+	OperatorID          string
 	DeviceName          string
 	BuildID             string
 	SupportedABIs       string
-	ID                  string
+	Manufacturer        string
 	AppVersion          string
-	// APIVersion is the Android API level (Build.VERSION.SDK_INT). Zero on a row
-	// written before this was collected.
-	APIVersion int
-	// RAMBytes and StorageBytes are the device's capacity, as reported at enroll.
-	RAMBytes     int64
-	StorageBytes int64
-	// PairingCode is the short code the device shows in a notification and the
-	// operator types into the web app. Empty once claimed.
-	PairingCode string
-	// PublicKey is the device's own signing key, PEM SubjectPublicKeyInfo, sent
-	// once at enroll. The private half never leaves the device, which is what
-	// removes the shared secret the old HMAC scheme had to transmit.
-	PublicKey    string
-	Tags         []string
-	LastSeen     int64
-	RegisteredAt int64
-	Tier         Tier
-	Online       bool
+	PublicKey           string
+	SecretPublicKey     string
+	PairingCode         string
+	Tags                []string
+	StorageBytes        int64
+	RAMBytes            int64
+	APIVersion          int
+	LastSeen            int64
+	RegisteredAt        int64
+	Tier                Tier
+	Online              bool
 }
 
 // NewDevice creates a new Device with pending lifecycle and the least privileged

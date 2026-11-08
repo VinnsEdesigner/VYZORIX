@@ -40,12 +40,49 @@ func newEnrollmentService(t *testing.T) *Service {
 			build_id TEXT, api_level INTEGER NOT NULL DEFAULT 0, supported_abis TEXT,
 			ram_bytes INTEGER NOT NULL DEFAULT 0, storage_bytes INTEGER NOT NULL DEFAULT 0,
 		deregistered_at INTEGER, deletion_scheduled_at INTEGER, fcm_token_refreshed_at INTEGER,
-		tags TEXT, tier INTEGER NOT NULL DEFAULT 1, public_key TEXT, pairing_code TEXT,
-		pairing_expires_at INTEGER)`); err != nil {
+		tags TEXT, tier INTEGER NOT NULL DEFAULT 1, public_key TEXT, secret_public_key TEXT,
+		pairing_code TEXT, pairing_expires_at INTEGER)`); err != nil {
 		t.Fatalf("create schema: %v", err)
 	}
 
 	return NewService(storage.NewDeviceRepository(db), nil, nil)
+}
+
+// newEnrollmentServiceWithRepo returns the service and the repository, so a
+// test can assert what was recorded.
+func newEnrollmentServiceWithRepo(t *testing.T) (*Service, *storage.DeviceRepository) {
+	t.Helper()
+
+	svc, repo := newEnrollmentServiceRepo(t)
+
+	return svc, repo
+}
+
+func newEnrollmentServiceRepo(t *testing.T) (*Service, *storage.DeviceRepository) {
+	t.Helper()
+
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+
+	if _, err := db.Exec(`CREATE TABLE devices (
+		id TEXT PRIMARY KEY, firebase_install_id TEXT, fcm_token TEXT, app_version TEXT,
+		device_class TEXT, online INTEGER NOT NULL DEFAULT 0,
+		registered_at INTEGER NOT NULL DEFAULT 0, last_seen INTEGER NOT NULL DEFAULT 0,
+		operator_id TEXT, organization_id TEXT, created_at TIMESTAMP, updated_at TIMESTAMP,
+		device_name TEXT, manufacturer TEXT, model TEXT, os_version TEXT, security_patch TEXT,
+		build_id TEXT, api_level INTEGER NOT NULL DEFAULT 0, supported_abis TEXT,
+		ram_bytes INTEGER NOT NULL DEFAULT 0, storage_bytes INTEGER NOT NULL DEFAULT 0,
+		deregistered_at INTEGER, deletion_scheduled_at INTEGER, fcm_token_refreshed_at INTEGER,
+		tags TEXT, tier INTEGER NOT NULL DEFAULT 1, public_key TEXT, secret_public_key TEXT,
+		pairing_code TEXT, pairing_expires_at INTEGER)`); err != nil {
+		t.Fatalf("create schema: %v", err)
+	}
+
+	repo := storage.NewDeviceRepository(db)
+
+	return NewService(repo, nil, nil), repo
 }
 
 // testPublicKey returns a real P-256 public key in PEM, the shape a device sends.

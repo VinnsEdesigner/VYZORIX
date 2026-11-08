@@ -62,7 +62,7 @@ const deviceColumns = `
 	created_at, updated_at, device_name, manufacturer, model, os_version, security_patch,
 	build_id, api_level, supported_abis, ram_bytes, storage_bytes,
 	deregistered_at, deletion_scheduled_at, fcm_token_refreshed_at, tags, tier,
-	public_key, pairing_code, pairing_expires_at
+	public_key, secret_public_key, pairing_code, pairing_expires_at
 `
 
 // scanDevice scans a device from a row.
@@ -70,7 +70,7 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 	var d device.Device
 	var fcmToken, operatorID, organizationID, deviceName, manufacturer, model, osVersion, securityPatch, tagsJSON sql.NullString
 	var buildID, supportedABIs sql.NullString
-	var publicKey, pairingCode sql.NullString
+	var publicKey, secretPublicKey, pairingCode sql.NullString
 	var deregisteredAt, deletionScheduledAt, fcmTokenRefreshedAt, tier, pairingExpiresAt sql.NullInt64
 	var apiLevel, ramBytes, storageBytes sql.NullInt64
 	// created_at/updated_at are declared TIMESTAMP but the driver hands back whatever
@@ -87,7 +87,7 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 		&createdAt, &updatedAt, &deviceName, &manufacturer, &model, &osVersion, &securityPatch,
 		&buildID, &apiLevel, &supportedABIs, &ramBytes, &storageBytes,
 		&deregisteredAt, &deletionScheduledAt, &fcmTokenRefreshedAt, &tagsJSON, &tier,
-		&publicKey, &pairingCode, &pairingExpiresAt,
+		&publicKey, &secretPublicKey, &pairingCode, &pairingExpiresAt,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -102,6 +102,7 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 	d.UpdatedAt = parseTimestamp(updatedAt)
 	d.Tier = device.TierFromInt(int(tier.Int64))
 	d.PublicKey = publicKey.String
+	d.SecretPublicKey = secretPublicKey.String
 	d.PairingCode = pairingCode.String
 	if pairingExpiresAt.Valid {
 		d.PairingExpiresAt = &pairingExpiresAt.Int64
@@ -149,7 +150,7 @@ func scanDevices(rows *sql.Rows) ([]*device.Device, error) {
 	for rows.Next() {
 		var d device.Device
 		var fcmToken, operatorID, organizationID, deviceName, manufacturer, model, osVersion, securityPatch, tagsJSON sql.NullString
-		var publicKey, pairingCode sql.NullString
+		var publicKey, secretPublicKey, pairingCode sql.NullString
 		var deregisteredAt, deletionScheduledAt, fcmTokenRefreshedAt, tier, pairingExpiresAt sql.NullInt64
 		var createdAt, updatedAt any
 
@@ -159,7 +160,7 @@ func scanDevices(rows *sql.Rows) ([]*device.Device, error) {
 			&organizationID,
 			&createdAt, &updatedAt, &deviceName, &manufacturer, &model, &osVersion, &securityPatch,
 			&deregisteredAt, &deletionScheduledAt, &fcmTokenRefreshedAt, &tagsJSON, &tier,
-			&publicKey, &pairingCode, &pairingExpiresAt,
+			&publicKey, &secretPublicKey, &pairingCode, &pairingExpiresAt,
 		); err != nil {
 			return nil, err
 		}
@@ -168,6 +169,7 @@ func scanDevices(rows *sql.Rows) ([]*device.Device, error) {
 		d.UpdatedAt = parseTimestamp(updatedAt)
 		d.Tier = device.TierFromInt(int(tier.Int64))
 		d.PublicKey = publicKey.String
+		d.SecretPublicKey = secretPublicKey.String
 		d.PairingCode = pairingCode.String
 		if pairingExpiresAt.Valid {
 			d.PairingExpiresAt = &pairingExpiresAt.Int64
@@ -297,8 +299,8 @@ func (r *DeviceRepository) Create(ctx context.Context, d *device.Device) error {
 		                    created_at, updated_at, device_name, manufacturer, model, os_version,
 		                    security_patch, build_id, api_level, supported_abis, ram_bytes, storage_bytes,
 		                    tags, tier,
-		                    public_key, pairing_code, pairing_expires_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		                    public_key, secret_public_key, pairing_code, pairing_expires_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err := r.exec(ctx, query,
 		d.ID, d.FirebaseInstallID, nullString(d.FCMToken), d.AppVersion, d.DeviceClass,
@@ -309,7 +311,7 @@ func (r *DeviceRepository) Create(ctx context.Context, d *device.Device) error {
 		nullString(d.SecurityPatch), nullString(d.BuildID), d.APIVersion,
 		nullString(d.SupportedABIs), d.RAMBytes, d.StorageBytes,
 		tagsToJSON(d.Tags), int(d.Tier),
-		nullString(d.PublicKey), nullString(d.PairingCode), nullInt(d.PairingExpiresAt),
+		nullString(d.PublicKey), nullString(d.SecretPublicKey), nullString(d.PairingCode), nullInt(d.PairingExpiresAt),
 	)
 
 	return err
@@ -329,7 +331,7 @@ func (r *DeviceRepository) Update(ctx context.Context, d *device.Device) error {
 		    model = ?, os_version = ?, security_patch = ?, build_id = ?, api_level = ?,
 		    supported_abis = ?, ram_bytes = ?, storage_bytes = ?,
 		    tags = ?, tier = ?,
-		    public_key = ?, pairing_code = ?, pairing_expires_at = ?
+		    public_key = ?, secret_public_key = ?, pairing_code = ?, pairing_expires_at = ?
 		WHERE id = ?`
 
 	result, err := r.exec(ctx, query,
@@ -340,7 +342,7 @@ func (r *DeviceRepository) Update(ctx context.Context, d *device.Device) error {
 		nullString(d.SecurityPatch), nullString(d.BuildID), d.APIVersion,
 		nullString(d.SupportedABIs), d.RAMBytes, d.StorageBytes,
 		tagsToJSON(d.Tags), int(d.Tier),
-		nullString(d.PublicKey), nullString(d.PairingCode), nullInt(d.PairingExpiresAt), d.ID,
+		nullString(d.PublicKey), nullString(d.SecretPublicKey), nullString(d.PairingCode), nullInt(d.PairingExpiresAt), d.ID,
 	)
 	if err != nil {
 		return err

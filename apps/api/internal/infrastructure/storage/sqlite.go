@@ -570,6 +570,9 @@ var migrations = []Migration{
 	// Per-device app secrets: the value wrapped to the device's key. Only the
 	// ciphertext is stored, never the plaintext.
 	{Apply: migrateCreateDeviceAppSecret, Name: "create_device_app_secrets", Version: 79},
+	// The device's second public key: the PURPOSE_DECRYPT key a secret is wrapped
+	// to, separate from the identity key.
+	{Apply: migrateAddDeviceSecretKey, Name: "add_device_secret_key", Version: 80},
 }
 
 // runMigrations applies all pending migrations.

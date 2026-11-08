@@ -18,6 +18,7 @@ var (
 	ErrPairingCodeUnknown = errors.New("pairing code is not recognised")
 	ErrPublicKeyRequired  = errors.New("a device public key is required")
 	ErrPublicKeyInvalid   = errors.New("device public key is not a valid P-256 key")
+	ErrSecretKeyInvalid   = errors.New("device secret key is not a valid RSA key")
 	ErrDeviceAlreadyOwned = errors.New("device is already claimed by an organization")
 )
 
@@ -29,29 +30,21 @@ const PairingCodeTTL = 10 * time.Minute
 // EnrollRequest is what a freshly installed device sends. It carries no secret:
 // the public key is the device's identity, and the private half never leaves it.
 type EnrollRequest struct {
-	DeviceUUID   string
-	PublicKeyPEM string
-	Model        string
-	Manufacturer string
-	OSVersion    string
-	// APIVersion is the Android API level. Recorded so the server can show what a
-	// device runs without parsing osVersion.
-	APIVersion  int
-	AppVersion  string
-	DeviceClass string
-	// BuildID is the build fingerprint.
-	BuildID string
-	// SecurityPatch is the patch level, so staleness is visible to an operator.
+	AppVersion    string
 	SecurityPatch string
-	// SupportedABIs is the device's ABI list, joined for storage.
+	Model         string
+	Manufacturer  string
+	OSVersion     string
+	DeviceClass   string
+	BuildID       string
+	DeviceUUID    string
+	PublicKeyPEM  string
+	SecretKeyPEM  string
 	SupportedABIs []string
-	// RAMBytes and StorageBytes are the device's capacity as reported at enroll.
-	RAMBytes     int64
-	StorageBytes int64
-	// TierHint is the device's self-reported state. It is used only to cap what
-	// is granted, never to grant more than the policy allows: the server cannot
-	// verify root.
-	TierHint int
+	StorageBytes  int64
+	RAMBytes      int64
+	APIVersion    int
+	TierHint      int
 }
 
 // EnrollResult is what the device receives: a code to display and how long it is
@@ -84,6 +77,15 @@ func (s *Service) Enroll(ctx context.Context, req EnrollRequest) (*EnrollResult,
 		return nil, fmt.Errorf("%w: %v", ErrPublicKeyInvalid, err)
 	}
 
+	// The secret key is optional: a device that does not support secrets, or an
+	// older build, omits it. When present it must be a valid RSA key, because a
+	// secret wrapped to a malformed key is a secret that cannot be unwrapped.
+	if req.SecretKeyPEM != "" {
+		if _, err := crypto.DecodeRSAPublicKeyPEM(req.SecretKeyPEM); err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrSecretKeyInvalid, err)
+		}
+	}
+
 	// Re-enrolling the same uuid is idempotent: a device that lost its code (or
 	// was reinstalled) gets a fresh one rather than a duplicate row. A device that
 	// is already claimed is not re-enrolled — that would be a way to hijack one.
@@ -104,6 +106,7 @@ func (s *Service) Enroll(ctx context.Context, req EnrollRequest) (*EnrollResult,
 
 	d := device.NewDevice(req.DeviceUUID, "")
 	d.PublicKey = req.PublicKeyPEM
+	d.SecretPublicKey = req.SecretKeyPEM
 	d.PairingCode = code
 	d.PairingExpiresAt = &expiresAt
 	d.Model = req.Model

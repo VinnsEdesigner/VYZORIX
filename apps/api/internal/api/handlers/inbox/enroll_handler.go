@@ -59,28 +59,25 @@ func NewEnrollHandler(
 // enrollRequest is the wire shape. It carries no secret: the public key is the
 // device's identity, and the private half never leaves the device.
 type enrollRequest struct {
-	DeviceUUID   string `json:"deviceUuid" binding:"required"`
-	PublicKey    string `json:"publicKey" binding:"required"`
-	Model        string `json:"model"`
-	Manufacturer string `json:"manufacturer"`
-	OSVersion    string `json:"osVersion"`
-	// APIVersion is the Android API level (Build.VERSION.SDK_INT). Named APIVersion
-	// in Go because the wire field is `apiLevel`; the device sends it so the server
-	// can show what a device runs without inferring it from osVersion.
-	APIVersion  int    `json:"apiLevel"`
-	AppVersion  string `json:"appVersion"`
-	DeviceClass string `json:"deviceClass"`
-	// BuildID is the build fingerprint, identifying the exact build.
-	BuildID string `json:"buildId"`
-	// SecurityPatch is the patch level ("2024-03-01"), so staleness is visible.
+	AppVersion    string `json:"appVersion"`
 	SecurityPatch string `json:"securityPatch"`
-	// SupportedABIs is the device's ABI list, most preferred first.
+	Model         string `json:"model"`
+	Manufacturer  string `json:"manufacturer"`
+	OSVersion     string `json:"osVersion"`
+	DeviceClass   string `json:"deviceClass"`
+	BuildID       string `json:"buildId"`
+	DeviceUUID    string `json:"deviceUuid" binding:"required"`
+	PublicKey     string `json:"publicKey" binding:"required"`
+	// SecretKey is the device's second public key (PURPOSE_DECRYPT), which a
+	// secret is wrapped to. Optional: a device that does not support secrets
+	// omits it, and setting a secret for such a device fails rather than
+	// wrapping to nothing.
+	SecretKey     string   `json:"secretKey"`
 	SupportedABIs []string `json:"supportedAbis"`
-	// RAMBytes and StorageBytes are the device's capacity, so an operator can see
-	// what it can run before assigning work to it.
-	RAMBytes     int64 `json:"ramBytes"`
-	StorageBytes int64 `json:"storageBytes"`
-	TierHint     int   `json:"tierHint"`
+	StorageBytes  int64    `json:"storageBytes"`
+	RAMBytes      int64    `json:"ramBytes"`
+	APIVersion    int      `json:"apiLevel"`
+	TierHint      int      `json:"tierHint"`
 }
 
 // enrollResponse is what the device shows in its notification. Nothing secret.
@@ -130,25 +127,27 @@ func (h *EnrollHandler) Enroll(c *gin.Context) {
 	}
 
 	result, err := h.devices.Enroll(c.Request.Context(), devicesvc.EnrollRequest{
-		DeviceUUID:     req.DeviceUUID,
-		PublicKeyPEM:   req.PublicKey,
-		Model:          req.Model,
-		Manufacturer:   req.Manufacturer,
-		OSVersion:      req.OSVersion,
-		APIVersion:     req.APIVersion,
-		AppVersion:     req.AppVersion,
-		DeviceClass:    req.DeviceClass,
-		BuildID:        req.BuildID,
-		SecurityPatch:  req.SecurityPatch,
-		SupportedABIs:  req.SupportedABIs,
-		RAMBytes:       req.RAMBytes,
-		StorageBytes:   req.StorageBytes,
-		TierHint:       req.TierHint,
+		DeviceUUID:    req.DeviceUUID,
+		PublicKeyPEM:  req.PublicKey,
+		SecretKeyPEM:  req.SecretKey,
+		Model:         req.Model,
+		Manufacturer:  req.Manufacturer,
+		OSVersion:     req.OSVersion,
+		APIVersion:    req.APIVersion,
+		AppVersion:    req.AppVersion,
+		DeviceClass:   req.DeviceClass,
+		BuildID:       req.BuildID,
+		SecurityPatch: req.SecurityPatch,
+		SupportedABIs: req.SupportedABIs,
+		RAMBytes:      req.RAMBytes,
+		StorageBytes:  req.StorageBytes,
+		TierHint:      req.TierHint,
 	})
 	if err != nil {
 		switch {
 		case errors.Is(err, devicesvc.ErrPublicKeyRequired),
-			errors.Is(err, devicesvc.ErrPublicKeyInvalid):
+			errors.Is(err, devicesvc.ErrPublicKeyInvalid),
+			errors.Is(err, devicesvc.ErrSecretKeyInvalid):
 			_ = c.Error(apperrors.NewServerError(apperrors.CodeValidationFailed, err.Error()))
 		case errors.Is(err, devicesvc.ErrDeviceAlreadyOwned):
 			responses.RespondConflictError(c, err.Error())

@@ -51,6 +51,7 @@ func newTestDeviceDB(t *testing.T) *sql.DB {
 			tags TEXT,
 			tier INTEGER NOT NULL DEFAULT 1,
 			public_key TEXT,
+			secret_public_key TEXT,
 			pairing_code TEXT,
 			pairing_expires_at INTEGER)`,
 	}
