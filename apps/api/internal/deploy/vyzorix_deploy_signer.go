@@ -5,24 +5,26 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/configscan"
 )
 
-// The signing path. A document is rendered, scanned for secrets, then signed;
-// the scan runs before the signature so an unsigned refusal is what an operator
-// sees.
-
 // DocumentSigner signs a rendered document and returns the signed text. A
 // function, not a concrete signer, so the server has exactly one signing key.
 type DocumentSigner func(document string) (string, error)
 
-// CompileAndSign compiles a manifest, renders it, refuses a config carrying a
-// secret, and signs the result.
+// CompileAndSign compiles a manifest and signs the result.
 func CompileAndSign(m *Manifest, in Injection, sign DocumentSigner) (string, error) {
-	if sign == nil {
-		return "", errNoSigner
-	}
-
 	cfg, err := Compile(m, in)
 	if err != nil {
 		return "", err
+	}
+
+	return SignConfig(cfg, sign)
+}
+
+// SignConfig renders a compiled config, refuses it if it carries a secret, signs
+// it, and re-parses the result with the format's own parser. The scan runs
+// before the signature, so an unsigned refusal is what an operator sees.
+func SignConfig(cfg *Config, sign DocumentSigner) (string, error) {
+	if sign == nil {
+		return "", errNoSigner
 	}
 
 	document, err := RenderConfig(*cfg)
@@ -39,9 +41,8 @@ func CompileAndSign(m *Manifest, in Injection, sign DocumentSigner) (string, err
 		return "", err
 	}
 
-	// The signed document is re-parsed with the format's own parser before it is
-	// returned: a signature over text the parser rejects is a signature over
-	// nothing the device can read.
+	// A signature over text the parser rejects is a signature over nothing the
+	// device can read.
 	if _, err := libv.Parse(signed); err != nil {
 		return "", err
 	}
