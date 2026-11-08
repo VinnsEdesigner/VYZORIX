@@ -564,6 +564,9 @@ var migrations = []Migration{
 	// Enriched enroll facts: build, API level, ABIs and capacity, so the device
 	// record holds what the device already reports at enroll.
 	{Apply: migrateAddDeviceFacts, Name: "add_device_facts", Version: 77},
+	// Per-device signed config: the current version and the last known-good one,
+	// retained so a failed apply can be undone without a network.
+	{Apply: migrateCreateDeviceDeployConfig, Name: "create_device_deploy_configs", Version: 78},
 }
 
 // runMigrations applies all pending migrations.
