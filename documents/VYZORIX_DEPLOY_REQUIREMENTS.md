@@ -223,6 +223,12 @@ device agent                      verify signature → fetch → verify digest �
 - **FR-15** An app removed from the manifest is stopped; its data is retained unless `purge = true` is declared for it.
 - **FR-16** Every refusal is reported with a distinct, machine-readable reason (unsigned, bad-signature, secret, digest-mismatch, cmd-escape, unauthorized).
 - **FR-17** Nothing in this feature is logged with a credential, a token, or a private key.
+- **FR-18** `device.deploy` is a **new permission action**, separate from `apps.read`/`apps.write` — the grant that lets an operator see what an app is doing must not also let them install one.
+- **FR-19** The app catalog is a `catalog_apps` section in the existing `provisioning` file, applied at boot like every other section.
+- **FR-20** `[[app]]` gains `purge` (default `false`); it is the only thing that deletes an app's data, and it is recorded in the manifest so the deletion is reviewable.
+- **FR-21** The device retains the current config and the previous known-good one (`keep_last = 2`), and restores the latter when an apply fails.
+- **FR-22** The manifest schema is authored in CUE at `tooling/schema/deploy.cue`, generated for Go, and covered by the existing pre-commit drift gate.
+- **FR-23** The deploy CLI is a new binary at `apps/cli`, sharing the API's generated types rather than re-declaring the wire shape.
 
 ---
 
@@ -231,11 +237,13 @@ device agent                      verify signature → fetch → verify digest �
 - **No container images and no Docker.** The device is the runtime; the manifest names processes and artifacts, not OCI layers.
 - **No deploy from the console in v1.** Read-only. (US-010)
 - **No wildcard-DNS or TLS app proxy.** Layer 3 decision D7 defers it; `cloud` exposure is out of scope here.
-- **No server-side app routes for `apps.read`/`apps.write`** beyond what deploy needs. Layer 3 decision D8.
+- **No server-side app routes beyond what deploy needs.** The `apps.read`/`apps.write` scopes exist but no route checks them; Layer 3 decision D8 defers that work. Deploy uses `device.deploy` (FR-18), not `apps.write`.
 - **No multi-device or group deploy in v1.** One device per deploy; org-level defaults are read but not applied fleet-wide.
 - **No arbitrary code execution via the socket.** A device runs what a *signed* config names, never a live command.
 - **No secret management.** This feature deliberately has no place to put a secret; secrets stay in the existing keypair/OTA model.
-- **No rollback automation.** A known-good set is retained and restorable; automatic rollback on a crash loop is a later feature.
+- **No automatic rollback.** The previous known-good config is retained and restorable (FR-21); restoring it automatically when an app crash-loops is a later feature.
+- **No offline first-deploy.** A device that has never been online has no pinned config and no artifacts, so it cannot be deployed to. Enrollment already requires one network round trip; every deploy after that is verifiable offline. This is a real product limit, not an oversight.
+- **No `vyzorix undeploy`.** Removing an app from the manifest is how an app is removed (FR-15, FR-20); a separate destructive verb is out of scope.
 
 ---
 
@@ -297,17 +305,92 @@ case safe by construction.
 
 ---
 
-## 10. Open Questions
+## 10. Decisions (resolved)
 
-1. **Grant naming.** Is `device.deploy` a new action, or does it fold into the existing
-   `apps.write` scope? The scopes exist; the action naming does not.
-2. **Catalog source.** Is the curated catalog a server-side list, a repo, or derived
-   from what has been deployed before?
-3. **`purge` semantics.** FR-15 retains data by default. Is `purge = true` per-app, or
-   an explicit `vyzorix undeploy` verb?
-4. **Version history depth.** Keep the last N configs per device, or only the last good
-   one? Affects the rollback story.
-5. **Offline first-deploy.** Can a device be deployed to before it has ever been online?
-   (Today: no — it has no pinned config and no artifacts.)
-6. **Who owns the schema file** — this repo or a shared package — given both the CLI
-   and the server must agree on it.
+These were open; each is now settled, with the evidence it rests on.
+
+1. **Grant naming — a new action, `device.deploy`.**
+   The existing actions are per-resource verbs (`device.read`, `device.write`,
+   `device.delete`, `device.assign`, `apps.read`, `apps.write`) and `apps.*` is about
+   *querying what an app is doing*, not about changing a device's contents. Folding
+   deploy into `apps.write` would mean the permission that lets an operator read an
+   app's state also lets them install one — a strictly larger grant than the name
+   implies. Deploy is the highest-consequence action in this system (it changes what
+   code runs), so it gets its own action and is granted explicitly.
+
+2. **Catalog source — a server-side list, seeded from `provisioning`.**
+   The repo already has a declarative, idempotent, ordered provisioning file
+   (`provisioning.example.yaml`, applied at boot via `PROVISIONING_FILE`) whose
+   sections include `organizations` and `api_keys`. The catalog is one more section
+   there (`catalog_apps`), so it is reviewable in the same place as everything else
+   and needs no new store. A manifest naming an app outside the catalog is still
+   permitted (FR-10) but is marked custom — the catalog is a convenience, not a gate.
+
+3. **`purge` semantics — per-app, and never implicit.**
+   `[[app]]` gains `purge = false` by default. Removing an app from the manifest stops
+   it and removes its registry entry; its data survives (FR-15). Deleting data is
+   destructive and irreversible, so it needs an explicit field in the manifest that
+   does it — not a separate verb, because a verb would let data be deleted without a
+   reviewable artifact recording that it was asked for. `vyzorix undeploy` is out of
+   scope for v1.
+
+4. **Version history depth — the last good config plus the current one.**
+   Two, not N. The recovery path that matters is "the deploy just failed, put back
+   what was working", and one prior good version answers it. Keeping N invites a
+   rollback picker, which is a product feature this PRD does not include, and a
+   device's disk is the scarce resource. The retention is a count, not a policy:
+   `keep_last = 2`.
+
+5. **Offline first-deploy — not supported, and stated as a limit.**
+   A device with no pinned config and no artifacts cannot be deployed to. It must be
+   online at least once (the enrollment flow already requires this: it POSTs to
+   `/v1/device/enroll`). What *is* supported is every subsequent deploy being
+   verifiable offline. This is recorded in Non-Goals rather than left implicit,
+   because it is a real product limitation and a user will hit it.
+
+6. **Schema ownership — CUE in `tooling/schema/`, generated for Go, published for the CLI.**
+   The repo already does this: `tooling/schema/*.cue` is the source, Go is generated
+   from it, and a **pre-commit gate fails on drift**. Adding
+   `tooling/schema/deploy.cue` means the manifest schema gets the same treatment as
+   every other schema in the repo, including the drift check. The CLI does not read
+   CUE: the server publishes the generated JSON Schema at a stable URL and the CLI
+   validates against that (FR-2), so the CLI needs no CUE toolchain.
+
+7. **Deploy CLI location — `apps/cli`, a new binary.**
+   There is no CLI today (`apps/` holds `api`, `proxy-server`, and two web/mobile
+   apps), so this is a new entry point. It goes in `apps/cli` so it shares the API's
+   generated types rather than re-declaring the wire shape — the repo's convention is
+   that generated types are the single source (AGENTS.md: "comes from the spec via
+   orval, NOT from CUE" for TS; the same rule for Go).
+
+---
+
+## 11. Evidence from the existing experiment
+
+An earlier experiment (`apps/api/public/vfd/`, untracked) dropped a built copy of the
+Vfd console — including its `site.webmanifest` and `sw.js` — into the server's static
+directory. It was never wired up, and it is useful precisely for what it proves and
+what it does not.
+
+**What it proves.** Its `index.html` contains **no baked engine URL** — only font
+links. It does not need one: the console's `connection-store` falls back to
+`location.origin` when `VITE_API_BASE_URL` is unset. So a console served *by the
+device* reaches the device's own engine **with no build-time configuration at all**.
+That is the whole device-served-PWA idea working, and it is why US-008 is a file
+write rather than a build system.
+
+**What it does not prove.** Nothing serves `public/` — no `http.FileServer`, no
+`embed`, and no reference to the path anywhere in the Go tree. The files are inert.
+And a manifest shipped *inside an artifact* cannot be customised per device, which is
+exactly what US-008 requires, so the generator is still needed.
+
+**Two consequences for this design:**
+
+- **Same-origin serving removes the CORS and secure-context problems at once.** The
+  engine already has `--allow-origin`; same-origin needs no CORS at all, and
+  `127.0.0.1` counts as a secure context, so the service worker and the install prompt
+  work without TLS. `expose = "lan"` is the case that needs a token (FR-11, P2 of the
+  Layer 3 proxy requirements).
+- **A `webroot` artifact needs no per-device build.** Ship the console once, generate
+  the manifest on the device, and the same bytes serve every device.
+
