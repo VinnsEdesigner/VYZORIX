@@ -190,11 +190,18 @@ device agent                      verify signature → fetch → verify digest �
 ### US-011: The Layer 3 gaps this depends on
 **Description:** As the platform, I need the runtime to exist before a manifest can target it.
 
+**Most of this is already built** — the supervisor, the `app-*` CLI, the registry and
+meta stores, the installer and the `APP_*` executors are in the tree (see the contract's
+§13.6). The acceptance criteria below are the *state*, and the one that is not yet true
+is the last: nothing verifies the supervisor is running before an apply writes the
+registry.
+
 **Acceptance Criteria:**
-- [ ] `/home/apps` is bound into the container and survives a rootfs replacement (Layer 3 decision D2).
-- [ ] The supervisor is started by Layer 1 before any `APP_*` command can arrive (decision D3).
-- [ ] `APP_START` / `APP_STOP` reach the supervisor's control socket and report failure, never silence.
-- [ ] An app's port is reachable per its `expose` mode: `loopback` default, `lan` only with a token, `cloud` deferred.
+- [x] `/home/apps` is bound into the container and survives a rootfs replacement — `ProotLauncher.binds` maps `files/apps:/home/apps`.
+- [x] The supervisor is started by Layer 1 before any `APP_*` command can arrive — `ProotLauncher.supervisorArgs` plus `Layer3Installer`.
+- [x] `APP_START` / `APP_STOP` reach the supervisor's control socket and report failure, never silence — registered in `CloudConnectionFactory`; `AppCommands` always returns an outcome.
+- [ ] **New:** an apply probes the supervisor (`ping`) and reports a distinct reason when it is unreachable, so a config that lands without the supervisor running is a visible failure, not a silent one.
+- [ ] An app's port is reachable per its `expose` mode: `loopback` default, `lan` only with a token, `cloud` deferred — the supervisor's `expose`/`unexpose` ops and the meta store exist; deploy must set them.
 
 ### US-012: A second app, to prove this is a platform
 **Description:** As a lead engineer, I want a non-Vfd tenant, because one tenant hides hardcoding.
@@ -251,6 +258,7 @@ device agent                      verify signature → fetch → verify digest �
 - **FR-25** The device holds a **second** Keystore key (`PURPOSE_DECRYPT`, RSA-3072) for secrets — separate from the identity key, never exposed over the bridge.
 - **FR-26** A decrypted secret is written to `files/apps/<app>/.env` at mode `0600` and **never** into `apps.json`, which is readable by every app in the container.
 - **FR-27** A device may fetch a secret's ciphertext only for a key the current signed config names for that app.
+- **FR-28** Every requirement above maps to a named file — new or existing — in the contract's §13 inventory, and §13.5 is the reverse map. A requirement with no file is unbuilt; a file with no requirement is not written. The generated artefacts (CUE → Go, swagger, selectors, orval) are regenerated, never hand-edited.
 
 ---
 

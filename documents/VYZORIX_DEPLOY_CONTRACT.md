@@ -347,9 +347,9 @@ compiles to byte-identical output" (US-001) testable.
 carries `children`, so repeated nodes parse and are addressable with no format
 change. What does **not** exist yet is a reader that returns a collection for a
 repeated node: the Android side has `VNode.find` but no `children(key)` helper, and
-Go's generated reader is built for the flat registration config. §13.1 budgets for
-that reader; the format itself does not change, so there is no version bump and no
-risk to the existing registration config.
+Go's generated reader is built for the flat registration config. §13.3 (`AppConfigReader.kt`)
+budgets for that reader; the format itself does not change, so there is no version bump
+and no risk to the existing registration config.
 
 Three fields are **injected by the server and may not be set by the file**:
 `memberId` (who authorised it — see §7), `version`, and each `dir`. A file that sets
@@ -950,96 +950,195 @@ automatically (§10).
 
 ---
 
-## 13. Inventory — what gets written, and how much
+## 13. Inventory — every file, and which requirement puts it there
 
 Counts are estimates, sized so the work is plannable. The repo's rule holds: a new file
 must earn its name, so existing files are modified in place wherever possible.
 
-### 13.1 Server (`vyzorix-update-server`)
+**How to read this.** *New* files are ones that do not exist today. *Touch* files exist
+and change. Every entry names the requirement it serves, so a file with no requirement
+is visibly unnecessary and a requirement with no file is visibly unbuilt. §13.5 is the
+reverse map — requirement → files — which is the check that nothing is missing.
 
-| File | ~LOC | Purpose |
-|:--|--:|:--|
-| `tooling/schema/deploy.cue` | 120 | The manifest schema. Source of truth; Go generated from it, JSON Schema published. |
-| `apps/api/internal/deploy/manifest.go` | 160 | Parse and validate `vyzorix.toml` against the generated types. Unknown key ⇒ error. |
-| `apps/api/internal/deploy/compile.go` | 190 | Manifest → config. Injects `memberId`/`version`/`dir`; writes the `vyzorix.v` document of §5.1 deterministically; enforces the structural no-secret rule (§5.2), the unhashed-ref rule (§5.3) and the `cmd` rule (§8). |
-| `apps/api/internal/deploy/render.go` | 120 | The `vyzorix.v` writer: repeated `app`/`artifact`/`env`/`secret` nodes in fixed field order (§5.1). Split from `compile.go` because the writer is the determinism surface and is tested on its own. |
-| `apps/api/internal/deploy/secretcheck.go` | 90 | The structural no-secret walk (§5.2): exempt schema paths, inspect every other value, inspect `env` keys. Replaces the line scanner in `config_service.go` for the apps path. |
-| `apps/api/internal/deploy/sign.go` | 90 | Sign the compiled config; version increment. |
-| `apps/api/internal/deploy/store.go` | 130 | Persist current + last-good per device (`keep_last = 2`). |
-| `apps/api/internal/deploy/authz.go` | 110 | The §7.1 predicate: role, grant, org binding, lifecycle. |
-| `apps/api/internal/api/handlers/deploy/deploy_handler.go` | 170 | `POST /v1/deploy`, `GET /v1/deploy/{device}`, dry-run. |
-| `apps/api/internal/api/handlers/deploy/credential_handler.go` | 110 | Mint/list/revoke a device-scoped deploy credential. |
-| `apps/api/internal/deploy/secrets.go` | 200 | RSA-OAEP-SHA1 wrap to the device key (§9b.3); store ciphertext via `secretstore`; generation counter; the "only keys the config names" check. |
-| `apps/api/internal/api/handlers/deploy/secrets_handler.go` | 130 | `GET` names+generation; `GET` ciphertext to an authenticated device. |
-| `apps/api/cmd/api/provisioning_adapters.go` | +40 | The `catalog_apps` section. |
-| `apps/api/internal/domain/permission/scoped.go` | +6 | `ActionDeviceDeploy`. |
-| `apps/cli/main.go` + `internal/deploy/*` | 400 | The CLI: `deploy`, `secrets set/list/unset`, validate, `--dry-run`. |
+Two facts the first draft of this section got wrong, because it never opened the code:
 
-**New package: one** (`internal/deploy`). Everything else is a file in an existing
-package, or an addition to one.
+- **Layer 3 is built, not greenfield.** `app-runtime/supervisor/` (C++), the `app-*`
+  CLI (`app-runtime/cli-wrappers/`), `native/lib/include/vyzorix/app_registry.h`,
+  `app_meta_store.h` and `android-core/.../Layer3Installer.kt` all exist. Deploy
+  *writes into* that runtime; it does not build it. §13.6 lists what is left.
+- **`secretstore` exists.** `apps/api/internal/infrastructure/security/secretstore/`
+  is the encrypted-at-rest store the secret ciphertext goes into. Deploy reuses it;
+  it is not a new file.
 
-**Two stores, and they are not the same store.** `deploy/store.go` holds the signed
-config per device with `keep_last = 2`. The existing `configversion` package
-(`ResourceTypeSettings`, `ResourceTypeThresholds`) versions *org-scoped* settings and
-thresholds and has no device dimension. Deploy does **not** reuse it: a device config
-is per-device and signed, and its retention is a count of two, not a restorable
-history. They are separate on purpose; a reader who finds `config_versions` first
-should not wire deploy into it.
+### 13.1 Server — new files (`vyzorix-update-server`)
 
-**Two reader/writer changes that are not new files but are easy to miss:**
-`config_service.go`'s `ValidateConfigHasNoSecrets` is replaced by the structural walk
-(§5.2) for configs that carry apps, and the JSON Schema of FR-2 is published at
-`GET /v1/deploy/schema` with a versioned path (`/v1/deploy/schema/{version}`) so the
-CLI can pin what it validates against.
+| New file | ~LOC | Requirement | Purpose |
+|:--|--:|:--|:--|
+| `tooling/schema/deploy.cue` | 120 | FR-22, FR-2 | The manifest schema. Source of truth; Go generated from it, JSON Schema published. |
+| `apps/api/internal/deploy/manifest.go` | 160 | US-001, FR-1 | Parse and validate `vyzorix.toml` against the generated types. Unknown key ⇒ error. |
+| `apps/api/internal/deploy/compile.go` | 190 | US-001, FR-3, FR-4 | Manifest → config. Injects `memberId`/`version`/`dir`; enforces the `cmd` rule (§8). |
+| `apps/api/internal/deploy/render.go` | 120 | US-001, §5.1 | The `vyzorix.v` writer: repeated `app`/`artifact`/`env`/`secret` nodes in fixed field order. The determinism surface, so it is tested on its own. |
+| `apps/api/internal/deploy/secretcheck.go` | 90 | FR-8, §5.2 | The structural no-secret walk: exempt schema paths, inspect every other value, inspect `env` keys. |
+| `apps/api/internal/deploy/sign.go` | 90 | US-002, FR-4, FR-5 | Sign the compiled config with `ServerSigner.SignDocument`; increment the version. |
+| `apps/api/internal/deploy/store.go` | 130 | FR-21, §13 note | Persist current + last-good per device (`keep_last = 2`). **Not** the `configversion` store. |
+| `apps/api/internal/deploy/authz.go` | 110 | US-003, FR-11, §7.1 | The predicate: super-admin, or a `device.deploy` grant whose scope covers the device. |
+| `apps/api/internal/deploy/secrets.go` | 200 | US-013, FR-24–27, §9b | `crypto.WrapSecret` to the device key; store ciphertext via `secretstore`; generation counter; the "only keys the config names" check. |
+| `apps/api/internal/deploy/catalog.go` | 80 | FR-10, FR-19 | The `catalog_apps` model and the "custom vs known" marking. |
+| `apps/api/internal/api/handlers/deploy/deploy_handler.go` | 170 | US-003, US-005, US-009 | `POST /v1/deploy`, `GET /v1/deploy/{device}`, `GET /v1/deploy/schema/{version}`, dry-run. |
+| `apps/api/internal/api/handlers/deploy/credential_handler.go` | 110 | US-004, FR-12 | Mint / list / revoke a device-scoped deploy credential. |
+| `apps/api/internal/api/handlers/deploy/secrets_handler.go` | 130 | US-013, §9b.6 | `GET` names+generation; `GET` ciphertext to an authenticated device. |
+| `apps/api/internal/infrastructure/storage/078_deploy_config.go` | 70 | FR-21 | The per-device signed-config table (current + last-good). |
+| `apps/api/internal/infrastructure/storage/079_deploy_credential.go` | 70 | FR-12 | The deploy-credential table. |
+| `apps/api/internal/infrastructure/storage/080_app_secret.go` | 70 | US-013 | The secret ciphertext table: `(device, app, key, generation, ciphertext)`. |
+| `apps/cli/main.go` | 120 | US-009, FR-23 | The `vyzorix` entry point. |
+| `apps/cli/internal/deploy/deploy.go` | 180 | US-009 | `deploy`, `--dry-run`, validate, progress, exit codes. |
+| `apps/cli/internal/deploy/secrets.go` | 100 | US-013, §9b.6 | `secrets set/list/unset`. |
+| `apps/cli/internal/deploy/validate.go` | 90 | FR-2, US-009 | Validate against the published JSON Schema before upload. |
 
-**Tests: ~7 files, ~55 cases.** The load-bearing ones are the refusals — secret,
-unhashed ref, `cmd` escape, cross-org, no-grant — because those are the invariants and
-a regression in any of them is silent.
+**New package: one** (`internal/deploy`). The handlers, storage and CLI are new files
+in existing packages or new leaf packages.
 
-### 13.2 Device (`Vyzorix-android`)
+**`device.deploy` is a base action and is in no action set.** `action_sets.go` expands
+`device.manage` into `device.read/write/delete/assign`; deploy must **not** be added to
+it, or the aggregate the contract exists to avoid (observe ⇒ install) reappears one
+level up. It is granted explicitly, per §7.2.
 
-| File | ~LOC | Purpose |
-|:--|--:|:--|
-| `cloud/DeployApplier.kt` | 240 | Verify, fetch, verify, install atomically, write the registry. The whole apply sequence of §9.1. |
-| `cloud/ArtifactFetcher.kt` | 180 | Resumable fetch + whole-file digest check. Generalises the OTA fetcher rather than replacing it. |
-| `cloud/PwaManifest.kt` | 120 | Generate `site.webmanifest` from the config; refuse an invalid `display`. |
-| `cloud/AppConfigReader.kt` | 130 | Read the repeated `app`/`artifact`/`env`/`secret` nodes of §5.1 out of the verified `VDocument`, iterating app nodes rather than flattening (§5.1). The libv-side addition this contract needs. |
-| `cloud/ConfigStore.kt` | +80 | Retain current + last-good; restore on failure. |
-| `cloud/DeployReporter.kt` | 90 | Report `device_ready {version}` and every refusal reason. |
-| `cloud/SecretKey.kt` | 110 | The second Keystore entry: `vyzorix.secret`, RSA-3072, `PURPOSE_DECRYPT`, generated on first run. Never exposed over the bridge. |
-| `cloud/SecretEnvelope.kt` | 90 | RSA-OAEP-SHA1 unwrap (§9b.3). **Written and proven in the spike**, on the JVM against a Go vector and on-device against a real Keystore key. |
-| `cloud/SecretStore.kt` | 140 | Fetch ciphertext, decrypt, write `files/apps/<app>/.env` at 0600, report `secrets_ready`; refuse to start an app whose secret will not open. |
-| `cloud/ConfigVerifier.kt` | +60 | Replace the line scanner in `assertNoSecrets` with the structural walk of §5.2. The one change to a shipped file that this contract cannot ship without. |
+### 13.2 Server — existing files to touch
 
-**Tests: ~7 files, ~45 cases.** The important ones: a tampered digest leaves the
-previous copy; `pwa = false` writes no file; a `cmd` symlink escape is refused; a
-failed apply keeps the running config; a ciphertext will not decrypt with the wrong key;
-a secret never reaches `apps.json` or a log; **the compiled §5.1 document parses and
-verifies** (the fixture that proves the format extension, and the one that would have
-caught the `secret`-token collision).
+| Existing file | Change | Requirement |
+|:--|:--|:--|
+| `apps/api/internal/domain/permission/scoped.go` | Add `ActionDeviceDeploy = "device.deploy"`. | FR-18, §7.2 |
+| `apps/api/internal/api/server_routes.go` | Register the `/v1/deploy` group and its routes. | US-003, US-013 |
+| `apps/api/internal/api/api_server.go` | Construct the deploy handler and service; wire the signer, store, secretstore and catalog. | US-003 |
+| `apps/api/internal/api/server_handlers.go` | The handler struct fields the routes need. | US-003 |
+| `apps/api/internal/application/device/config_service.go` | Replace `ValidateConfigHasNoSecrets`'s line scan with the structural walk (`secretcheck.go`) for configs that carry apps; `BuildConfig` emits the `apps` section and `features.apps = true`. | FR-8, §5.1–5.2 |
+| `apps/api/internal/api/handlers/inbox/enroll_handler.go` | Deliver the apps-carrying config; carry the device's **secret** public key into the device record at enroll. | US-005, §9b.3 |
+| `apps/api/cmd/api/provisioning_adapters.go` | The `catalog_apps` section adapter. | FR-19, §8.1 |
+| `apps/api/internal/application/provisioning/vyzorix_boot_provisioning.go` | Add `CatalogApps []CatalogAppConfig` to `Config` and apply it at boot. | FR-19 |
+| `provisioning.example.yaml` | Document the `catalog_apps` section; move the example grant to `device.deploy` on a specific device. | FR-19, §7.1 |
+| `apps/api/internal/api/openapi/schemas.go` | **Generated** from `tooling/schema/deploy.cue` by `tooling/codegen/build_schemas.py`; never hand-edited. | FR-22 |
+| `apps/api/swag/*` (`docs.go`, `swagger.json`, `openapi3.json`, `swagger.yaml`) | **Generated** by `swag init` after the handlers land; the swagger drift gate compares them. | FR-22 |
+| `e2e/selectors/vyzorix-selectors.cjs` | **Generated** by `tooling/codegen/build_selectors.py`; new deploy endpoints add selectors. | US-010 |
+| `packages/API_Client/src/generated/**` | **Generated** by orval (`pnpm codegen:api`, `codegen:hooks`); the CLI and console consume the deploy types rather than re-declaring them. | FR-23 |
+| `apps/VyzoriX_web/src/ui/pages/` (new `deploy/` page), `src/routes/` | The read-only Deploy view. | US-010 |
 
-### 13.3 Not in this contract
+The four generated rows are why the CUE and swagger drift gates exist: the source is
+edited, the artefacts are regenerated, and a stale artefact fails the gate. Nothing in
+those rows is hand-written.
 
-Layer 3's remaining work — the supervisor, the control socket, the app proxy, the
-`app-*` CLI verbs — is specified in `doc/LAYER_3_REQUIREMENTS.md` and is a
-**dependency**. Two pieces that document lists as gaps are **already closed in the
-code** and must not be re-listed as blockers:
+### 13.3 Device — new files (`Vyzorix-android`)
 
-- **`APP_START` / `APP_STOP` are registered.** `CloudConnectionFactory` registers
-  `APP_START`, `APP_STOP` and `APP_RESTART` (`AppCommands.Start/Stop/Restart`). The
-  Layer 3 doc's §3 table and its decision C1 say otherwise; the table is stale.
-- **`/home/apps` is bound.** `ProotLauncher.binds` already adds
-  `files/apps:/home/apps` (`APPS_IN_CONTAINER`), which *is* Layer 3 decision D2. The
-  Layer 3 doc's §3 and §5.1 say it is missing; that is stale too.
+| New file | ~LOC | Requirement | Purpose |
+|:--|--:|:--|:--|
+| `cloud-connector/src/main/kotlin/com/vyzorix/connector/cloud/DeployApplier.kt` | 240 | US-006, US-007, §9.1 | Verify, fetch, verify, install atomically, write the registry. |
+| `.../cloud/ArtifactFetcher.kt` | 180 | US-006, FR-13 | Resumable fetch + whole-file digest check. Generalises the OTA fetcher. |
+| `.../cloud/PwaManifest.kt` | 120 | US-008, FR-14 | Generate `site.webmanifest`; refuse an invalid `display`. |
+| `.../cloud/AppConfigReader.kt` | 130 | §5.1 | Read the repeated `app`/`artifact`/`env`/`secret` nodes out of the verified `VDocument`, iterating app nodes rather than flattening. |
+| `.../cloud/DeployReporter.kt` | 90 | US-005, FR-16 | Report `device_ready {version}` and every refusal reason. |
+| `.../cloud/AppRegistryWriter.kt` | 110 | US-007, §13 note | Write `apps.json` atomically in the supervisor's shape. **Not** a copy of the config — see the note below. |
+| `.../secret/SecretKey.kt` | 110 | FR-25, §9b.3 | The second Keystore entry: `vyzorix.secret`, RSA-3072, `PURPOSE_DECRYPT`, generated on first run. Never exposed over the bridge. |
+| `.../secret/SecretStore.kt` | 140 | US-013, FR-26 | Fetch ciphertext, decrypt, write `files/apps/<app>/.env` at 0600; refuse to start an app whose secret will not open. |
 
-So the only Layer 3 dependency this feature still carries is the **supervisor
-existing** — a signed config can be delivered and applied without it, but the apps
-will not be *started* until it reads the registry. That is a real dependency and is
-stated in §11 of the requirements; the other two are not.
+`.../secret/SecretEnvelope.kt` (90) is already written and proven in the spike, so it is
+counted here as done rather than new work.
 
-### 13.4 Rough size
+**`apps.json` is not the config.** The registry the supervisor reads
+(`native/lib/include/vyzorix/app_registry.h`) holds `{name, dir, cmd, port, env,
+autostart, pid, pidStartTicks}` and **nothing else** — no `expose`, no `secret_keys`.
+`expose` and its token live in the supervisor's separate meta store
+(`app_meta_store.h`), and the secret is a `0600` `.env` the supervisor reads at start
+(§9b.4). So `AppRegistryWriter` writes the registry shape and does *not* put secrets or
+exposure metadata into it; the earlier draft's "write apps.json with expose and
+secret_keys" would have produced a file the supervisor silently ignores those fields in.
 
-Server ~1,600 LOC + CLI 400 + tests; device ~1,050 LOC + tests. Comparable to the
+### 13.4 Device — existing files to touch
+
+| Existing file | Change | Requirement |
+|:--|:--|:--|
+| `cloud-connector/src/main/kotlin/com/vyzorix/connector/config/ConfigVerifier.kt` | Replace the line scanner in `assertNoSecrets` with the structural walk of §5.2; read the apps section. | FR-8, §5.1 |
+| `.../config/ConfigStore.kt` | Retain current + last-good; restore on failure. | FR-21 |
+| `.../CloudConnectionFactory.kt` | Route a delivered `device_config` to `DeployApplier`; construct the deploy components. | US-005 |
+| `.../command/AppControlClient.kt` | Unchanged as a client; the deploy path signals the supervisor through the same socket (its `inotify` re-read). | US-007 |
+| `cloud-connector/build.gradle.kts` | No new dependency expected; the connector already has libv, OkHttp and serialization. Listed so a reviewer checks rather than assumes. | — |
+| `app/build.gradle.kts` | Bundle the `secret-envelope` test vector into `androidTest` assets; any new permissions. | US-013 |
+| `android-core/src/main/kotlin/com/vyzorix/engine/ProotLauncher.kt` | No change needed — `/home/apps` is already bound and the supervisor is already launched. Listed to say so explicitly. | §13.6 |
+
+### 13.5 Requirement → files (the completeness check)
+
+| Requirement | Server files | Device files |
+|:--|:--|:--|
+| US-001 manifest + compiler | `deploy.cue`, `manifest.go`, `compile.go`, `render.go` | — |
+| US-002 signing | `sign.go` (`ServerSigner`) | `ConfigVerifier` (verify) |
+| US-003 `POST /v1/deploy` | `deploy_handler.go`, `authz.go`, `server_routes.go` | — |
+| US-004 deploy credential | `credential_handler.go`, `079_deploy_credential.go` | — |
+| US-005 delivery + drift | `deploy_handler.go`, `enroll_handler.go` | `ConfigStore`, `DeployReporter`, `CloudConnectionFactory` |
+| US-006 fetch/verify/install | — | `ArtifactFetcher`, `DeployApplier` |
+| US-007 `/home/apps` + registry | — | `AppRegistryWriter`, `DeployApplier` |
+| US-008 webroot + PWA | `compile.go` | `PwaManifest` |
+| US-009 CLI | `apps/cli/**` | — |
+| US-010 console view | `apps/VyzoriX_web/src/ui/pages/deploy/` | — |
+| US-011 Layer 3 gaps | — | see §13.6 |
+| US-012 second app | (no platform file — that is the test) | (no platform file) |
+| US-013 secrets | `secrets.go`, `secrets_handler.go`, `080_app_secret.go` | `SecretKey`, `SecretEnvelope`, `SecretStore` |
+| FR-2 published schema | `deploy.cue` → `schemas.go`, `build_schemas.py`; `deploy_handler.go` serves it | `validate.go` (CLI) |
+| FR-8 no-secret | `secretcheck.go` | `ConfigVerifier` |
+| FR-9 `cmd` rule | `compile.go` | `DeployApplier` (re-checks) |
+| FR-16 refusals | `deploy_handler.go` | `DeployReporter` |
+| FR-17/FR-24 never logged | every deploy file (a test greps) | `SecretStore` (a test greps) |
+| FR-18 `device.deploy` | `scoped.go`, `authz.go` | — |
+| FR-19 catalog | `catalog.go`, `provisioning_adapters.go`, `vyzorix_boot_provisioning.go` | — |
+| FR-20 `purge` | `compile.go` | `DeployApplier` |
+| FR-21 `keep_last = 2` | `store.go`, `078_deploy_config.go` | `ConfigStore` |
+| FR-22 CUE + drift | `deploy.cue`, `schemas.go`, `swag/*`, `selectors.cjs` | — |
+| FR-23 CLI shares types | `apps/cli/**`, orval output | — |
+| FR-25–27 secret envelope | `secrets.go` | `SecretKey`, `SecretEnvelope`, `SecretStore` |
+
+US-012 has no platform file on purpose: "a second app deploys with no platform change"
+is a property, and the moment a file is added to make it work, the requirement has
+failed. Its exercise is a test (`13.7`), not an artefact.
+
+### 13.6 Layer 3 — what is already built, and the one gap left
+
+Layer 3 is **not** greenfield, and the contract must not re-budget it. Already in the
+tree:
+
+- **The supervisor** — `app-runtime/supervisor/` (C++): registry read, autostart,
+  crash backoff, PID start-ticks validation, log rotation, control socket, `inotify`
+  re-read of the registry.
+- **The `app-*` CLI** — `app-runtime/cli-wrappers/app_tool.cpp`, with ops `start`,
+  `stop`, `restart`, `list`, `logs`, `env`, `create`, `remove`, `ping`, `expose`,
+  `unexpose`.
+- **The registry and meta stores** — `native/lib/include/vyzorix/app_registry.h`,
+  `app_meta_store.h` (exposure + token, mode 0600).
+- **The installer and launch** — `android-core/.../Layer3Installer.kt` installs the
+  supervisor and CLI; `ProotLauncher.supervisorArgs` starts it with the registry path
+  and control socket; `binds()` already maps `files/apps:/home/apps`.
+- **The command path** — `CloudConnectionFactory` registers `APP_START`, `APP_STOP`
+  and `APP_RESTART` via `AppCommands`/`AppControlClient`.
+
+The **one** gap deploy still carries: nothing verifies the supervisor is *running*
+before an apply writes the registry. If it is absent the config still lands and the
+apps simply do not start, which is a silent failure. Deploy's `DeployApplier` should
+probe the control socket (`ping`) and report a distinct reason when it is unreachable —
+a small addition, and the only Layer 3 work this contract owns.
+
+### 13.7 Tests
+
+**Server: ~8 files, ~60 cases.** Load-bearing: the refusals — secret, unhashed ref,
+`cmd` escape, cross-org (404), no-grant (403) — plus the structural no-secret pair
+(names accepted, values refused) and the two-app compile. The envelope tests
+(`secret_envelope_test.go`, `secret_envelope_vector_test.go`) already exist and pass.
+
+**Device: ~8 files, ~50 cases.** Load-bearing: a tampered digest leaves the previous
+copy; `pwa = false` writes no file; a `cmd` symlink escape is refused; a failed apply
+keeps the running config; a ciphertext will not decrypt with the wrong key; a secret
+never reaches `apps.json` or a log; the compiled §5.1 document parses and verifies; and
+the two-app end-to-end from US-012. `SecretEnvelopeInteropTest` and
+`SecretEnvelopeKeystoreTest` already exist and pass.
+
+### 13.8 Rough size
+
+Server ~1,900 LOC + CLI 400 + tests; device ~1,100 LOC + tests. Comparable to the
 registration contract's own estimate, and the same shape: most of the value is in the
 refusals and the crypto, which are cheap to write and expensive to omit.
 
