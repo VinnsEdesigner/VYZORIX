@@ -11,12 +11,9 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/crypto"
 )
 
-// twoAppManifest is the US-012 fixture: a platform, not a hardcoded feature.
-//
-// The `pwa` key must precede the `[[app.artifact]]` blocks: once a TOML reader is
-// inside an array-of-tables element, a bare key belongs to that element. And the
-// boolean form (`pwa = true`) and the table form (`[app.pwa]`) are mutually
-// exclusive, because both define the key `pwa`.
+// twoAppManifest is the US-012 fixture. Note the `pwa` key precedes the
+// `[[app.artifact]]` blocks: inside an array-of-tables element a bare key
+// belongs to that element, and the boolean and table forms are exclusive.
 const twoAppManifest = `
 [device]
 id  = "d_01H"
@@ -65,7 +62,7 @@ pwa = true
   kind = "webroot"
 `
 
-// signer returns a deterministic signer for the tests, plus its public key.
+// signer returns a test signer and its public key.
 func signer(t *testing.T) (DocumentSigner, *ecdsa.PublicKey) {
 	t.Helper()
 
@@ -126,8 +123,7 @@ func compileFixture(t *testing.T) (string, *ecdsa.PublicKey) {
 	return signed, pub
 }
 
-// TestCompileAndVerifyRoundTrip is the trust model in one test: compile, sign,
-// verify against the public key.
+// TestCompileAndVerifyRoundTrip is the trust model in one test.
 func TestCompileAndVerifyRoundTrip(t *testing.T) {
 	t.Parallel()
 
@@ -186,8 +182,8 @@ func TestWrongKeyFailsVerification(t *testing.T) {
 	}
 }
 
-// TestTwoAppsCompile proves the US-012 property: a second app compiles with no
-// platform change, and both are present with their own fields.
+// TestTwoAppsCompile proves US-012: a second app compiles with no platform
+// change, and both are present with their own fields.
 func TestTwoAppsCompile(t *testing.T) {
 	t.Parallel()
 
@@ -249,8 +245,7 @@ func TestCompileIsDeterministic(t *testing.T) {
 	}
 }
 
-// TestRandomizedEnvStillDeterministic proves the sorted env write, which is what
-// makes a map deterministic.
+// TestRandomizedEnvStillDeterministic covers the sorted env write.
 func TestRandomizedEnvStillDeterministic(t *testing.T) {
 	t.Parallel()
 
@@ -293,8 +288,8 @@ func TestRandomizedEnvStillDeterministic(t *testing.T) {
 	}
 }
 
-// appField reads one child of an app node by key. It is the reader rule of
-// contract §5.1 in one function: never use an absolute path across apps.
+// appField reads one child of an app node by key — the §5.1 reader rule: never
+// use an absolute path across apps.
 func appField(app *libv.Node, key string) string {
 	for _, child := range app.Children {
 		if child.Key() == key && len(child.Tokens) > 1 {

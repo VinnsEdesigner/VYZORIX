@@ -13,8 +13,8 @@ import (
 	toml "github.com/pelletier/go-toml/v2"
 )
 
-// Bounds on the manifest's own fields. The device trusts this document, so the
-// limits are enforced here rather than left to whatever the compiler produces.
+// Bounds on the manifest's own fields, enforced here rather than left to
+// whatever the compiler produces.
 const (
 	maxDeviceIDLen   = 128
 	maxAppNameLen    = 32
@@ -25,17 +25,15 @@ const (
 	maxAppsPerDevice = 32
 )
 
-// ExposeMode is how an app's port is reachable. `cloud` is refused in v1
-// (contract §10); it is modelled so the refusal names the value.
+// ExposeMode is how an app's port is reachable. `cloud` is refused in v1 (§10).
 type ExposeMode string
 
 const (
-	// ExposeLoopback binds 127.0.0.1 only. The default, and the only mode that
-	// needs no token.
+	// ExposeLoopback binds 127.0.0.1 only. The default.
 	ExposeLoopback ExposeMode = "loopback"
 	// ExposeLAN binds 0.0.0.0 and requires a token at the supervisor.
 	ExposeLAN ExposeMode = "lan"
-	// ExposeCloud is refused in v1: it needs the deferred wildcard-DNS/TLS proxy.
+	// ExposeCloud needs the deferred wildcard-DNS/TLS proxy.
 	ExposeCloud ExposeMode = "cloud"
 )
 
@@ -50,33 +48,27 @@ const (
 	ArtifactWebroot ArtifactKind = "webroot"
 )
 
-// DisplayMode is the PWA display value. Anything else is a hard error: an
-// invalid value silently degrades to `browser` and the operator never learns
-// why the app is not installable (contract §6).
+// DisplayMode is the PWA display value. An invalid value silently degrades to
+// `browser`, so anything else is a hard error.
 type DisplayMode string
 
 const (
-	// DisplayStandalone is the generated default.
 	DisplayStandalone DisplayMode = "standalone"
-	// DisplayFullscreen hides all browser chrome.
 	DisplayFullscreen DisplayMode = "fullscreen"
-	// DisplayMinimalUI keeps a minimal set of controls.
-	DisplayMinimalUI DisplayMode = "minimal-ui"
-	// DisplayBrowser is a normal browser tab.
-	DisplayBrowser DisplayMode = "browser"
+	DisplayMinimalUI  DisplayMode = "minimal-ui"
+	DisplayBrowser    DisplayMode = "browser"
 )
 
 // Icon is one entry of a generated web manifest's icon list. Icons are never
-// generated; an operator supplies them or the list is empty (contract §6).
+// generated.
 type Icon struct {
 	Src   string `toml:"src"`
 	Sizes string `toml:"sizes"`
 	Type  string `toml:"type"`
 }
 
-// PWA is the per-app web-manifest declaration. In the manifest it is either a
-// boolean or a table; both arrive here as a non-nil PWA, with Enabled carrying
-// the boolean form.
+// PWA is the per-app web-manifest declaration. In the manifest it is a boolean
+// or a table; Enabled carries the boolean form.
 type PWA struct {
 	Name            string `toml:"name"`
 	ShortName       string `toml:"short_name"`
@@ -90,8 +82,8 @@ type PWA struct {
 	Enabled         bool   `toml:"-"`
 }
 
-// ArtifactSpec is one artifact reference. A URL is literal and the digest pins
-// its bytes, so the transport can be untrusted (contract §5.3).
+// ArtifactSpec is one artifact reference. The URL is literal and the digest pins
+// its bytes, so the transport can be untrusted (§5.3).
 type ArtifactSpec struct {
 	Name   string       `toml:"name"`
 	URL    string       `toml:"url"`
@@ -101,11 +93,8 @@ type ArtifactSpec struct {
 	Size   int64        `toml:"size"`
 }
 
-// AppSpec is one [[app]] block.
-//
-// Autostart carries the contract's `true` default (§4.1). Go zero-values a bool
-// to false, so a *bool is used to tell "absent" from "explicitly false", and
-// ParseManifest resolves it before validation.
+// AppSpec is one [[app]] block. Autostart is a *bool so "absent" is
+// distinguishable from "explicitly false"; resolveDefaults resolves it.
 type AppSpec struct {
 	Env        map[string]string `toml:"env"`
 	SecretsT   map[string]string `toml:"secrets"`
@@ -122,7 +111,7 @@ type AppSpec struct {
 }
 
 // DeviceSpec is the [device] block. Only id, org and an optional display name
-// are the operator's; everything else is server-injected (contract §5.1).
+// are the operator's; everything else is server-injected (§5.1).
 type DeviceSpec struct {
 	ID   string `toml:"id"`
 	Org  string `toml:"org"`
@@ -177,10 +166,8 @@ func ParseManifest(data []byte) (*Manifest, error) {
 	return &m, nil
 }
 
-// unknownKeyError turns the decoder's strict-mode error into one that names each
-// unknown key. The raw message ("fields in the document are missing in the
-// target struct") does not say which field, and a refusal an operator cannot
-// locate is one they will work around.
+// unknownKeyError names each unknown key. The decoder's own message ("fields in
+// the document are missing in the target struct") does not say which one.
 func unknownKeyError(err error) error {
 	var strict *toml.StrictMissingError
 	if !errors.As(err, &strict) {
@@ -200,8 +187,7 @@ func unknownKeyError(err error) error {
 	}
 }
 
-// Validate refuses a manifest the compiler must not accept. It names the field,
-// because a refusal an operator cannot locate is one they will work around.
+// Validate refuses a manifest the compiler must not accept, naming the field.
 func (m *Manifest) Validate() error {
 	if err := m.Device.validate(); err != nil {
 		return err
@@ -236,8 +222,7 @@ func (m *Manifest) Validate() error {
 	return nil
 }
 
-// validate checks the [device] block. The id and org must be present; the
-// server binds them to the caller and the file may not name an authoriser.
+// validate checks the [device] block.
 func (d *DeviceSpec) validate() error {
 	if strings.TrimSpace(d.ID) == "" {
 		return &ManifestError{Field: "device.id", Message: "required"}
@@ -292,8 +277,7 @@ func (a *AppSpec) validate() error {
 	return a.validatePWA()
 }
 
-// resolveDefaults applies the contract's defaults that a Go zero value cannot
-// express: autostart is true unless the file says otherwise.
+// resolveDefaults applies the defaults a Go zero value cannot express.
 func (a *AppSpec) resolveDefaults() {
 	if a.AutostartT == nil {
 		a.Autostart = true
@@ -360,7 +344,7 @@ func (a *AppSpec) validateArtifacts() error {
 }
 
 // validate checks one artifact. The digest is mandatory: without it the URL is
-// trusted because it was signed, which is only true if the host is honest.
+// trusted only because it was signed, which holds only if the host is honest.
 func (a *ArtifactSpec) validate(app string) error {
 	field := "app." + app + ".artifact"
 
@@ -418,8 +402,8 @@ func (a *ArtifactSpec) validate(app string) error {
 	return nil
 }
 
-// validateSecrets normalises the [app.secrets] table into names. The values
-// must be empty: the table's keys are names and a value here is a mistake.
+// validateSecrets normalises the [app.secrets] table into names, refusing a
+// value: the table's keys are names, so a value here is a mistake.
 func (a *AppSpec) validateSecrets() error {
 	if len(a.SecretsT) == 0 {
 		return nil
@@ -447,8 +431,7 @@ func (a *AppSpec) validateSecrets() error {
 	return nil
 }
 
-// validatePWA refuses an invalid display value. The absent and false cases are
-// both "no manifest"; they are distinguished at render time, not here.
+// validatePWA refuses an invalid display value.
 func (a *AppSpec) validatePWA() error {
 	if a.PWA == nil || !a.PWA.Enabled {
 		return nil
@@ -469,8 +452,7 @@ func (a *AppSpec) validatePWA() error {
 }
 
 // UnmarshalTOML accepts `pwa = true`, `pwa = false`, or a `[app.pwa]` table.
-// The union is why this is custom: TOML has no sum type, and a bool field and a
-// table field cannot share a name.
+// TOML has no sum type, and a bool field and a table field cannot share a name.
 func (p *PWA) UnmarshalTOML(data []byte) error {
 	trimmed := strings.TrimSpace(string(data))
 
@@ -480,8 +462,6 @@ func (p *PWA) UnmarshalTOML(data []byte) error {
 		return nil
 	}
 
-	// A table. Decoded with the document's strictness, so a typo in [app.pwa]
-	// is refused rather than ignored.
 	type pwaTable PWA
 
 	var table pwaTable
@@ -497,8 +477,7 @@ func (p *PWA) UnmarshalTOML(data []byte) error {
 	return nil
 }
 
-// sortStrings sorts in place with an insertion sort. It keeps this file free of
-// an import for one call, and it is stable, which determinism wants.
+// sortStrings sorts in place; stable, which the determinism guarantee wants.
 func sortStrings(s []string) {
 	for i := 1; i < len(s); i++ {
 		for j := i; j > 0 && s[j] < s[j-1]; j-- {

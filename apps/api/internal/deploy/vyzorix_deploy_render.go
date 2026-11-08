@@ -6,11 +6,9 @@ import (
 	"strings"
 )
 
-// The vyzorix.v renderer. The format is a strict depth-based tree — depth is the
-// number of leading v characters, a node is `key value`, and a list is a
-// repeated node of the same key under one parent (VYZORIX_DEPLOY_CONTRACT.md
-// §5.1). Output is byte-identical for the same input: apps keep manifest order,
-// env keys are sorted, and every other field is written in a fixed order.
+// The vyzorix.v renderer. Output is byte-identical for the same input: apps keep
+// manifest order, env keys are sorted, every other field is written in a fixed
+// order (§5.1).
 
 const (
 	// appsContainerDepth holds the `apps` node; app nodes sit one deeper.
@@ -21,14 +19,14 @@ const (
 	artifactFieldDepth = 5
 )
 
-// renderer accumulates document lines and the first token error, so a bad value
-// aborts the whole render rather than producing a partial document.
+// renderer accumulates lines and the first token error, so a bad value aborts
+// the render rather than producing a partial document.
 type renderer struct {
 	err   error
 	lines []string
 }
 
-// node writes one node at the given depth with optional value tokens.
+// node writes one node at the given depth.
 func (r *renderer) node(depth int, key string, values ...string) {
 	if r.err != nil {
 		return
@@ -50,9 +48,8 @@ func (r *renderer) node(depth int, key string, values ...string) {
 	r.lines = append(r.lines, line)
 }
 
-// RenderConfig writes the unsigned vyzorix.v document for a compiled config.
-// The caller signs the result; this function never signs, so a render can be
-// inspected without a key.
+// RenderConfig writes the unsigned vyzorix.v document. It never signs, so a
+// render can be inspected without a key.
 func RenderConfig(cfg Config) (string, error) {
 	r := &renderer{lines: make([]string, 0, 16+len(cfg.Apps)*8)}
 
@@ -116,8 +113,7 @@ func (r *renderer) renderApp(app *AppConfig) {
 	r.renderPWA(app)
 }
 
-// renderEnv writes one `env KEY=VALUE` node per variable, keys sorted so the
-// document is deterministic.
+// renderEnv writes one `env KEY=VALUE` node per variable, keys sorted.
 func (r *renderer) renderEnv(app *AppConfig) {
 	if len(app.Env) == 0 {
 		return
@@ -135,8 +131,8 @@ func (r *renderer) renderEnv(app *AppConfig) {
 	}
 }
 
-// renderSecrets writes one `secret NAME` node per name. A name is a name; the
-// value travels on its own channel (contract §9b).
+// renderSecrets writes one `secret NAME` node per name; values travel on their
+// own channel (§9b).
 func (r *renderer) renderSecrets(app *AppConfig) {
 	for _, name := range app.Secrets {
 		r.node(appFieldDepth, "secret", name)
@@ -160,9 +156,8 @@ func (r *renderer) renderArtifact(art *ArtifactConfig) {
 	}
 }
 
-// renderPWA writes the pwa node only when the webroot is a PWA. A webroot with
-// pwa absent or false has no node at all: the absence is the negative case, and
-// a reader that sees no node generates nothing (contract §6).
+// renderPWA writes the pwa node only when the webroot is a PWA. Absent and
+// false produce no node at all, which is the negative case (§6).
 func (r *renderer) renderPWA(app *AppConfig) {
 	if app.PWA == nil || !app.PWA.Enabled {
 		return
@@ -196,9 +191,8 @@ func (r *renderer) renderPWA(app *AppConfig) {
 }
 
 // token renders one value as a libv token. The format splits on whitespace and
-// quotes with `"`, so a value with a space must be quoted, and a value carrying
-// a quote or a newline cannot be represented at all — it is refused rather than
-// silently mangled into a different document.
+// quotes with `"`, so a value with a space is quoted and one carrying a quote or
+// newline is refused rather than mangled into a different document.
 func token(value string) (string, error) {
 	if strings.ContainsAny(value, "\"\n\r") {
 		return "", fmt.Errorf("deploy: value %q contains a quote or newline, which the vyzorix.v format cannot carry", value)

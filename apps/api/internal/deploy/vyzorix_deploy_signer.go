@@ -6,17 +6,14 @@ import (
 
 // The signing path. A document is rendered, scanned for secrets, then signed;
 // the scan runs before the signature so an unsigned refusal is what an operator
-// sees, and the render is a pure function of the config so the same manifest
-// always signs to the same bytes (contract §5.1, §14).
+// sees.
 
-// DocumentSigner signs a rendered document and returns the signed text. It is a
-// function rather than a concrete signer so the server has exactly one signing
-// key: passing a second type here would let the config and the command frames be
-// signed by different keys.
+// DocumentSigner signs a rendered document and returns the signed text. A
+// function, not a concrete signer, so the server has exactly one signing key.
 type DocumentSigner func(document string) (string, error)
 
-// CompileAndSign compiles a manifest, renders it, refuses a config that carries
-// a secret, and signs the result.
+// CompileAndSign compiles a manifest, renders it, refuses a config carrying a
+// secret, and signs the result.
 func CompileAndSign(m *Manifest, in Injection, sign DocumentSigner) (string, error) {
 	if sign == nil {
 		return "", errNoSigner

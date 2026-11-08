@@ -5,10 +5,10 @@ import (
 	"testing"
 )
 
-// The refusals are the invariants. A regression in any of these is silent, so
-// each is asserted by the message it produces, not merely by "an error".
+// The refusals are the invariants; a regression in any is silent, so each is
+// asserted by the message it produces, not merely by "an error".
 
-// manifestWith returns the two-app fixture with its [device] block replaced.
+// manifestWith returns a one-app manifest with the given [[app]] body.
 func manifestWith(t *testing.T, appBlock string) []byte {
 	t.Helper()
 
@@ -164,8 +164,8 @@ cmd = "/home/apps/vfd/run.sh"
 	}
 }
 
-// TestConfigNamingSecretsIsAccepted is the other half of the invariant: the
-// scan must not refuse the schema's own `secret NAME` nodes.
+// TestConfigNamingSecretsIsAccepted is the other half: the scan must not refuse
+// the schema's own `secret NAME` nodes.
 func TestConfigNamingSecretsIsAccepted(t *testing.T) {
 	t.Parallel()
 
@@ -176,8 +176,7 @@ func TestConfigNamingSecretsIsAccepted(t *testing.T) {
 	}
 }
 
-// TestConfigCarryingASecretIsRefused is the half the shipped scanner got wrong
-// in the other direction: a value that is a secret must still be refused.
+// TestConfigCarryingASecretIsRefused: a value that is a secret is still refused.
 func TestConfigCarryingASecretIsRefused(t *testing.T) {
 	t.Parallel()
 
@@ -315,8 +314,65 @@ cmd = "/home/apps/vfd/run.sh"
 	}
 }
 
-// TestAutostartDefaultsToTrue covers the contract's `true` default, which a Go
-// zero value would otherwise silently invert.
+// TestCredentialInArtifactURLIsRefused: the scan must reach nested values.
+func TestCredentialInArtifactURLIsRefused(t *testing.T) {
+	t.Parallel()
+
+	m, err := ParseManifest(manifestWith(t, `
+name = "vfd"
+cmd = "/home/apps/vfd/run.sh"
+
+  [[app.artifact]]
+  name = "engine"
+  url = "https://user:s3cr3t@example.test/e.tar.gz"
+  sha256 = "9f2c000000000000000000000000000000000000000000000000000000000000"
+`))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+
+	sign, _ := signer(t)
+
+	if _, err := CompileAndSign(m, injection(), sign); err == nil {
+		t.Fatal("a credential in an artifact URL must be refused")
+	}
+}
+
+// TestCredentialInPwaFieldIsRefused covers the other nested value.
+func TestCredentialInPwaFieldIsRefused(t *testing.T) {
+	t.Parallel()
+
+	m, err := ParseManifest(manifestWith(t, `
+name = "vfd"
+cmd = "/home/apps/vfd/run.sh"
+
+  [app.pwa]
+  description = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"
+`))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+
+	sign, _ := signer(t)
+
+	if _, err := CompileAndSign(m, injection(), sign); err == nil {
+		t.Fatal("a credential in a PWA field must be refused")
+	}
+}
+
+// TestArtifactDigestIsNotASecret guards the false positive: a bare-hex rule
+// outside env would refuse every artifact in every manifest.
+func TestArtifactDigestIsNotASecret(t *testing.T) {
+	t.Parallel()
+
+	signed, _ := compileFixture(t)
+
+	if !strings.Contains(signed, "sha256 9f2c") {
+		t.Fatal("the digest must survive the scan")
+	}
+}
+
+// TestAutostartDefaultsToTrue: a Go zero value would otherwise invert it.
 func TestAutostartDefaultsToTrue(t *testing.T) {
 	t.Parallel()
 
@@ -330,8 +386,7 @@ func TestAutostartDefaultsToTrue(t *testing.T) {
 	}
 }
 
-// TestAutostartExplicitFalseIsHonoured proves the default does not override the
-// operator.
+// TestAutostartExplicitFalseIsHonoured: the default does not override the file.
 func TestAutostartExplicitFalseIsHonoured(t *testing.T) {
 	t.Parallel()
 

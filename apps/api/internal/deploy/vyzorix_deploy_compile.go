@@ -6,14 +6,12 @@ import (
 	"strings"
 )
 
-// The compiler: manifest -> config. It injects the server-owned fields, applies
-// the cmd rule (§8) and the unhashed-reference rule (§5.3), and produces the
-// field set the renderer writes. It does not sign and does not scan for secrets;
-// Compile does both around it so a caller cannot forget either.
+// The compiler: manifest -> config. It injects the server-owned fields and
+// produces the field set the renderer writes. It neither signs nor scans for
+// secrets; CompileAndSign does both around it.
 
 // Injection is the server-owned data a compile adds. None of it may come from
-// the file (contract §5.1): a config that names its own authoriser proves
-// nothing.
+// the file: a config that names its own authoriser proves nothing (§5.1).
 type Injection struct {
 	MemberID         string
 	DeviceID         string
@@ -28,8 +26,7 @@ type Injection struct {
 }
 
 // Compile turns a manifest into a config. The manifest must already have passed
-// ParseManifest; Compile re-checks the rules that depend on injected values and
-// on cross-app state.
+// ParseManifest.
 func Compile(m *Manifest, in Injection) (*Config, error) {
 	cfg := &Config{
 		DeviceID:         in.DeviceID,
@@ -57,9 +54,8 @@ func Compile(m *Manifest, in Injection) (*Config, error) {
 	return cfg, nil
 }
 
-// compileApp builds one AppConfig. The cmd rule is enforced at parse time; the
-// digest rule is re-checked here because it also guards against a future caller
-// that builds a Manifest without going through ParseManifest.
+// compileApp builds one AppConfig. The digest rule is re-checked here so a
+// caller that builds a Manifest without ParseManifest is still covered.
 func compileApp(spec *AppSpec) (*AppConfig, error) {
 	app := &AppConfig{
 		Name:      spec.Name,
@@ -97,13 +93,11 @@ func compileApp(spec *AppSpec) (*AppConfig, error) {
 }
 
 // cmdMetacharacters are the shell characters the cmd rule refuses. The command
-// is executed by fork/exec with no shell, so a metacharacter has nothing to be
-// interpreted by; refusing it is belt-and-braces on top of that.
+// runs under fork/exec with no shell, so this is belt-and-braces.
 const cmdMetacharacters = ";|&$`><(){}*?~!\n\r"
 
-// validateCmd applies the cmd rule (contract §8): absolute, inside the app's own
-// directory, and free of shell metacharacters. The symlink check is the device's
-// — the artifact has not been fetched here — so this is the compile-time half.
+// validateCmd applies the cmd rule (§8): absolute, inside the app's own
+// directory, free of shell metacharacters. The symlink check is the device's.
 func validateCmd(appName, cmd string) error {
 	field := "app." + appName + ".cmd"
 

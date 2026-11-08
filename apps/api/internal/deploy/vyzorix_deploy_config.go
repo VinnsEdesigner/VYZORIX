@@ -1,9 +1,7 @@
 package deploy
 
-// The compiled config: what is signed, delivered and stored. It is the
-// vyzorix.v shape of REGISTRATION_CONTRACT.md §6, extended with the apps the
-// manifest declares (VYZORIX_DEPLOY_CONTRACT.md §5.1). The .toml never leaves
-// the operator's machine; this does.
+// The compiled config: the vyzorix.v shape of REGISTRATION_CONTRACT.md §6,
+// extended with the apps the manifest declares.
 
 // Config is the whole signed document's field set.
 type Config struct {
