@@ -113,7 +113,8 @@ id   = "d_01H..."            # required — the target
 org  = "org_01H..."          # required — the owning organization
 name = "field-ops-07"        # optional — a display name override
 
-# One or more apps. Order is not significant.
+# One or more apps. Order is significant: it is the order the config records and
+# the order the device applies.
 [[app]]
 name      = "vfd"                    # required, unique within the file
 cmd       = "/home/apps/vfd/run.sh"  # required (see §8 for the rule)
@@ -121,6 +122,38 @@ port      = 8080                     # optional — the port the app listens on
 autostart = true                     # optional, default true
 expose    = "loopback"               # optional — loopback | lan | cloud
 purge     = false                    # optional, default false — see below
+
+  # Sub-tables and bare keys must precede the first [[app.artifact]]. Once TOML is
+  # inside an array-of-tables element, a bare key or sub-table belongs to that
+  # element, so `pwa = true` written after an [[app.artifact]] would set the
+  # artifact's field, not the app's — and the manifest would be refused as an
+  # unknown key. This is a real TOML rule, not a style choice.
+
+  [app.env]
+  MI_PORT = "8080"                   # configuration — safe to commit
+
+  # Secrets are NAMES only, and the names are the KEYS of this table. The values
+  # are set out of band (vyzorix secrets set) and never appear in this file. The
+  # table form is deliberate: it is what lets the no-secret scan (§5.2) exempt
+  # this one node by its position in the document, instead of pattern-matching a
+  # field that is defined to hold secret names. See §9b.
+  [app.secrets]
+  DATABASE_URL = ""
+  S3_SECRET_KEY = ""
+
+  # A webroot may be installable, and that is a decision, not a default. The
+  # boolean form (`pwa = true`) and the table form (`[app.pwa]`) are mutually
+  # exclusive — both define the key `pwa` — so use exactly one. The table below
+  # implies enabled.
+    [app.pwa]                        # optional — overrides the generated defaults
+    name             = "Vyzorix"
+    short_name       = "Vyzorix"
+    description      = "Download, transcode and deliver media."
+    theme_color      = "#be123c"
+    background_color = "#ededed"
+    display          = "standalone"
+    orientation      = "portrait"
+    start_url        = "/"
 
   # Artifacts are references. `sha256` is mandatory. `arch` is optional and,
   # when present, restricts the artifact to one ABI — see §4.2.
@@ -143,44 +176,18 @@ purge     = false                    # optional, default false — see below
   sha256 = "41ab..."
   kind   = "webroot"                 # optional — "webroot" unpacks and is served
 
-  # A webroot may be installable, and that is a decision, not a default.
-  pwa = true
-
-    [app.pwa]                        # optional — overrides the generated defaults
-    name             = "Vyzorix"
-    short_name       = "Vyzorix"
-    description      = "Download, transcode and deliver media."
-    theme_color      = "#be123c"
-    background_color = "#ededed"
-    display          = "standalone"
-    orientation      = "portrait"
-    start_url        = "/"
-
-  [app.env]
-  MI_PORT = "8080"                   # configuration — safe to commit
-
-  # Secrets are NAMES only, and the names are the KEYS of this table. The values
-  # are set out of band (vyzorix secrets set) and never appear in this file. The
-  # table form is deliberate: it is what lets the no-secret scan (§5.2) exempt
-  # this one node by its position in the document, instead of pattern-matching a
-  # field that is defined to hold secret names. See §9b.
-  [app.secrets]
-  DATABASE_URL = ""
-  S3_SECRET_KEY = ""
-
 [[app]]                              # a second app — this is what makes it a platform
 name = "wiki"
 cmd  = "/home/apps/wiki/run.sh"
 port = 9000
 expose = "lan"
+pwa = true                           # the boolean form, for an app with no overrides
 
   [[app.artifact]]
   name   = "site"
   url    = "https://.../wiki.tar.gz"
   sha256 = "7b3d..."
   kind   = "webroot"
-
-  pwa = true
 ```
 
 ### 4.1 Field rules
@@ -204,7 +211,7 @@ expose = "lan"
 | `app.artifact[].arch` | enum | no | — | `arm64-v8a` \| `armeabi-v7a` \| `x86_64`. When present, the artifact applies only to that ABI (§4.2). |
 | `app.artifact[].size` | int | no | — | Informational; a mismatch is not an error. |
 | `app.artifact[].kind` | enum | no | `dir` | `dir` \| `webroot`. |
-| `app.pwa` | bool or table | no | **`false`** | See §6. |
+| `app.pwa` | bool or table | no | **`false`** | The boolean and the `[app.pwa]` table are mutually exclusive; both define `pwa`. See §6. |
 
 **An unknown key is a hard error.** A typo'd setting must not silently do nothing —
 `autostart` misspelled as `auto_start` would otherwise produce an app that never
