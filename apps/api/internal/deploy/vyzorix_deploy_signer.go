@@ -2,6 +2,7 @@ package deploy
 
 import (
 	libv "github.com/VinnsEdesigner/libv/go"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/configscan"
 )
 
 // The signing path. A document is rendered, scanned for secrets, then signed;
@@ -29,7 +30,7 @@ func CompileAndSign(m *Manifest, in Injection, sign DocumentSigner) (string, err
 		return "", err
 	}
 
-	if scanErr := ScanConfigForSecrets(document); scanErr != nil {
+	if scanErr := configscan.Scan(document); scanErr != nil {
 		return "", scanErr
 	}
 

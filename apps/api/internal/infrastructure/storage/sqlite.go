@@ -567,6 +567,9 @@ var migrations = []Migration{
 	// Per-device signed config: the current version and the last known-good one,
 	// retained so a failed apply can be undone without a network.
 	{Apply: migrateCreateDeviceDeployConfig, Name: "create_device_deploy_configs", Version: 78},
+	// Per-device app secrets: the value wrapped to the device's key. Only the
+	// ciphertext is stored, never the plaintext.
+	{Apply: migrateCreateDeviceAppSecret, Name: "create_device_app_secrets", Version: 79},
 }
 
 // runMigrations applies all pending migrations.

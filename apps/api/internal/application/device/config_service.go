@@ -7,6 +7,7 @@ import (
 	"time"
 
 	libv "github.com/VinnsEdesigner/libv/go"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/configscan"
 )
 
 // ConfigKind is the server-signature domain for a device config. Distinct from
@@ -108,39 +109,15 @@ func RenderConfig(sign SignDocument, cfg DeviceConfig) (string, error) {
 	return sign(b.String())
 }
 
-// forbiddenConfigTokens are the things a config must never carry. Checked before
-// signing so a future field cannot quietly reintroduce a secret.
-var forbiddenConfigTokens = []string{"secret", "token", "password", "key", "hmac"}
-
-// ValidateConfigHasNoSecrets refuses a config that mentions anything secret.
+// ValidateConfigHasNoSecrets refuses a config that carries a secret value.
 //
-// This is an invariant, not a style check: the design's central claim is that no
-// secret is transmitted, and a config is transmitted. A field named `token` or a
-// value that looks like a key would break that claim silently, so it is refused
-// here rather than noticed later.
+// It delegates to the structural walk in configscan, which is the one check
+// both config paths use. The earlier implementation here scanned every line for
+// the words secret, token, key and hmac, which refuses the schema's own
+// `secret NAME` nodes — the field that exists so a config can name a secret
+// without carrying one — so it would reject any config carrying apps.
 func ValidateConfigHasNoSecrets(document string) error {
-	for _, line := range strings.Split(document, "\n") {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" || strings.HasPrefix(trimmed, "'") {
-			continue
-		}
-		// The signature line names an algorithm, not a secret.
-		if strings.HasPrefix(trimmed, "v sig ") {
-			continue
-		}
-
-		lower := strings.ToLower(trimmed)
-		for _, forbidden := range forbiddenConfigTokens {
-			if strings.Contains(lower, forbidden) {
-				return fmt.Errorf(
-					"config must not carry a secret: line %q mentions %q",
-					trimmed, forbidden,
-				)
-			}
-		}
-	}
-
-	return nil
+	return configscan.Scan(document)
 }
 
 // ConfigEnvelope is what the device receives: the signed document and the
