@@ -38,17 +38,17 @@ func (e *SecretScanError) Error() string {
 // ScanConfigForSecrets walks a rendered config and refuses a value that looks
 // like a credential. Schema keys are exempt by path — the `secret NAME` node and
 // the `apps` container contain those words by design — but every value is
-// inspected, including nested ones.
+// inspected, at every depth.
 func ScanConfigForSecrets(document string) error {
 	doc, err := libv.Parse(document)
 	if err != nil {
 		return &SecretScanError{Key: "<document>", Reason: "does not parse: " + err.Error()}
 	}
 
-	for _, app := range doc.Root.Find("device.apps.app") {
-		if err := scanNode(app); err != nil {
-			return err
-		}
+	// The root, not just the app nodes: a credential in a top-level value
+	// (`name`, `member`, `stream`) is as much a secret as one in an env.
+	if err := scanNode(doc.Root); err != nil {
+		return err
 	}
 
 	return nil

@@ -16,7 +16,7 @@ func registeredDevice(id string) *device.Device {
 func callerWith(grants ...permission.ScopedPermission) *Caller {
 	return &Caller{
 		Authenticated: true,
-		MemberID:      "op_1",
+		OrgID:         "org_1",
 		Permissions:   grants,
 	}
 }
@@ -41,7 +41,7 @@ func denialOf(t *testing.T, err error) Denial {
 func TestSuperAdminMayDeploy(t *testing.T) {
 	t.Parallel()
 
-	caller := &Caller{Authenticated: true, IsSuperAdmin: true, MemberID: "op_1"}
+	caller := &Caller{Authenticated: true, IsSuperAdmin: true, OrgID: "org_1"}
 
 	if err := Authorize(caller, registeredDevice("d_1")); err != nil {
 		t.Fatalf("a super-admin must be allowed: %v", err)
@@ -123,6 +123,34 @@ func TestDeviceManageDoesNotImplyDeploy(t *testing.T) {
 	}
 }
 
+// TestAuthorizeRefusesACrossOrgDevice is the D ∈ O conjunct, checked in
+// Authorize itself: a device from another org must be refused even when handed
+// in directly, so the function cannot be misused by a caller that forgot to
+// scope its lookup.
+func TestAuthorizeRefusesACrossOrgDevice(t *testing.T) {
+	t.Parallel()
+
+	dev := &device.Device{ID: "d_1", OrganizationID: "org_2", Lifecycle: device.LifecycleRegistered}
+	caller := callerWith(permission.ScopedPermission{Action: permission.ActionDeviceDeploy, Scope: "devices:*"})
+
+	if got := denialOf(t, Authorize(caller, dev)); got != DenialNotInOrg {
+		t.Fatalf("a cross-org device must be DenialNotInOrg, got %q", got)
+	}
+}
+
+// TestAuthorizeRefusesASuperAdminFromAnotherOrg proves the org binding is not
+// bypassed by the super-admin clause.
+func TestAuthorizeRefusesASuperAdminFromAnotherOrg(t *testing.T) {
+	t.Parallel()
+
+	dev := &device.Device{ID: "d_1", OrganizationID: "org_2", Lifecycle: device.LifecycleRegistered}
+	caller := &Caller{Authenticated: true, IsSuperAdmin: true, OrgID: "org_1"}
+
+	if got := denialOf(t, Authorize(caller, dev)); got != DenialNotInOrg {
+		t.Fatalf("the org binding must apply to a super-admin too, got %q", got)
+	}
+}
+
 // TestUnauthenticatedIsRefused proves a grant does not help an anonymous caller.
 func TestUnauthenticatedIsRefused(t *testing.T) {
 	t.Parallel()
@@ -173,7 +201,7 @@ func TestSuperAdminStillBoundByLifecycle(t *testing.T) {
 	t.Parallel()
 
 	dev := &device.Device{ID: "d_1", OrganizationID: "org_1", Lifecycle: device.LifecyclePending}
-	caller := &Caller{Authenticated: true, IsSuperAdmin: true}
+	caller := &Caller{Authenticated: true, IsSuperAdmin: true, OrgID: "org_1"}
 
 	if got := denialOf(t, Authorize(caller, dev)); got != DenialNotRegistered {
 		t.Fatalf("a super-admin must not bypass the lifecycle gate, got %q", got)
@@ -206,7 +234,7 @@ func TestCrossOrgDeviceIsNotInOrg(t *testing.T) {
 
 	caller := callerWith(permission.ScopedPermission{Action: permission.ActionDeviceDeploy, Scope: "devices:*"})
 
-	_, err := AuthorizeDeploy(context.Background(), lookup, caller, "org_1", "d_other")
+	_, err := AuthorizeDeploy(context.Background(), lookup, caller, "d_other")
 
 	if got := denialOf(t, err); got != DenialNotInOrg {
 		t.Fatalf("another org's device must be DenialNotInOrg, got %q", got)
@@ -223,7 +251,7 @@ func TestAuthorizeDeployAllowsTheHappyPath(t *testing.T) {
 
 	caller := callerWith(permission.ScopedPermission{Action: permission.ActionDeviceDeploy, Scope: "devices:d_1"})
 
-	dev, err := AuthorizeDeploy(context.Background(), lookup, caller, "org_1", "d_1")
+	dev, err := AuthorizeDeploy(context.Background(), lookup, caller, "d_1")
 	if err != nil {
 		t.Fatalf("the happy path must be allowed: %v", err)
 	}
@@ -240,7 +268,7 @@ func TestAuthorizeDeployIsUnauthenticatedBeforeLookup(t *testing.T) {
 
 	lookup := &fakeLookup{devices: map[string]*device.Device{}}
 
-	_, err := AuthorizeDeploy(context.Background(), lookup, &Caller{}, "org_1", "d_1")
+	_, err := AuthorizeDeploy(context.Background(), lookup, &Caller{OrgID: "org_1"}, "d_1")
 
 	if got := denialOf(t, err); got != DenialUnauthenticated {
 		t.Fatalf("an unauthenticated caller must be refused, got %q", got)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/deployconfig"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
 )
@@ -50,8 +49,7 @@ func (e *DeniedError) Error() string {
 // Caller is the authenticated principal a deploy is attributed to. It carries
 // the facts the predicate needs and nothing else.
 type Caller struct {
-	Role          string
-	MemberID      string
+	OrgID         string
 	Permissions   permission.ScopedPermissions
 	Authenticated bool
 	IsSuperAdmin  bool
@@ -65,6 +63,12 @@ func Authorize(caller *Caller, dev *device.Device) error {
 	}
 
 	if dev == nil {
+		return &DeniedError{Denial: DenialNotInOrg}
+	}
+
+	// D ∈ O. A device in another org reads as not-in-org, never as no-grant, so
+	// a caller cannot distinguish "absent" from "someone else's".
+	if caller.OrgID == "" || caller.OrgID != dev.OrganizationID {
 		return &DeniedError{Denial: DenialNotInOrg}
 	}
 
@@ -100,15 +104,19 @@ type DeviceLookup interface {
 var ErrDeviceNotInOrg = errors.New("device not found in organization")
 
 // AuthorizeDeploy is the composed check a handler calls: it loads the device
-// scoped to the caller's org and applies the predicate. The device lookup is
-// scoped by org, so a cross-org device is DenialNotInOrg rather than a grant
-// failure.
-func AuthorizeDeploy(ctx context.Context, lookup DeviceLookup, caller *Caller, orgID, deviceID string) (*device.Device, error) {
+// scoped to the caller's org and applies the predicate. The org comes from the
+// caller, so there is one source of truth and the lookup cannot be pointed at a
+// different org than the predicate checks.
+func AuthorizeDeploy(ctx context.Context, lookup DeviceLookup, caller *Caller, deviceID string) (*device.Device, error) {
 	if caller == nil || !caller.Authenticated {
 		return nil, &DeniedError{Denial: DenialUnauthenticated}
 	}
 
-	dev, err := lookup.FindForOrg(ctx, deviceID, orgID)
+	if caller.OrgID == "" {
+		return nil, &DeniedError{Denial: DenialNotInOrg}
+	}
+
+	dev, err := lookup.FindForOrg(ctx, deviceID, caller.OrgID)
 	if err != nil {
 		if errors.Is(err, ErrDeviceNotInOrg) {
 			return nil, &DeniedError{Denial: DenialNotInOrg}
@@ -122,22 +130,4 @@ func AuthorizeDeploy(ctx context.Context, lookup DeviceLookup, caller *Caller, o
 	}
 
 	return dev, nil
-}
-
-// CurrentAndLastGood reads a device's retained configs for the console's
-// held-vs-target view. It is here rather than in the store so a handler has one
-// call, and it treats a missing last-good as normal: a device deployed once has
-// no prior version.
-func CurrentAndLastGood(ctx context.Context, store deployconfig.Repository, deviceID string) (current, lastGood *deployconfig.Record, err error) {
-	current, err = store.Current(ctx, deviceID)
-	if err != nil && !errors.Is(err, deployconfig.ErrNotFound) {
-		return nil, nil, err
-	}
-
-	lastGood, err = store.LastGood(ctx, deviceID)
-	if err != nil && !errors.Is(err, deployconfig.ErrNotFound) {
-		return nil, nil, err
-	}
-
-	return current, lastGood, nil
 }

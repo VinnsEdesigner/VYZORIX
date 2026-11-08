@@ -360,6 +360,27 @@ cmd = "/home/apps/vfd/run.sh"
 	}
 }
 
+// TestCredentialInATopLevelValueIsRefused covers the depth the walk must reach:
+// a credential in `device.name` is as much a secret as one in an env, and the
+// scan must not stop at the app nodes.
+func TestCredentialInATopLevelValueIsRefused(t *testing.T) {
+	t.Parallel()
+
+	m, err := ParseManifest([]byte(twoAppManifest))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+
+	sign, _ := signer(t)
+
+	in := injection()
+	in.Name = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"
+
+	if _, err := CompileAndSign(m, in, sign); err == nil {
+		t.Fatal("a credential in a top-level value must be refused")
+	}
+}
+
 // TestArtifactDigestIsNotASecret guards the false positive: a bare-hex rule
 // outside env would refuse every artifact in every manifest.
 func TestArtifactDigestIsNotASecret(t *testing.T) {
