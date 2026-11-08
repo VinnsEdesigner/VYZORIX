@@ -14,12 +14,6 @@ import (
 // thin adapter over this, so the sequence and its ordering live in one place and
 // are testable without HTTP.
 
-// DeviceRepository is the org-scoped device lookup the service needs. It is
-// satisfied by the storage repository, and by a fake in tests.
-type DeviceRepository interface {
-	FindByIDAndOrganization(ctx context.Context, id, orgID string) (*device.Device, error)
-}
-
 // DeployRequest is one operator's deploy.
 type DeployRequest struct {
 	OrgID    string
@@ -42,7 +36,6 @@ type DeployResult struct {
 // DeployService orchestrates a deploy end to end.
 type DeployService struct {
 	configs  deployconfig.Repository
-	devices  DeviceRepository
 	caller   func(ctx context.Context, orgID string) (*Caller, error)
 	lookup   DeviceLookup
 	sign     DocumentSigner
@@ -60,7 +53,6 @@ type SettingsSource interface {
 // NewDeployService builds a DeployService.
 func NewDeployService(
 	configs deployconfig.Repository,
-	devices DeviceRepository,
 	caller func(ctx context.Context, orgID string) (*Caller, error),
 	lookup DeviceLookup,
 	sign DocumentSigner,
@@ -68,7 +60,6 @@ func NewDeployService(
 ) *DeployService {
 	return &DeployService{
 		configs:  configs,
-		devices:  devices,
 		caller:   caller,
 		lookup:   lookup,
 		sign:     sign,

@@ -140,9 +140,9 @@ func DecodeRSAPrivateKeyPEM(encoded string) (*rsa.PrivateKey, error) {
 // WrapSecret encrypts a secret to a device's public key and returns the
 // ciphertext as base64, which is the form the API serves and the device fetches.
 //
-// The parameters are the contract's: OAEP with SHA-256 and a nil label. A label
-// would have to match on both sides and buys nothing here, so it is nil rather
-// than an empty string — the two are not the same to some providers.
+// The parameters are the contract's: OAEP-SHA1 with a nil label. A label would
+// have to match on both sides and buys nothing here, so it is nil rather than an
+// empty string — the two are not the same to some providers.
 func WrapSecret(recipientPublicKeyPEM string, plaintext []byte) (string, error) {
 	pub, err := DecodeRSAPublicKeyPEM(recipientPublicKeyPEM)
 	if err != nil {
@@ -153,7 +153,7 @@ func WrapSecret(recipientPublicKeyPEM string, plaintext []byte) (string, error) 
 		return "", errors.New("secret is empty")
 	}
 
-	// A 3072-bit modulus leaves ~318 bytes for OAEP-SHA256. Refusing over-long
+	// A 3072-bit modulus leaves ~318 bytes for OAEP-SHA1. Refusing over-long
 	// plaintext here names the limit instead of letting EncryptOAEP return a
 	// bare "message too long", which reads like a bug rather than a bound.
 	if max := pub.Size() - 2*sha1.Size - 2; len(plaintext) > max {

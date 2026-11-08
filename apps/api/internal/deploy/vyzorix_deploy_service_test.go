@@ -89,7 +89,6 @@ func serviceFixture(t *testing.T, caller *Caller) (*DeployService, *memConfigs) 
 
 	svc := NewDeployService(
 		configs,
-		devices,
 		func(_ context.Context, _ string) (*Caller, error) { return caller, nil },
 		devices,
 		sign,

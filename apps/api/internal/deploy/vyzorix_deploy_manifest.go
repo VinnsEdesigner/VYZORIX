@@ -488,3 +488,7 @@ func sortStrings(s []string) {
 
 // errNoSigner is returned when a compile is asked to sign with no signer.
 var errNoSigner = errors.New("deploy: no signer configured")
+
+// errNotSigned is returned when a signer produces a document with no signature
+// line. The device would refuse it, so storing it would only fail later.
+var errNotSigned = errors.New("deploy: signer returned an unsigned document")

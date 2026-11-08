@@ -1,6 +1,7 @@
 package deploy
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -446,5 +447,23 @@ func TestNoSignerIsRefused(t *testing.T) {
 
 	if _, err := CompileAndSign(m, injection(), nil); err == nil {
 		t.Fatal("compiling with no signer must be refused")
+	}
+}
+
+// TestUnsignedResultIsRefused proves SignConfig checks the signature line it got
+// back, rather than trusting the signer. A document with no signature line would
+// otherwise be stored and served as though it were signed.
+func TestUnsignedResultIsRefused(t *testing.T) {
+	t.Parallel()
+
+	m, err := ParseManifest([]byte(twoAppManifest))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+
+	identity := func(document string) (string, error) { return document, nil }
+
+	if _, err := CompileAndSign(m, injection(), identity); !errors.Is(err, errNotSigned) {
+		t.Fatalf("a signer that returns the input unchanged must be refused, got %v", err)
 	}
 }

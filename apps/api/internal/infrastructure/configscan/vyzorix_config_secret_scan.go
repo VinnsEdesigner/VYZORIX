@@ -90,8 +90,11 @@ func scanNodeValue(node *libv.Node, inApp bool) error {
 	}
 
 	if key == "secret" && inApp {
-		// A name, not a value: only a strong shape is a mistake here.
-		if len(node.Tokens) > 1 && strongSecretShape.MatchString(strings.Join(node.Tokens[1:], " ")) {
+		// A name, not a value. A digest or base64 run is not a name, so both the
+		// context-free shapes and the bare-run shape are refused here — unlike an
+		// artifact's sha256, which is a digest and lives on its own node.
+		value := strings.Join(node.Tokens[1:], " ")
+		if len(node.Tokens) > 1 && (strongSecretShape.MatchString(value) || envSecretShape.MatchString(value)) {
 			return &Error{Key: "secret", Reason: "carries what looks like a value, not a name"}
 		}
 

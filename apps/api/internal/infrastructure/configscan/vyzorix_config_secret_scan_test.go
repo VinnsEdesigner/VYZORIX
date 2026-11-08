@@ -22,6 +22,7 @@ func TestRefusesASecretValue(t *testing.T) {
 		"secret key not in app": "v device d1\nvv secret abc123\n",
 		"hex run in env":        "v device d1\nvv env K=9f2c1b3a4d5e6f708192a3b4c5d6e7f8091a2b3c4\n",
 		"secret-shaped env key": "v device d1\nvv env API_TOKEN=short\n",
+		"hex run as a secret":   "v device d1\nvv apps\nvvv app vfd\nvvvv secret 0123456789abcdef0123456789abcdef01234567\n",
 	}
 
 	for name, doc := range cases {

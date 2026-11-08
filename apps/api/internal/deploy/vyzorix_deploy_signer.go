@@ -42,9 +42,16 @@ func SignConfig(cfg *Config, sign DocumentSigner) (string, error) {
 	}
 
 	// A signature over text the parser rejects is a signature over nothing the
-	// device can read.
-	if _, err := libv.Parse(signed); err != nil {
+	// device can read. And a document with no signature line would be stored and
+	// served as though it were signed, which is the failure the trust model exists
+	// to prevent.
+	parsed, err := libv.Parse(signed)
+	if err != nil {
 		return "", err
+	}
+
+	if !parsed.Signed {
+		return "", errNotSigned
 	}
 
 	return signed, nil
