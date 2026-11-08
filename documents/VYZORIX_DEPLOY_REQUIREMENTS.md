@@ -202,6 +202,19 @@ device agent                      verify signature → fetch → verify digest �
 - [ ] Removing the second app from the manifest stops it and leaves the first running.
 - [ ] The deploy of the second app is exercised in the integration test suite.
 
+### US-013: A secret reaches an app, without entering the config
+**Description:** As an operator running a server-shaped app, I want to set a credential, so that the app works without the secret ever living in a git repo or a signed document.
+
+**Acceptance Criteria:**
+- [ ] `vyzorix secrets set <app> KEY=VALUE --device <id>` stores the value encrypted to that device's key.
+- [ ] `vyzorix secrets list <app> --device <id>` shows key names and a generation, and **never** a value.
+- [ ] The signed config names the secret keys an app expects and carries **no value**.
+- [ ] The app receives the secret as an environment variable at start.
+- [ ] A secret value never appears in `apps.json`, in a log line, or in any `GET` response — asserted by a test.
+- [ ] A device cannot fetch a secret its current signed config does not name.
+- [ ] A secret that will not decrypt is reported and the app is **not started** with the variable absent.
+- [ ] `secrets set`/`unset` require the same `device.deploy` grant as a deploy.
+
 ---
 
 ## 5. Functional Requirements
@@ -229,6 +242,10 @@ device agent                      verify signature → fetch → verify digest �
 - **FR-21** The device retains the current config and the previous known-good one (`keep_last = 2`), and restores the latter when an apply fails.
 - **FR-22** The manifest schema is authored in CUE at `tooling/schema/deploy.cue`, generated for Go, and covered by the existing pre-commit drift gate.
 - **FR-23** The deploy CLI is a new binary at `apps/cli`, sharing the API's generated types rather than re-declaring the wire shape.
+- **FR-24** A secret value is never carried in a signed config; `[app.env]` is configuration and `[app.secrets]` is a list of **names**. Values travel on their own channel, encrypted to the device's key.
+- **FR-25** The device holds a **second** Keystore key (`PURPOSE_DECRYPT`, RSA-3072) for secrets — separate from the identity key, never exposed over the bridge.
+- **FR-26** A decrypted secret is written to `files/apps/<app>/.env` at mode `0600` and **never** into `apps.json`, which is readable by every app in the container.
+- **FR-27** A device may fetch a secret's ciphertext only for a key the current signed config names for that app.
 
 ---
 
@@ -240,7 +257,8 @@ device agent                      verify signature → fetch → verify digest �
 - **No server-side app routes beyond what deploy needs.** The `apps.read`/`apps.write` scopes exist but no route checks them; Layer 3 decision D8 defers that work. Deploy uses `device.deploy` (FR-18), not `apps.write`.
 - **No multi-device or group deploy in v1.** One device per deploy; org-level defaults are read but not applied fleet-wide.
 - **No arbitrary code execution via the socket.** A device runs what a *signed* config names, never a live command.
-- **No secret management.** This feature deliberately has no place to put a secret; secrets stay in the existing keypair/OTA model.
+- **No secret management UI in the console.** Secrets are set by the CLI and encrypted to a device; the console shows key *names* only, read-only. Editing a credential from a browser is a later feature.
+- **No group or fleet secret.** A secret is encrypted to one device's key, so there is no shared secret in v1 (§10 of the contract).
 - **No automatic rollback.** The previous known-good config is retained and restorable (FR-21); restoring it automatically when an app crash-loops is a later feature.
 - **No offline first-deploy.** A device that has never been online has no pinned config and no artifacts, so it cannot be deployed to. Enrollment already requires one network round trip; every deploy after that is verifiable offline. This is a real product limit, not an oversight.
 - **No `vyzorix undeploy`.** Removing an app from the manifest is how an app is removed (FR-15, FR-20); a separate destructive verb is out of scope.

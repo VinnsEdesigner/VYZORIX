@@ -148,7 +148,11 @@ purge     = false                    # optional, default false — see below
     start_url        = "/"
 
   [app.env]
-  MI_PORT = "8080"
+  MI_PORT = "8080"                   # configuration — safe to commit
+
+  # Secrets are NAMES only. The values are set out of band (vyzorix secrets set)
+  # and never appear in this file. See §9b.
+  secrets = ["DATABASE_URL", "S3_SECRET_KEY"]
 
 [[app]]                              # a second app — this is what makes it a platform
 name = "wiki"
@@ -178,7 +182,8 @@ expose = "lan"
 | `app.autostart` | bool | no | `true` | Whether the supervisor starts it. |
 | `app.expose` | enum | no | `loopback` | `loopback` \| `lan` \| `cloud`. `cloud` is refused in v1 (§10). |
 | `app.purge` | bool | no | `false` | The only thing that deletes an app's data. |
-| `app.env` | map | no | `{}` | String→string. A value that looks like a secret is refused (§5.2). |
+| `app.env` | map | no | `{}` | String→string. **Configuration only** — a value that looks like a secret is refused (§5.2); a secret goes through `vyzorix secrets` (§9b). |
+| `app.secrets` | list of string | no | `[]` | The **names** of secrets this app expects. Names only — never a value (§9b). |
 | `app.artifact[].name` | string | yes | — | Unique within the app. |
 | `app.artifact[].url` | string | yes | — | `https` only. |
 | `app.artifact[].sha256` | string | **yes** | — | 64 hex. Mandatory — see §5.3. |
@@ -224,6 +229,7 @@ is signed, delivered and stored; the `.toml` never leaves the operator's machine
       "expose": "loopback",
       "purge": false,
       "env": { "MI_PORT": "8080" },
+      "secrets": ["DATABASE_URL", "S3_SECRET_KEY"],
       "artifacts": [
         { "name": "engine",  "url": "https://...", "sha256": "9f2c...", "kind": "dir" },
         { "name": "console", "url": "https://...", "sha256": "41ab...", "kind": "webroot" }
@@ -257,9 +263,10 @@ The device re-checks the same rule before storing, and reports `config_carries_s
 with the key. Both sides check because the invariant is load-bearing: a config that can
 carry a token collapses the model back to "a secret travels over the wire".
 
-A caller that genuinely needs a secret has no place to put it here, by design. The
-answer is the existing keypair/OTA model, or an app that reads its own credential from
-somewhere that is not this config.
+A caller that genuinely needs a secret has **somewhere else to put it** — §9b defines it —
+and that is the point of the refusal being absolute here. The answer is not "put it in the
+config and hope"; it is a separate channel with its own encryption and its own
+authorisation.
 
 ### 5.3 The no-unhashed-reference rule
 
@@ -477,6 +484,143 @@ data gets deleted by accident.
 
 ---
 
+## 9b. Secrets — where an env var that *is* a secret goes
+
+An app that is itself a server needs credentials: a database URL, an API token, a
+signing key. `[app.env]` is exactly where a user would put them, and §5.2 refuses it.
+That refusal is right — a config is signed, logged, served by `GET /v1/deploy/{device}`
+and shown in a console, so a secret in it is a secret in five places — but a rule with
+no alternative is not a design. This is the alternative.
+
+### 9b.1 The rule
+
+**`[app.env]` is for configuration. A secret travels on its own channel, encrypted to
+the device, and is never in the signed config.**
+
+The compiler's refusal (§5.2) is unchanged and stays. What is added is somewhere for
+the secret to go.
+
+### 9b.2 Where a secret is stored, and how it is delivered
+
+Modelled on the one platform whose split this is — `fly.toml` carries no secrets,
+`flyctl secrets set` writes to a separate encrypted store, and setting one *redeploys*
+because the machine's environment changed. Vyzorix does the same, with one difference:
+the device is intermittent, so the secret cannot be pushed at deploy time and assumed
+received. It is delivered on demand, and re-delivered on every reconnect.
+
+```
+ vyzorix secrets set vfd DATABASE_URL=... --device d_01H...
+   │
+   ├─ server: encrypt to the DEVICE's public key      (RSA-OAEP-SHA256)
+   │           store the CIPHERTEXT at rest            (secretstore, AES-GCM)
+   │           record key, app, device — never the plaintext
+   ▼
+ device_config frame            the signed config: names the KEYS, not the values
+   │
+   ▼
+ agent: sees a key it does not hold → asks → server returns CIPHERTEXT
+        │
+        ├─ decrypt with the device key                 (Keystore, PURPOSE_DECRYPT)
+        ├─ write files/apps/<app>/.env, mode 0600
+        └─ report secrets_ready {app, keys[]}
+```
+
+The config carries a **list of secret key names** per app — `"secrets": ["DATABASE_URL"]`
+— and never a value. That is what lets the device know it is missing one, and what lets
+the console show *which* secrets an app expects without showing any of them.
+
+### 9b.3 The envelope, and why this key and not the other
+
+**A secret is encrypted to a key the agent holds for exactly this purpose** — an
+RSA-3072 keypair in the Android Keystore with `PURPOSE_DECRYPT`, generated on first
+run, non-exportable, and *separate from the identity key*.
+
+Three reasons the envelope is RSA-OAEP rather than ECDH:
+
+1. **`PURPOSE_AGREE_KEY` is API 31**, and this app has `minSdk = 26`. ECDH in the
+   Keystore is unavailable on Android 8–11, which the app supports. `PURPOSE_DECRYPT`
+   is API 23, so RSA works on every device in range.
+2. **The identity key cannot be reused.** It is generated with `PURPOSE_SIGN` only
+   (`KeystoreDeviceIdentity`), and widening its purpose would change what that key
+   *is* — a signing key that can also decrypt is a worse key. More importantly, the
+   identity key's public half is deliberately public: `IdentityApi` exposes it to the
+   container, and it is sent to the server at enroll. Encrypting a secret to a key
+   whose public half is handed out freely is fine cryptographically, but it means the
+   secret's confidentiality rests on a key the whole system already knows.
+3. **The container must not be able to decrypt.** `IdentityApi` says of the identity
+   key: *"this API has no way to reach it."* The secret key needs the same property
+   for the same reason — proot runs with `-0`, so the container is **root inside**,
+   and anything the container can read, a compromised app can read. The decryption
+   happens in the agent process, and only the *plaintext* env file reaches the
+   container.
+
+So: a **second Keystore entry**, `vyzorix.secret`, `PURPOSE_DECRYPT`, generated on
+first run alongside the identity key, whose public half is sent at enroll exactly as
+the identity key's is. The agent never exposes it over the bridge; there is no
+`SecretApi`.
+
+### 9b.4 What lands on disk, and why not `apps.json`
+
+The plaintext goes to `files/apps/<app>/.env`, mode `0600`, and **not** into
+`apps.json`. The registry is inside `/home/apps`, which is bound into the container and
+readable by every app running there — putting a secret in it would hand one app
+another's credential. The supervisor already passes env to a process (Layer 3 §4.1 S8,
+`app-env`); it reads the `.env` at start and does not copy it into the registry.
+
+`apps.json` holds `env` (configuration, from the config) and a list of `secret_keys`
+(names only). That distinction is the whole point: the registry is inspectable, so it
+must not be worth inspecting.
+
+### 9b.5 Rotation, and the failure that matters
+
+- **A secret is replaced, not merged.** `secrets set` for an existing key overwrites the
+  ciphertext and bumps the app's secret generation. The device re-fetches when the
+  generation differs from the one it holds.
+- **A device that has been wiped** has lost its Keystore key, so it cannot decrypt
+  anything sent before the wipe. It re-enrolls (a new identity, per
+  `REGISTRATION_CONTRACT.md` §5) and the operator re-sets the secret. There is no
+  recovery of a secret encrypted to a key that no longer exists — by design, and worth
+  stating rather than discovering.
+- **A secret the device cannot decrypt is a refusal, not a silent skip.** If the
+  ciphertext will not open, the agent reports `secret_undecryptable {app, key}` and
+  **does not start the app**. Starting it with the variable absent is the failure mode
+  that produces an app that looks up but talks to the wrong thing.
+
+### 9b.6 The CLI and the API
+
+```
+vyzorix secrets set   <app> KEY=VALUE --device <id>     # encrypt, store, bump generation
+vyzorix secrets list  <app> --device <id>               # names + generation, never values
+vyzorix secrets unset <app> KEY    --device <id>
+```
+
+- `GET /v1/deploy/{device}/secrets/{app}` returns **names and generation only**.
+- `GET /v1/deploy/{device}/secrets/{app}/{key}` returns **ciphertext** to an
+  authenticated device, and only for a key the current signed config names. A device
+  cannot ask for a secret its config does not reference.
+- `set`/`unset` are authorised by `device.deploy` (§7.1) — the same grant, because
+  writing a credential is the same kind of act as writing what runs.
+- **A value is never logged, never returned by any `GET`, and never written to
+  `VYZORIX_DEPLOY_CONTRACT`-adjacent state.** `list` shows names, which is what an
+  operator needs to confirm the right thing is set.
+
+### 9b.7 What this does and does not protect
+
+**Protects:** a secret never sits in a git repo, never travels in the signed config,
+never appears in a log or a console response, is encrypted at rest on the server, and
+is encrypted in transit to a key only the agent holds — so a server compromise that
+reaches the *ciphertext store* does not yield a plaintext secret for a device whose key
+it does not have.
+
+**Does not protect:** the device itself. A rooted phone, or the operator's own
+container running as fake-root, can read `files/apps/<app>/.env` once the app has
+started. This is the same limit as every secret on a device the operator controls, and
+it is stated rather than implied. The envelope defends the *transport and the store*,
+not a compromised endpoint.
+
+
+---
+
 ## 10. Honest limits
 
 - **Offline first-deploy is not supported.** A device that has never been online has no
@@ -507,6 +651,17 @@ data gets deleted by accident.
 - **Key rotation needs an overlap window.** A device offline for months may only know an
   older pinned key; the server must accept a signature from any key in the set until
   the device has re-fetched.
+- **The secret envelope defends the transport and the store, not the device.** Once an
+  app has started, its secret is a `0600` file the app itself can read — and proot runs
+  with `-0`, so the container is root inside. A rooted phone, or a compromised app, can
+  read it. This is the limit of any secret on an endpoint the operator controls (§9b.7).
+- **A wiped device loses its secret key, so old ciphertext is unrecoverable.** The
+  Keystore entry does not survive a reinstall; the device re-enrolls as a new identity
+  and the operator re-sets the secret. Stated because it is a real operational step, not
+  an edge case.
+- **Secrets are per device, not shared.** A secret set for device A does not apply to
+  device B, because it is encrypted to A's key. A fleet of ten devices means ten
+  `secrets set` calls, or a loop — there is no group secret in v1.
 
 ---
 
@@ -556,7 +711,12 @@ automatically (§10).
    `[app.pwa]` override changes the served file.
 9. A failed apply leaves the device running its previous config, demonstrated by
    inducing an artifact failure and observing the device still answer.
-10. `./gradlew gate` passes; the server gate passes; the flow is exercised end to end
+10. A secret set with `vyzorix secrets set` reaches the app as an env var, and **never**
+    appears in the signed config, in `apps.json`, in a log, or in any `GET` response —
+    asserted by a test that greps all four.
+11. A secret the device cannot decrypt is refused, and the app is **not started** with
+    the variable absent.
+12. `./gradlew gate` passes; the server gate passes; the flow is exercised end to end
     against the real server on the emulator.
 
 ---
@@ -578,9 +738,11 @@ must earn its name, so existing files are modified in place wherever possible.
 | `apps/api/internal/deploy/authz.go` | 110 | The §7.1 predicate: role, grant, org binding, lifecycle. |
 | `apps/api/internal/api/handlers/deploy/deploy_handler.go` | 170 | `POST /v1/deploy`, `GET /v1/deploy/{device}`, dry-run. |
 | `apps/api/internal/api/handlers/deploy/credential_handler.go` | 110 | Mint/list/revoke a device-scoped deploy credential. |
+| `apps/api/internal/deploy/secrets.go` | 200 | RSA-OAEP wrap to the device key; store ciphertext via `secretstore`; generation counter; the "only keys the config names" check. |
+| `apps/api/internal/api/handlers/deploy/secrets_handler.go` | 130 | `GET` names+generation; `GET` ciphertext to an authenticated device. |
 | `apps/api/cmd/api/provisioning_adapters.go` | +40 | The `catalog_apps` section. |
 | `apps/api/internal/domain/permission/scoped.go` | +6 | `ActionDeviceDeploy`. |
-| `apps/cli/main.go` + `internal/deploy/*` | 320 | The CLI: read the file, validate, upload, stream progress, `--dry-run`. |
+| `apps/cli/main.go` + `internal/deploy/*` | 400 | The CLI: `deploy`, `secrets set/list/unset`, validate, `--dry-run`. |
 
 **New package: one** (`internal/deploy`). Everything else is a file in an existing
 package, or an addition to one.
@@ -598,11 +760,14 @@ a regression in any of them is silent.
 | `cloud/PwaManifest.kt` | 120 | Generate `site.webmanifest` from the config; refuse an invalid `display`. |
 | `cloud/ConfigStore.kt` | +80 | Retain current + last-good; restore on failure. |
 | `cloud/DeployReporter.kt` | 90 | Report `device_ready {version}` and every refusal reason. |
+| `cloud/SecretKey.kt` | 110 | The second Keystore entry: `vyzorix.secret`, RSA-3072, `PURPOSE_DECRYPT`, generated on first run. Never exposed over the bridge. |
+| `cloud/SecretStore.kt` | 140 | Fetch ciphertext, decrypt, write `files/apps/<app>/.env` at 0600, report `secrets_ready`; refuse to start an app whose secret will not open. |
 | `engine/ProotLauncher.kt` | +20 | Bind `/home/apps` (Layer 3 D2) — the gap this depends on. |
 
-**Tests: ~5 files, ~35 cases.** The important ones: a tampered digest leaves the
+**Tests: ~7 files, ~45 cases.** The important ones: a tampered digest leaves the
 previous copy; `pwa = false` writes no file; a `cmd` symlink escape is refused; a
-failed apply keeps the running config.
+failed apply keeps the running config; a ciphertext will not decrypt with the wrong key;
+a secret never reaches `apps.json` or a log.
 
 ### 13.3 Not in this contract
 
@@ -613,15 +778,16 @@ this feature cannot start without them (`/home/apps` bind, supervisor start).
 
 ### 13.4 Rough size
 
-Server ~1,300 LOC + CLI 320 + tests; device ~650 LOC + tests. Comparable to the
+Server ~1,600 LOC + CLI 400 + tests; device ~1,050 LOC + tests. Comparable to the
 registration contract's own estimate, and the same shape: most of the value is in the
-refusals, which are cheap to write and expensive to omit.
+refusals and the crypto, which are cheap to write and expensive to omit.
 
 ---
 
 ## 14. The spike, and why it is first
 
-**Build the compiler, the signer, and the verifier round-trip — and nothing else.**
+**Build the compiler, the signer, the verifier — and the secret envelope — and nothing
+else.**
 
 It is first because it is the load-bearing invariant. Every other part of this contract
 can be wrong in a way that is visible and fixable; a config that verifies when it
@@ -629,6 +795,12 @@ should not is the failure that makes the rest pointless. A round-trip test — c
 manifest, sign it, verify it, then tamper with one byte and verify again — exercises
 the whole trust model in a few hundred lines, with no device, no network and no
 artifacts.
+
+The envelope is in the spike for the same reason and at the same cost: RSA-OAEP wrap
+in Go, unwrap in Kotlin, is a handful of lines, and it is the one piece of new
+cryptography this feature introduces. Getting it wrong is silent — a secret that
+decrypts to garbage is worse than one that refuses — so it is worth proving before
+anything is built on top of it.
 
 Specifically, the spike is done when:
 
@@ -640,6 +812,8 @@ Specifically, the spike is done when:
 6. A `cmd` outside `/home/apps/<app>/` is refused, including through a symlink.
 7. The same tests run on both sides — Go signs, Kotlin verifies — because a signature
    that only verifies in one language is not a signature.
+8. **A secret wrapped in Go unwraps in Kotlin**, and a ciphertext wrapped to key A
+   fails to unwrap with key B.
 
 Only then is it worth fetching an artifact. The fetch is the part everyone wants to
 build first and the part that teaches the least.
