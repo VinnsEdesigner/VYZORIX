@@ -975,25 +975,25 @@ Two facts the first draft of this section got wrong, because it never opened the
 | New file | ~LOC | Requirement | Purpose |
 |:--|--:|:--|:--|
 | `tooling/schema/deploy.cue` | 120 | FR-22, FR-2 | The manifest schema. Source of truth; Go generated from it, JSON Schema published. |
-| `apps/api/internal/deploy/manifest.go` | 160 | US-001, FR-1 | Parse and validate `vyzorix.toml` against the generated types. Unknown key ⇒ error. |
-| `apps/api/internal/deploy/compile.go` | 190 | US-001, FR-3, FR-4 | Manifest → config. Injects `memberId`/`version`/`dir`; enforces the `cmd` rule (§8). |
-| `apps/api/internal/deploy/render.go` | 120 | US-001, §5.1 | The `vyzorix.v` writer: repeated `app`/`artifact`/`env`/`secret` nodes in fixed field order. The determinism surface, so it is tested on its own. |
-| `apps/api/internal/deploy/secretcheck.go` | 90 | FR-8, §5.2 | The structural no-secret walk: exempt schema paths, inspect every other value, inspect `env` keys. |
-| `apps/api/internal/deploy/sign.go` | 90 | US-002, FR-4, FR-5 | Sign the compiled config with `ServerSigner.SignDocument`; increment the version. |
-| `apps/api/internal/deploy/store.go` | 130 | FR-21, §13 note | Persist current + last-good per device (`keep_last = 2`). **Not** the `configversion` store. |
-| `apps/api/internal/deploy/authz.go` | 110 | US-003, FR-11, §7.1 | The predicate: super-admin, or a `device.deploy` grant whose scope covers the device. |
-| `apps/api/internal/deploy/secrets.go` | 200 | US-013, FR-24–27, §9b | `crypto.WrapSecret` to the device key; store ciphertext via `secretstore`; generation counter; the "only keys the config names" check. |
-| `apps/api/internal/deploy/catalog.go` | 80 | FR-10, FR-19 | The `catalog_apps` model and the "custom vs known" marking. |
-| `apps/api/internal/api/handlers/deploy/deploy_handler.go` | 170 | US-003, US-005, US-009 | `POST /v1/deploy`, `GET /v1/deploy/{device}`, `GET /v1/deploy/schema/{version}`, dry-run. |
-| `apps/api/internal/api/handlers/deploy/credential_handler.go` | 110 | US-004, FR-12 | Mint / list / revoke a device-scoped deploy credential. |
-| `apps/api/internal/api/handlers/deploy/secrets_handler.go` | 130 | US-013, §9b.6 | `GET` names+generation; `GET` ciphertext to an authenticated device. |
-| `apps/api/internal/infrastructure/storage/078_deploy_config.go` | 70 | FR-21 | The per-device signed-config table (current + last-good). |
-| `apps/api/internal/infrastructure/storage/079_deploy_credential.go` | 70 | FR-12 | The deploy-credential table. |
-| `apps/api/internal/infrastructure/storage/080_app_secret.go` | 70 | US-013 | The secret ciphertext table: `(device, app, key, generation, ciphertext)`. |
-| `apps/cli/main.go` | 120 | US-009, FR-23 | The `vyzorix` entry point. |
-| `apps/cli/internal/deploy/deploy.go` | 180 | US-009 | `deploy`, `--dry-run`, validate, progress, exit codes. |
-| `apps/cli/internal/deploy/secrets.go` | 100 | US-013, §9b.6 | `secrets set/list/unset`. |
-| `apps/cli/internal/deploy/validate.go` | 90 | FR-2, US-009 | Validate against the published JSON Schema before upload. |
+| `apps/api/internal/deploy/vyzorix_deploy_manifest.go` | 160 | US-001, FR-1 | Parse and validate `vyzorix.toml` against the generated types. Unknown key ⇒ error. |
+| `apps/api/internal/deploy/vyzorix_deploy_compile.go` | 190 | US-001, FR-3, FR-4 | Manifest → config. Injects `memberId`/`version`/`dir`; enforces the `cmd` rule (§8). |
+| `apps/api/internal/deploy/vyzorix_deploy_render.go` | 120 | US-001, §5.1 | The `vyzorix.v` writer: repeated `app`/`artifact`/`env`/`secret` nodes in fixed field order. The determinism surface, so it is tested on its own. |
+| `apps/api/internal/deploy/vyzorix_deploy_secret_scan.go` | 90 | FR-8, §5.2 | The structural no-secret walk: exempt schema paths, inspect every other value, inspect `env` keys. |
+| `apps/api/internal/deploy/vyzorix_deploy_signer.go` | 90 | US-002, FR-4, FR-5 | Sign the compiled config with `ServerSigner.SignDocument`; increment the version. |
+| `apps/api/internal/deploy/vyzorix_deploy_store.go` | 130 | FR-21, §13 note | Persist current + last-good per device (`keep_last = 2`). **Not** the `configversion` store. |
+| `apps/api/internal/deploy/vyzorix_deploy_authz.go` | 110 | US-003, FR-11, §7.1 | The predicate: super-admin, or a `device.deploy` grant whose scope covers the device. |
+| `apps/api/internal/deploy/vyzorix_deploy_secrets.go` | 200 | US-013, FR-24–27, §9b | `crypto.WrapSecret` to the device key; store ciphertext via `secretstore`; generation counter; the "only keys the config names" check. |
+| `apps/api/internal/deploy/vyzorix_deploy_catalog.go` | 80 | FR-10, FR-19 | The `catalog_apps` model and the "custom vs known" marking. |
+| `apps/api/internal/api/handlers/deploy/vyzorix_deploy_config_handler.go` | 170 | US-003, US-005, US-009 | `POST /v1/deploy`, `GET /v1/deploy/{device}`, `GET /v1/deploy/schema/{version}`, dry-run. |
+| `apps/api/internal/api/handlers/deploy/vyzorix_deploy_credential_handler.go` | 110 | US-004, FR-12 | Mint / list / revoke a device-scoped deploy credential. |
+| `apps/api/internal/api/handlers/deploy/vyzorix_app_secret_handler.go` | 130 | US-013, §9b.6 | `GET` names+generation; `GET` ciphertext to an authenticated device. |
+| `apps/api/internal/infrastructure/storage/078_device_deploy_config.go` | 70 | FR-21 | The per-device signed-config table (current + last-good). |
+| `apps/api/internal/infrastructure/storage/079_device_deploy_credential.go` | 70 | FR-12 | The deploy-credential table. |
+| `apps/api/internal/infrastructure/storage/080_device_app_secret.go` | 70 | US-013 | The secret ciphertext table: `(device, app, key, generation, ciphertext)`. |
+| `apps/cli/vyzorix_cli_main.go` | 120 | US-009, FR-23 | The `vyzorix` entry point. |
+| `apps/cli/internal/deploy/vyzorix_deploy_command.go` | 180 | US-009 | `deploy`, `--dry-run`, validate, progress, exit codes. |
+| `apps/cli/internal/deploy/vyzorix_secrets_command.go` | 100 | US-013, §9b.6 | `secrets set/list/unset`. |
+| `apps/cli/internal/deploy/vyzorix_manifest_validate.go` | 90 | FR-2, US-009 | Validate against the published JSON Schema before upload. |
 
 **New package: one** (`internal/deploy`). The handlers, storage and CLI are new files
 in existing packages or new leaf packages.
@@ -1011,7 +1011,7 @@ level up. It is granted explicitly, per §7.2.
 | `apps/api/internal/api/server_routes.go` | Register the `/v1/deploy` group and its routes. | US-003, US-013 |
 | `apps/api/internal/api/api_server.go` | Construct the deploy handler and service; wire the signer, store, secretstore and catalog. | US-003 |
 | `apps/api/internal/api/server_handlers.go` | The handler struct fields the routes need. | US-003 |
-| `apps/api/internal/application/device/config_service.go` | Replace `ValidateConfigHasNoSecrets`'s line scan with the structural walk (`secretcheck.go`) for configs that carry apps; `BuildConfig` emits the `apps` section and `features.apps = true`. | FR-8, §5.1–5.2 |
+| `apps/api/internal/application/device/config_service.go` | Replace `ValidateConfigHasNoSecrets`'s line scan with the structural walk (`vyzorix_deploy_secret_scan.go`) for configs that carry apps; `BuildConfig` emits the `apps` section and `features.apps = true`. | FR-8, §5.1–5.2 |
 | `apps/api/internal/api/handlers/inbox/enroll_handler.go` | Deliver the apps-carrying config; carry the device's **secret** public key into the device record at enroll. | US-005, §9b.3 |
 | `apps/api/cmd/api/provisioning_adapters.go` | The `catalog_apps` section adapter. | FR-19, §8.1 |
 | `apps/api/internal/application/provisioning/vyzorix_boot_provisioning.go` | Add `CatalogApps []CatalogAppConfig` to `Config` and apply it at boot. | FR-19 |
@@ -1067,31 +1067,31 @@ secret_keys" would have produced a file the supervisor silently ignores those fi
 
 | Requirement | Server files | Device files |
 |:--|:--|:--|
-| US-001 manifest + compiler | `deploy.cue`, `manifest.go`, `compile.go`, `render.go` | — |
-| US-002 signing | `sign.go` (`ServerSigner`) | `ConfigVerifier` (verify) |
-| US-003 `POST /v1/deploy` | `deploy_handler.go`, `authz.go`, `server_routes.go` | — |
-| US-004 deploy credential | `credential_handler.go`, `079_deploy_credential.go` | — |
-| US-005 delivery + drift | `deploy_handler.go`, `enroll_handler.go` | `ConfigStore`, `DeployReporter`, `CloudConnectionFactory` |
+| US-001 manifest + compiler | `deploy.cue`, `vyzorix_deploy_manifest.go`, `vyzorix_deploy_compile.go`, `vyzorix_deploy_render.go` | — |
+| US-002 signing | `vyzorix_deploy_signer.go` (`ServerSigner`) | `ConfigVerifier` (verify) |
+| US-003 `POST /v1/deploy` | `vyzorix_deploy_config_handler.go`, `vyzorix_deploy_authz.go`, `server_routes.go` | — |
+| US-004 deploy credential | `vyzorix_deploy_credential_handler.go`, `079_device_deploy_credential.go` | — |
+| US-005 delivery + drift | `vyzorix_deploy_config_handler.go`, `enroll_handler.go` | `ConfigStore`, `DeployReporter`, `CloudConnectionFactory` |
 | US-006 fetch/verify/install | — | `ArtifactFetcher`, `DeployApplier` |
 | US-007 `/home/apps` + registry | — | `AppRegistryWriter`, `DeployApplier` |
-| US-008 webroot + PWA | `compile.go` | `PwaManifest` |
+| US-008 webroot + PWA | `vyzorix_deploy_compile.go` | `PwaManifest` |
 | US-009 CLI | `apps/cli/**` | — |
 | US-010 console view | `apps/VyzoriX_web/src/ui/pages/deploy/` | — |
 | US-011 Layer 3 gaps | — | see §13.6 |
 | US-012 second app | (no platform file — that is the test) | (no platform file) |
-| US-013 secrets | `secrets.go`, `secrets_handler.go`, `080_app_secret.go` | `SecretKey`, `SecretEnvelope`, `SecretStore` |
-| FR-2 published schema | `deploy.cue` → `schemas.go`, `build_schemas.py`; `deploy_handler.go` serves it | `validate.go` (CLI) |
-| FR-8 no-secret | `secretcheck.go` | `ConfigVerifier` |
-| FR-9 `cmd` rule | `compile.go` | `DeployApplier` (re-checks) |
-| FR-16 refusals | `deploy_handler.go` | `DeployReporter` |
+| US-013 secrets | `vyzorix_deploy_secrets.go`, `vyzorix_app_secret_handler.go`, `080_device_app_secret.go` | `SecretKey`, `SecretEnvelope`, `SecretStore` |
+| FR-2 published schema | `deploy.cue` → `schemas.go`, `build_schemas.py`; `vyzorix_deploy_config_handler.go` serves it | `vyzorix_manifest_validate.go` (CLI) |
+| FR-8 no-secret | `vyzorix_deploy_secret_scan.go` | `ConfigVerifier` |
+| FR-9 `cmd` rule | `vyzorix_deploy_compile.go` | `DeployApplier` (re-checks) |
+| FR-16 refusals | `vyzorix_deploy_config_handler.go` | `DeployReporter` |
 | FR-17/FR-24 never logged | every deploy file (a test greps) | `SecretStore` (a test greps) |
-| FR-18 `device.deploy` | `scoped.go`, `authz.go` | — |
-| FR-19 catalog | `catalog.go`, `provisioning_adapters.go`, `vyzorix_boot_provisioning.go` | — |
-| FR-20 `purge` | `compile.go` | `DeployApplier` |
-| FR-21 `keep_last = 2` | `store.go`, `078_deploy_config.go` | `ConfigStore` |
+| FR-18 `device.deploy` | `scoped.go`, `vyzorix_deploy_authz.go` | — |
+| FR-19 catalog | `vyzorix_deploy_catalog.go`, `provisioning_adapters.go`, `vyzorix_boot_provisioning.go` | — |
+| FR-20 `purge` | `vyzorix_deploy_compile.go` | `DeployApplier` |
+| FR-21 `keep_last = 2` | `vyzorix_deploy_store.go`, `078_device_deploy_config.go` | `ConfigStore` |
 | FR-22 CUE + drift | `deploy.cue`, `schemas.go`, `swag/*`, `selectors.cjs` | — |
 | FR-23 CLI shares types | `apps/cli/**`, orval output | — |
-| FR-25–27 secret envelope | `secrets.go` | `SecretKey`, `SecretEnvelope`, `SecretStore` |
+| FR-25–27 secret envelope | `vyzorix_deploy_secrets.go` | `SecretKey`, `SecretEnvelope`, `SecretStore` |
 
 US-012 has no platform file on purpose: "a second app deploys with no platform change"
 is a property, and the moment a file is added to make it work, the requirement has
