@@ -30,12 +30,12 @@ type OrganizationLookup interface {
 // It carries no secret: a name, a role, an org and, when a device was named, that
 // device's tier.
 type identityResponse struct {
+	Device       *deviceSummary `json:"device,omitempty"`
 	OperatorName string         `json:"operatorName"`
 	Email        string         `json:"email"`
 	Role         string         `json:"role"`
 	OrgID        string         `json:"orgId"`
 	OrgName      string         `json:"orgName"`
-	Device       *deviceSummary `json:"device,omitempty"`
 }
 
 // deviceSummary is the device half of the identity, present only when the request
