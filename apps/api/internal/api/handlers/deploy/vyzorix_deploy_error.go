@@ -22,6 +22,8 @@ type Handler struct {
 	devices           deploy.DeviceLookup
 	membershipChecker MembershipChecker
 	grants            GrantLister
+	operators         OperatorLookup
+	organizations     OrganizationLookup
 	log               *slog.Logger
 }
 
@@ -33,6 +35,8 @@ func NewHandler(
 	devices deploy.DeviceLookup,
 	membershipChecker MembershipChecker,
 	grants GrantLister,
+	operators OperatorLookup,
+	organizations OrganizationLookup,
 	log *slog.Logger,
 ) *Handler {
 	return &Handler{
@@ -42,6 +46,8 @@ func NewHandler(
 		devices:           devices,
 		membershipChecker: membershipChecker,
 		grants:            grants,
+		operators:         operators,
+		organizations:     organizations,
 		log:               log,
 	}
 }

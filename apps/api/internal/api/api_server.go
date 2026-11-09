@@ -172,6 +172,7 @@ type Server struct {
 	streamHandler               *websockethandlers.StreamHandler
 	operatorTerminalHandler     *websockethandlers.OperatorTerminalHandler
 	recordingHandler            *websockethandlers.RecordingHandler
+	deviceFrameHandler          *websockethandlers.DeviceFrameHandler
 	ptyRelay                    *hub.PTYRelay
 	telemetryHistoryHandler     *handlers.TelemetryHistoryHandler
 	connectionStatusHandler     *handlers.ConnectionStatusHandler
@@ -205,10 +206,19 @@ type Server struct {
 	// device-scoped credential check both use.
 	DeviceRepo        *storage.DeviceRepository
 	deployHandler     *deployhandlers.Handler
+	deployService     *deploy.DeployService
 	deployCredentials *deploy.CredentialService
+	deployCatalog     *deploy.Catalog
 	InvitationService *orgapplication.InvitationService
 	idempotencyRepo   *storage.IdempotencyRepository
 	config            config.Config
+}
+
+// DeployCatalog returns the app catalog the deploy feature reads. It is exposed
+// so boot provisioning can seed it from the file's `catalog_apps` section, which
+// runs after the server is constructed.
+func (s *Server) DeployCatalog() *deploy.Catalog {
+	return s.deployCatalog
 }
 
 // Routes returns the Gin engine for serving.
@@ -281,9 +291,28 @@ func (s *Server) wireDeployHandler(cfg *ServerConfig) {
 		sign = cfg.ServerSigner.SignDocument
 	}
 
-	deployService := deploy.NewDeployService(configs, s.DeviceRepo, sign, deploy.DeviceSettings{})
+	// The catalog is empty until provisioning seeds it from `catalog_apps`, which
+	// runs after the server is built. It is wired before the first request, so the
+	// read path never sees a half-built catalog.
+	s.deployCatalog = deploy.NewCatalog(nil)
+
+	deployService := deploy.NewDeployService(configs, s.DeviceRepo, sign, deploy.DeviceSettings{}, s.deployCatalog)
 	secretService := deploy.NewSecretService(secrets, secretKeys)
 	credentialService := deploy.NewCredentialService(credentials)
+	s.deployService = deployService
+
+	// The delivery path reads the same store the deploy writes, so a device is
+	// served the config that was deployed rather than a rebuild of its record.
+	// This is the fix for the two-disjoint-sources defect: one store, one truth.
+	if cfg.DeviceService != nil {
+		cfg.DeviceService.SetDeployConfigSource(configs)
+	}
+
+	// The device's device_ready frame lands on the frame handler the wire set up
+	// before the hub started, so the reporter is bound here, after both exist.
+	if s.deviceFrameHandler != nil {
+		s.deviceFrameHandler.SetApplyReporter(deployService)
+	}
 
 	var membershipChecker deployhandlers.MembershipChecker
 	var grants deployhandlers.GrantLister
@@ -294,6 +323,15 @@ func (s *Server) wireDeployHandler(cfg *ServerConfig) {
 		grants = s.grantRepo
 	}
 
+	// The identity endpoint resolves a name and an org for the caller. The operator
+	// repo comes from the config; the org repo is built over the same DB.
+	var operators deployhandlers.OperatorLookup
+	if cfg.OperatorRepo != nil {
+		operators = cfg.OperatorRepo
+	}
+
+	organizations := deployhandlers.OrganizationLookup(storage.NewOrganizationStorage(db))
+
 	s.deployCredentials = credentialService
 	s.deployHandler = deployhandlers.NewHandler(
 		deployService,
@@ -302,6 +340,8 @@ func (s *Server) wireDeployHandler(cfg *ServerConfig) {
 		s.DeviceRepo,
 		membershipChecker,
 		grants,
+		operators,
+		organizations,
 		cfg.Log,
 	)
 }
@@ -715,6 +755,7 @@ func NewServerWithDeps(cfg *ServerConfigWithDeps) *Server {
 	s.streamHandler = cfg.HandlerSet.Stream
 	s.operatorTerminalHandler = cfg.HandlerSet.OperatorTerminal
 	s.recordingHandler = cfg.HandlerSet.RecordingHandler
+	s.deviceFrameHandler = cfg.HandlerSet.DeviceFrames
 	s.ptyRelay = cfg.HandlerSet.PTYRelay
 	s.telemetryHistoryHandler = cfg.HandlerSet.TelemetryHistory
 	s.connectionStatusHandler = cfg.HandlerSet.ConnectionStatus

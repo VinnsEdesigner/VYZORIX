@@ -100,10 +100,12 @@ func newDeployFixture(t *testing.T) *deployFixture {
 	secretKeys := storage.NewDeviceSecretKeyRepository(raw)
 	creds := storage.NewDeployCredentialRepository(raw)
 	grants := storage.NewGrantRepository(raw)
+	operators := storage.NewOperatorRepository(raw)
+	organizations := storage.NewOrganizationStorage(raw)
 
 	signer := testServerSigner(t)
 
-	svc := deploy.NewDeployService(configs, devices, signer.SignDocument, deploy.DeviceSettings{})
+	svc := deploy.NewDeployService(configs, devices, signer.SignDocument, deploy.DeviceSettings{}, nil)
 	secretSvc := deploy.NewSecretService(secrets, secretKeys)
 	credSvc := deploy.NewCredentialService(creds)
 
@@ -113,7 +115,7 @@ func newDeployFixture(t *testing.T) *deployFixture {
 		grantRepo:         grants,
 		deployCredentials: credSvc,
 	}
-	s.deployHandler = deployhandlers.NewHandler(svc, secretSvc, credSvc, devices, nil, grants, s.log)
+	s.deployHandler = deployhandlers.NewHandler(svc, secretSvc, credSvc, devices, nil, grants, operators, organizations, s.log)
 
 	// Seed a registered device in each org. RegisteredAt > 0 is what the storage
 	// layer reads as LifecycleRegistered, which the predicate requires.
@@ -221,9 +223,12 @@ func TestDeployRouteTakesTheDeviceFromTheManifest(t *testing.T) {
 	}
 
 	var got struct {
-		Version      int      `json:"version"`
-		AuthorizedBy string   `json:"authorizedBy"`
-		Apps         []string `json:"apps"`
+		Version      int    `json:"version"`
+		AuthorizedBy string `json:"authorizedBy"`
+		Apps         []struct {
+			Name   string `json:"name"`
+			Custom bool   `json:"custom"`
+		} `json:"apps"`
 	}
 
 	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
@@ -238,7 +243,7 @@ func TestDeployRouteTakesTheDeviceFromTheManifest(t *testing.T) {
 		t.Fatalf("authorizedBy = %q, want %q", got.AuthorizedBy, deployOp)
 	}
 
-	if len(got.Apps) != 1 || got.Apps[0] != "vfd" {
+	if len(got.Apps) != 1 || got.Apps[0].Name != "vfd" {
 		t.Fatalf("apps = %v, want [vfd]", got.Apps)
 	}
 
@@ -729,4 +734,37 @@ func testServerSigner(t *testing.T) *cryptohmac.ServerSigner {
 	}
 
 	return signer
+}
+
+// TestSchemaRouteIsPublicAndCoexistsWithTheDeviceRoute registers the public
+// schema route beside the tenant deploy routes, the way the server does. It pins
+// what a handler unit test cannot: gin accepts the static /v1/deploy/schema/:version
+// path next to the tenant /v1/deploy/:imei path (a conflict panics at
+// registration), and the schema is served without a credential.
+func TestSchemaRouteIsPublicAndCoexistsWithTheDeviceRoute(t *testing.T) {
+	t.Parallel()
+
+	f := newDeployFixture(t)
+
+	gin.SetMode(gin.TestMode)
+
+	r := gin.New()
+	v1 := r.Group("/v1")
+
+	f.server.setupDeployRoutes(v1)
+	f.server.setupDeploySchemaRoute(v1)
+
+	w := do(t, r, http.MethodGet, "/v1/deploy/schema/1", nil, nil)
+	if w.Code != http.StatusOK {
+		t.Fatalf("GET /v1/deploy/schema/1 = %d, want 200 with no auth; body=%s", w.Code, w.Body.String())
+	}
+
+	if !strings.Contains(w.Body.String(), "DeployManifest") {
+		t.Fatalf("body is not the manifest schema: %s", w.Body.String())
+	}
+
+	w = do(t, r, http.MethodGet, "/v1/deploy/schema/999", nil, nil)
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("unknown schema version = %d, want 404", w.Code)
+	}
 }

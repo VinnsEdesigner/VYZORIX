@@ -303,6 +303,10 @@ func (s *Server) setupAuthenticatedRoutes() {
 	s.setupDeviceManagementRoutes(tenantGroup)
 
 	s.setupDeployRoutes(tenantGroup)
+
+	// The manifest schema is public, so it is registered on the /v1 group rather
+	// than the authenticated tenant group.
+	s.setupDeploySchemaRoute(r)
 }
 
 // setupDeployRoutes registers the deploy surface (VYZORIX_DEPLOY_CONTRACT.md
@@ -328,6 +332,10 @@ func (s *Server) setupDeployRoutes(tenantGroup *gin.RouterGroup) {
 	deployGroup.Use(middleware.NewOrganizationContext(nil).Middleware())
 
 	deployGroup.POST("", s.deployHandler.Deploy)
+
+	// Registered before /:imei: gin 1.9 allows a static sibling of a param route, and
+	// the static wins for this path, so whoami is never read as a device id.
+	deployGroup.GET("/whoami", s.deployHandler.Identity)
 	deployGroup.GET("/:imei", s.deployHandler.Current)
 	deployGroup.GET("/:imei/document", s.deployHandler.Document)
 
@@ -338,6 +346,20 @@ func (s *Server) setupDeployRoutes(tenantGroup *gin.RouterGroup) {
 	deployGroup.POST("/:imei/secrets/:app", s.deployHandler.SetSecret)
 	deployGroup.GET("/:imei/secrets/:app", s.deployHandler.ListSecrets)
 	deployGroup.DELETE("/:imei/secrets/:app/:key", s.deployHandler.UnsetSecret)
+}
+
+// setupDeploySchemaRoute registers the manifest schema, unauthenticated (FR-2).
+// It is "published": the CLI validates a manifest against it before it has any
+// credential, and the schema is identical for every tenant, so requiring a session
+// would only make the CLI carry one to fetch a public document.
+func (s *Server) setupDeploySchemaRoute(public *gin.RouterGroup) {
+	if s.deployHandler == nil {
+		return
+	}
+
+	// Registered on the public /v1 group, beside the tenant group rather than
+	// inside it, so no auth middleware runs.
+	public.GET("/deploy/schema/:version", s.deployHandler.Schema)
 }
 
 // resolveDeployCredential resolves a presented deploy credential to the device
