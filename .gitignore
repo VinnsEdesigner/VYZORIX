@@ -60,7 +60,7 @@ tools/
 .go-version
 
 # Go workspace
-*.sum
+go.work.sum
 
 # Go binaries
 *.exe
