@@ -81,8 +81,8 @@ type DeviceFrameHandler struct {
 	// applies is set after the hub is already running, because the deploy feature
 	// is wired last. The lock makes that late binding safe against a frame arriving
 	// mid-assignment.
-	mu      sync.RWMutex
 	applies ApplyReporter
+	mu      sync.RWMutex
 }
 
 // NewDeviceFrameHandler creates a DeviceFrameHandler. Either sink may be nil; a
