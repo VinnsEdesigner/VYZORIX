@@ -9,6 +9,7 @@ export * from './metrics';
 export * from './telemetry';
 export * from './commands';
 export * from './updates';
+export * from './deploy';
 export * from './realtime';
 export * from './apikey';
 export * from './registration';

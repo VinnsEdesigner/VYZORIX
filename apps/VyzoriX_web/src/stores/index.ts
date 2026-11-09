@@ -81,6 +81,12 @@ export {
 } from './updates-store';
 
 export {
+  useDeployStore,
+  type DeployStoreState,
+  type DeploySelection,
+} from './deploy-store';
+
+export {
   useVyzorErrorStore,
   type VyzorErrorStoreState,
 } from './vyzor-error-store';

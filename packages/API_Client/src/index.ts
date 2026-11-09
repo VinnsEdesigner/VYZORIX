@@ -21,6 +21,7 @@ export { getApiKeys } from './generated/api-keys/api-keys';
 export { getClientCredentials } from './generated/client-credentials/client-credentials';
 export { getServiceAccounts } from './generated/service-accounts/service-accounts';
 export { getContactPoints } from './generated/contact-points/contact-points';
+export { getDeploy } from './generated/deploy/deploy';
 export { getAlerts } from './generated/alerts/alerts';
 export { getDashboard } from './generated/dashboard/dashboard';
 export { getDiagnostics } from './generated/diagnostics/diagnostics';

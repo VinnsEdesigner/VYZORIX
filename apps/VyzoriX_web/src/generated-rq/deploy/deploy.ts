@@ -623,7 +623,7 @@ return customAxios<MintCredentialResponse>(getPostDeployImeiCredentialsUrl(imei)
 
 
 export const getPostDeployImeiCredentialsMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeployImeiCredentials>>, TError,{imei: string;data: MintCredentialRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(_queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeployImeiCredentials>>, TError,{imei: string;data: MintCredentialRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postDeployImeiCredentials>>, TError,{imei: string;data: MintCredentialRequest}, TContext> => {
 
 const mutationKey = ['postDeployImeiCredentials'];
@@ -643,12 +643,6 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         }
 
   const onSuccess = (data: Awaited<ReturnType<typeof postDeployImeiCredentials>>, variables: {imei: string;data: MintCredentialRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
-        if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ queryKey: getGetDeployImeiQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDeployImeiDocumentQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDeployImeiSecretsAppQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDeployImeiCredentialsQueryKey() });
-        }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
 
@@ -705,7 +699,7 @@ export const deleteDeployImeiCredentialsId = async (imei: string,
 
 
 export const getDeleteDeployImeiCredentialsIdMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDeployImeiCredentialsId>>, TError,{imei: string;id: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(_queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDeployImeiCredentialsId>>, TError,{imei: string;id: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteDeployImeiCredentialsId>>, TError,{imei: string;id: string}, TContext> => {
 
 const mutationKey = ['deleteDeployImeiCredentialsId'];
@@ -725,12 +719,6 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         }
 
   const onSuccess = (data: Awaited<ReturnType<typeof deleteDeployImeiCredentialsId>>, variables: {imei: string;id: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
-        if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ queryKey: getGetDeployImeiQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDeployImeiDocumentQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDeployImeiSecretsAppQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDeployImeiCredentialsQueryKey() });
-        }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
 
@@ -1021,7 +1009,7 @@ return customAxios<SetSecretResponse>(getPostDeployImeiSecretsAppUrl(imei,app),
 
 
 export const getPostDeployImeiSecretsAppMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeployImeiSecretsApp>>, TError,{imei: string;app: string;data: SetSecretRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(_queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeployImeiSecretsApp>>, TError,{imei: string;app: string;data: SetSecretRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postDeployImeiSecretsApp>>, TError,{imei: string;app: string;data: SetSecretRequest}, TContext> => {
 
 const mutationKey = ['postDeployImeiSecretsApp'];
@@ -1041,12 +1029,6 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         }
 
   const onSuccess = (data: Awaited<ReturnType<typeof postDeployImeiSecretsApp>>, variables: {imei: string;app: string;data: SetSecretRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
-        if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ queryKey: getGetDeployImeiQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDeployImeiDocumentQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDeployImeiSecretsAppQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDeployImeiCredentialsQueryKey() });
-        }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
 
@@ -1232,7 +1214,7 @@ export const deleteDeployImeiSecretsAppKey = async (imei: string,
 
 
 export const getDeleteDeployImeiSecretsAppKeyMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDeployImeiSecretsAppKey>>, TError,{imei: string;app: string;key: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(_queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDeployImeiSecretsAppKey>>, TError,{imei: string;app: string;key: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteDeployImeiSecretsAppKey>>, TError,{imei: string;app: string;key: string}, TContext> => {
 
 const mutationKey = ['deleteDeployImeiSecretsAppKey'];
@@ -1252,12 +1234,6 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         }
 
   const onSuccess = (data: Awaited<ReturnType<typeof deleteDeployImeiSecretsAppKey>>, variables: {imei: string;app: string;key: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
-        if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ queryKey: getGetDeployImeiQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDeployImeiDocumentQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDeployImeiSecretsAppQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDeployImeiCredentialsQueryKey() });
-        }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
 

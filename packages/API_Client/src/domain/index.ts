@@ -8,6 +8,7 @@ export * from "./admin";
 export * from "./alerts";
 export * from "./apikey";
 export * from "./contact-points";
+export * from "./deploy";
 export * from "./auth";
 export * from "./service-accounts";
 export * from "./clientcredentials";

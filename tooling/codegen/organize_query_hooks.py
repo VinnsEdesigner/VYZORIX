@@ -10,6 +10,7 @@ Run after: node node_modules/.pnpm/orval*/node_modules/orval/dist/bin/orval.mjs 
 """
 import json
 import os
+import re
 import shutil
 
 SOURCE = "apps/VyzoriX_web/src/generated-rq"
@@ -45,6 +46,81 @@ TAG_RENAMES = {
     "updates": "update-management",
     "usage-stats": "usage-statistics",
 }
+
+# orval's `query.mutationInvalidates` emits
+#     queryClient.invalidateQueries({ queryKey: getGetXQueryKey() });
+# for every invalidated query. That is correct only when the query key needs no
+# arguments. A query keyed on a required path param (e.g. `imei`) declares
+#     export const getGetXQueryKey = (imei: string) => ...
+# so the generated call is a type error ("Expected 1 arguments, but got 0").
+# Drop those calls from the auto-generated `onSuccess`; the hand-written
+# mutation hooks re-issue the correct invalidations (they know the path params)
+# via the generated `invalidateGetX` helpers.
+_EMPTY_KEY_CALL = re.compile(
+    r"[ \t]*queryClient\.invalidateQueries\(\{ queryKey: (get\w+QueryKey)\(\) \}\);[ \t]*\n?"
+)
+# A key function that requires at least one argument (does not take `() =>`).
+_REQUIRED_ARG_KEY = re.compile(r"export const (get\w+QueryKey) = \(([^)]*)\) =>")
+# The `if (!options?.skipInvalidation) { ... }` wrapper orval emits around the
+# invalidate calls, once every call inside it has been removed.
+_EMPTY_INVALIDATION_GUARD = re.compile(
+    r"[ \t]*if \(!options\?\.skipInvalidation\) \{[ \t]*\n[ \t]*\}[ \t]*\n"
+)
+
+
+def fix_empty_invalidate_calls(content):
+    """Remove `invalidateQueries` calls that omit a required query-key argument.
+
+    Returns the (possibly) rewritten content. `content` must already have had
+    its schemas import rewritten, so the file is self-contained.
+    """
+    # Collect key functions whose first parameter is required (no `?`).
+    required = set()
+    for name, params in _REQUIRED_ARG_KEY.findall(content):
+        first = params.split(",")[0].strip()
+        if not first:
+            continue  # `() =>` — no parameters, callable with no args
+        # `params?: Foo` -> name `params?`; `imei: string` -> name `imei`
+        param_name = first.split(":")[0].strip()
+        if param_name and not param_name.endswith("?"):
+            required.add(name)
+
+    if not required:
+        return content
+
+    def _sub(match):
+        key_fn = match.group(1)
+        # Drop the whole line when the key needs an argument we cannot supply here.
+        return "" if key_fn in required else match.group(0)
+
+    rewritten = _EMPTY_KEY_CALL.sub(_sub, content)
+    # When every call inside the guard was removed, drop the empty guard too.
+    rewritten = _EMPTY_INVALIDATION_GUARD.sub("", rewritten)
+    # With the calls gone, a mutation-options function may no longer use its
+    # `queryClient` parameter; rename it so `noUnusedParameters` stays happy.
+    rewritten = _rename_unused_query_client(rewritten)
+    return rewritten
+
+
+_MUT_OPTIONS_PARAM = "(queryClient: QueryClient, options?:"
+
+
+def _rename_unused_query_client(content):
+    """Rename `queryClient` to `_queryClient` in mutation-options functions that
+    no longer reference it after their invalidations were removed."""
+    parts = re.split(r"(?=^export const )", content, flags=re.M)
+    for i, part in enumerate(parts):
+        if _MUT_OPTIONS_PARAM not in part:
+            continue
+        # The signature itself contributes one occurrence; anything more means
+        # the body still uses it.
+        if part.count("queryClient") > 1:
+            continue
+        parts[i] = part.replace(
+            _MUT_OPTIONS_PARAM, "(_queryClient: QueryClient, options?:", 1
+        )
+    return "".join(parts)
+
 
 def main():
     if not os.path.isdir(SOURCE):
@@ -99,6 +175,9 @@ def main():
             "from '../vyzorixUpdateServerAPI.schemas'",
             "from '@vyzorix/api-client'",
         )
+
+        # Drop auto-invalidation calls that omit a required query-key argument.
+        content = fix_empty_invalidate_calls(content)
 
         # Create new dir and write file
         os.makedirs(new_dir, exist_ok=True)
