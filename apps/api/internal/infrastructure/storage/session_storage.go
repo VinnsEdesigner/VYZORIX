@@ -433,8 +433,12 @@ func (r *RefreshTokenRepository) Create(ctx context.Context, rt *refresh_token.R
 		INSERT INTO refresh_tokens (id, token_hash, operator_id, session_id, expires_at, created_at, revoked_at, replaced_by_id, is_revoked)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
+	// replaced_by_id is a self-reference (refresh-token rotation). An unset value
+	// must be SQL NULL, not the empty string: the column is a FOREIGN KEY, and an
+	// empty string is not a row, so it fails the constraint. This made every login
+	// 500 with "FOREIGN KEY constraint failed".
 	_, err := r.db.ExecContext(ctx, query,
-		rt.ID, rt.TokenHash, rt.OperatorID, rt.SessionID, rt.ExpiresAt, rt.CreatedAt, rt.RevokedAt, rt.ReplacedByID, rt.IsRevoked,
+		rt.ID, rt.TokenHash, rt.OperatorID, rt.SessionID, rt.ExpiresAt, rt.CreatedAt, rt.RevokedAt, nullString(rt.ReplacedByID), rt.IsRevoked,
 	)
 
 	return err

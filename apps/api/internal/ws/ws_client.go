@@ -2,6 +2,7 @@
 package hub
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"log/slog"
@@ -326,10 +327,23 @@ func (c *Client) processTelemetry(raw []byte, t *telemetry.TelemetryFrame) {
 }
 
 func (c *Client) writeCompressed(frame command.CommandFrame) error {
-	data, err := json.Marshal(frame)
-	if err != nil {
+	// Marshal with HTML escaping DISABLED. Go's json.Marshal escapes <, > and &
+	// to \u003c, \u003e and \u0026 by default, which rewrites the bytes of `args`.
+	// The frame signature covers the args verbatim, so an escaped send is a frame
+	// the device cannot verify — the whole config/command push silently failed
+	// whenever a signed document contained one of those characters (a
+	// `backoff 1s>30s` node was enough). The signed and the sent bytes must be the
+	// same bytes.
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(frame); err != nil {
 		return c.Conn.WriteJSON(frame)
 	}
+	// Encode appends a trailing newline; the signature covers the JSON object, not
+	// a newline, so strip it.
+	data := bytes.TrimRight(buf.Bytes(), "\n")
+
 	compressed, didCompress, _ := c.Hub.compression.CompressMessage(data)
 	if didCompress {
 		c.Hub.compression.RecordCompression(len(data), len(compressed))
@@ -341,7 +355,9 @@ func (c *Client) writeCompressed(frame command.CommandFrame) error {
 		}
 		return c.Conn.WriteJSON(compFrame)
 	}
-	return c.Conn.WriteJSON(frame)
+
+	// Send the exact bytes that were signed, not a re-marshal.
+	return c.Conn.WriteMessage(websocket.TextMessage, data)
 }
 
 // WritePump pumps outgoing messages to the WebSocket connection.
