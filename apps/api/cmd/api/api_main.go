@@ -290,8 +290,13 @@ func startServer(cfg *config.Config, log *slog.Logger, apiServer *api.Server,
 		// connections).
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      30 * time.Second,
-		IdleTimeout:       60 * time.Second,
+		// WriteTimeout must accommodate an APK download, not just a JSON reply. A
+		// 30 s cap truncated every large OTA fetch: the device saw "unexpected end
+		// of stream" and the download never completed (a 76 MB APK on a slow link
+		// takes minutes). Long enough for the largest artifact; the read side keeps
+		// its own short bounds.
+		WriteTimeout: 10 * time.Minute,
+		IdleTimeout:  60 * time.Second,
 	}
 
 	// Background workers registered on the lifecycle manager.
