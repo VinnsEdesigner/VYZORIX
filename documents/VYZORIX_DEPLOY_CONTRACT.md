@@ -981,7 +981,6 @@ Two facts the first draft of this section got wrong, because it never opened the
 
 | New file | ~LOC | Requirement | Purpose |
 |:--|--:|:--|:--|
-| `tooling/schema/deploy.cue` | 120 | FR-22, FR-2 | The manifest schema. Source of truth; Go generated from it, JSON Schema published. |
 | `apps/api/internal/deploy/vyzorix_deploy_manifest.go` | 160 | US-001, FR-1 | Parse and validate `vyzorix.toml` against the generated types. Unknown key ⇒ error. |
 | `apps/api/internal/deploy/vyzorix_deploy_compile.go` | 190 | US-001, FR-3, FR-4 | Manifest → config. Injects `memberId`/`version`/`dir`; enforces the `cmd` rule (§8). |
 | `apps/api/internal/deploy/vyzorix_deploy_render.go` | 120 | US-001, §5.1 | The `vyzorix.v` writer: repeated `app`/`artifact`/`env`/`secret` nodes in fixed field order. The determinism surface, so it is tested on its own. |
@@ -997,13 +996,16 @@ Two facts the first draft of this section got wrong, because it never opened the
 | `apps/api/internal/infrastructure/storage/078_device_deploy_config.go` | 70 | FR-21 | The per-device signed-config table (current + last-good). |
 | `apps/api/internal/infrastructure/storage/079_device_deploy_credential.go` | 70 | FR-12 | The deploy-credential table. |
 | `apps/api/internal/infrastructure/storage/080_device_app_secret.go` | 70 | US-013 | The secret ciphertext table: `(device, app, key, generation, ciphertext)`. |
-| `apps/cli/vyzorix_cli_main.go` | 120 | US-009, FR-23 | The `vyzorix` entry point. |
-| `apps/cli/internal/deploy/vyzorix_deploy_command.go` | 180 | US-009 | `deploy`, `--dry-run`, validate, progress, exit codes. |
-| `apps/cli/internal/deploy/vyzorix_secrets_command.go` | 100 | US-013, §9b.6 | `secrets set/list/unset`. |
-| `apps/cli/internal/deploy/vyzorix_manifest_validate.go` | 90 | FR-2, US-009 | Validate against the published JSON Schema before upload. |
 
-**New package: one** (`internal/deploy`). The handlers, storage and CLI are new files
+**New package: one** (`internal/deploy`). The handlers and storage are new files
 in existing packages or new leaf packages.
+
+**The manifest contract is a module, not a file.** `tooling/schema/deploy.cue`, the
+Go wire types and the published JSON Schema live in `github.com/VinnsEdesigner/vyzorix-spec`,
+a public module both the server and the CLI import. The server keeps only
+`apps/api/internal/deploy/vyzorix_deploy_schema.go`, a thin shim over the module's
+`Schema(version)`. The CLI is its own repository (`vyzorix-cli`) for the same reason
+its release is: a public installer cannot read a private repo's assets.
 
 **`device.deploy` is a base action and is in no action set.** `action_sets.go` expands
 `device.manage` into `device.read/write/delete/assign`; deploy must **not** be added to
@@ -1023,10 +1025,10 @@ level up. It is granted explicitly, per §7.2.
 | `apps/api/cmd/api/provisioning_adapters.go` | The `catalog_apps` section adapter. | FR-19, §8.1 |
 | `apps/api/internal/application/provisioning/vyzorix_boot_provisioning.go` | Add `CatalogApps []CatalogAppConfig` to `Config` and apply it at boot. | FR-19 |
 | `provisioning.example.yaml` | Document the `catalog_apps` section; move the example grant to `device.deploy` on a specific device. | FR-19, §7.1 |
-| `apps/api/openapi/schemas.go` | **Generated** from `tooling/schema/deploy.cue` by `tooling/codegen/build_schemas.py`; never hand-edited. | FR-22 |
+| `apps/api/openapi/schemas.go` | **Generated** from `tooling/schema/*.cue` by `tooling/codegen/build_schemas.py`; never hand-edited. The deploy types are no longer here — they come from `vyzorix-spec`. | FR-22 |
 | `apps/api/swag/*` (`docs.go`, `swagger.json`, `openapi3.json`, `swagger.yaml`) | **Generated** by `swag init` after the handlers land; the swagger drift gate compares them. | FR-22 |
 | `e2e/selectors/vyzorix-selectors.cjs` | **Generated** by `tooling/codegen/build_selectors.py`; new deploy endpoints add selectors. | US-010 |
-| `packages/API_Client/src/generated/**` | **Generated** by orval (`pnpm codegen:api`, `codegen:hooks`); the CLI and console consume the deploy types rather than re-declaring them. | FR-23 |
+| `packages/API_Client/src/generated/**` | **Generated** by orval (`pnpm codegen:api`, `codegen:hooks`); the console consumes the deploy types rather than re-declaring them. The CLI shares them through `vyzorix-spec`. | FR-23 |
 | `apps/VyzoriX_web/src/ui/pages/` (new `deploy/` page), `src/routes/` | The read-only Deploy view. | US-010 |
 
 The four generated rows are why the CUE and swagger drift gates exist: the source is
@@ -1074,7 +1076,7 @@ secret_keys" would have produced a file the supervisor silently ignores those fi
 
 | Requirement | Server files | Device files |
 |:--|:--|:--|
-| US-001 manifest + compiler | `deploy.cue`, `vyzorix_deploy_manifest.go`, `vyzorix_deploy_compile.go`, `vyzorix_deploy_render.go` | — |
+| US-001 manifest + compiler | `vyzorix-spec` (schema), `vyzorix_deploy_manifest.go`, `vyzorix_deploy_compile.go`, `vyzorix_deploy_render.go` | — |
 | US-002 signing | `vyzorix_deploy_signer.go` (`ServerSigner`) | `ConfigVerifier` (verify) |
 | US-003 `POST /v1/deploy` | `vyzorix_deploy_config_handler.go`, `vyzorix_deploy_authentication.go`, `server_routes.go` | — |
 | US-004 deploy credential | `vyzorix_deploy_credential_handler.go`, `079_device_deploy_credential.go` | — |
@@ -1082,12 +1084,12 @@ secret_keys" would have produced a file the supervisor silently ignores those fi
 | US-006 fetch/verify/install | — | `ArtifactFetcher`, `DeployApplier` |
 | US-007 `/home/apps` + registry | — | `AppRegistryWriter`, `DeployApplier` |
 | US-008 webroot + PWA | `vyzorix_deploy_compile.go` | `PwaManifest` |
-| US-009 CLI | `apps/cli/**` | — |
+| US-009 CLI | `vyzorix-cli` repo | — |
 | US-010 console view | `apps/VyzoriX_web/src/ui/pages/deploy/` | — |
 | US-011 Layer 3 gaps | — | see §13.6 |
 | US-012 second app | (no platform file — that is the test) | (no platform file) |
 | US-013 secrets | `vyzorix_deploy_secrets.go`, `vyzorix_app_secret_handler.go`, `080_device_app_secret.go` | `SecretKey`, `SecretEnvelope`, `SecretStore` |
-| FR-2 published schema | `deploy.cue` → `schemas.go`, `build_schemas.py`; `vyzorix_deploy_config_handler.go` serves it | `vyzorix_manifest_validate.go` (CLI) |
+| FR-2 published schema | `vyzorix-spec` → `vyzorix_deploy_schema.go`; `vyzorix_deploy_config_handler.go` serves it | `vyzorix_manifest_validate.go` (CLI) |
 | FR-8 no-secret | `vyzorix_deploy_secret_scan.go` | `ConfigVerifier` |
 | FR-9 `cmd` rule | `vyzorix_deploy_compile.go` | `DeployApplier` (re-checks) |
 | FR-16 refusals | `vyzorix_deploy_config_handler.go` | `DeployReporter` |
@@ -1096,8 +1098,8 @@ secret_keys" would have produced a file the supervisor silently ignores those fi
 | FR-19 catalog | `vyzorix_deploy_catalog.go`, `provisioning_adapters.go`, `vyzorix_boot_provisioning.go` | — |
 | FR-20 `purge` | `vyzorix_deploy_compile.go` | `DeployApplier` |
 | FR-21 `keep_last = 2` | `vyzorix_deploy_store.go`, `078_device_deploy_config.go` | `ConfigStore` |
-| FR-22 CUE + drift | `deploy.cue`, `schemas.go`, `swag/*`, `selectors.cjs` | — |
-| FR-23 CLI shares types | `apps/cli/**`, orval output | — |
+| FR-22 CUE + drift | `tooling/schema/*.cue`, `schemas.go`, `swag/*`, `selectors.cjs`; `vyzorix-spec` owns the manifest CUE | — |
+| FR-23 CLI shares types | `vyzorix-spec`, orval output | — |
 | FR-25–27 secret envelope | `vyzorix_deploy_secrets.go` | `SecretKey`, `SecretEnvelope`, `SecretStore` |
 
 US-012 has no platform file on purpose: "a second app deploys with no platform change"

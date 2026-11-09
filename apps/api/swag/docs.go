@@ -5429,7 +5429,7 @@ const docTemplate = `{
         },
         "/deploy/schema/{version}": {
             "get": {
-                "description": "The versioned JSON Schema for vyzorix.toml. Generated from tooling/schema/deploy.cue.",
+                "description": "The versioned JSON Schema for vyzorix.toml. Generated from the vyzorix-spec module.",
                 "produces": [
                     "application/json"
                 ],
@@ -5456,6 +5456,39 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "unknown schema version",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/deploy/whoami": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deploy"
+                ],
+                "summary": "Current operator identity for the deploy surface",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "device id, to include its tier",
+                        "name": "device",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "identity",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_deploy.identityResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
                         "schema": {
                             "$ref": "#/definitions/openapi.ErrorResponse"
                         }
@@ -11780,6 +11813,43 @@ const docTemplate = `{
                 },
                 "version": {
                     "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_deploy.deviceSummary": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tier": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_deploy.identityResponse": {
+            "type": "object",
+            "properties": {
+                "device": {
+                    "$ref": "#/definitions/internal_api_handlers_deploy.deviceSummary"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "operatorName": {
+                    "type": "string"
+                },
+                "orgId": {
+                    "type": "string"
+                },
+                "orgName": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
                 }
             }
         },

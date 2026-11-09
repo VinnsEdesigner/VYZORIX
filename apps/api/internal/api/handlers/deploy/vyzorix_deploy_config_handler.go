@@ -213,7 +213,7 @@ func (h *Handler) Document(c *gin.Context) {
 // tenant. The {version} segment is the pin, so a client that validated against
 // version 1 is refused rather than silently served version 2.
 // @Summary      The manifest JSON Schema
-// @Description  The versioned JSON Schema for vyzorix.toml. Generated from tooling/schema/deploy.cue.
+// @Description  The versioned JSON Schema for vyzorix.toml. Generated from the vyzorix-spec module.
 // @Tags         deploy
 // @Produce      json
 // @Param        version  path  string  true  "schema version"

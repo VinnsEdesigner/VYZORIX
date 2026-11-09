@@ -75,6 +75,30 @@ definitions:
       version:
         type: integer
     type: object
+  internal_api_handlers_deploy.deviceSummary:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      tier:
+        type: string
+    type: object
+  internal_api_handlers_deploy.identityResponse:
+    properties:
+      device:
+        $ref: '#/definitions/internal_api_handlers_deploy.deviceSummary'
+      email:
+        type: string
+      operatorName:
+        type: string
+      orgId:
+        type: string
+      orgName:
+        type: string
+      role:
+        type: string
+    type: object
   internal_api_handlers_deploy.mintCredentialRequest:
     properties:
       name:
@@ -6889,7 +6913,8 @@ paths:
       - deploy
   /deploy/schema/{version}:
     get:
-      description: The versioned JSON Schema for vyzorix.toml. Generated from tooling/schema/deploy.cue.
+      description: The versioned JSON Schema for vyzorix.toml. Generated from the
+        vyzorix-spec module.
       parameters:
       - description: schema version
         in: path
@@ -6909,6 +6934,27 @@ paths:
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
       summary: The manifest JSON Schema
+      tags:
+      - deploy
+  /deploy/whoami:
+    get:
+      parameters:
+      - description: device id, to include its tier
+        in: query
+        name: device
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: identity
+          schema:
+            $ref: '#/definitions/internal_api_handlers_deploy.identityResponse'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Current operator identity for the deploy surface
       tags:
       - deploy
   /device/{imei}:
