@@ -30,6 +30,11 @@ const (
 	exitUsage   = 2
 )
 
+// version is the released build's version, injected at build time with
+// -ldflags "-X main.version=v0.1.0". A build from a working tree reports "dev",
+// so an unreleased binary cannot be mistaken for a tagged one.
+var version = "dev"
+
 func main() {
 	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
 }
@@ -54,6 +59,10 @@ func run(args []string, stdout, stderr *os.File) int {
 		return runDeploy(ctx, args[1:], stdout, stderr)
 	case "secrets":
 		return runSecrets(ctx, args[1:], stdout, stderr)
+	case "-v", "--version", "version":
+		fmt.Fprintf(stdout, "vyzorix %s\n", version)
+
+		return exitOK
 	case "-h", "--help", "help":
 		usage(stdout)
 
@@ -512,12 +521,14 @@ func parseInterspersed(fs *flag.FlagSet, args []string) ([]string, error) {
 }
 
 func usage(out *os.File) {
-	fmt.Fprint(out, `vyzorix - deploy apps to a Vyzorix device
+	fmt.Fprint(out, `Vyzorix - deploy applications to your device
 
-  Install (from a clone of the server repo):
+  Install:
+    # The repository is private, so a release download needs a credential:
+    gh auth login
     bash tooling/scripts/install-cli.sh
-    # or, with Go 1.27+ on PATH:
-    (cd apps/cli && go build -o ~/.local/bin/vyzorix .)
+    # Or build from a clone with Go 1.27+:
+    (cd apps/cli && CGO_ENABLED=0 go build -o ~/.local/bin/vyzorix .)
 
   Usage:
     vyzorix login   --server URL --api-key KEY [--org ORG] [--device DEV]
