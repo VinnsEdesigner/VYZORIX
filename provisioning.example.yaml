@@ -7,6 +7,7 @@
 # Loaded in this order — later sections may reference earlier ones by name:
 #   organizations -> operators -> device_groups -> api_keys -> permission_grants
 #   -> contact_points -> alert_rules -> service_accounts -> annotations
+#   -> catalog_apps
 
 organizations:
   - name: Default Org
@@ -95,3 +96,13 @@ annotations:
     source: provisioning
     tags:
       - bootstrap
+
+# The app catalog (VYZORIX_DEPLOY_CONTRACT.md §8.1, FR-19). It names the apps a
+# reviewer has seen. A manifest that deploys one of these is ordinary; a manifest
+# that deploys anything else is still permitted, but the console marks the app
+# *custom* so an unreviewed app is visible. The catalog is a review aid, not a
+# gate: it never refuses a deploy, and it has no store — it is seeded into memory
+# at boot and read on each deploy.
+catalog_apps:
+  - name: vfd
+  - name: wiki

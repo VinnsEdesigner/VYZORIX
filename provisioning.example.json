@@ -98,5 +98,13 @@
         "bootstrap"
       ]
     }
+  ],
+  "catalog_apps": [
+    {
+      "name": "vfd"
+    },
+    {
+      "name": "wiki"
+    }
   ]
 }

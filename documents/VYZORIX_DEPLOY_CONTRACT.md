@@ -1,7 +1,10 @@
 # Vyzorix Deploy Contract
 
-**Status:** design, agreed in outline. Nothing built except the secrets channel (§9b),
-committed on a branch and not on `main`.
+**Status:** the server and the CLI are built and on `main`. The manifest contract
+lives in the public module `github.com/VinnsEdesigner/vyzorix-spec`; the server
+imports it (`internal/deploy/vyzorix_deploy_schema.go`) and the CLI is its own
+repository, `github.com/VinnsEdesigner/vyzorix-cli` (§13.1). The device half (§13.3)
+is not built.
 **Parent:** `VYZORIX_DEPLOY_REQUIREMENTS.md` (this repo, `documents/`) — the requirements
 and the resolved decisions. This document is the *contract*: the exact shapes, the
 rules that must not bend, and what is written where.
@@ -828,9 +831,13 @@ vyzorix secrets unset <app> KEY    --device <id>
 ```
 
 - `GET /v1/deploy/{device}/secrets/{app}` returns **names and generation only**.
-- `GET /v1/deploy/{device}/secrets/{app}/{key}` returns **ciphertext** to an
+- `GET /v1/device/{imei}/secrets/{app}/{key}` returns **ciphertext** to an
   authenticated device, and only for a key the current signed config names. A device
-  cannot ask for a secret its config does not reference.
+  cannot ask for a secret its config does not reference. It sits on the device-signed
+  group, beside `/v1/device/{imei}/config`, because it is the *device* that asks and
+  the device authenticates with its own keypair — not an operator session. The
+  operator-facing `set`/`list`/`unset` above live under `/v1/deploy`; only the device
+  read is under `/v1/device`.
 - `set`/`unset` are authorised by `device.deploy` (§7.1) — the same grant, because
   writing a credential is the same kind of act as writing what runs.
 - **A value is never logged, never returned by any `GET`, and never written into any

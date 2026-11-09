@@ -1,6 +1,7 @@
 package deployhandlers
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -91,6 +92,14 @@ func (h *Handler) Deploy(c *gin.Context) {
 		return
 	}
 
+	// A device that is connected right now is told immediately; one that is
+	// offline re-fetches on reconnect (§7). A push that finds no connection is
+	// not an error — the deploy is stored either way — so its outcome is logged
+	// and never changes the response.
+	if !result.DryRun {
+		h.pushConfig(c, result.DeviceID, result.Version)
+	}
+
 	// 202, not 200: the deploy is accepted and stored, and the device applies it
 	// on its next connection. Nothing has run yet.
 	c.JSON(http.StatusAccepted, deployResponse{
@@ -101,6 +110,20 @@ func (h *Handler) Deploy(c *gin.Context) {
 		DryRun:       result.DryRun,
 		Document:     result.Document,
 	})
+}
+
+// pushConfig notifies a connected device of a new deploy. It is best-effort: the
+// config is already stored, so a device that is not connected (or a handler with
+// no pusher wired) simply re-fetches on reconnect.
+func (h *Handler) pushConfig(c *gin.Context, deviceID string, version int) {
+	if h.pusher == nil || deviceID == "" {
+		return
+	}
+
+	if h.pusher.PushConfig(c.Request.Context(), deviceID) {
+		h.log.Info("deploy pushed to a connected device",
+			slog.String("deviceId", deviceID), slog.Int("version", version))
+	}
 }
 
 // markApps converts the service's catalog markings to the wire shape.

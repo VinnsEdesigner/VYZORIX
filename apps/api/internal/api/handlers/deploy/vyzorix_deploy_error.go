@@ -1,6 +1,7 @@
 package deployhandlers
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -25,6 +26,26 @@ type Handler struct {
 	operators         OperatorLookup
 	organizations     OrganizationLookup
 	log               *slog.Logger
+	pusher            ConfigPusher
+}
+
+// ConfigPusher delivers a freshly deployed config to a device that is connected
+// right now. The push is an optimisation over the device's own re-fetch
+// (GET /v1/device/{imei}/config, contract §7): a device that is offline when it
+// is deployed to simply re-fetches on reconnect, so a push that finds no
+// connection is not an error.
+//
+// It is an interface, set after the handler is built, because the pusher is the
+// onboarding handler and the deploy handler is wired first. *inbox.EnrollHandler
+// implements it.
+type ConfigPusher interface {
+	PushConfig(ctx context.Context, deviceID string) bool
+}
+
+// SetConfigPusher wires the pusher used to notify a connected device of a new
+// deploy. It may be called on a live handler.
+func (h *Handler) SetConfigPusher(pusher ConfigPusher) {
+	h.pusher = pusher
 }
 
 // NewHandler builds a deploy Handler.

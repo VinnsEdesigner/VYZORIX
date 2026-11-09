@@ -1,6 +1,7 @@
 package inbox
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -321,20 +322,41 @@ func (h *EnrollHandler) GetConfig(c *gin.Context) {
 // either way, and it re-fetches on reconnect by version. Reporting the outcome
 // lets the operator see that the device has not been configured yet.
 func (h *EnrollHandler) deliverConfig(c *gin.Context, deviceID string) bool {
+	sent, err := h.pushConfig(c.Request.Context(), deviceID)
+	if err != nil {
+		// Logged, not surfaced: the claim succeeded and the config is retryable.
+		_ = c.Error(err)
+	}
+
+	return sent
+}
+
+// PushConfig signs and pushes the device's current config to it over the
+// WebSocket, and reports whether it was sent. It is exported so a deploy can
+// notify a device that is connected right now rather than waiting for its next
+// reconnect (VYZORIX_DEPLOY_CONTRACT.md §7); a device that is not connected is
+// not an error, because it re-fetches on reconnect.
+func (h *EnrollHandler) PushConfig(ctx context.Context, deviceID string) bool {
+	sent, _ := h.pushConfig(ctx, deviceID)
+
+	return sent
+}
+
+// pushConfig builds, signs and sends the device_config frame. It returns the
+// send outcome and any build error separately, so the claim path can surface an
+// error while the deploy path treats both as best-effort.
+func (h *EnrollHandler) pushConfig(ctx context.Context, deviceID string) (bool, error) {
 	if h.hub == nil || h.signer == nil {
-		return false
+		return false, nil
 	}
 
 	sign := func(document string) (string, error) {
 		return h.signer.SignDocument(document)
 	}
 
-	envelope, err := h.devices.ConfigForDevice(c.Request.Context(), sign, deviceID)
+	envelope, err := h.devices.ConfigForDevice(ctx, sign, deviceID)
 	if err != nil {
-		// Logged, not surfaced: the claim succeeded and the config is retryable.
-		_ = c.Error(err)
-
-		return false
+		return false, err
 	}
 
 	frame := command.CommandFrame{
@@ -348,10 +370,8 @@ func (h *EnrollHandler) deliverConfig(c *gin.Context, deviceID string) bool {
 	// document carries its own signature too; this covers the envelope, so a
 	// swapped document fails the frame check.
 	if err := cryptohmac.SignCommandFrameWithKey(h.signer, &frame, deviceID); err != nil {
-		_ = c.Error(err)
-
-		return false
+		return false, err
 	}
 
-	return h.hub.Send(deviceID, frame)
+	return h.hub.Send(deviceID, frame), nil
 }

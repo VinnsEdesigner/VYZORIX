@@ -15,6 +15,7 @@ export * from "./config-versions/config-version-history";
 export * from "./connections/device-connections";
 export * from "./contact-points/notification-contact-points";
 export * from "./dashboard/dashboard-stats";
+export * from "./deploy/deploy";
 export * from "./device/device";
 export * from "./devices/device-management";
 export * from "./diagnostics/device-diagnostics";

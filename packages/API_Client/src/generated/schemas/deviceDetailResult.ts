@@ -7,13 +7,20 @@
  */
 
 export interface DeviceDetailResult {
+  api_level?: number;
   app_version?: string;
+  build_id?: string;
   device_name?: string;
   id?: string;
   imei?: string;
   last_seen?: number;
   manufacturer?: string;
   model?: string;
+  os_version?: string;
+  ram_bytes?: number;
   registered_at?: number;
+  security_patch?: string;
   status?: string;
+  storage_bytes?: number;
+  supported_abis?: string;
 }

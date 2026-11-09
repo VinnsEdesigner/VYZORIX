@@ -9,6 +9,7 @@ import type {
   DownloadProgressRequest,
   DownloadProgressResult,
   GetCheckUpdateParams,
+  GetDownloadProgressDeviceId200,
   UpdateChangelogResult,
   UpdaterCheckResult,
   UpdaterVersionManifestResult
@@ -87,6 +88,18 @@ const postDownloadProgress = (
       options);
     }
   /**
+ * Returns the latest reported OTA download progress for a device
+ * @summary Read a device's update download progress
+ */
+const getDownloadProgressDeviceId = (
+    deviceId: string,
+ options?: SecondParameter<typeof customAxios<GetDownloadProgressDeviceId200>>,) => {
+      return customAxios<GetDownloadProgressDeviceId200>(
+      {url: `/download-progress/${deviceId}`, method: 'GET'
+    },
+      options);
+    }
+  /**
  * Returns the current OTA version manifest for Android clients
  * @summary OTA version manifest
  */
@@ -98,10 +111,11 @@ const getVersion = (
     },
       options);
     }
-  return {getApkName,getBinName,getChangelog,getCheckUpdate,postDownloadProgress,getVersion}};
+  return {getApkName,getBinName,getChangelog,getCheckUpdate,postDownloadProgress,getDownloadProgressDeviceId,getVersion}};
 export type GetApkNameResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUpdater>['getApkName']>>>
 export type GetBinNameResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUpdater>['getBinName']>>>
 export type GetChangelogResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUpdater>['getChangelog']>>>
 export type GetCheckUpdateResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUpdater>['getCheckUpdate']>>>
 export type PostDownloadProgressResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUpdater>['postDownloadProgress']>>>
+export type GetDownloadProgressDeviceIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUpdater>['getDownloadProgressDeviceId']>>>
 export type GetVersionResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getUpdater>['getVersion']>>>

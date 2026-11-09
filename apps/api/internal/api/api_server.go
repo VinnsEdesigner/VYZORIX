@@ -344,6 +344,14 @@ func (s *Server) wireDeployHandler(cfg *ServerConfig) {
 		organizations,
 		cfg.Log,
 	)
+
+	// A deploy notifies a device that is connected right now, so it does not wait
+	// for its next reconnect. The pusher is the onboarding handler (it already
+	// builds and signs the device_config frame); it is wired here because the
+	// deploy handler is built after it.
+	if s.enrollHandler != nil {
+		s.deployHandler.SetConfigPusher(s.enrollHandler)
+	}
 }
 
 // wireAuthorizationWiring initializes the shared authorization plumbing used by

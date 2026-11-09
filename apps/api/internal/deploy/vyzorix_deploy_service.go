@@ -34,6 +34,7 @@ type DeployRequest struct {
 type DeployResult struct {
 	AuthorizedBy string
 	Document     string
+	DeviceID     string
 	Artifacts    []ArtifactConfig
 	AppNames     []string
 	Apps         []AppMarking
@@ -162,6 +163,7 @@ func (s *DeployService) Deploy(ctx context.Context, req DeployRequest) (*DeployR
 	}
 
 	result := resultFromConfig(cfg, injection.Version, req.DryRun, s.catalog)
+	result.DeviceID = deviceID
 
 	if req.DryRun {
 		result.Document = document

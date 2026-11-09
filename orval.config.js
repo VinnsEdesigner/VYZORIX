@@ -81,6 +81,10 @@ module.exports = {
 				{ onMutations: ['deleteTelemetryCleanup'], invalidates: [{ query: 'getTelemetryHistory' }, { query: 'getTelemetryHistoryExport' }] },
 				{ onMutations: ['postDownloadProgress'], invalidates: [{ query: 'getChangelog' }, { query: 'getCheckUpdate' }, { query: 'getVersion' }] },
 				                                { onMutations: ['postUpdatesDeviceStatus', 'postUpdatesHistoryPushIdCancel', 'postUpdatesPush', 'postUpdatesSync'], invalidates: [{ query: 'getUpdatesChangelog' }, { query: 'getUpdatesExport' }, { query: 'getUpdatesHistory' }, { query: 'getUpdatesStatus' }, { query: 'getUpdatesSyncStatus' }, { query: 'getUpdatesVersions' }] },
+				                                // Deploy: setting or removing a secret, and minting or revoking a
+				                                // credential, all change what the device will run, so they invalidate the
+				                                // deploy view rather than the device list.
+				                                { onMutations: ['postDeployImeiSecretsApp', 'deleteDeployImeiSecretsAppKey', 'postDeployImeiCredentials', 'deleteDeployImeiCredentialsId'], invalidates: [{ query: 'getDeployImei' }, { query: 'getDeployImeiDocument' }, { query: 'getDeployImeiSecretsApp' }, { query: 'getDeployImeiCredentials' }] },
                                         ],
                                 },
                         },

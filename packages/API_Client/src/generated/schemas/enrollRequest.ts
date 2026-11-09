@@ -7,12 +7,25 @@
  */
 
 export interface EnrollRequest {
+  apiLevel?: number;
   appVersion?: string;
+  buildId?: string;
   deviceClass?: string;
   deviceUuid: string;
   manufacturer?: string;
   model?: string;
   osVersion?: string;
   publicKey: string;
+  ramBytes?: number;
+  /**
+     * SecretKey is the device's second public key (PURPOSE_DECRYPT), which a
+     * secret is wrapped to. Optional: a device that does not support secrets
+     * omits it, and setting a secret for such a device fails rather than
+     * wrapping to nothing.
+     */
+  secretKey?: string;
+  securityPatch?: string;
+  storageBytes?: number;
+  supportedAbis?: string[];
   tierHint?: number;
 }

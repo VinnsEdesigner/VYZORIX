@@ -5,6 +5,156 @@
  * Go-generated OpenAPI contract from handler annotations
  * OpenAPI spec version: 0.0.01
  */
+export interface AppMarking {
+  custom?: boolean;
+  name?: string;
+}
+
+export interface CiphertextResponse {
+  app?: string;
+  ciphertext?: string;
+  envelope?: string;
+  generation?: number;
+  key?: string;
+}
+
+export interface CredentialResponse {
+  createdAt?: number;
+  createdBy?: string;
+  deviceId?: string;
+  id?: string;
+  lastUsedAt?: number;
+  name?: string;
+  prefix?: string;
+  revokedAt?: number;
+}
+
+export interface CredentialListResponse {
+  credentials?: CredentialResponse[];
+}
+
+export interface CurrentResponse {
+  createdAt?: number;
+  deviceId?: string;
+  document?: string;
+  kind?: string;
+  version?: number;
+}
+
+export interface DeployResponse {
+  apps?: AppMarking[];
+  artifacts?: number;
+  authorizedBy?: string;
+  document?: string;
+  dryRun?: boolean;
+  version?: number;
+}
+
+export interface DeviceSummary {
+  id?: string;
+  name?: string;
+  tier?: string;
+}
+
+export interface IdentityResponse {
+  device?: DeviceSummary;
+  email?: string;
+  operatorName?: string;
+  orgId?: string;
+  orgName?: string;
+  role?: string;
+}
+
+export interface MintCredentialRequest {
+  name?: string;
+}
+
+export interface MintCredentialResponse {
+  createdAt?: number;
+  createdBy?: string;
+  deviceId?: string;
+  id?: string;
+  lastUsedAt?: number;
+  name?: string;
+  prefix?: string;
+  revokedAt?: number;
+  token?: string;
+}
+
+export interface SecretNameResponse {
+  generation?: number;
+  key?: string;
+  updatedAt?: number;
+}
+
+export interface SecretListResponse {
+  app?: string;
+  secrets?: SecretNameResponse[];
+}
+
+export interface SetSecretRequest {
+  key?: string;
+  value?: string;
+}
+
+export interface SetSecretResponse {
+  app?: string;
+  generation?: number;
+  key?: string;
+}
+
+export interface ClaimRequest {
+  name?: string;
+  pairingCode: string;
+  tierCap?: number;
+}
+
+export interface EnrollRequest {
+  apiLevel?: number;
+  appVersion?: string;
+  buildId?: string;
+  deviceClass?: string;
+  deviceUuid: string;
+  manufacturer?: string;
+  model?: string;
+  osVersion?: string;
+  publicKey: string;
+  ramBytes?: number;
+  /**
+     * SecretKey is the device's second public key (PURPOSE_DECRYPT), which a
+     * secret is wrapped to. Optional: a device that does not support secrets
+     * omits it, and setting a secret for such a device fails rather than
+     * wrapping to nothing.
+     */
+  secretKey?: string;
+  securityPatch?: string;
+  storageBytes?: number;
+  supportedAbis?: string[];
+  tierHint?: number;
+}
+
+export interface EnrollResponse {
+  deviceId?: string;
+  expiresAt?: number;
+  /**
+     * ExpiresInSeconds is what the device counts down. Sending the remaining time
+     * as well as the absolute deadline means a device with a wrong clock still
+     * expires its code correctly.
+     */
+  expiresInSeconds?: number;
+  pairingCode?: string;
+  pairingDisplay?: string;
+  /**
+     * PollIntervalSeconds is how often the device should ask for its config while
+     * it waits to be claimed. The config normally arrives over the held WebSocket
+     * the moment an operator claims the code, so this is the fallback for a device
+     * whose socket is not up — it bounds how long a claimed device can sit
+     * unconfigured. The server owns the value so the cadence can be tuned without
+     * shipping a new APK.
+     */
+  pollIntervalSeconds?: number;
+}
+
 export interface APIKey {
   created_at?: number;
   expires_at?: number;
@@ -515,15 +665,22 @@ export interface DeviceCountResult {
 }
 
 export interface DeviceDetailResult {
+  api_level?: number;
   app_version?: string;
+  build_id?: string;
   device_name?: string;
   id?: string;
   imei?: string;
   last_seen?: number;
   manufacturer?: string;
   model?: string;
+  os_version?: string;
+  ram_bytes?: number;
   registered_at?: number;
+  security_patch?: string;
   status?: string;
+  storage_bytes?: number;
+  supported_abis?: string;
 }
 
 export interface DeviceDisconnectResult {
@@ -1650,36 +1807,6 @@ export interface WebhookTestResult {
   success?: boolean;
 }
 
-export interface ClaimRequest {
-  name?: string;
-  pairingCode: string;
-  tierCap?: number;
-}
-
-export interface EnrollRequest {
-  appVersion?: string;
-  deviceClass?: string;
-  deviceUuid: string;
-  manufacturer?: string;
-  model?: string;
-  osVersion?: string;
-  publicKey: string;
-  tierHint?: number;
-}
-
-export interface EnrollResponse {
-  deviceId?: string;
-  expiresAt?: number;
-  /**
-     * ExpiresInSeconds is what the device counts down. Sending the remaining time
-     * as well as the absolute deadline means a device with a wrong clock still
-     * expires its code correctly.
-     */
-  expiresInSeconds?: number;
-  pairingCode?: string;
-  pairingDisplay?: string;
-}
-
 export type GetAdminApiKeysParams = {
 /**
  * page number (default 1)
@@ -1917,6 +2044,22 @@ limit?: number;
 offset?: number;
 };
 
+export type PostDeployParams = {
+/**
+ * compile and sign without persisting
+ */
+dry_run?: boolean;
+};
+
+export type GetDeploySchemaVersion200 = { [key: string]: unknown };
+
+export type GetDeployWhoamiParams = {
+/**
+ * device id, to include its tier
+ */
+device?: string;
+};
+
 export type GetDeviceInboxParams = {
 /**
  * filter by status
@@ -1978,6 +2121,8 @@ export type DeleteDevicesImeiParams = {
  */
 hard?: boolean;
 };
+
+export type GetDownloadProgressDeviceId200 = { [key: string]: unknown };
 
 export type GetOrganizationsIdInvitationsParams = {
 /**

@@ -6633,6 +6633,91 @@
         }
       }
     },
+    "/deploy/schema/{version}": {
+      "get": {
+        "summary": "The manifest JSON Schema",
+        "description": "The versioned JSON Schema for vyzorix.toml. Generated from the vyzorix-spec module.",
+        "tags": [
+          "deploy"
+        ],
+        "parameters": [
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "schema version"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the JSON Schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "unknown schema version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/deploy/whoami": {
+      "get": {
+        "summary": "Current operator identity for the deploy surface",
+        "description": "",
+        "tags": [
+          "deploy"
+        ],
+        "parameters": [
+          {
+            "name": "device",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "device id, to include its tier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "identity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/identityResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/deploy/{imei}": {
       "get": {
         "summary": "Get a device's current config",
@@ -14374,6 +14459,17 @@
   },
   "components": {
     "schemas": {
+      "appMarking": {
+        "type": "object",
+        "properties": {
+          "custom": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
       "ciphertextResponse": {
         "type": "object",
         "properties": {
@@ -14460,7 +14556,7 @@
           "apps": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/appMarking"
             }
           },
           "artifacts": {
@@ -14477,6 +14573,43 @@
           },
           "version": {
             "type": "integer"
+          }
+        }
+      },
+      "deviceSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string"
+          }
+        }
+      },
+      "identityResponse": {
+        "type": "object",
+        "properties": {
+          "device": {
+            "$ref": "#/components/schemas/deviceSummary"
+          },
+          "email": {
+            "type": "string"
+          },
+          "operatorName": {
+            "type": "string"
+          },
+          "orgId": {
+            "type": "string"
+          },
+          "orgName": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
           }
         }
       },

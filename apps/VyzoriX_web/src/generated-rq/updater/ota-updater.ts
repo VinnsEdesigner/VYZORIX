@@ -32,6 +32,7 @@ import type {
   DownloadProgressResult,
   ErrorResponse,
   GetCheckUpdateParams,
+  GetDownloadProgressDeviceId200,
   UpdateChangelogResult,
   UpdaterCheckResult,
   UpdaterVersionManifestResult
@@ -588,7 +589,116 @@ export const usePostDownloadProgress = <TError = ErrorResponse,
       const backupQueryClient = useQueryClient();
       return useMutation(getPostDownloadProgressMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
-    export const getGetVersionUrl = () => {
+    export const getGetDownloadProgressDeviceIdUrl = (deviceId: string,) => {
+
+
+
+
+  return `/download-progress/${deviceId}`
+}
+
+/**
+ * Returns the latest reported OTA download progress for a device
+ * @summary Read a device's update download progress
+ */
+export const getDownloadProgressDeviceId = async (deviceId: string, options?: Parameters<typeof customAxios>[1]): Promise<GetDownloadProgressDeviceId200> => {
+
+  return customAxios<GetDownloadProgressDeviceId200>(getGetDownloadProgressDeviceIdUrl(deviceId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDownloadProgressDeviceIdQueryKey = (deviceId: string,) =>
+    organizationScopedQueryKey({ deviceId }, { url: `/download-progress/${deviceId}` });
+
+
+export const useGetDownloadProgressDeviceIdQueryOptions = <TData = Awaited<ReturnType<typeof getDownloadProgressDeviceId>>, TError = ErrorResponse>(deviceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDownloadProgressDeviceId>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  organizationScopedQueryKey({ deviceId }, { url: `/download-progress/${deviceId}`, queryOptions });
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDownloadProgressDeviceId>>> = ({ signal }) => getDownloadProgressDeviceId(deviceId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: deviceId !== null && deviceId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDownloadProgressDeviceId>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetDownloadProgressDeviceIdQueryResult = NonNullable<Awaited<ReturnType<typeof getDownloadProgressDeviceId>>>
+export type GetDownloadProgressDeviceIdQueryError = ErrorResponse
+
+
+export function useGetDownloadProgressDeviceId<TData = Awaited<ReturnType<typeof getDownloadProgressDeviceId>>, TError = ErrorResponse>(
+ deviceId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDownloadProgressDeviceId>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDownloadProgressDeviceId>>,
+          TError,
+          Awaited<ReturnType<typeof getDownloadProgressDeviceId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDownloadProgressDeviceId<TData = Awaited<ReturnType<typeof getDownloadProgressDeviceId>>, TError = ErrorResponse>(
+ deviceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDownloadProgressDeviceId>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDownloadProgressDeviceId>>,
+          TError,
+          Awaited<ReturnType<typeof getDownloadProgressDeviceId>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDownloadProgressDeviceId<TData = Awaited<ReturnType<typeof getDownloadProgressDeviceId>>, TError = ErrorResponse>(
+ deviceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDownloadProgressDeviceId>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Read a device's update download progress
+ */
+
+export function useGetDownloadProgressDeviceId<TData = Awaited<ReturnType<typeof getDownloadProgressDeviceId>>, TError = ErrorResponse>(
+ deviceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDownloadProgressDeviceId>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = useGetDownloadProgressDeviceIdQueryOptions(deviceId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+/**
+ * @summary Read a device's update download progress
+ */
+export const invalidateGetDownloadProgressDeviceId = async (
+ queryClient: QueryClient, deviceId: string, options?: InvalidateOptions
+  ): Promise<QueryClient> => {
+
+  await queryClient.invalidateQueries({ queryKey: organizationScopedQueryKey({ deviceId }, { url: `/download-progress/${deviceId}` }) }, options);
+
+  return queryClient;
+}
+
+
+
+
+export const getGetVersionUrl = () => {
 
 
 

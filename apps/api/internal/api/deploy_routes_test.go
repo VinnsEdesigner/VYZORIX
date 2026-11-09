@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
@@ -12,6 +13,7 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -766,5 +768,75 @@ func TestSchemaRouteIsPublicAndCoexistsWithTheDeviceRoute(t *testing.T) {
 	w = do(t, r, http.MethodGet, "/v1/deploy/schema/999", nil, nil)
 	if w.Code != http.StatusNotFound {
 		t.Fatalf("unknown schema version = %d, want 404", w.Code)
+	}
+}
+
+// recordingPusher records the devices a deploy pushed a config to.
+type recordingPusher struct {
+	mu      sync.Mutex
+	devices []string
+}
+
+func (p *recordingPusher) PushConfig(_ context.Context, deviceID string) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	p.devices = append(p.devices, deviceID)
+
+	return true
+}
+
+func (p *recordingPusher) count() int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	return len(p.devices)
+}
+
+// TestDeployPushesToAConnectedDevice pins that a successful deploy notifies the
+// target device immediately, so a device that is connected does not wait for its
+// next reconnect to pick the new config up.
+func TestDeployPushesToAConnectedDevice(t *testing.T) {
+	t.Parallel()
+
+	f := newDeployFixture(t)
+	f.grantDeploy(t, "devices:"+deployDevice)
+
+	pusher := &recordingPusher{}
+	f.server.deployHandler.SetConfigPusher(pusher)
+
+	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+
+	w := do(t, r, http.MethodPost, "/v1/deploy", []byte(deployManifest), nil)
+	if w.Code != http.StatusAccepted {
+		t.Fatalf("POST /v1/deploy = %d, want 202; body=%s", w.Code, w.Body.String())
+	}
+
+	if pusher.count() != 1 {
+		t.Fatalf("a successful deploy must push the config once, got %d", pusher.count())
+	}
+}
+
+// TestDeployDryRunDoesNotPush pins that a dry run is inert: it compiles and signs
+// but neither stores nor notifies, so a device is never told to apply a version
+// that was never persisted.
+func TestDeployDryRunDoesNotPush(t *testing.T) {
+	t.Parallel()
+
+	f := newDeployFixture(t)
+	f.grantDeploy(t, "devices:"+deployDevice)
+
+	pusher := &recordingPusher{}
+	f.server.deployHandler.SetConfigPusher(pusher)
+
+	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+
+	w := do(t, r, http.MethodPost, "/v1/deploy?dry_run=true", []byte(deployManifest), nil)
+	if w.Code != http.StatusAccepted {
+		t.Fatalf("dry run = %d, want 202; body=%s", w.Code, w.Body.String())
+	}
+
+	if pusher.count() != 0 {
+		t.Fatalf("a dry run must not push a config, got %d pushes", pusher.count())
 	}
 }
