@@ -5416,6 +5416,42 @@
                 }
             }
         },
+        "/deploy/schema/{version}": {
+            "get": {
+                "description": "The versioned JSON Schema for vyzorix.toml. Generated from tooling/schema/deploy.cue.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deploy"
+                ],
+                "summary": "The manifest JSON Schema",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "schema version",
+                        "name": "version",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "the JSON Schema",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "unknown schema version",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/deploy/{imei}": {
             "get": {
                 "description": "Returns the signed config the device should be running.",
@@ -11619,6 +11655,17 @@
         }
     },
     "definitions": {
+        "internal_api_handlers_deploy.appMarking": {
+            "type": "object",
+            "properties": {
+                "custom": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_api_handlers_deploy.ciphertextResponse": {
             "type": "object",
             "properties": {
@@ -11705,7 +11752,7 @@
                 "apps": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/internal_api_handlers_deploy.appMarking"
                     }
                 },
                 "artifacts": {

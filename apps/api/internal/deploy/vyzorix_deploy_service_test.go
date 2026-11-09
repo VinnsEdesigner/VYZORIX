@@ -93,6 +93,7 @@ func serviceFixture(t *testing.T, caller *Caller) (*DeployService, *memConfigs, 
 		devices,
 		sign,
 		fixedSettings{},
+		nil,
 	)
 	svc.now = func() time.Time { return time.UnixMilli(1_700_000_000_000) }
 

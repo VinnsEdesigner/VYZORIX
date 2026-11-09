@@ -1,4 +1,11 @@
 definitions:
+  internal_api_handlers_deploy.appMarking:
+    properties:
+      custom:
+        type: boolean
+      name:
+        type: string
+    type: object
   internal_api_handlers_deploy.ciphertextResponse:
     properties:
       app:
@@ -55,7 +62,7 @@ definitions:
     properties:
       apps:
         items:
-          type: string
+          $ref: '#/definitions/internal_api_handlers_deploy.appMarking'
         type: array
       artifacts:
         type: integer
@@ -6878,6 +6885,30 @@ paths:
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
       summary: Fetch a secret's ciphertext (device)
+      tags:
+      - deploy
+  /deploy/schema/{version}:
+    get:
+      description: The versioned JSON Schema for vyzorix.toml. Generated from tooling/schema/deploy.cue.
+      parameters:
+      - description: schema version
+        in: path
+        name: version
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: the JSON Schema
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: unknown schema version
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: The manifest JSON Schema
       tags:
       - deploy
   /device/{imei}:

@@ -31,6 +31,7 @@ type Service struct {
 	txManager     transaction.TxManager
 	logger        *slog.Logger
 	statusUpdater DeviceStatusUpdater
+	deployConfigs DeployConfigSource
 }
 
 // DeviceStatusUpdater defines the interface for updating device online status.

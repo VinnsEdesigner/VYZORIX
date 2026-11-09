@@ -85,77 +85,102 @@ def parse_cue_file(filepath):
             line = line.strip()
             if not line or line.startswith("//"):
                 continue
-            # Open map: fieldName?: {[string]: <type>} (map[string]<type>).
-            # Value type is `_` (any) or a CUE primitive.
-            map_match = re.match(r"(\w+)(\?)?:\s*\{\[string\]:\s*(\w+|_)\}(?:\s*\|\s*\*(.+?))?$", line)
+
+            # Split off an optional `| *default` suffix first; a default never
+            # contains `&`, so this cannot eat part of a constraint.
+            default = None
+            default_match = re.search(r"\s*\|\s*\*(.+?)$", line)
+            if default_match:
+                default = default_match.group(1)
+                line = line[: default_match.start()].rstrip()
+
+            name_match = re.match(r"(\w+)(\?)?:\s*(.+)$", line)
+            if not name_match:
+                raise ValueError(
+                    f"{os.path.basename(filepath)}: cannot parse line in #{name}: {line!r}\n"
+                    "  Supported: `name: type`, `name?: type`, `name?: {[string]: <primitive>}`, "
+                    "`name?: #Type`, `name: [...type] | [...#Type]`, each with optional "
+                    '`& <constraint>` terms (regex, bounds, enum).'
+                )
+
+            fname = name_match.group(1)
+            optional = name_match.group(2) == "?"
+            type_expr = name_match.group(3)
+
+            # A map: {[string]: <value type>} with an optional `& <constraint>`
+            # on the value. The constraint cannot contain `}`.
+            map_match = re.match(r"^\{\[string\]:\s*(\w+|_)(?:\s*&\s*(.+?))?\}$", type_expr)
             if map_match:
                 fields.append({
-                    "name": map_match.group(1),
-                    "type": "map",
-                    "map_value": map_match.group(3),
-                    "optional": map_match.group(2) == "?",
-                    "default": map_match.group(4),
-                    "is_nested": False,
-                })
-                continue
-            # Any field: fieldName?: _ (interface{} / any / json.RawMessage).
-            any_match = re.match(r"(\w+)(\?)?:\s*_(?:\s*\|\s*\*(.+?))?$", line)
-            if any_match:
-                fields.append({
-                    "name": any_match.group(1),
-                    "type": "any",
-                    "optional": any_match.group(2) == "?",
-                    "default": any_match.group(3),
-                    "is_nested": False,
-                })
-                continue
-            # Match: fieldName: type | *default  or  fieldName?: type
-            # Handles nested refs (#TypeName), arrays ([...T] / [...#T]).
-            field_match = re.match(
-                r"(\w+)(\?)?:\s*(?:#(\w+)|(\[\.\.\.#?(\w+)\])|(\w+))(?:\s*\|\s*\*(.+?))?$", line
-            )
-            if field_match:
-                fname = field_match.group(1)
-                optional = field_match.group(2) == "?"
-                # Group 3 = nested type ref (#TypeName)
-                # Group 5 = array element type ([...string] or [...#TypeName])
-                # Group 6 = primitive type
-                nested_ref = field_match.group(3)
-                array_type = field_match.group(5)
-                primitive_type = field_match.group(6)
-                default = field_match.group(7)
-
-                if nested_ref:
-                    ftype = nested_ref
-                    is_nested = True
-                elif array_type:
-                    # Array: element type in group 5 (string or #TypeName).
-                    # to_go_struct renders [...X] as []X — nested-ref arrays
-                    # become []TypeName (not pointers), matching openapi.
-                    ftype = f"[...{array_type}]"
-                    is_nested = False
-                elif primitive_type:
-                    ftype = primitive_type
-                    is_nested = False
-                else:
-                    ftype = "any"
-                    is_nested = False
-
-                fields.append({
                     "name": fname,
-                    "type": ftype,
+                    "type": "map",
+                    "map_value": map_match.group(1),
+                    "value_constraint": map_match.group(2),
                     "optional": optional,
                     "default": default,
-                    "is_nested": is_nested,
+                    "is_nested": False,
+                    "constraints": [],
                 })
                 continue
-            # Strict: an unrecognized field line is a hard error, not a silent
-            # drop. This is what keeps the restricted CUE subset honest.
-            raise ValueError(
-                f"{os.path.basename(filepath)}: cannot parse line in #{name}: {line!r}\n"
-                "  Supported: `name: type`, `name?: type`, `name?: {[string]: <primitive>}`, "
-                "`name?: #Type`, `name: [...type] | [...#Type]`."
-            )
+
+            # `any`: a bare `_` with no constraints.
+            if type_expr == "_":
+                fields.append({
+                    "name": fname,
+                    "type": "any",
+                    "optional": optional,
+                    "default": default,
+                    "is_nested": False,
+                    "constraints": [],
+                })
+                continue
+
+            # Everything else: a base type followed by zero or more
+            # `& <constraint>` terms. `&` never appears inside a constraint, so a
+            # plain split is exact.
+            terms = [t.strip() for t in type_expr.split("&")]
+            base, constraints = terms[0], terms[1:]
+
+            # A union `A | B`. TOML has no sum type, so a union decodes as `any`
+            # in Go and is published as a oneOf; `pwa` is the one field that needs
+            # it (`pwa = true` or a `[app.pwa]` table, §4.1).
+            if "|" in base:
+                fields.append({
+                    "name": fname,
+                    "type": "any",
+                    "union": [m.strip() for m in base.split("|")],
+                    "optional": optional,
+                    "default": default,
+                    "is_nested": False,
+                    "constraints": constraints,
+                })
+                continue
+
+            if base.startswith("#"):
+                ftype, is_nested = base[1:], True
+            elif re.match(r"^\[\.\.\.#?\w+\]$", base):
+                # Array: [...string] or [...#TypeName]. Nested-ref arrays render
+                # as []TypeName (not pointers), matching openapi.
+                ftype, is_nested = f"[...{base[4:-1].lstrip('#')}]", False
+            elif re.match(r"^\w+$", base):
+                # A primitive. CUE_TO_GO maps the known ones; anything else
+                # passes through as its own name, as the generator always has.
+                ftype, is_nested = base, False
+            else:
+                raise ValueError(
+                    f"{os.path.basename(filepath)}: cannot parse line in #{name}: {line!r}\n"
+                    "  Supported: `name: type`, `name?: type`, `name?: {[string]: <primitive>}`, "
+                    "`name?: #Type`, `name: [...type] | [...#Type]`."
+                )
+
+            fields.append({
+                "name": fname,
+                "type": ftype,
+                "optional": optional,
+                "default": default,
+                "is_nested": is_nested,
+                "constraints": constraints,
+            })
 
         if fields:
             type_defs[name] = fields

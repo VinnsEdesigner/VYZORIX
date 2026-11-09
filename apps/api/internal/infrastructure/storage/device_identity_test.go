@@ -230,3 +230,40 @@ func TestDeviceReadHandlesAnIsoTimestamp(t *testing.T) {
 		t.Error("created_at must be parsed, not left zero")
 	}
 }
+
+// TestDeviceReadHandlesNullAppVersionAndDeviceClass guards the deploy read path:
+// app_version and device_class are nullable, and a device that has not yet
+// reported them is the normal state. Scanning NULL into a plain string fails the
+// whole read, which surfaced as a 500 on every deploy to a fresh device.
+func TestDeviceReadHandlesNullAppVersionAndDeviceClass(t *testing.T) {
+	db := newTestDeviceDB(t)
+	repo := NewDeviceRepository(db)
+	ctx := context.Background()
+
+	if _, err := db.Exec(
+		`INSERT INTO devices (id, firebase_install_id, organization_id, online,
+                                      registered_at, last_seen, created_at, updated_at)
+                 VALUES ('fresh-1', 'fid-1', 'org-1', 0, ?, ?, ?, ?)`,
+		time.Now().UnixMilli(), time.Now().UnixMilli(),
+		time.Now().UnixMilli(), time.Now().UnixMilli(),
+	); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	got, err := repo.FindByID(ctx, "fresh-1")
+	if err != nil {
+		t.Fatalf("a device with NULL app_version/device_class must be readable: %v", err)
+	}
+	if got.AppVersion != "" || got.DeviceClass != "" {
+		t.Errorf("null fields must read as empty, got app_version=%q device_class=%q",
+			got.AppVersion, got.DeviceClass)
+	}
+
+	list, _, err := repo.List(ctx, "org-1", 10, 0)
+	if err != nil {
+		t.Fatalf("List must tolerate NULL app_version/device_class: %v", err)
+	}
+	if len(list) != 1 {
+		t.Fatalf("want 1 device, got %d", len(list))
+	}
+}

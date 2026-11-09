@@ -68,7 +68,7 @@ const deviceColumns = `
 // scanDevice scans a device from a row.
 func scanDevice(row *sql.Row) (*device.Device, error) {
 	var d device.Device
-	var fcmToken, operatorID, organizationID, deviceName, manufacturer, model, osVersion, securityPatch, tagsJSON sql.NullString
+	var fcmToken, appVersion, deviceClass, operatorID, organizationID, deviceName, manufacturer, model, osVersion, securityPatch, tagsJSON sql.NullString
 	var buildID, supportedABIs sql.NullString
 	var publicKey, secretPublicKey, pairingCode sql.NullString
 	var deregisteredAt, deletionScheduledAt, fcmTokenRefreshedAt, tier, pairingExpiresAt sql.NullInt64
@@ -81,7 +81,7 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 	var createdAt, updatedAt any
 
 	err := row.Scan(
-		&d.ID, &d.FirebaseInstallID, &fcmToken, &d.AppVersion, &d.DeviceClass,
+		&d.ID, &d.FirebaseInstallID, &fcmToken, &appVersion, &deviceClass,
 		&d.Online, &d.RegisteredAt, &d.LastSeen, &operatorID,
 		&organizationID,
 		&createdAt, &updatedAt, &deviceName, &manufacturer, &model, &osVersion, &securityPatch,
@@ -98,6 +98,8 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 		return nil, err
 	}
 
+	d.AppVersion = appVersion.String
+	d.DeviceClass = deviceClass.String
 	d.CreatedAt = parseTimestamp(createdAt)
 	d.UpdatedAt = parseTimestamp(updatedAt)
 	d.Tier = device.TierFromInt(int(tier.Int64))
@@ -149,22 +151,32 @@ func scanDevices(rows *sql.Rows) ([]*device.Device, error) {
 
 	for rows.Next() {
 		var d device.Device
-		var fcmToken, operatorID, organizationID, deviceName, manufacturer, model, osVersion, securityPatch, tagsJSON sql.NullString
+		var fcmToken, appVersion, deviceClass, operatorID, organizationID, deviceName, manufacturer, model, osVersion, securityPatch, tagsJSON sql.NullString
+		var buildID, supportedABIs sql.NullString
 		var publicKey, secretPublicKey, pairingCode sql.NullString
 		var deregisteredAt, deletionScheduledAt, fcmTokenRefreshedAt, tier, pairingExpiresAt sql.NullInt64
+		var apiLevel, ramBytes, storageBytes sql.NullInt64
 		var createdAt, updatedAt any
 
 		if err := rows.Scan(
-			&d.ID, &d.FirebaseInstallID, &fcmToken, &d.AppVersion, &d.DeviceClass,
+			&d.ID, &d.FirebaseInstallID, &fcmToken, &appVersion, &deviceClass,
 			&d.Online, &d.RegisteredAt, &d.LastSeen, &operatorID,
 			&organizationID,
 			&createdAt, &updatedAt, &deviceName, &manufacturer, &model, &osVersion, &securityPatch,
+			&buildID, &apiLevel, &supportedABIs, &ramBytes, &storageBytes,
 			&deregisteredAt, &deletionScheduledAt, &fcmTokenRefreshedAt, &tagsJSON, &tier,
 			&publicKey, &secretPublicKey, &pairingCode, &pairingExpiresAt,
 		); err != nil {
 			return nil, err
 		}
 
+		d.AppVersion = appVersion.String
+		d.DeviceClass = deviceClass.String
+		d.BuildID = buildID.String
+		d.SupportedABIs = supportedABIs.String
+		d.APIVersion = int(apiLevel.Int64)
+		d.RAMBytes = ramBytes.Int64
+		d.StorageBytes = storageBytes.Int64
 		d.CreatedAt = parseTimestamp(createdAt)
 		d.UpdatedAt = parseTimestamp(updatedAt)
 		d.Tier = device.TierFromInt(int(tier.Int64))

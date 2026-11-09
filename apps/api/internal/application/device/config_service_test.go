@@ -232,3 +232,18 @@ func TestRenderedConfigIsParseableByTheFormat(t *testing.T) {
 		t.Fatalf("stream node not found at the expected depth: %+v", got)
 	}
 }
+
+// TestConfigEnablesApps is the flag §5.1 turns on: a registered device runs apps,
+// so its config must say so, or the device-side gate stays shut and nothing a
+// deploy installs ever starts.
+func TestConfigEnablesApps(t *testing.T) {
+	svc := newConfigService(t, true)
+	envelope, err := svc.ConfigForDevice(context.Background(), configSign(newConfigSigner(t)), "dev-1")
+	if err != nil {
+		t.Fatalf("config: %v", err)
+	}
+
+	if !strings.Contains(envelope.Document, "vvv apps true") {
+		t.Errorf("config must enable apps:\n%s", envelope.Document)
+	}
+}

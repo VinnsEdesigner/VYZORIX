@@ -367,6 +367,12 @@ func startServer(cfg *config.Config, log *slog.Logger, apiServer *api.Server,
 				WithServiceAccountRepository(storage.NewServiceAccountRepository(db)).
 				WithAnnotationRepository(storage.NewAnnotationRepository(db))
 		}
+		// The app catalog is seeded from the file, not a store, so it is wired as
+		// a sink the deploy feature's catalog reads (§8.1).
+		if catalog := apiServer.DeployCatalog(); catalog != nil {
+			prov = prov.WithCatalogSink(catalog.Add)
+		}
+
 		if err := prov.LoadAndApply(context.Background(), provFile); err != nil {
 			log.Error("provisioning failed", "err", err)
 		} else {

@@ -19,12 +19,19 @@ import (
 // deployResponse is what the operator is told (§3). It names the version and the
 // authoriser, so the receipt can be checked against the device's config.
 type deployResponse struct {
-	AuthorizedBy string   `json:"authorizedBy"`
-	Document     string   `json:"document,omitempty"`
-	AppNames     []string `json:"apps"`
-	Artifacts    int      `json:"artifacts"`
-	Version      int      `json:"version"`
-	DryRun       bool     `json:"dryRun"`
+	AuthorizedBy string       `json:"authorizedBy"`
+	Document     string       `json:"document,omitempty"`
+	Apps         []appMarking `json:"apps"`
+	Artifacts    int          `json:"artifacts"`
+	Version      int          `json:"version"`
+	DryRun       bool         `json:"dryRun"`
+}
+
+// appMarking is one app's catalog classification (§8.1): the console marks an app
+// the catalog does not know as custom, so an unreviewed app is visible.
+type appMarking struct {
+	Name   string `json:"name"`
+	Custom bool   `json:"custom"`
 }
 
 // Deploy handles POST /v1/deploy.
@@ -89,11 +96,22 @@ func (h *Handler) Deploy(c *gin.Context) {
 	c.JSON(http.StatusAccepted, deployResponse{
 		Version:      result.Version,
 		AuthorizedBy: result.AuthorizedBy,
-		AppNames:     result.AppNames,
+		Apps:         markApps(result.Apps),
 		Artifacts:    len(result.Artifacts),
 		DryRun:       result.DryRun,
 		Document:     result.Document,
 	})
+}
+
+// markApps converts the service's catalog markings to the wire shape.
+func markApps(markings []deploy.AppMarking) []appMarking {
+	out := make([]appMarking, 0, len(markings))
+
+	for _, m := range markings {
+		out = append(out, appMarking{Name: m.Name, Custom: m.Custom})
+	}
+
+	return out
 }
 
 // currentResponse is the GET /v1/deploy/{imei} body. It carries the document,
@@ -185,4 +203,30 @@ func (h *Handler) Document(c *gin.Context) {
 	}
 
 	c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte(record.Document))
+}
+
+// Schema handles GET /v1/deploy/schema/{version} (FR-2). It serves the manifest
+// JSON Schema the CLI validates a manifest against before uploading, so a
+// manifest the CLI accepts is the manifest the server accepts.
+//
+// It takes no caller: the schema is public, versioned and identical for every
+// tenant. The {version} segment is the pin, so a client that validated against
+// version 1 is refused rather than silently served version 2.
+// @Summary      The manifest JSON Schema
+// @Description  The versioned JSON Schema for vyzorix.toml. Generated from tooling/schema/deploy.cue.
+// @Tags         deploy
+// @Produce      json
+// @Param        version  path  string  true  "schema version"
+// @Success      200  {object}  map[string]any  "the JSON Schema"
+// @Failure      404  {object}  openapi.ErrorResponse  "unknown schema version"
+// @Router       /deploy/schema/{version} [get]
+func (h *Handler) Schema(c *gin.Context) {
+	schema, err := deploy.ManifestSchema(c.Param("version"))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+
+		return
+	}
+
+	c.Data(http.StatusOK, "application/schema+json; charset=utf-8", schema)
 }

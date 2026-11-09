@@ -2,11 +2,13 @@ package device
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	libv "github.com/VinnsEdesigner/libv/go"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/deployconfig"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/configscan"
 )
 
@@ -62,7 +64,7 @@ func (s *Service) BuildConfig(ctx context.Context, deviceID string) (*DeviceConf
 		TelemetryIntervalSecond: DefaultTelemetryIntervalSeconds,
 		TerminalEnabled:         true,
 		USBEnabled:              false,
-		AppsEnabled:             false,
+		AppsEnabled:             true,
 		StreamPath:              "/v1/device/" + d.ID + "/stream",
 	}, nil
 }
@@ -135,11 +137,33 @@ type ConfigEnvelope struct {
 // The validation is not optional: every caller gets a config that has been checked
 // for secrets, so the invariant holds by construction rather than by each caller
 // remembering.
+//
+// A device that has been deployed to is served the config the deploy stored —
+// the exact bytes the operator's manifest produced and the server signed, at the
+// version it was signed with. The registration config below is the fallback for a
+// device that has never been deployed to; it is not a second source of truth for
+// one that has.
 func (s *Service) ConfigForDevice(
 	ctx context.Context,
 	sign SignDocument,
 	deviceID string,
 ) (*ConfigEnvelope, error) {
+	if s.deployConfigs != nil {
+		deployed, err := s.deployConfigs.Current(ctx, deviceID)
+		if err != nil && !errors.Is(err, deployconfig.ErrNotFound) {
+			return nil, err
+		}
+
+		if deployed != nil {
+			return &ConfigEnvelope{
+				Version:  deployed.Version,
+				Document: deployed.Document,
+				IssuedAt: deployed.CreatedAt.UnixMilli(),
+				DeviceID: deviceID,
+			}, nil
+		}
+	}
+
 	if sign == nil {
 		return nil, fmt.Errorf("no signing key configured; cannot issue a signed config")
 	}
@@ -171,4 +195,23 @@ func (s *Service) ConfigForDevice(
 		IssuedAt: time.Now().UnixMilli(),
 		DeviceID: cfg.DeviceID,
 	}, nil
+}
+
+// DeployConfigSource is the deploy store's read side: the signed config a device
+// was deployed to. It is the narrow read this package needs, so the delivery path
+// does not depend on the deploy feature's write side.
+//
+// *storage.DeployConfigRepository satisfies it. It is an interface so a test can
+// supply a store without a database.
+type DeployConfigSource interface {
+	// Current returns the config the device should be running, or
+	// deployconfig.ErrNotFound when it has never been deployed to.
+	Current(ctx context.Context, deviceID string) (*deployconfig.Record, error)
+}
+
+// SetDeployConfigSource wires the deploy store the delivery path reads. Without
+// it, a device is served only the registration config, which is the pre-deploy
+// behaviour.
+func (s *Service) SetDeployConfigSource(source DeployConfigSource) {
+	s.deployConfigs = source
 }

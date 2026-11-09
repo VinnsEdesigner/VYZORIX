@@ -558,6 +558,57 @@ type DashboardStats struct {
 	TotalDevices   int `json:"total_devices"`
 }
 
+type DeployManifest struct {
+	Device DeployDevice `json:"device"`
+	App    []DeployApp  `json:"app"`
+}
+
+type DeployDevice struct {
+	ID   string `json:"id"`
+	Name string `json:"name,omitempty"`
+	Org  string `json:"org"`
+}
+
+type DeployApp struct {
+	Cmd       string            `json:"cmd"`
+	Env       map[string]string `json:"env,omitempty"`
+	Expose    string            `json:"expose,omitempty"`
+	Name      string            `json:"name"`
+	Pwa       any               `json:"pwa,omitempty"`
+	Secrets   map[string]string `json:"secrets,omitempty"`
+	Artifact  []DeployArtifact  `json:"artifact,omitempty"`
+	Port      int               `json:"port,omitempty"`
+	Autostart bool              `json:"autostart,omitempty"`
+	Purge     bool              `json:"purge,omitempty"`
+}
+
+type DeployArtifact struct {
+	Arch   string `json:"arch,omitempty"`
+	Kind   string `json:"kind,omitempty"`
+	Name   string `json:"name"`
+	Sha256 string `json:"sha256"`
+	Size   *int64 `json:"size,omitempty"`
+	URL    string `json:"url"`
+}
+
+type DeployPWA struct {
+	BackgroundColor string       `json:"background_color,omitempty"`
+	Description     string       `json:"description,omitempty"`
+	Display         string       `json:"display,omitempty"`
+	Name            string       `json:"name,omitempty"`
+	Orientation     string       `json:"orientation,omitempty"`
+	ShortName       string       `json:"short_name,omitempty"`
+	StartURL        string       `json:"start_url,omitempty"`
+	ThemeColor      string       `json:"theme_color,omitempty"`
+	Icons           []DeployIcon `json:"icons,omitempty"`
+}
+
+type DeployIcon struct {
+	Sizes string `json:"sizes"`
+	Src   string `json:"src"`
+	Type  string `json:"type"`
+}
+
 type DeviceStatus struct {
 	AppVersion  string `json:"app_version"`
 	DeviceClass string `json:"device_class"`

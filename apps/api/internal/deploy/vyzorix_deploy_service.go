@@ -36,6 +36,7 @@ type DeployResult struct {
 	Document     string
 	Artifacts    []ArtifactConfig
 	AppNames     []string
+	Apps         []AppMarking
 	Version      int
 	DryRun       bool
 }
@@ -46,6 +47,7 @@ type DeployService struct {
 	lookup   DeviceLookup
 	sign     DocumentSigner
 	settings SettingsSource
+	catalog  *Catalog
 	now      func() time.Time
 }
 
@@ -56,18 +58,21 @@ type SettingsSource interface {
 	ForDevice(ctx context.Context, dev *device.Device) Injection
 }
 
-// NewDeployService builds a DeployService.
+// NewDeployService builds a DeployService. A nil catalog marks every app custom,
+// which is the honest answer when no provisioning file declared one.
 func NewDeployService(
 	configs deployconfig.Repository,
 	lookup DeviceLookup,
 	sign DocumentSigner,
 	settings SettingsSource,
+	catalog *Catalog,
 ) *DeployService {
 	return &DeployService{
 		configs:  configs,
 		lookup:   lookup,
 		sign:     sign,
 		settings: settings,
+		catalog:  catalog,
 		now:      time.Now,
 	}
 }
@@ -156,7 +161,7 @@ func (s *DeployService) Deploy(ctx context.Context, req DeployRequest) (*DeployR
 		return nil, err
 	}
 
-	result := resultFromConfig(cfg, injection.Version, req.DryRun)
+	result := resultFromConfig(cfg, injection.Version, req.DryRun, s.catalog)
 
 	if req.DryRun {
 		result.Document = document
@@ -169,6 +174,51 @@ func (s *DeployService) Deploy(ctx context.Context, req DeployRequest) (*DeployR
 	}
 
 	return result, nil
+}
+
+// Deliverable is the config a device is served: the signed document and the
+// version it carries, so the device can compare what it holds to what is on
+// offer before fetching.
+type Deliverable struct {
+	Document string
+	Version  int
+	IssuedAt int64
+}
+
+// DeliverableForDevice returns the signed config a device should be running, or
+// ErrNoConfig when the device has never been deployed to.
+//
+// This is the delivery half of the deploy feature: the device_config frame and
+// the re-fetch endpoint both read the *stored* config, not a fresh compile. The
+// stored config is the one the operator's manifest produced and the server
+// signed; rebuilding it here would issue a different document at a different
+// version and the device would apply something nobody deployed.
+func (s *DeployService) DeliverableForDevice(ctx context.Context, deviceID string) (*Deliverable, error) {
+	record, err := s.configs.Current(ctx, deviceID)
+	if errors.Is(err, deployconfig.ErrNotFound) {
+		return nil, ErrNoConfig
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &Deliverable{
+		Document: record.Document,
+		Version:  record.Version,
+		IssuedAt: record.CreatedAt.UnixMilli(),
+	}, nil
+}
+
+// MarkApplied records that a device reported a version as applied (§9.1 step 8).
+// It is how the console knows a deploy landed rather than merely being stored.
+//
+// A version the store does not hold as current is not an error: the device may
+// report late, after a newer deploy has superseded the one it applied. The
+// update simply matches no row, and the current config's applied_at stays unset
+// until the device applies the version it is actually running.
+func (s *DeployService) MarkApplied(ctx context.Context, deviceID string, version int) error {
+	return s.configs.MarkApplied(ctx, deviceID, version, s.now())
 }
 
 // Current returns the config a device should be running, after the same
@@ -235,7 +285,7 @@ func (s *DeployService) currentVersion(ctx context.Context, deviceID string) (in
 }
 
 // resultFromConfig builds the operator-facing summary.
-func resultFromConfig(cfg *Config, version int, dryRun bool) *DeployResult {
+func resultFromConfig(cfg *Config, version int, dryRun bool, catalog *Catalog) *DeployResult {
 	result := &DeployResult{
 		Version:      version,
 		AuthorizedBy: cfg.MemberID,
@@ -247,6 +297,8 @@ func resultFromConfig(cfg *Config, version int, dryRun bool) *DeployResult {
 		result.AppNames = append(result.AppNames, cfg.Apps[i].Name)
 		result.Artifacts = append(result.Artifacts, cfg.Apps[i].Artifacts...)
 	}
+
+	result.Apps = catalog.Mark(result.AppNames)
 
 	return result
 }

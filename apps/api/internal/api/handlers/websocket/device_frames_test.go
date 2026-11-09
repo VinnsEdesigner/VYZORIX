@@ -133,3 +133,66 @@ func TestHandleDeviceFrameOtherErrorStillHandled(t *testing.T) {
 		t.Fatal("a sink error must not change whether the frame type was recognised")
 	}
 }
+
+// fakeReporter records the versions a device_ready frame reports.
+type fakeReporter struct {
+	calls []appliedCall
+	err   error
+}
+
+type appliedCall struct {
+	deviceID string
+	version  int
+}
+
+func (f *fakeReporter) MarkApplied(_ context.Context, deviceID string, version int) error {
+	f.calls = append(f.calls, appliedCall{deviceID, version})
+
+	return f.err
+}
+
+func TestHandleDeviceFrameRoutesDeviceReady(t *testing.T) {
+	reporter := &fakeReporter{}
+	h := NewDeviceFrameHandler(nil, nil, discardLogger())
+	h.SetApplyReporter(reporter)
+
+	raw := []byte(`{"type":"device_ready","version":7}`)
+	if handled := h.HandleDeviceFrame(context.Background(), hub.DeviceFrame{DeviceID: "dev-1", Type: "device_ready", Raw: raw, Kind: hub.FrameText}); !handled {
+		t.Fatal("device_ready must be reported as handled")
+	}
+
+	if len(reporter.calls) != 1 || reporter.calls[0] != (appliedCall{"dev-1", 7}) {
+		t.Fatalf("reporter calls = %+v, want [{dev-1 7}]", reporter.calls)
+	}
+}
+
+// TestHandleDeviceReadyDropsAMalformedFrame pins the same rule as a command
+// result: a bad frame is logged and dropped, never propagated.
+func TestHandleDeviceReadyDropsAMalformedFrame(t *testing.T) {
+	reporter := &fakeReporter{}
+	h := NewDeviceFrameHandler(nil, nil, discardLogger())
+	h.SetApplyReporter(reporter)
+
+	for _, raw := range []string{
+		`{"type":"device_ready"}`,             // no version
+		`{"type":"device_ready","version":0}`, // a version must be positive
+		`not json`,
+	} {
+		if handled := h.HandleDeviceFrame(context.Background(), hub.DeviceFrame{DeviceID: "dev-1", Type: "device_ready", Raw: []byte(raw), Kind: hub.FrameText}); !handled {
+			t.Fatalf("device_ready must be recognised for raw %s", raw)
+		}
+	}
+
+	if len(reporter.calls) != 0 {
+		t.Fatalf("reporter calls = %+v, want none for malformed frames", reporter.calls)
+	}
+}
+
+func TestHandleDeviceReadyWithoutAReporterIsHandled(t *testing.T) {
+	h := NewDeviceFrameHandler(nil, nil, discardLogger())
+
+	raw := []byte(`{"type":"device_ready","version":1}`)
+	if handled := h.HandleDeviceFrame(context.Background(), hub.DeviceFrame{DeviceID: "dev-1", Type: "device_ready", Raw: raw, Kind: hub.FrameText}); !handled {
+		t.Fatal("device_ready must be recognised even with no reporter wired")
+	}
+}

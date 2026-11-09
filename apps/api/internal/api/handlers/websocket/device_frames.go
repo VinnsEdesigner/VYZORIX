@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log/slog"
+	"sync"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application"
 	cmdapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/command"
@@ -17,6 +18,9 @@ import (
 const (
 	// frameTypeCommandResult reports the terminal outcome of a dispatched command.
 	frameTypeCommandResult = "command_result"
+	// frameTypeDeviceReady reports that a device applied a config version
+	// (VYZORIX_DEPLOY_CONTRACT.md §9.1 step 8).
+	frameTypeDeviceReady = "device_ready"
 )
 
 // CommandResultSink records a device-reported command outcome. *cmdapp.Service
@@ -49,6 +53,23 @@ type PTYDeviceSink interface {
 	HandleDeviceBinary(deviceID string, raw []byte) bool
 }
 
+// ApplyReporter records that a device applied a config version. *deploy.DeployService
+// implements it; the interface keeps this handler independent of the deploy wiring.
+type ApplyReporter interface {
+	MarkApplied(ctx context.Context, deviceID string, version int) error
+}
+
+// deviceReadyFrame is the wire shape of a device_ready frame:
+//
+//	{"type":"device_ready","version":7}
+//
+// It is the device's confirmation that it applied a config, which is how the
+// server knows a deploy landed rather than merely being stored (§9.1 step 8).
+type deviceReadyFrame struct {
+	Type    string `json:"type"`
+	Version int    `json:"version"`
+}
+
 // DeviceFrameHandler routes non-telemetry device frames to the feature that owns
 // them. It handles command results (text) and PTY traffic (binary); app
 // registration will add another text case here rather than in the transport
@@ -57,6 +78,11 @@ type DeviceFrameHandler struct {
 	commands CommandResultSink
 	pty      PTYDeviceSink
 	log      *slog.Logger
+	// applies is set after the hub is already running, because the deploy feature
+	// is wired last. The lock makes that late binding safe against a frame arriving
+	// mid-assignment.
+	mu      sync.RWMutex
+	applies ApplyReporter
 }
 
 // NewDeviceFrameHandler creates a DeviceFrameHandler. Either sink may be nil; a
@@ -69,6 +95,24 @@ func NewDeviceFrameHandler(commands CommandResultSink, pty PTYDeviceSink, log *s
 	return &DeviceFrameHandler{commands: commands, pty: pty, log: log}
 }
 
+// SetApplyReporter wires the feature that records an applied config version. It
+// is called once the deploy feature exists, which is after the hub starts, so it
+// is safe to call on a live handler.
+func (h *DeviceFrameHandler) SetApplyReporter(reporter ApplyReporter) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	h.applies = reporter
+}
+
+// applyReporter returns the installed reporter under the read lock.
+func (h *DeviceFrameHandler) applyReporter() ApplyReporter {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	return h.applies
+}
+
 // HandleDeviceFrame implements hub.DeviceFrameHandler. It returns whether the
 // frame was recognised.
 func (h *DeviceFrameHandler) HandleDeviceFrame(_ context.Context, frame hub.DeviceFrame) bool {
@@ -79,6 +123,10 @@ func (h *DeviceFrameHandler) HandleDeviceFrame(_ context.Context, frame hub.Devi
 	switch frame.Type {
 	case frameTypeCommandResult:
 		h.handleCommandResult(frame)
+
+		return true
+	case frameTypeDeviceReady:
+		h.handleDeviceReady(frame)
 
 		return true
 	default:
@@ -137,6 +185,40 @@ func (h *DeviceFrameHandler) handleCommandResult(frame hub.DeviceFrame) {
 		h.log.Error("failed to record command result",
 			"deviceId", frame.DeviceID, "dispatchId", payload.DispatchID, "err", err)
 	}
+}
+
+// handleDeviceReady records that a device applied a config version. A malformed
+// frame is logged and dropped, like a command result: a device must never be able
+// to break its own connection with a bad frame.
+func (h *DeviceFrameHandler) handleDeviceReady(frame hub.DeviceFrame) {
+	var payload deviceReadyFrame
+	if err := json.Unmarshal(frame.Raw, &payload); err != nil {
+		h.log.Warn("bad device_ready frame", "deviceId", frame.DeviceID, "err", err)
+
+		return
+	}
+
+	if payload.Version <= 0 {
+		h.log.Warn("device_ready frame missing a version", "deviceId", frame.DeviceID)
+
+		return
+	}
+
+	reporter := h.applyReporter()
+	if reporter == nil {
+		h.log.Warn("device_ready received but no apply reporter is wired", "deviceId", frame.DeviceID)
+
+		return
+	}
+
+	if err := reporter.MarkApplied(context.Background(), frame.DeviceID, payload.Version); err != nil {
+		h.log.Error("failed to record applied config version",
+			"deviceId", frame.DeviceID, "version", payload.Version, "err", err)
+
+		return
+	}
+
+	h.log.Info("device reported a config applied", "deviceId", frame.DeviceID, "version", payload.Version)
 }
 
 // Compile-time references so the contracts stay checked.

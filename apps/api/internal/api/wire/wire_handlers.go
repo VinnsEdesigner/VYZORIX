@@ -100,6 +100,7 @@ type HandlerSet struct {
 	RecordingHandler      *websockethandlers.RecordingHandler
 	TelemetryHistory      *handlers.TelemetryHistoryHandler
 	ConnectionStatus      *handlers.ConnectionStatusHandler
+	DeviceFrames          *websockethandlers.DeviceFrameHandler
 	AdminClients          *admin.ClientsHandler
 	Updates               *updateshandlers.UpdatesHandler
 	UpdatesService        *updatesapplication.Service
@@ -356,7 +357,12 @@ func wireDeviceFrameRouting(hs *HandlerSet, deps HandlerDependencies) {
 		})
 	}
 
-	deps.Hub.SetDeviceFrameHandler(websockethandlers.NewDeviceFrameHandler(deps.CommandService, ptySink, deps.Log))
+	// Keep the handler so the deploy feature can bind its apply reporter after the
+	// hub is already running: the deploy feature is wired last, so the binding
+	// cannot happen here.
+	deviceFrames := websockethandlers.NewDeviceFrameHandler(deps.CommandService, ptySink, deps.Log)
+	deps.Hub.SetDeviceFrameHandler(deviceFrames)
+	hs.DeviceFrames = deviceFrames
 
 	if deps.CommandService != nil {
 		deps.CommandService.SetStatusPublisher(deps.Hub)

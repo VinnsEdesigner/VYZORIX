@@ -31,6 +31,14 @@ type Config struct {
 	ContactPoints   []ContactPointConfig   `json:"contact_points" yaml:"contact_points"`
 	ServiceAccounts []ServiceAccountConfig `json:"service_accounts" yaml:"service_accounts"`
 	Annotations     []AnnotationConfig     `json:"annotations" yaml:"annotations"`
+	CatalogApps     []CatalogAppConfig     `json:"catalog_apps" yaml:"catalog_apps"`
+}
+
+// CatalogAppConfig is one entry in the app catalog (§8.1, FR-19): a known app's
+// name. The catalog is a review aid, not a gate, so a malformed entry is logged
+// and skipped rather than failing the boot.
+type CatalogAppConfig struct {
+	Name string `json:"name" yaml:"name"`
 }
 
 type AnnotationConfig struct {
@@ -169,6 +177,9 @@ type Provisioner struct {
 	orgCreator     OrgCreator
 	opCreator      OperatorCreator
 	keyCreator     KeyCreator
+	// catalogSink receives the app catalog names from the file. It is a plain
+	// function so this package does not import the deploy feature.
+	catalogSink func(names []string)
 }
 
 func New(log *slog.Logger) *Provisioner {
@@ -207,6 +218,14 @@ func (p *Provisioner) WithCreators(orgCreator OrgCreator, opCreator OperatorCrea
 	p.orgCreator = orgCreator
 	p.opCreator = opCreator
 	p.keyCreator = keyCreator
+	return p
+}
+
+// WithCatalogSink receives the `catalog_apps` names. It is a function, not a
+// repository, because the catalog has no store: the deploy feature holds the
+// names in memory and reads them to mark an app known or custom.
+func (p *Provisioner) WithCatalogSink(sink func(names []string)) *Provisioner {
+	p.catalogSink = sink
 	return p
 }
 
@@ -336,7 +355,30 @@ func (p *Provisioner) LoadAndApply(ctx context.Context, path string) error {
 		p.log.Info("provisioned annotation", "title", ac.Title)
 	}
 
+	// The catalog has no store and no dependencies: it is a name list the deploy
+	// feature reads to mark an app known or custom (§8.1). It is applied last
+	// because nothing else depends on it.
+	p.applyCatalog(cfg.CatalogApps)
+
 	return nil
+}
+
+// applyCatalog hands the declared app names to the sink. With no sink the section
+// is inert, which is what a server built without the deploy feature should do.
+func (p *Provisioner) applyCatalog(apps []CatalogAppConfig) {
+	if p.catalogSink == nil {
+		return
+	}
+
+	names := make([]string, 0, len(apps))
+	for _, app := range apps {
+		if name := strings.TrimSpace(app.Name); name != "" {
+			names = append(names, name)
+		}
+	}
+
+	p.catalogSink(names)
+	p.log.Info("provisioned app catalog", "apps", len(names))
 }
 
 // orgCreatorFor picks the operator to own a new organization: the first operator
