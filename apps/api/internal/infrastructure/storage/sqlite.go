@@ -576,6 +576,10 @@ var migrations = []Migration{
 	// Device-scoped deploy credentials: a long-lived token for CI, stored only as
 	// a hash so a database copy yields no usable credential.
 	{Apply: migrateCreateDeployCredential, Name: "create_device_deploy_credentials", Version: 81},
+	// The deployment's own secrets (signing key, APK keystore, admin password),
+	// so they survive the workspace that produced them. Not reachable from any
+	// route; it exists for out-of-band restore.
+	{Apply: migrateCreateSecretBackup, Name: "create_secret_backup", Version: 82},
 }
 
 // runMigrations applies all pending migrations.

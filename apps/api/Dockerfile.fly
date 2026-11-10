@@ -72,6 +72,14 @@ RUN mkdir -p /data /app/bin /app/public /app/logs && \
 
 COPY --from=go-builder --chown=appuser:appuser /out/vyzorix /app/vyzorix
 
+# The published APK and its version manifest, baked into the image so
+# GET /v1/apk/<name> and /v1/check-update work with no volume. Fly has no
+# persistent disk by default, and the OTA route serves these from VYZORIX_BIN_DIR
+# and VYZORIX_API_DIR; without this a device would 404 its own update.
+# Publishing a new APK is therefore a redeploy (see tooling/scripts/generate_version.sh).
+COPY --chown=appuser:appuser apps/api/bin/ /app/bin/
+COPY --chown=appuser:appuser apps/api/data/version.json /data/version.json
+
 # Materialises the provisioning file from the PROVISIONING_YAML secret at boot,
 # so the operator password is never baked into the image.
 COPY --chown=appuser:appuser apps/api/docker-entrypoint.sh /app/docker-entrypoint.sh

@@ -1,8 +1,8 @@
 {
-  "version": "0.1.0",
-  "version_code": 1,
-  "apk_filename": "vyzorix-app-v0.1.0.apk",
-  "apk_sha256": "87a8c51210d72cb2a9cd76d5d7ccaaaf6c93e97984a2e3ad0e4c6e9fc0c84510",
-  "apk_size_bytes": 64081215,
-  "release_notes": "Vyzorix device agent 0.1.0"
+  "version": "0.1.3",
+  "version_code": 3,
+  "apk_filename": "vyzorix-app-v0.1.3-release-arm64.apk",
+  "apk_sha256": "923bba79c61b65431ee267915f426d0e31e4d8299bfa2ffadb880873401224d1",
+  "apk_size_bytes": 73305839,
+  "release_notes": "Vyzorix device agent 0.1.3 (versionCode 3), release build for arm64."
 }
