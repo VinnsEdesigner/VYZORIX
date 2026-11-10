@@ -16,13 +16,11 @@ func migrateOperatorFCMToken(tx *sql.Tx) error {
 	ALTER TABLE operators ADD COLUMN fcm_token TEXT`
 
 	_, err := tx.ExecContext(ctx, query)
-	if err != nil {
-		// Check if column already exists (error message varies by SQLite version).
-		// Common error: "duplicate column name: fcm_token".
-		if err.Error() != "duplicate column name: fcm_token" {
-			return err
-		}
-		// Column already exists, not an error.
+	if err != nil && !isDuplicateColumnErr(err) {
+		// Any other failure is real. The duplicate-column case is matched by a
+		// substring because the error text is driver-dependent: the libSQL/Turso
+		// driver prefixes it with "SQLite error: ".
+		return err
 	}
 
 	return nil

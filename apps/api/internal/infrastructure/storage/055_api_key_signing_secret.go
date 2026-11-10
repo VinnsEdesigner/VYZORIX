@@ -13,11 +13,12 @@ func migrateAddAPIKeySigningSecret(tx *sql.Tx) error {
 	_, err := tx.Exec(`
 		ALTER TABLE api_keys ADD COLUMN signing_secret TEXT NOT NULL DEFAULT ''
 	`)
-	if err != nil {
-		// Column may already exist (idempotent re-run).
-		if err.Error() != "duplicate column name: signing_secret" {
-			return err
-		}
+	// The column may already exist on an idempotent re-run. isDuplicateColumnErr
+	// matches on a substring, because the error text is driver-dependent: the
+	// libSQL/Turso driver prefixes it with "SQLite error: ", so an exact compare
+	// against the bare SQLite message misses and fails the migration.
+	if err != nil && !isDuplicateColumnErr(err) {
+		return err
 	}
 	return nil
 }
