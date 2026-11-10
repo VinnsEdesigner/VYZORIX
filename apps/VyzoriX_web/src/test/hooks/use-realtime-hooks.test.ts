@@ -1,5 +1,5 @@
 /**
- * Integration tests for the spec realtime presentation hooks (§8.1–§8.4).
+ * Integration tests for the spec realtime presentation hooks (–).
  *
  * These render the REAL hooks via React Testing Library. The hooks consume the
  * REAL `useWebSocketStore` (real graphql-ws `createClient`). A fake WebSocket

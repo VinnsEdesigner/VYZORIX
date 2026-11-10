@@ -47,7 +47,7 @@ interface UseWebSocketConnectionResult {
 }
 
 /**
- * Manage the realtime WebSocket connection lifecycle (spec §8.1).
+ * Manage the realtime WebSocket connection lifecycle.
  *
  * Auto-connects when an organization is selected and disconnects on cleanup.
  * Returns the live connection status from the underlying graphql-ws store so

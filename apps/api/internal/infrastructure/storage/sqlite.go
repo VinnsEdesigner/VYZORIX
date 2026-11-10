@@ -553,10 +553,10 @@ var migrations = []Migration{
 	// Command result output (e.g. SHELL_EXEC stdout) reported by a device.
 	{Apply: migrateAddCommandResult, Name: "add_command_result", Version: 73},
 	// Device state tier, so resolution reads it from the record rather than
-	// trusting a caller. See documents/ANDROID_SERVICE_BOUNDARY_CONTRACT.md §3.
+	// trusting a caller.
 	{Apply: migrateAddDeviceTier, Name: "add_device_tier", Version: 74},
 	// Device signing key and pairing code: the keypair registration model.
-	// See doc/REGISTRATION_CONTRACT.md.
+	//.
 	{Apply: migrateAddDeviceIdentity, Name: "add_device_identity", Version: 75},
 	// The command secret is gone: the keypair model replaced it, so the column is
 	// dropped rather than left unused.

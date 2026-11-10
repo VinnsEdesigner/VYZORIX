@@ -91,7 +91,7 @@ func TestGrantOnAnotherDeviceIsRefused(t *testing.T) {
 	}
 }
 
-// TestAppsWriteDoesNotImplyDeploy is the FR-18 invariant: the permission to
+// TestAppsWriteDoesNotImplyDeploy is the invariant: the permission to
 // observe an app must not let an operator install one.
 func TestAppsWriteDoesNotImplyDeploy(t *testing.T) {
 	t.Parallel()
@@ -275,7 +275,7 @@ func TestAuthorizeDeployIsUnauthenticatedBeforeLookup(t *testing.T) {
 	}
 }
 
-// TestDeployIsNotInAnyActionSet pins the FR-18 decision: no aggregate action may
+// TestDeployIsNotInAnyActionSet pins the decision: no aggregate action may
 // imply deploy, or the observe-implies-install grant reappears one level up.
 func TestDeployIsNotInAnyActionSet(t *testing.T) {
 	t.Parallel()

@@ -8,7 +8,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
 )
 
-// The §7.1 predicate: who may deploy to a device. The decision is pure and the
+// The predicate: who may deploy to a device. The decision is pure and the
 // data it needs is injected, so it is testable without a database and cannot
 // drift into the handler.
 
@@ -21,7 +21,7 @@ const (
 	DenialUnauthenticated Denial = "unauthenticated"
 	// DenialNotInOrg: the device does not exist in the caller's org. 404, never
 	// 403 — a 403 would confirm the device exists, an existence leak across
-	// tenants (§7.1).
+	// tenants.
 	DenialNotInOrg Denial = "not_in_org"
 	// DenialNotRegistered: the device is pending or deregistered. 409.
 	DenialNotRegistered Denial = "not_registered"
@@ -55,7 +55,7 @@ type Caller struct {
 	IsSuperAdmin  bool
 }
 
-// Authorize applies §7.1. It returns nil when the caller may deploy to dev, or
+// Authorize applies. It returns nil when the caller may deploy to dev, or
 // a *DeniedError naming the reason.
 func Authorize(caller *Caller, dev *device.Device) error {
 	if caller == nil || !caller.Authenticated {
@@ -94,7 +94,7 @@ func Authorize(caller *Caller, dev *device.Device) error {
 
 // DeviceLookup resolves a device by id within an org. A device in another org
 // must read as ErrNotFound, so the caller cannot distinguish "absent" from
-// "someone else's" — the existence leak §7.1 forbids.
+// "someone else's" — the existence leak forbids.
 type DeviceLookup interface {
 	FindForOrg(ctx context.Context, deviceID, orgID string) (*device.Device, error)
 }

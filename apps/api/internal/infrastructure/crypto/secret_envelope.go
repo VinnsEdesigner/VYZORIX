@@ -1,7 +1,7 @@
 // Package crypto: the secret envelope.
 //
-// A secret is never carried in a signed config (VYZORIX_DEPLOY_CONTRACT.md §5.2,
-// §9b). It travels on its own channel, RSA-OAEP-SHA1 to the device's public
+// A secret is never carried in a signed config (
+//). It travels on its own channel, RSA-OAEP-SHA1 to the device's public
 // key, so a compromise that reaches the ciphertext store yields nothing for a
 // device whose private key the attacker does not hold. This is the server half.
 //
@@ -22,7 +22,7 @@
 // the 3072-bit modulus is the protection — but it is a constraint, not a
 // preference, and it is recorded so nobody "upgrades" it back to SHA-256 and
 // breaks every device. Verified on device, not inferred; see the spike note in
-// VYZORIX_DEPLOY_CONTRACT.md §9b.3.
+//.
 package crypto
 
 import (

@@ -10,7 +10,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/deploycredential"
 )
 
-// The deploy-credential surface (§7.4): mint, list and revoke a token scoped to
+// The deploy-credential surface: mint, list and revoke a token scoped to
 // one device. Minting is the only call that returns the plaintext, once; every
 // read returns the prefix and the metadata, never the token.
 
@@ -76,7 +76,7 @@ func (h *Handler) MintCredential(c *gin.Context) {
 	deviceID := c.Param("imei")
 
 	// Minting a credential is writing a long-lived key to a device, so it takes
-	// the same grant as deploying to it (§9b.6).
+	// the same grant as deploying to it.
 	if _, err := deploy.AuthorizeDeploy(c.Request.Context(), h.devices, caller, deviceID); err != nil {
 		h.respondDeployError(c, err)
 

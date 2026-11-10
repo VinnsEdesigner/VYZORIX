@@ -1,6 +1,6 @@
 package deploy
 
-// The compiled config: the vyzorix.v shape of REGISTRATION_CONTRACT.md §6,
+// The compiled config: the vyzorix.v shape of,
 // extended with the apps the manifest declares.
 
 // Config is the whole signed document's field set.

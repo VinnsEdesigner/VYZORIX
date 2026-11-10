@@ -69,7 +69,7 @@ type PTYSession struct {
 	OperatorID string
 	OrgID      string
 	// capability is the resolved API allowlist, device tier and expiry the session
-	// carries. It is the boundary contract's §7 decision, recorded here at open so
+	// carries. It is the boundary contract's decision, recorded here at open so
 	// the device's cloud WebSocket (Build 4) can deliver it and so it is
 	// observable before that exists. Empty means the session was opened without a
 	// resolver configured.

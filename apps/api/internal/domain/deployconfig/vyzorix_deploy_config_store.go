@@ -1,6 +1,6 @@
 // Package deployconfig is the per-device signed config store: the current
 // version and the last known-good one, retained so a failed apply can be undone
-// without a network (§9.2). It is deliberately not the org-scoped configversion
+// without a network. It is deliberately not the org-scoped configversion
 // store; a device config is per-device and signed.
 package deployconfig
 

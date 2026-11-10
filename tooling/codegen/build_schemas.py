@@ -143,7 +143,7 @@ def parse_cue_file(filepath):
 
             # A union `A | B`. TOML has no sum type, so a union decodes as `any`
             # in Go and is published as a oneOf; `pwa` is the one field that needs
-            # it (`pwa = true` or a `[app.pwa]` table, §4.1).
+            # it (`pwa = true` or a `[app.pwa]` table).
             if "|" in base:
                 fields.append({
                     "name": fname,

@@ -7,7 +7,7 @@ import (
 )
 
 // SchemaVersion is the published manifest schema's version. It is the {version}
-// segment of GET /v1/deploy/schema/{version} (FR-2). The spec module owns both
+// segment of GET /v1/deploy/schema/{version}. The spec module owns both
 // the value and the schema, so the server and the CLI cannot disagree on which
 // version a manifest was validated against.
 const SchemaVersion = vyzorixspec.SchemaVersion

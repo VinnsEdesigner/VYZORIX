@@ -60,7 +60,7 @@ type GrantRepository interface {
 //
 // The API allowlist is a filter on top of the capability, not the capability
 // itself: for anything with a file descriptor (a PTY, a USB handle) the fd is the
-// real revocable grant, and closing it revokes access (architecture §9.1).
+// real revocable grant, and closing it revokes access (architecture).
 type SessionCapability struct {
 	SessionID    string
 	DeviceID     string

@@ -62,7 +62,7 @@ type PTYAudit interface {
 
 // PTYCapabilityResolver resolves the capability a session carries to the device:
 // the API allowlist the server decided, the device's tier, and an expiry. It is
-// the boundary contract's §7 resolution, invoked at session open so the decision
+// the boundary contract's resolution, invoked at session open so the decision
 // is made once rather than per call.
 //
 // The device's cloud WebSocket (Build 4) is what will deliver this to the device.
@@ -520,7 +520,7 @@ func (c *ptyOperatorClient) handleOpen(h *OperatorTerminalHandler, deviceID, ses
 	}
 
 	// Resolve the session's capability before the device is told to open a
-	// shell. This is the boundary contract's §7 decision — role tags intersected
+	// shell. This is the boundary contract's decision — role tags intersected
 	// with the device tier and the scoped grant — made once, here, rather than
 	// re-derived per call. A resolution that yields an empty allowlist is a
 	// refusal: the session would be able to call nothing, so it is not opened.

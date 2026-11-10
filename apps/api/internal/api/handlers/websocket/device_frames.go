@@ -19,7 +19,7 @@ const (
 	// frameTypeCommandResult reports the terminal outcome of a dispatched command.
 	frameTypeCommandResult = "command_result"
 	// frameTypeDeviceReady reports that a device applied a config version
-	// (VYZORIX_DEPLOY_CONTRACT.md §9.1 step 8).
+	//.
 	frameTypeDeviceReady = "device_ready"
 )
 
@@ -64,7 +64,7 @@ type ApplyReporter interface {
 //	{"type":"device_ready","version":7}
 //
 // It is the device's confirmation that it applied a config, which is how the
-// server knows a deploy landed rather than merely being stored (§9.1 step 8).
+// server knows a deploy landed rather than merely being stored (step 8).
 type deviceReadyFrame struct {
 	Type    string `json:"type"`
 	Version int    `json:"version"`

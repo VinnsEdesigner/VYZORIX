@@ -41,7 +41,7 @@ type Repository interface {
 
 	// FindByPairingCode retrieves a pending device by the code an operator types
 	// to claim it. Only a live code matches, so an expired notification cannot
-	// be claimed. See doc/REGISTRATION_CONTRACT.md.
+	// be claimed.
 	FindByPairingCode(ctx context.Context, code string) (*Device, error)
 
 	// ClearPairingCode consumes a device's pairing code so it cannot be claimed

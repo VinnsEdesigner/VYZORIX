@@ -118,7 +118,7 @@ type Config struct {
 	// app, so nothing per-device is transmitted — which is what the keypair model
 	// buys over the old shared command secret.
 	//
-	// See doc/REGISTRATION_CONTRACT.md §5.
+	//.
 	ServerSigningKey              string
 	MetricsBindAddr               string
 	AllowedOrigins                []string

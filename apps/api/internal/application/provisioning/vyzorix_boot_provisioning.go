@@ -34,7 +34,7 @@ type Config struct {
 	CatalogApps     []CatalogAppConfig     `json:"catalog_apps" yaml:"catalog_apps"`
 }
 
-// CatalogAppConfig is one entry in the app catalog (§8.1, FR-19): a known app's
+// CatalogAppConfig is one entry in the app catalog: a known app's
 // name. The catalog is a review aid, not a gate, so a malformed entry is logged
 // and skipped rather than failing the boot.
 type CatalogAppConfig struct {
@@ -356,7 +356,7 @@ func (p *Provisioner) LoadAndApply(ctx context.Context, path string) error {
 	}
 
 	// The catalog has no store and no dependencies: it is a name list the deploy
-	// feature reads to mark an app known or custom (§8.1). It is applied last
+	// feature reads to mark an app known or custom. It is applied last
 	// because nothing else depends on it.
 	p.applyCatalog(cfg.CatalogApps)
 

@@ -80,7 +80,7 @@ func ptyAuditLogger(logger *audit.Logger) websockethandlers.PTYAudit {
 
 // ptyCapabilityResolver resolves a session's capability at open: the operator's
 // role and grants intersected with the device's tier, per the boundary contract's
-// §7. It is the server-side decision, made once, so the device never re-derives
+//. It is the server-side decision, made once, so the device never re-derives
 // authority.
 type ptyCapabilityResolver struct {
 	members *orgapplication.MemberService

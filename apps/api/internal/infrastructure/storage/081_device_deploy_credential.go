@@ -7,7 +7,7 @@ import (
 )
 
 // migrateCreateDeployCredential creates the device-scoped deploy credential
-// store (VYZORIX_DEPLOY_CONTRACT.md §7.4).
+// store.
 //
 // Only `token_hash` is stored. The plaintext credential exists once, at mint
 // time, and is never written here or returned by any read, so a database copy

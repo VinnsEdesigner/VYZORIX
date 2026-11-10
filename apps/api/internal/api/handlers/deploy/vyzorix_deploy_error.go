@@ -31,7 +31,7 @@ type Handler struct {
 
 // ConfigPusher delivers a freshly deployed config to a device that is connected
 // right now. The push is an optimisation over the device's own re-fetch
-// (GET /v1/device/{imei}/config, contract §7): a device that is offline when it
+// (GET /v1/device/{imei}/config, contract): a device that is offline when it
 // is deployed to simply re-fetches on reconnect, so a push that finds no
 // connection is not an error.
 //

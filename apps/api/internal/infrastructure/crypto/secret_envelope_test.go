@@ -52,7 +52,7 @@ func TestSecretEnvelopeRoundTrip(t *testing.T) {
 	}
 }
 
-// TestSecretEnvelopeWrongKeyFails is the second half of §14 item 8: a ciphertext
+// TestSecretEnvelopeWrongKeyFails is the second half of item 8: a ciphertext
 // wrapped to key A must not open with key B. If it did, "encrypted to the
 // device's key" would be a claim rather than a property.
 func TestSecretEnvelopeWrongKeyFails(t *testing.T) {

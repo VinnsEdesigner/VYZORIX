@@ -17,7 +17,7 @@ import (
 // parameter names at the same path position, and the device-signed routes under
 // /v1/device already use `:imei`. The value is a device id, not an IMEI.
 
-// deployResponse is what the operator is told (§3). It names the version and the
+// deployResponse is what the operator is told. It names the version and the
 // authoriser, so the receipt can be checked against the device's config.
 type deployResponse struct {
 	AuthorizedBy string       `json:"authorizedBy"`
@@ -28,7 +28,7 @@ type deployResponse struct {
 	DryRun       bool         `json:"dryRun"`
 }
 
-// appMarking is one app's catalog classification (§8.1): the console marks an app
+// appMarking is one app's catalog classification: the console marks an app
 // the catalog does not know as custom, so an unreviewed app is visible.
 type appMarking struct {
 	Name   string `json:"name"`
@@ -80,7 +80,7 @@ func (h *Handler) Deploy(c *gin.Context) {
 		// on this route) is what made every deploy fail authorization.
 		//
 		// The member is the resolved caller's, not the context operator's: a CI deploy
-		// authenticated by a credential has no operator in the context, and §7.3
+		// authenticated by a credential has no operator in the context, and
 		// requires the config to name the human who minted the credential.
 		MemberID: memberID,
 		Manifest: body,
@@ -93,7 +93,7 @@ func (h *Handler) Deploy(c *gin.Context) {
 	}
 
 	// A device that is connected right now is told immediately; one that is
-	// offline re-fetches on reconnect (§7). A push that finds no connection is
+	// offline re-fetches on reconnect. A push that finds no connection is
 	// not an error — the deploy is stored either way — so its outcome is logged
 	// and never changes the response.
 	if !result.DryRun {
@@ -228,7 +228,7 @@ func (h *Handler) Document(c *gin.Context) {
 	c.Data(http.StatusOK, "text/plain; charset=utf-8", []byte(record.Document))
 }
 
-// Schema handles GET /v1/deploy/schema/{version} (FR-2). It serves the manifest
+// Schema handles GET /v1/deploy/schema/{version}. It serves the manifest
 // JSON Schema the CLI validates a manifest against before uploading, so a
 // manifest the CLI accepts is the manifest the server accepts.
 //

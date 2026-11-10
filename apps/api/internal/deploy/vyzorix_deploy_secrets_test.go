@@ -224,7 +224,7 @@ func TestUnsetRemoves(t *testing.T) {
 	}
 }
 
-// TestFetchRefusesAKeyTheConfigDoesNotName is the FR-27 gate: the config, not
+// TestFetchRefusesAKeyTheConfigDoesNotName is the gate: the config, not
 // the device's claim, decides what may be fetched.
 func TestFetchRefusesAKeyTheConfigDoesNotName(t *testing.T) {
 	t.Parallel()

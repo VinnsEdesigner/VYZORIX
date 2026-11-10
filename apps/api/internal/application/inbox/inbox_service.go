@@ -287,7 +287,7 @@ func (s *Service) ApproveDevice(ctx context.Context, imei string, operatorID, or
 	// keypair model has none to deliver, which is the point. The old flow put the
 	// plaintext command secret in this frame, over FCM — an unauthenticated channel
 	// — which made every downstream signature only as strong as that handoff.
-	// See doc/REGISTRATION_CONTRACT.md §1.
+	//.
 	//
 	// The device learns it was approved by fetching its config over the WebSocket
 	// it already holds; this push is only a wake hint for a device that went
@@ -733,7 +733,7 @@ func (s *Service) ResendApproval(ctx context.Context, imei, operatorID, orgID st
 	// No secret check and no secret in the push. The old resend path required the
 	// plaintext secret to still be stored, and delivered it over FCM; both are gone
 	// with the keypair model, where there is nothing to resend. See
-	// doc/REGISTRATION_CONTRACT.md §1 and §8.
+	// and.
 	fcmPushSent := false
 	if s.fcmNotifier != nil && entry.FCMToken != "" {
 		wake := fcm.SilentWake{

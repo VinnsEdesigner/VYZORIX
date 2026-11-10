@@ -31,7 +31,7 @@ function inRange(value: number, min: number, max: number): boolean {
 }
 
 /**
- * Validate a telemetry frame (spec §6.3).
+ * Validate a telemetry frame.
  *
  * `deviceId` is required. When the optional numeric metrics are present they
  * must be within their valid ranges: riskScore and bufferLevel are 0–100

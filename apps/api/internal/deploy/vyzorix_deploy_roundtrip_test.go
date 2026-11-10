@@ -288,7 +288,7 @@ func TestRandomizedEnvStillDeterministic(t *testing.T) {
 	}
 }
 
-// appField reads one child of an app node by key — the §5.1 reader rule: never
+// appField reads one child of an app node by key — the reader rule: never
 // use an absolute path across apps.
 func appField(app *libv.Node, key string) string {
 	for _, child := range app.Children {

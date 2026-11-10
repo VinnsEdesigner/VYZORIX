@@ -9,7 +9,7 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 	// Inbox endpoints - authenticated operators.
 	rg.GET("/inbox", h.GetInbox)
 	rg.GET("/inbox/:imei", h.GetInboxEntry)
-	rg.PATCH("/inbox/:imei", h.UpdateInboxEntry) // FR-37: notes/annotations update (implemented).
+	rg.PATCH("/inbox/:imei", h.UpdateInboxEntry) // notes/annotations update (implemented).
 	rg.POST("/inbox/:imei/ack", h.AckInbox)
 	rg.POST("/inbox/:imei/resend", h.ResendApproval) // Resend FCM notification for approved devices.
 }

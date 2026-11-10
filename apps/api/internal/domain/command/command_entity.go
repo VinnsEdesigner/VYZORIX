@@ -141,7 +141,7 @@ const (
 	// TypeDeviceConfig delivers the device's signed configuration. It is not a
 	// command the device executes: it is the settings the server resolved once the
 	// operator claimed the device, and the device applies them and reports ready.
-	// See doc/REGISTRATION_CONTRACT.md §3 phase C and §6.
+	// phase C and.
 	TypeDeviceConfig = "DEVICE_CONFIG"
 )
 

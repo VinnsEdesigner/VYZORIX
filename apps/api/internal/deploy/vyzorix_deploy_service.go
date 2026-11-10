@@ -20,7 +20,7 @@ import (
 //
 // DeviceID is the target. On `POST /v1/deploy` the path names no device, so the
 // handler leaves it empty and the service takes it from the manifest's `device.id`
-// (§3, §4.1) — the file is the declaration, and the endpoint is the target.
+// — the file is the declaration, and the endpoint is the target.
 type DeployRequest struct {
 	Caller   *Caller
 	OrgID    string
@@ -212,7 +212,7 @@ func (s *DeployService) DeliverableForDevice(ctx context.Context, deviceID strin
 	}, nil
 }
 
-// MarkApplied records that a device reported a version as applied (§9.1 step 8).
+// MarkApplied records that a device reported a version as applied (step 8).
 // It is how the console knows a deploy landed rather than merely being stored.
 //
 // A version the store does not hold as current is not an error: the device may

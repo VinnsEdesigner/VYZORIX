@@ -29,7 +29,7 @@ const MOCK_SESSION = {
 /**
  * MSW handlers mirroring the Go server auth contract.
  * Field names are snake_case to match the actual API responses.
- * See AUTHENTICATION_SYSTEM_SERVER.md → Appendix: API Contract Reference.
+ * → Appendix: API Contract Reference.
  */
 export function createAuthHandlers() {
   return [

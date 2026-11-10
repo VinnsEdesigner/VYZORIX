@@ -171,7 +171,7 @@ func (s *Server) dashboardHandler(c *gin.Context) {
 // HMAC: the device signs with the private key it generated at first boot, and the
 // server verifies with the public half it received at enroll. There is no shared
 // secret, so there is nothing to deliver and nothing to look up per device beyond
-// the registered public key. See doc/REGISTRATION_CONTRACT.md §5.
+// the registered public key.
 //
 // The signed string is crypto.DeviceCanonicalString, deliberately distinct from
 // the server's own canonical form, so a device signature can never be replayed as

@@ -15,8 +15,8 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
 )
 
-// CommandSigner handles HMAC signing of commands per DEVICE_REGISTRATION.md §5.
-// and COMMAND_SECURITY.md §3.
+// CommandSigner handles HMAC signing of commands.
+// and.
 type CommandSigner struct{}
 
 // NewCommandSigner creates a new CommandSigner.

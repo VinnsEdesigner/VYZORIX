@@ -1,5 +1,5 @@
 // Package deploy compiles a vyzorix.toml manifest into a signed vyzorix.v
-// config. It is the server half of VYZORIX_DEPLOY_CONTRACT.md: the operator
+// config. It is the server half of: the operator
 // declares, this package refuses what it must, signs what remains, and the
 // device verifies it alone.
 package deploy
@@ -26,7 +26,7 @@ const (
 	maxAppsPerDevice = 32
 )
 
-// ExposeMode is how an app's port is reachable. `cloud` is refused in v1 (§10).
+// ExposeMode is how an app's port is reachable. `cloud` is refused in v1.
 type ExposeMode string
 
 const (
@@ -84,7 +84,7 @@ type PWA struct {
 }
 
 // ArtifactSpec is one artifact reference. The URL is literal and the digest pins
-// its bytes, so the transport can be untrusted (§5.3).
+// its bytes, so the transport can be untrusted.
 type ArtifactSpec struct {
 	Name   string       `toml:"name"`
 	URL    string       `toml:"url"`
@@ -112,7 +112,7 @@ type AppSpec struct {
 }
 
 // DeviceSpec is the [device] block. Only id, org and an optional display name
-// are the operator's; everything else is server-injected (§5.1).
+// are the operator's; everything else is server-injected.
 type DeviceSpec struct {
 	ID   string `toml:"id"`
 	Org  string `toml:"org"`
@@ -149,7 +149,7 @@ var (
 )
 
 // ParseManifest decodes a vyzorix.toml. An unknown key is a hard error: a typo'd
-// setting must not silently do nothing (contract §4.1).
+// setting must not silently do nothing.
 func ParseManifest(data []byte) (*Manifest, error) {
 	var m Manifest
 
@@ -168,7 +168,7 @@ func ParseManifest(data []byte) (*Manifest, error) {
 }
 
 // PeekDeviceID reads the target device id from a manifest without validating the
-// rest of it. The deploy endpoint's device is named by the manifest (§3), and the
+// rest of it. The deploy endpoint's device is named by the manifest, and the
 // caller must be authorised for that device *before* the manifest is validated —
 // an unauthorised caller must not be told which keys are wrong. So the id is read
 // on its own, tolerantly; ParseManifest is the strict pass that follows.

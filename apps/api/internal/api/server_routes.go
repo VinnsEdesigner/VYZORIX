@@ -225,7 +225,7 @@ func (s *Server) setupDevicePublicRoutes(public *gin.RouterGroup) {
 	// Keypair enrollment. Public by necessity: a freshly installed device has no
 	// credential yet, so there is nothing to authenticate with. Safety rests on
 	// the pairing code's entropy, TTL, single-use rule and the public group's rate
-	// limiting. See doc/REGISTRATION_CONTRACT.md §4 and §9.
+	// limiting. and.
 	if s.enrollHandler != nil {
 		devicePublicGroup.POST("/enroll", s.enrollHandler.Enroll)
 	}
@@ -309,8 +309,8 @@ func (s *Server) setupAuthenticatedRoutes() {
 	s.setupDeploySchemaRoute(r)
 }
 
-// setupDeployRoutes registers the deploy surface (VYZORIX_DEPLOY_CONTRACT.md
-// §3, §9b.6, §7.4).
+// setupDeployRoutes registers the deploy surface (
+//).
 //
 // The operator endpoints live on the tenant group, so they take a session or an
 // API key plus the org context. The device's own secret fetch is registered on
@@ -348,7 +348,7 @@ func (s *Server) setupDeployRoutes(tenantGroup *gin.RouterGroup) {
 	deployGroup.DELETE("/:imei/secrets/:app/:key", s.deployHandler.UnsetSecret)
 }
 
-// setupDeploySchemaRoute registers the manifest schema, unauthenticated (FR-2).
+// setupDeploySchemaRoute registers the manifest schema, unauthenticated.
 // It is "published": the CLI validates a manifest against it before it has any
 // credential, and the schema is identical for every tenant, so requiring a session
 // would only make the CLI carry one to fetch a public document.
@@ -548,7 +548,7 @@ func (s *Server) setupDeviceSignedRoutes(r *gin.RouterGroup) {
 
 	// The device fetches its own config by version. The push at claim time is the
 	// primary path; this is what a device uses when it was offline then, or when the
-	// version it holds differs from the server's. See REGISTRATION_CONTRACT.md §7.
+	// version it holds differs from the server's.
 	if s.enrollHandler != nil {
 		deviceSigned.GET("/:imei/config", s.enrollHandler.GetConfig)
 	}
@@ -603,7 +603,7 @@ func (s *Server) setupDeviceManagementRoutes(r *gin.RouterGroup) {
 func (s *Server) setupDeviceInboxRoutes(r *gin.RouterGroup) {
 	// Claiming a device is an authenticated operator action, so it is registered
 	// independently of the inbox handler: it needs org context and the device-write
-	// scope, not the inbox scopes. See doc/REGISTRATION_CONTRACT.md §3 phase B.
+	// scope, not the inbox scopes. phase B.
 	if s.enrollHandler != nil {
 		claimGroup := r.Group("/device")
 		claimGroup.Use(middleware.NewOrganizationContext(nil).Middleware())
@@ -643,7 +643,7 @@ func (s *Server) setupDevicesRoutes(r *gin.RouterGroup) {
 		// All device routes require organization context for multi-tenant isolation.
 		devices.Use(middleware.NewOrganizationContext(nil).Middleware())
 		devices.Use(middleware.NewOrganizationMembership(s.memberHandler.MembershipChecker()).Middleware())
-		// Apply rate limiting per spec Section 11.1.
+		// Apply rate limiting per spec
 		devices.GET("", s.deviceRegRateLimiter.DevicesListLimit(), s.requireScope(permission.ActionDeviceRead, permission.WildcardScope(permission.ScopeDevices)), s.devicesHandler.GetDevices)
 		devices.GET("/:imei", s.deviceRegRateLimiter.DevicesGetLimit(), s.requireScope(permission.ActionDeviceRead, permission.WildcardScope(permission.ScopeDevices)), s.devicesHandler.GetDeviceDetail)
 		devices.DELETE("/:imei", s.deviceRegRateLimiter.DevicesDeleteLimit(), s.requireScope(permission.ActionDeviceDelete, permission.WildcardScope(permission.ScopeDevices)), s.devicesHandler.DeregisterDevice)

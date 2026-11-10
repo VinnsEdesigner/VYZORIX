@@ -13,7 +13,7 @@ const DefaultHeartbeatSeconds = 60
 // DeviceSettings derives the server-owned injection from the device record.
 //
 // Everything here is policy the server owns: a manifest cannot set a tier, a
-// stream path or the feature flags (§5.1). The values mirror what the
+// stream path or the feature flags. The values mirror what the
 // registration path already issues for a claimed device, so a deploy and a claim
 // produce the same document for the same device.
 type DeviceSettings struct{}

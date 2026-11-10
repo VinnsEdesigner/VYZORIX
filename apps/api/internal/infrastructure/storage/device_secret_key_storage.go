@@ -14,7 +14,7 @@ import (
 //
 // It is separate from the identity key, whose public half is handed to the
 // container. Wrapping a secret to a key the whole system knows would make the
-// container able to read it (VYZORIX_DEPLOY_CONTRACT.md §9b.3).
+// container able to read it.
 type DeviceSecretKeyRepository struct {
 	db *sql.DB
 }

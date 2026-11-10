@@ -8,7 +8,7 @@ import (
 
 // The vyzorix.v renderer. Output is byte-identical for the same input: apps keep
 // manifest order, env keys are sorted, every other field is written in a fixed
-// order (§5.1).
+// order.
 
 const (
 	// appsContainerDepth holds the `apps` node; app nodes sit one deeper.
@@ -132,7 +132,7 @@ func (r *renderer) renderEnv(app *AppConfig) {
 }
 
 // renderSecrets writes one `secret NAME` node per name; values travel on their
-// own channel (§9b).
+// own channel.
 func (r *renderer) renderSecrets(app *AppConfig) {
 	for _, name := range app.Secrets {
 		r.node(appFieldDepth, "secret", name)
@@ -157,7 +157,7 @@ func (r *renderer) renderArtifact(art *ArtifactConfig) {
 }
 
 // renderPWA writes the pwa node only when the webroot is a PWA. Absent and
-// false produce no node at all, which is the negative case (§6).
+// false produce no node at all, which is the negative case.
 func (r *renderer) renderPWA(app *AppConfig) {
 	if app.PWA == nil || !app.PWA.Enabled {
 		return

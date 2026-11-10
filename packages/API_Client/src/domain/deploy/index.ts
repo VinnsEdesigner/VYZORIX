@@ -1,5 +1,5 @@
 // Deploy domain — the declarative, signed deployment surface
-// (`documents/VYZORIX_DEPLOY_CONTRACT.md`).
+// (``).
 //
 // Two layers, same as every other bounded context:
 //   1. the generated wire types (as the server emits them) are re-exported
@@ -190,7 +190,7 @@ export function deployAppSecretsFromWire(wire: SecretListResponse): DeployAppSec
 
 // ---- Presentation helpers ----
 
-/** The `expose` modes an app may declare (contract §4.1). */
+/** The `expose` modes an app may declare. */
 export type DeployExposeMode = 'loopback' | 'lan' | 'cloud';
 
 export function getDeployExposeLabel(mode: DeployExposeMode): string {

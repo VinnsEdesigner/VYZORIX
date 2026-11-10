@@ -314,7 +314,7 @@ func (r Requirement) SatisfiedBy(grant TagSet) bool {
 // has no filesystem, so it could not enforce any of it, and nothing consumed it.
 // It had also drifted — it listed `rootfs`, `overlay` and `android.sock` as an
 // "engine zone" to protect, when the rootfs is the container's own root and the
-// socket is the door §2.2 exists to open.
+// socket is the door exists to open.
 //
 // Bind rules are a device concern and live in exactly one place:
 // `ProotLauncher.binds()` and `ProotLauncher.isEngineZonePath()` in the Android

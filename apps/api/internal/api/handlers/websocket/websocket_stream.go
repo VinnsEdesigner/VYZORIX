@@ -26,7 +26,7 @@ type StreamUpgrader struct {
 	upgrader        websocket.Upgrader
 	hmacVerifier    cryptohmac.Verifier
 	// devicePublicKeys resolves a device's registered signing key, which is what
-	// the connect handshake is verified against. See doc/REGISTRATION_CONTRACT.md §5.
+	// the connect handshake is verified against.
 	devicePublicKeys DevicePublicKeyProvider
 	config           config.Config
 	allowDevAuth     bool
@@ -114,7 +114,7 @@ func (u *StreamUpgrader) Upgrade(c *gin.Context, deviceID string) (*websocket.Co
 // The device signs the connect canonical string with the private key it generated
 // at first boot; the server verifies with the public half it received at enroll.
 // No shared secret, so nothing has to be delivered — which is why this replaces
-// the HMAC handshake. See doc/REGISTRATION_CONTRACT.md §5.
+// the HMAC handshake.
 func (u *StreamUpgrader) verifyDeviceConnect(r *http.Request, deviceID string) error {
 	if u.devicePublicKeys == nil {
 		return errors.New("no device public key provider configured")

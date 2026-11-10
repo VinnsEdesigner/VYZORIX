@@ -11,7 +11,7 @@ import (
 // The ciphertext column holds the value already wrapped to the device's public
 // key (RSA-OAEP-SHA1). The server stores only that: a server compromise that
 // reaches this table yields nothing for a device whose private key the attacker
-// does not hold (§9b.7). There is deliberately no plaintext column and no
+// does not hold. There is deliberately no plaintext column and no
 // column for the device's private key.
 //
 // The primary key is (device_id, app, key): a secret is scoped to one device,

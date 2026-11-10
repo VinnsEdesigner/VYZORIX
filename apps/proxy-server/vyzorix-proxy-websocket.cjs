@@ -6,7 +6,7 @@
  *
  * Browsers cannot set custom headers on WebSocket upgrade requests, so the
  * Go API's signing middleware is bypassed for WS connections (by design —
- * see SIGNING_ARCHITECTURE.md). Instead, WS is authenticated via the session
+ *). Instead, WS is authenticated via the session
  * cookie.
  *
  * How it works:

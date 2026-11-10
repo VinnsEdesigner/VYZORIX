@@ -233,7 +233,7 @@ func TestRenderedConfigIsParseableByTheFormat(t *testing.T) {
 	}
 }
 
-// TestConfigEnablesApps is the flag §5.1 turns on: a registered device runs apps,
+// TestConfigEnablesApps is the flag turns on: a registered device runs apps,
 // so its config must say so, or the device-side gate stays shut and nothing a
 // deploy installs ever starts.
 func TestConfigEnablesApps(t *testing.T) {

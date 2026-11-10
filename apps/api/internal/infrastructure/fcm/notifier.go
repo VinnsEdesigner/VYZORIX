@@ -317,7 +317,7 @@ func (e *EnhancedNotifier) persistForRetry(ctx context.Context, wake SilentWake,
 	return err
 }
 
-// TopicMessage represents a message to be sent to an FCM topic (FR-8: Topic Messaging Support).
+// TopicMessage represents a message to be sent to an FCM topic (: Topic Messaging Support).
 type TopicMessage struct {
 	Topic      string
 	Command    string
@@ -341,7 +341,7 @@ func (e *EnhancedNotifier) SendToTopic(ctx context.Context, msg TopicMessage) er
 		return ErrUnavailable
 	}
 
-	// Determine priority (FR-8.5: Message Prioritization).
+	// Determine priority (.5: Message Prioritization).
 	priority := "high"
 	if msg.Priority == "normal" {
 		priority = "normal"
@@ -505,7 +505,7 @@ func ptr24Hours() *time.Duration {
 // `command_secret` so the device could complete registration — over FCM, which is
 // an unauthenticated channel. The keypair model has no secret to deliver, so the
 // field is gone rather than left empty: a wire field that exists is a field
-// something will fill in again. See doc/REGISTRATION_CONTRACT.md §1.
+// something will fill in again.
 func buildFCMData(wake SilentWake) map[string]string {
 	data := map[string]string{
 		"action":      "WAKE_DAEMON",

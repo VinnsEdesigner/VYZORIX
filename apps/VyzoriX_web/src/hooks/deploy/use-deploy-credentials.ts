@@ -11,7 +11,7 @@ import { deployCredentialsFromWire, type DeployCredential } from '@vyzorix/api-c
 
 /**
  * A device's deploy credentials. Names, prefixes and revocation state only —
- * a token is never returned by a GET (contract §7).
+ * a token is never returned by a GET.
  */
 export function useDeployCredentials(imei: string | undefined) {
   const organizationId = useCurrentOrganizationId();

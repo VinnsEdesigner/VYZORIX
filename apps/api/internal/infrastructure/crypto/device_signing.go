@@ -283,7 +283,7 @@ const pairingAlphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 
 // pairingCodeLength is 8 characters from a 32-symbol alphabet, ~40 bits. Entropy
 // alone is not the defence; the TTL, single-use rule and rate limiting are what
-// make guessing infeasible. See REGISTRATION_CONTRACT.md §4.
+// make guessing infeasible.
 const pairingCodeLength = 8
 
 // GeneratePairingCode returns a code and its display form ("K7QM-3X2P").

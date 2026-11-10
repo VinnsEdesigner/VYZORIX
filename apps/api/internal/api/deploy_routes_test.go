@@ -492,7 +492,7 @@ func TestSuperAdminDeploysWithoutAGrant(t *testing.T) {
 	}
 }
 
-// TestMintedCredentialDeploysAndIsRefusedAfterRevocation covers §7.4 end to end:
+// TestMintedCredentialDeploysAndIsRefusedAfterRevocation covers end to end:
 // a device-scoped credential mints, authenticates a deploy with no session, and
 // stops working the moment it is revoked.
 func TestMintedCredentialDeploysAndIsRefusedAfterRevocation(t *testing.T) {
@@ -532,7 +532,7 @@ func TestMintedCredentialDeploysAndIsRefusedAfterRevocation(t *testing.T) {
 		t.Fatalf("credential deploy = %d, want 202; body=%s", w.Code, w.Body.String())
 	}
 
-	// §7.3: the config carries the member who authorised it. A credential deploy has
+	// The config carries the member who authorised it. A credential deploy has
 	// no operator in the context, so the member must come from the credential's
 	// minting operator — not from GetOperatorFromContext, which is nil here.
 	record, err := f.configs.Current(t.Context(), deployDevice)
@@ -589,7 +589,7 @@ func TestCredentialCannotReachAnotherDevice(t *testing.T) {
 	}
 }
 
-// TestSecretSetListUnsetNeverReturnsAValue is the §9b.6 invariant at the HTTP
+// TestSecretSetListUnsetNeverReturnsAValue is the invariant at the HTTP
 // seam: a value goes in on set, and no response ever carries it back.
 func TestSecretSetListUnsetNeverReturnsAValue(t *testing.T) {
 	t.Parallel()
@@ -661,7 +661,7 @@ func TestSecretSetListUnsetNeverReturnsAValue(t *testing.T) {
 }
 
 // TestSecretSetRequiresTheGrant pins that writing a credential takes the same
-// grant as writing what runs (§9b.6).
+// grant as writing what runs.
 func TestSecretSetRequiresTheGrant(t *testing.T) {
 	t.Parallel()
 

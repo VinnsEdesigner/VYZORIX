@@ -938,7 +938,7 @@ func (r *OperatorRepository) GetHMACWindowSeconds(ctx context.Context) (int, err
 	}
 
 	if val == "" {
-		return 30, nil // default 30 seconds per COMMAND_SECURITY.md.
+		return 30, nil // default 30 seconds.
 	}
 
 	var seconds int

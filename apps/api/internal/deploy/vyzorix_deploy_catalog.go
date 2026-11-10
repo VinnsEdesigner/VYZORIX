@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-// The app catalog (§8.1, FR-19): the names of known apps, seeded at boot from
+// The app catalog: the names of known apps, seeded at boot from
 // the provisioning file's `catalog_apps` section. A manifest naming an app in the
 // catalog is ordinary; one naming anything else is permitted but marked custom,
 // so the console can flag an app nobody reviewed. The catalog is a review aid,

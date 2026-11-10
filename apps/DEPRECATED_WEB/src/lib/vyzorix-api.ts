@@ -66,7 +66,7 @@ export interface CommandResponse {
   serverTime: number;
 }
 
-// TelemetryFrame as described in docs/VyzorixUpdate_RepoTree.md and DOC_8.
+// TelemetryFrame.
 export interface TelemetryFrame {
   type: "telemetry";
   deviceId?: string;

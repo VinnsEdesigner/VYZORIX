@@ -1,6 +1,6 @@
 // Package appsecret is the per-device secret store: a value encrypted to one
 // device's key, named by the app that expects it. The value never enters the
-// signed config, which names the keys only (§9b).
+// signed config, which names the keys only.
 package appsecret
 
 import (

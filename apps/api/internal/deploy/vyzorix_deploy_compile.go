@@ -11,7 +11,7 @@ import (
 // secrets; CompileAndSign does both around it.
 
 // Injection is the server-owned data a compile adds. None of it may come from
-// the file: a config that names its own authoriser proves nothing (§5.1).
+// the file: a config that names its own authoriser proves nothing.
 type Injection struct {
 	MemberID         string
 	DeviceID         string
@@ -96,7 +96,7 @@ func compileApp(spec *AppSpec) (*AppConfig, error) {
 // runs under fork/exec with no shell, so this is belt-and-braces.
 const cmdMetacharacters = ";|&$`><(){}*?~!\n\r"
 
-// validateCmd applies the cmd rule (§8): absolute, inside the app's own
+// validateCmd applies the cmd rule: absolute, inside the app's own
 // directory, free of shell metacharacters. The symlink check is the device's.
 func validateCmd(appName, cmd string) error {
 	field := "app." + appName + ".cmd"

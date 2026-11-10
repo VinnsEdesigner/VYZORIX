@@ -31,7 +31,7 @@ var (
 // nothing to authenticate with. Claim is operator-authenticated: it is the step
 // that decides who owns the device.
 //
-// See doc/REGISTRATION_CONTRACT.md for the flow this implements.
+// for the flow this implements.
 type EnrollHandler struct {
 	devices *devicesvc.Service
 	// hub delivers the config to the device over the WebSocket it is holding
@@ -241,8 +241,8 @@ func (h *EnrollHandler) Claim(c *gin.Context) {
 		return
 	}
 
-	// The operator sees these facts and confirms the device is theirs (REGISTRATION_CONTRACT.md
-	// §3), so the whole set the device reported is returned, not just the name and model.
+	// The operator sees these facts and confirms the device is theirs (
+	//), so the whole set the device reported is returned, not just the name and model.
 	c.JSON(http.StatusOK, gin.H{
 		"deviceId":        d.ID,
 		"name":            d.DeviceName,
@@ -334,7 +334,7 @@ func (h *EnrollHandler) deliverConfig(c *gin.Context, deviceID string) bool {
 // PushConfig signs and pushes the device's current config to it over the
 // WebSocket, and reports whether it was sent. It is exported so a deploy can
 // notify a device that is connected right now rather than waiting for its next
-// reconnect (VYZORIX_DEPLOY_CONTRACT.md §7); a device that is not connected is
+// reconnect; a device that is not connected is
 // not an error, because it re-fetches on reconnect.
 func (h *EnrollHandler) PushConfig(ctx context.Context, deviceID string) bool {
 	sent, _ := h.pushConfig(ctx, deviceID)

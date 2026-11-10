@@ -39,7 +39,7 @@ function toQueryString(doc: unknown): string {
 }
 
 /**
- * Subscribe to a device's live telemetry stream (spec §8.2).
+ * Subscribe to a device's live telemetry stream.
  *
  * Maintains a rolling buffer of the last `MAX_TELEMETRY_HISTORY` frames and
  * exposes the latest frame plus the full history. Also invalidates the REST
@@ -137,7 +137,7 @@ export function useDeviceTelemetry(
 
 /**
  * Collect dashboard events (device connect/disconnect, threshold breach,
- * command delivered/failed) with unread tracking (spec §8.3).
+ * command delivered/failed) with unread tracking.
  *
  * Events are buffered up to `MAX_EVENTS`. `unreadCount` increments per new
  * event and is reset by `markAsRead` / `clearEvents`. Optional `eventTypes`
@@ -247,7 +247,7 @@ export function useDashboardEvents(
 
 /**
  * Dispatch commands to a device and track their delivery status over the
- * realtime channel (spec §8.4).
+ * realtime channel.
  *
  * `sendCommand` dispatches via the REST endpoint (the authoritative path) and
  * returns the `dispatchId`. The hook subscribes to command-status events for

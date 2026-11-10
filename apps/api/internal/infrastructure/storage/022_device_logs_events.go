@@ -9,7 +9,7 @@ import (
 // NOTE: device_events table is created by migration 034 (migrateDeviceEvents).
 // to ensure consistent schema with timestamp and data columns (TEXT in SQLite).
 func migrateCreateDeviceLogsAndEvents(tx *sql.Tx) error {
-	// Create device_logs table per SERVER_BACKEND_DASHBOARD_COMMANDS_API.md Section 4.1.
+	// Create device_logs table
 	_, err := tx.ExecContext(context.Background(), `
 		CREATE TABLE IF NOT EXISTS device_logs (
 			id              TEXT PRIMARY KEY,

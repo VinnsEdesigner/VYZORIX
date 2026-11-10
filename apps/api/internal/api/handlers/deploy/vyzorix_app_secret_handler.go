@@ -10,7 +10,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/crypto"
 )
 
-// The app-secret surface (§9b.6): set, list names, unset, and the device's
+// The app-secret surface: set, list names, unset, and the device's
 // ciphertext fetch. A value enters on exactly one call, `set`, and leaves on
 // exactly one, the device's fetch, which is wrapped to that device's key. No
 // response here carries a plaintext.
@@ -214,7 +214,7 @@ func (h *Handler) UnsetSecret(c *gin.Context) {
 // org, which is why it takes no caller.
 //
 // The current signed config is the gate: a device may fetch only a key its own
-// config names (§9b.6), so the fetch cannot be turned into a read of another
+// config names, so the fetch cannot be turned into a read of another
 // app's secret by guessing a name.
 // @Summary      Fetch a secret's ciphertext (device)
 // @Description  Returns the value wrapped to the device's key. Only for a key the

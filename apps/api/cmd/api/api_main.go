@@ -373,7 +373,7 @@ func startServer(cfg *config.Config, log *slog.Logger, apiServer *api.Server,
 				WithAnnotationRepository(storage.NewAnnotationRepository(db))
 		}
 		// The app catalog is seeded from the file, not a store, so it is wired as
-		// a sink the deploy feature's catalog reads (§8.1).
+		// a sink the deploy feature's catalog reads.
 		if catalog := apiServer.DeployCatalog(); catalog != nil {
 			prov = prov.WithCatalogSink(catalog.Add)
 		}

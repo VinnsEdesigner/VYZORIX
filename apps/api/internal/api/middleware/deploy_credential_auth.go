@@ -11,7 +11,7 @@ import (
 )
 
 // HeaderDeployCredential is the header a CI client presents a device-scoped
-// deploy credential in (VYZORIX_DEPLOY_CONTRACT.md §7.4). It is its own header
+// deploy credential in. It is its own header
 // rather than a bearer token so a credential can never be confused with an
 // operator API key, which reaches more than one device.
 const HeaderDeployCredential = "X-Vyzorix-Deploy-Credential"
@@ -25,7 +25,7 @@ const ContextKeyDeployCredentialOrg = "deploy_credential_org"
 
 // ContextKeyDeployCredentialAuthor is the operator who minted the credential. It
 // is the `memberId` a credential-initiated deploy records, so the config still
-// names a human even when the deploy came from CI (§7.3).
+// names a human even when the deploy came from CI.
 const ContextKeyDeployCredentialAuthor = "deploy_credential_author"
 
 // DeployCredentialIdentity is what a resolved credential tells the request.

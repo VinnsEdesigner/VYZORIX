@@ -8,7 +8,7 @@ import (
 
 // migrateAddDeviceTier adds the device tier column, so a device's state
 // capability level is read from its record rather than asserted by a caller.
-// See documents/ANDROID_SERVICE_BOUNDARY_CONTRACT.md §3: tier names device state
+// The tier names device state
 // (unrooted / rooted / advanced) and resolution intersects on it, so an unrooted
 // device can never be handed a rooted-only API.
 //

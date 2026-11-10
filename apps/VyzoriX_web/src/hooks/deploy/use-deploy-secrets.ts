@@ -12,7 +12,7 @@ import { deployAppSecretsFromWire, type DeployAppSecrets } from '@vyzorix/api-cl
 /**
  * The secret *names* an app expects and their generation. Never a value — a
  * secret value is encrypted to the device and is not readable from the console
- * (contract §9b, US-010).
+ * (contract, US-010).
  */
 export function useDeployAppSecrets(imei: string | undefined, app: string | undefined) {
   const organizationId = useCurrentOrganizationId();

@@ -1,5 +1,5 @@
 // Package configscan is the structural no-secret check for a rendered vyzorix.v
-// config (VYZORIX_DEPLOY_CONTRACT.md §5.2). A config is transmitted and signed,
+// config. A config is transmitted and signed,
 // so it must never carry a secret value; it may only name one.
 //
 // This is the single check both config paths use — registration and deploy. An

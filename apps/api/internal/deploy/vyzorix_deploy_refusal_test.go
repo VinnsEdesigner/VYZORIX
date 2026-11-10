@@ -51,7 +51,7 @@ cmd = "/home/apps/vfd/run.sh"
 	}
 }
 
-// TestCmdOutsideAppDirIsRefused is the §8 rule at compile time.
+// TestCmdOutsideAppDirIsRefused is the rule at compile time.
 func TestCmdOutsideAppDirIsRefused(t *testing.T) {
 	t.Parallel()
 

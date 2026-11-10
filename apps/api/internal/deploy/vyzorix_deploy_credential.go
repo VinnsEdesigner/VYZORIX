@@ -12,7 +12,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/deploycredential"
 )
 
-// The deploy credential (§7.4): a long-lived token scoped to one device, so CI
+// The deploy credential: a long-lived token scoped to one device, so CI
 // can deploy without an operator session. It is minted, listed and revoked by an
 // operator with `device.deploy`, and it authenticates exactly one device.
 //

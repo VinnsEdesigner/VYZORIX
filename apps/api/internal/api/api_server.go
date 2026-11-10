@@ -634,7 +634,7 @@ func (s *Server) wireConfirmHandler(cfg *ServerConfig) {
 		return
 	}
 
-	// The keypair registration endpoints. See doc/REGISTRATION_CONTRACT.md.
+	// The keypair registration endpoints.
 	s.enrollHandler = inboxhandlers.NewEnrollHandler(cfg.DeviceService, cfg.Hub, cfg.ServerSigner)
 }
 

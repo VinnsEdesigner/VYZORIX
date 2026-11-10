@@ -79,7 +79,7 @@ func TestManifestSchema_UnknownVersionIsRefused(t *testing.T) {
 }
 
 // TestManifestSchema_EnforcesTheServersRules is the parity guard: the published
-// schema is what the CLI pre-validates against (FR-2), so every rule the server
+// schema is what the CLI pre-validates against, so every rule the server
 // enforces must also be in the schema, or the CLI accepts a manifest the server
 // then refuses. Each case is a manifest the server refuses; the schema must too.
 func TestManifestSchema_EnforcesTheServersRules(t *testing.T) {
@@ -116,7 +116,7 @@ func TestManifestSchema_EnforcesTheServersRules(t *testing.T) {
 }
 
 // TestManifestSchema_AcceptsTheEdgeCasesTheServerAccepts pins the other half:
-// a rule that refuses too much is as wrong as one that refuses too little (§5.2).
+// a rule that refuses too much is as wrong as one that refuses too little.
 func TestManifestSchema_AcceptsTheEdgeCasesTheServerAccepts(t *testing.T) {
 	compiled := compileManifestSchema(t)
 

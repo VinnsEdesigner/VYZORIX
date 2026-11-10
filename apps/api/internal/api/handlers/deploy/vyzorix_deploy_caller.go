@@ -1,5 +1,5 @@
 // Package deployhandlers provides the HTTP surface for the deploy contract
-// (documents/VYZORIX_DEPLOY_CONTRACT.md). It is a thin adapter: every decision —
+//. It is a thin adapter: every decision —
 // who may deploy, what compiles, what is refused, what is signed — belongs to
 // internal/deploy, and this package only turns a request into a call and a
 // result into a response.
@@ -36,7 +36,7 @@ type GrantLister interface {
 // resolveCaller builds the deploy.Caller for the request's organization and the
 // member id the deploy is attributed to.
 //
-// Two credentials reach here. A deploy credential (§7.4) is a grant scoped to the
+// Two credentials reach here. A deploy credential is a grant scoped to the
 // one device it names, so it is represented as exactly that — not as a super
 // admin, which would be a lie the predicate could later act on. An operator
 // session or API key is resolved through the same membership check requireScope

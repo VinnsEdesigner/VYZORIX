@@ -24,7 +24,7 @@ var (
 
 // PairingCodeTTL is how long a code stays claimable. Short enough that a leaked
 // code is stale by the time it could be used, long enough to walk to a browser.
-// See doc/REGISTRATION_CONTRACT.md §4.
+//.
 const PairingCodeTTL = 10 * time.Minute
 
 // EnrollRequest is what a freshly installed device sends. It carries no secret:
@@ -61,7 +61,7 @@ type EnrollResult struct {
 // This is the one unauthenticated step, by necessity: the device has no
 // credential yet. Its safety rests on the code's entropy, its TTL, its
 // single-use rule and the caller's rate limiting — stated plainly rather than
-// implied. See doc/REGISTRATION_CONTRACT.md §4 and §9.
+// implied. and.
 func (s *Service) Enroll(ctx context.Context, req EnrollRequest) (*EnrollResult, error) {
 	if req.DeviceUUID == "" {
 		return nil, ErrPublicKeyRequired

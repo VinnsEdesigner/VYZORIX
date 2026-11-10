@@ -17,7 +17,7 @@ import (
 // The value is wrapped to the device's public key before it reaches storage, so
 // the plaintext exists only in the request and in the device's memory. Nothing
 // here logs a value, returns one, or writes one to a place a GET can reach
-// (§9b.6).
+//.
 
 // SecretError is a refusal naming the app and key. The CLI prints it verbatim.
 type SecretError struct {
@@ -49,7 +49,7 @@ type SecretService struct {
 }
 
 // DeviceSecretKeyLookup resolves the public key a secret is wrapped to. It is
-// the device's PURPOSE_DECRYPT key, distinct from its identity key (§9b.3).
+// the device's PURPOSE_DECRYPT key, distinct from its identity key.
 type DeviceSecretKeyLookup interface {
 	SecretPublicKey(ctx context.Context, deviceID string) (string, error)
 }
@@ -114,7 +114,7 @@ func (s *SecretService) Unset(ctx context.Context, deviceID, app, key string) er
 
 // FetchForDevice returns the ciphertext for one key, but only when the current
 // signed config names that key for that app. A device cannot ask for a secret
-// its config does not reference (§9b.6), so the config is the gate and not the
+// its config does not reference, so the config is the gate and not the
 // device's own claim.
 func (s *SecretService) FetchForDevice(ctx context.Context, deviceID, app, key, currentConfig string) (*appsecret.Record, error) {
 	if !configNamesSecret(currentConfig, app, key) {

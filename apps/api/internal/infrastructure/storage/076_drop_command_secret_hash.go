@@ -11,7 +11,7 @@ import (
 // They held the HMAC key the old registration flow needed: the server minted a
 // shared secret per device and had to deliver it, which it did over FCM — an
 // unauthenticated channel. The keypair model replaced it (see
-// doc/REGISTRATION_CONTRACT.md), so nothing reads or writes these columns and
+//), so nothing reads or writes these columns and
 // they are dropped rather than left to rot. A dropped column is also a stronger
 // statement than an unused one: nothing can quietly start using it again.
 //
