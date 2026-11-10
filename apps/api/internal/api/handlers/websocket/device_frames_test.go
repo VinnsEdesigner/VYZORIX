@@ -1,10 +1,12 @@
 package websocket
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
 	"log/slog"
+	"strings"
 	"testing"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application"
@@ -194,5 +196,41 @@ func TestHandleDeviceReadyWithoutAReporterIsHandled(t *testing.T) {
 	raw := []byte(`{"type":"device_ready","version":1}`)
 	if handled := h.HandleDeviceFrame(context.Background(), hub.DeviceFrame{DeviceID: "dev-1", Type: "device_ready", Raw: raw, Kind: hub.FrameText}); !handled {
 		t.Fatal("device_ready must be recognised even with no reporter wired")
+	}
+}
+
+func TestCommandResultOutputIsLogged(t *testing.T) {
+	var buf bytes.Buffer
+	sink := &fakeSink{}
+	h := NewDeviceFrameHandler(sink, nil, slog.New(slog.NewTextHandler(&buf, nil)))
+
+	raw := []byte(`{"type":"command_result","dispatchId":"d1","success":true,"output":"uid=0(root) gid=0(root)"}`)
+	h.HandleDeviceFrame(context.Background(), hub.DeviceFrame{DeviceID: "dev-1", Type: "command_result", Raw: raw, Kind: hub.FrameText})
+
+	logged := buf.String()
+	if !strings.Contains(logged, "command result recorded") {
+		t.Fatalf("the result was not logged: %s", logged)
+	}
+	if !strings.Contains(logged, "uid=0(root)") {
+		t.Fatalf("the command output was not logged: %s", logged)
+	}
+	if !strings.Contains(logged, "level=INFO") {
+		t.Fatalf("the result should be logged at INFO: %s", logged)
+	}
+}
+
+func TestTruncateForLogBoundsLargeOutput(t *testing.T) {
+	short := "small"
+	if got := truncateForLog(short); got != short {
+		t.Fatalf("short output changed: %q", got)
+	}
+
+	big := strings.Repeat("x", commandOutputLogLimit+100)
+	got := truncateForLog(big)
+	if !strings.HasSuffix(got, "\u2026(truncated)") {
+		t.Fatalf("large output not marked truncated: %q", got)
+	}
+	if len(got) >= len(big) {
+		t.Fatalf("large output not shortened: len=%d, original=%d", len(got), len(big))
 	}
 }

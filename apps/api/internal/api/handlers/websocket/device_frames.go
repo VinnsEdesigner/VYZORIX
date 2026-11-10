@@ -174,8 +174,14 @@ func (h *DeviceFrameHandler) handleCommandResult(frame hub.DeviceFrame) {
 	err := h.commands.ReportResult(context.Background(), frame.DeviceID, payload.DispatchID, payload.Success, output)
 	switch {
 	case err == nil:
-		h.log.Debug("command result recorded",
-			"deviceId", frame.DeviceID, "dispatchId", payload.DispatchID, "success", payload.Success)
+		// Info, with the output: an operator watching a command run reads the server
+		// log, and the result is the thing they came for. Debug hid it, so the only
+		// place a command's output was visible was the database.
+		h.log.Info("command result recorded",
+			"deviceId", frame.DeviceID,
+			"dispatchId", payload.DispatchID,
+			"success", payload.Success,
+			"output", truncateForLog(output))
 	case errors.Is(err, application.ErrCommandNotFound):
 		// A device reporting a dispatch ID we do not know, or one that belongs to
 		// another device. Do not reveal which; just note it.
@@ -185,6 +191,22 @@ func (h *DeviceFrameHandler) handleCommandResult(frame hub.DeviceFrame) {
 		h.log.Error("failed to record command result",
 			"deviceId", frame.DeviceID, "dispatchId", payload.DispatchID, "err", err)
 	}
+}
+
+// commandOutputLogLimit bounds how much of a command's output is written to the
+// log. The full result is stored on the command; the log line is for an operator
+// watching a command run, and an unbounded line — a device that prints a large file
+// or a runaway process — would flood the log with one frame.
+const commandOutputLogLimit = 2048
+
+// truncateForLog shortens s to commandOutputLogLimit bytes, marking the cut so a
+// reader knows the output continues rather than ends there.
+func truncateForLog(s string) string {
+	if len(s) <= commandOutputLogLimit {
+		return s
+	}
+
+	return s[:commandOutputLogLimit] + "…(truncated)"
 }
 
 // handleDeviceReady records that a device applied a config version. A malformed
