@@ -8,7 +8,7 @@ Complete directory structure based on all frontend spec documents:
 - `documents/DIAGNOSTICS_PAGE.md`
 - `documents/DASHBOARD_COMMANDS_LOGS.md`
 - `documents/DEVICE_REGISTRATION_SYSTEM.md`
-- `documents/REALTIME_WEBSOCKET_ARCHITECTURE.md`
+- `DOCUMENTATION/WEBSOCKET_SYSTEM.md`
 
 ## Full Structure (77 directories)
 
@@ -50,7 +50,7 @@ src/
     updates/                           # From UPDATES_PAGE.md
     diagnostics/                       # From DIAGNOSTICS_PAGE.md
     registration/                      # From DEVICE_REGISTRATION_SYSTEM.md
-    realtime/                          # From REALTIME_WEBSOCKET_ARCHITECTURE.md
+    realtime/                          # From WEBSOCKET_SYSTEM.md
     _shared/
 
  domain/                                # DOMAIN LAYER
@@ -66,7 +66,7 @@ src/
     updates/                           # From UPDATES_PAGE.md
     diagnostics/                       # From DIAGNOSTICS_PAGE.md
     registration/                      # From DEVICE_REGISTRATION_SYSTEM.md
-    realtime/                         # From REALTIME_WEBSOCKET_ARCHITECTURE.md
+    realtime/                         # From WEBSOCKET_SYSTEM.md
 
  lib/
      api/                              # DATA LAYER
@@ -119,7 +119,7 @@ UI → Hooks → Domain → API
 | DIAGNOSTICS_PAGE.md | diagnostics domain/hooks/api |
 | DASHBOARD_COMMANDS_LOGS.md | commands, logs features |
 | DEVICE_REGISTRATION_SYSTEM.md | registration domain/hooks/api |
-| REALTIME_WEBSOCKET_ARCHITECTURE.md | realtime domain/hooks/api + websocket |
+| DOCUMENTATION/WEBSOCKET_SYSTEM.md | realtime domain/hooks/api + websocket |
 
 ## Implementation Order
 

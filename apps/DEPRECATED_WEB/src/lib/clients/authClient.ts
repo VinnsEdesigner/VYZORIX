@@ -1,5 +1,5 @@
 /**
- * authClient.ts - Credentials authentication client for vyzorix-update-server.
+ * authClient.ts - Credentials authentication client for VYZORIX.
  *
  * Handles register, login, logout, and session management.
  * Uses HttpOnly cookies for session management.

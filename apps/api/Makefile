@@ -14,7 +14,7 @@ GOLANGCILINT_INSTALL_DIR=/workspace/go/bin
 GOLANGCILINT=$(GOLANGCILINT_INSTALL_DIR)/golangci-lint
 
 # Binary name
-BINARY_NAME=vyzorix-update-server
+BINARY_NAME=vyzorix
 BINARY_UNIX=$(BINARY_NAME)-unix
 
 # Go build flags
@@ -211,10 +211,10 @@ clean:
 	rm -rf dist/
 
 docker-build:
-	docker build -t vyzorix-update-server:latest .
+	docker build -t vyzorix:latest .
 
 docker-build-no-cache:
-	docker build --no-cache -t vyzorix-update-server:latest .
+	docker build --no-cache -t vyzorix:latest .
 
 docker-up:
 	docker-compose up -d
@@ -228,7 +228,7 @@ docker-logs:
 	docker-compose logs -f
 
 docker-shell:
-	docker-compose exec vyzorix-server sh
+	docker-compose exec vyzorix sh
 
 init-data:
 	@mkdir -p $(DATA_DIR) $(BIN_DIR) $(PUBLIC_DIR)

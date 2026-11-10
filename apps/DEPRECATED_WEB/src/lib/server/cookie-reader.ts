@@ -77,7 +77,7 @@ const getPrefetchedAuthState = async (request: Request): Promise<PrefetchedAuthS
   const cookies = parseCookies(cookieHeader);
 
   // 3. Check for session cookie
-  // Supports both old 'vyzorix_session' (Library) and new 'vyz_session' (vyzorix-update-server)
+  // Supports both old 'vyzorix_session' (Library) and new 'vyz_session' (VYZORIX)
   const sessionCookie = cookies["vyz_session"] ?? cookies["vyzorix_session"];
   if (!sessionCookie) {
     return { isAuthenticated: false, operator: null };

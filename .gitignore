@@ -37,7 +37,7 @@ dist-ssr
 /data/*
 !/data/.gitkeep
 apps/api/bin/
-apps/api/vyzorix-server*
+apps/api/vyzorix*
 .env
 /db/*
 !/db/.gitkeep
@@ -70,11 +70,11 @@ go.work.sum
 *.dylib
 
 # Compiled Vyzorix server binaries
-vyzorix-server
-vyzorix-server-clean
-vyzorix-server-new
-vyzorix-server-old
-vyzorix-update-server
+vyzorix
+vyzorix-clean
+vyzorix-new
+vyzorix-old
+vyzorix
 
 # Playwright E2E test output
 test-results/

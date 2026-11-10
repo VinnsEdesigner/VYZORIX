@@ -91,7 +91,7 @@ versions than the running binary's version. Expose via
 
 **Requirements**:
 - `UpdateChecker` that calls `https://api.github.com/repos/VinnsEdesigner/
-  vyzorix-update-server/releases/latest`.
+  VYZORIX/releases/latest`.
 - Compares `version` (set via `-X link flag` at build) against latest release
   tag.
 - `GET /v1/admin/updates/check` (super_admin).

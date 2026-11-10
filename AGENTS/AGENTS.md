@@ -4,7 +4,7 @@
 
 Vyzorix Update Server is a Go-based update management system with React frontend. It provides device management, OTA updates, and real-time communication via WebSocket.
 
-**Repository:** `VinnsEdesigner/vyzorix-update-server`  
+**Repository:** `VinnsEdesigner/VYZORIX`  
 **Main Technologies:** Go 1.24, React 19, TanStack Start, SQLite, Gin
 
 ---

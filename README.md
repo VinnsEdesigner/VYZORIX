@@ -1,8 +1,10 @@
 <div align="center">
 
-# Vyzorix Update Server
+# Vyzorix
 
-Real-time device management and OTA updates for VyzorixAudioRouter.
+The server half of the Vyzorix platform: device fleets, signed command dispatch,
+telemetry, OTA updates, and the deploy plane that ships applications to Android
+devices running a Debian container.
 
 Go · Gin · SQLite · GraphQL · WebSocket · React
 
@@ -13,6 +15,11 @@ Go · Gin · SQLite · GraphQL · WebSocket · React
 The server manages Android device fleets: device registration, signed command
 dispatch, telemetry, OTA updates, alerting, and a multi-tenant organization
 model. It exposes a REST API, a GraphQL API, and a WebSocket stream.
+
+It is one half of a two-repo platform. The other half is the device agent,
+`Vyzorix-android`, which runs a Debian container on an unrooted phone and holds the
+single WebSocket this server speaks to. The operator-facing `vyzorix` CLI and the
+shared manifest schema (`vyzorix-spec`) complete the set.
 
 ## Quick start
 
@@ -46,8 +53,22 @@ DOCUMENTATION/      Feature and operations documentation
 
 ## Documentation
 
-Start at [DOCUMENTATION/README.md](./DOCUMENTATION/README.md) — it indexes
-everything below.
+New to the platform? Read the
+[Platform Overview](./DOCUMENTATION/VYZORIX_PLATFORM_OVERVIEW.md) first — one page,
+and everything else reads faster after it. The
+[Platform Docs Index](./DOCUMENTATION/VYZORIX_DOCS_INDEX.md) groups every platform
+document by task, and the
+[Platform Glossary](./DOCUMENTATION/VYZORIX_GLOSSARY.md) defines the vocabulary.
+
+| Platform | Documents |
+|:-----|:----------|
+| Start here | [Platform Overview](./DOCUMENTATION/VYZORIX_PLATFORM_OVERVIEW.md), [Docs Index](./DOCUMENTATION/VYZORIX_DOCS_INDEX.md), [Glossary](./DOCUMENTATION/VYZORIX_GLOSSARY.md) |
+| Deploy | [Pipeline](./DOCUMENTATION/DEPLOY_PIPELINE.md), [Manifest Reference](./DOCUMENTATION/MANIFEST_REFERENCE.md), [CLI Reference](./DOCUMENTATION/CLI_REFERENCE.md), [Server API](./DOCUMENTATION/DEPLOY_SERVER_API.md), [Credentials](./DOCUMENTATION/DEPLOY_CREDENTIALS.md), [Secrets](./DOCUMENTATION/DEPLOY_SECRETS.md), [App Exposure](./DOCUMENTATION/APP_EXPOSURE.md) |
+| Device | [Onboarding](./DOCUMENTATION/DEVICE_ONBOARDING.md), [APK & OTA](./DOCUMENTATION/APK_DISTRIBUTION.md), [Commands & Signing](./DOCUMENTATION/DEVICE_COMMANDS_AND_SIGNING.md), [Telemetry & Events](./DOCUMENTATION/TELEMETRY_AND_EVENTS.md) |
+| Container | [Filesystem](./DOCUMENTATION/CONTAINER_FILESYSTEM.md), [Android APIs](./DOCUMENTATION/CONTAINER_ANDROID_APIS.md), [Terminal](./DOCUMENTATION/CONTAINER_TERMINAL.md), [App Runtime](./DOCUMENTATION/APP_RUNTIME.md) |
+
+The server's own operational documentation is indexed in
+[DOCUMENTATION/README.md](./DOCUMENTATION/README.md).
 
 | Area | Documents |
 |:-----|:----------|

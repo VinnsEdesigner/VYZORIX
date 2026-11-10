@@ -405,7 +405,7 @@ func (s *Server) initUpdateChecker(cfg *ServerConfig) {
 	if version == "" {
 		version = "dev"
 	}
-	s.updateCheckerHandler = admin.NewUpdateCheckerHandler(version, "VinnsEdesigner/vyzorix-update-server")
+	s.updateCheckerHandler = admin.NewUpdateCheckerHandler(version, "VinnsEdesigner/VYZORIX")
 	s.updateCheckerHandler.SetUsageStats(statsSvc)
 	s.statsSvc = statsSvc
 }

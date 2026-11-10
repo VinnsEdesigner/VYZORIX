@@ -1,5 +1,28 @@
 # Document Index
 
+## Platform (device, container, CLI, deploy)
+
+Start with the overview; the index groups everything by task.
+
+- [Platform Overview](VYZORIX_PLATFORM_OVERVIEW.md) — How the whole platform fits together: the four device layers, the three workflows, the vocabulary.
+- [Platform Docs Index](VYZORIX_DOCS_INDEX.md) — Every platform document, grouped by task.
+- [Platform Glossary](VYZORIX_GLOSSARY.md) — The platform's vocabulary, defined (complements the server [Glossary](GLOSSARY.md) below).
+- [CLI Reference](CLI_REFERENCE.md) — The `vyzorix` command: install, login, deploy, secrets, exit codes.
+- [Manifest Reference](MANIFEST_REFERENCE.md) — `vyzorix.toml`, field by field.
+- [Deploy Pipeline](DEPLOY_PIPELINE.md) — The deploy path, stage by stage, and the failure model.
+- [Deploy Server API](DEPLOY_SERVER_API.md) — The deploy endpoints and their auth groups.
+- [Deploy Credentials](DEPLOY_CREDENTIALS.md) — Device-scoped CI tokens.
+- [Deploy Secrets](DEPLOY_SECRETS.md) — The encrypted secret channel.
+- [Device Onboarding](DEVICE_ONBOARDING.md) — From a fresh APK to a registered device.
+- [APK Distribution](APK_DISTRIBUTION.md) — First install, OTA, and the private-repo trap.
+- [Device Commands & Signing](DEVICE_COMMANDS_AND_SIGNING.md) — Commands and the three signing domains.
+- [Container Filesystem](CONTAINER_FILESYSTEM.md) — Every folder and its purpose.
+- [Container Android APIs](CONTAINER_ANDROID_APIS.md) — The bridge: Android APIs from inside the container.
+- [Container Terminal](CONTAINER_TERMINAL.md) — The interactive shell, PTY and reattach.
+- [App Runtime](APP_RUNTIME.md) — The supervisor and the `app-*` CLI.
+- [App Exposure](APP_EXPOSURE.md) — Reaching an app over the network.
+- [Telemetry & Events](TELEMETRY_AND_EVENTS.md) — What the device reports and what the server does with it.
+
 ## Hardening & Security
 
 - [Error System](ERROR_SYSTEM.md) — The structured error response shape, error codes, the three ways handlers return errors, and what was removed.

@@ -91,7 +91,7 @@ scrape_configs:
   - job_name: vyzorix
     metrics_path: /metrics
     static_configs:
-      - targets: ["vyzorix-server:3000"]
+      - targets: ["vyzorix:3000"]
 ```
 
 ---

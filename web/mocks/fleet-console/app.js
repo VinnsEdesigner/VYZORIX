@@ -1,6 +1,6 @@
 /* app.js — Vyzorix UI mock (Grafana-style). Plain JS, no build step.
  *
- * Views mirror the real vyzorix-update-server surface (REST + GraphQL):
+ * Views mirror the real VYZORIX surface (REST + GraphQL):
  * dashboard, devices, commands, telemetry, updates (OTA), alerts, logs,
  * organizations, api-keys, settings. Data here is mock/illustrative.
  */

@@ -1,9 +1,9 @@
 # Binary (built from source)
-vyzorix-server
-vyzorix-server-old
-vyzorix-server-new
-vyzorix-server-clean
-vyzorix-update-server
+vyzorix
+vyzorix-old
+vyzorix-new
+vyzorix-clean
+vyzorix
 bin/
 *.server
 .server.pid

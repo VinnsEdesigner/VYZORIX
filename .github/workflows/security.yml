@@ -228,7 +228,7 @@ jobs:
     name: Build Container
     runs-on: ubuntu-latest
     outputs:
-      image: ghcr.io/vinnsedesigner/vyzorix-update-server/vyzorix:latest
+      image: ghcr.io/vinnsedesigner/vyzorix/vyzorix:latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -249,7 +249,7 @@ jobs:
           context: .
           file: ./apps/api/Dockerfile
           push: false
-          tags: ghcr.io/vinnsedesigner/vyzorix-update-server/vyzorix:latest
+          tags: ghcr.io/vinnsedesigner/vyzorix/vyzorix:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

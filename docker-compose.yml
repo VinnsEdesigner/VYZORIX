@@ -39,7 +39,7 @@ services:
     build:
       context: .
       dockerfile: ./apps/api/Dockerfile
-    container_name: vyzorix-server
+    container_name: vyzorix-api
     restart: unless-stopped
     environment:
       # Secrets come from the environment / a .env file, never from this file.

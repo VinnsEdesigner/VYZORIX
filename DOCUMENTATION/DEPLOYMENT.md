@@ -30,8 +30,8 @@ Internet → [Nginx :443 TLS] → [Go API :3000 (internal)]
 ```bash
 ssh root@your-vps
 apt update && apt install -y docker.io docker-compose certbot
-git clone https://github.com/VinnsEdesigner/vyzorix-update-server.git
-cd vyzorix-update-server
+git clone https://github.com/VinnsEdesigner/VYZORIX.git
+cd VYZORIX
 ```
 
 ### Configure

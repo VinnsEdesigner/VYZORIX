@@ -11,7 +11,7 @@ import (
 
 func TestUpdateChecker_Check_ReturnsJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewUpdateCheckerHandler("1.0.0", "VinnsEdesigner/vyzorix-update-server")
+	h := NewUpdateCheckerHandler("1.0.0", "VinnsEdesigner/VYZORIX")
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/admin/updates/check", nil)
@@ -30,7 +30,7 @@ func TestUpdateChecker_Check_ReturnsJSON(t *testing.T) {
 
 func TestUpdateChecker_Check_HasUpdateAvailableField(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	h := NewUpdateCheckerHandler("1.0.0", "VinnsEdesigner/vyzorix-update-server")
+	h := NewUpdateCheckerHandler("1.0.0", "VinnsEdesigner/VYZORIX")
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/admin/updates/check", nil)

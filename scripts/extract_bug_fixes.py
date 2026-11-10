@@ -9,7 +9,7 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-API_PATH = Path("/workspace/project/vyzorix-update-server/apps/api")
+API_PATH = Path("/workspace/project/VYZORIX/apps/api")
 
 # Pattern matches: BUG-06 Fix:, BUG-06 fix:, BUG-06: etc.
 BUG_PATTERN = re.compile(r'BUG-(\d+)', re.IGNORECASE)

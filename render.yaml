@@ -14,7 +14,7 @@
 
 services:
   - type: web
-    name: vyzorix-update-server
+    name: vyzorix
     env: docker
     region: oregon
     plan: starter
@@ -116,6 +116,6 @@ services:
 
       # Deployment URLs — must be set correctly for OAuth redirects to work
       - key: BASE_URL
-        value: "https://vyzorix-update-server.onrender.com"
+        value: "https://vyzorix.onrender.com"
       - key: FRONTEND_URL
         value: "https://your-frontend.onrender.com"

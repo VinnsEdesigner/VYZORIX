@@ -20,7 +20,7 @@ COPY apps/api ./
 RUN CGO_ENABLED=1 GOOS=linux go build \
     -trimpath \
     -ldflags="-s -w" \
-    -o /out/vyzorix-update-server ./cmd/api
+    -o /out/vyzorix ./cmd/api
 
 # =============================================================================
 # Stage 2: Web Builder - Build the frontend with Vite and pnpm
@@ -107,7 +107,7 @@ RUN mkdir -p /data /app/bin /app/public /app/logs && \
     chown -R appuser:appuser /app /data
 
 # Copy binary
-COPY --from=go-builder --chown=appuser:appuser /out/vyzorix-update-server /app/vyzorix-update-server
+COPY --from=go-builder --chown=appuser:appuser /out/vyzorix /app/vyzorix
 
 # Copy .env.example for default configuration
 COPY .env.example /app/.env.example
@@ -123,7 +123,7 @@ COPY apps/api/ssr-server.js /app/ssr-server.js
 COPY --from=web-builder --chown=appuser:appuser /app/apps/VyzoriX_web /web
 
 # Make binary executable
-RUN chmod +x /app/vyzorix-update-server /app/ssr-server.js
+RUN chmod +x /app/vyzorix /app/ssr-server.js
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
@@ -133,7 +133,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 USER appuser
 
 # Use exec form
-ENTRYPOINT ["/app/vyzorix-update-server"]
+ENTRYPOINT ["/app/vyzorix"]
 
 # =============================================================================
 

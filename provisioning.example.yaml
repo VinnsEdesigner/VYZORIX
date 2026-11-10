@@ -97,7 +97,7 @@ annotations:
     tags:
       - bootstrap
 
-# The app catalog (VYZORIX_DEPLOY_CONTRACT.md §8.1, FR-19). It names the apps a
+# The app catalog (DEPLOY_PIPELINE.md, the app catalog). It names the apps a
 # reviewer has seen. A manifest that deploys one of these is ordinary; a manifest
 # that deploys anything else is still permitted, but the console marks the app
 # *custom* so an unreviewed app is visible. The catalog is a review aid, not a

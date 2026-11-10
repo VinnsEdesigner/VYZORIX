@@ -11,7 +11,7 @@ export COREPACK_ENABLE_AUTOINSTALL=0
 export PNPM_TELEMETRY=0
 
 # Install pnpm and dependencies
-cd /workspace/project/vyzorix-update-server
+cd /workspace/project/VYZORIX
 pnpm install
 
 # Add SSR dependencies (needed for SSR server in production mode)
@@ -32,7 +32,7 @@ go version
 
 ```bash
 # Build config package
-cd /workspace/project/vyzorix-update-server
+cd /workspace/project/VYZORIX
 pnpm --filter @vyzorix/config run build
 
 # Build web app (generates both client + SSR server entries)
@@ -44,16 +44,16 @@ cp -r apps/web/dist/client/* apps/api/public/
 # Build Go server
 export PATH=$PATH:/usr/local/go/bin
 cd apps/api
-go build -o vyzorix-server .
+go build -o vyzorix .
 ```
 
 ### 4. Run the Server
 
 ```bash
-cd /workspace/project/vyzorix-update-server/apps/api
+cd /workspace/project/VYZORIX/apps/api
 
 # Start Go server (serves landing page and static assets)
-./vyzorix-server
+./vyzorix
 
 # Server available at http://localhost:3000
 # landing.html served at /
@@ -65,13 +65,13 @@ cd /workspace/project/vyzorix-update-server/apps/api
 For faster iteration without SSR:
 
 ```bash
-cd /workspace/project/vyzorix-update-server/apps/api
-./vyzorix-server
+cd /workspace/project/VYZORIX/apps/api
+./vyzorix
 ```
 
 Then in another terminal, run Vite dev server:
 ```bash
-cd /workspace/project/vyzorix-update-server/apps/web
+cd /workspace/project/VYZORIX/apps/web
 pnpm run dev
 ```
 
@@ -95,24 +95,24 @@ Browser → Go Server (port 3000)
 
 1. **Build web app** (if not already built):
 ```bash
-cd /workspace/project/vyzorix-update-server/apps/web
+cd /workspace/project/VYZORIX/apps/web
 pnpm run build
 cp -r dist/client/* ../api/public/
 ```
 
 2. **Start SSR server** (Terminal 1):
 ```bash
-cd /workspace/project/vyzorix-update-server/apps/api
+cd /workspace/project/VYZORIX/apps/api
 npm install  # or pnpm install
 NODE_ENV=production node ssr-server.js
 ```
 
 3. **Start Go server with SSR enabled** (Terminal 2):
 ```bash
-cd /workspace/project/vyzorix-update-server/apps/api
+cd /workspace/project/VYZORIX/apps/api
 export SSR_ENABLED=true
 export SSR_SERVER_URL=http://localhost:3001
-./vyzorix-server
+./vyzorix
 ```
 
 4. **Access**: Open http://localhost:3000

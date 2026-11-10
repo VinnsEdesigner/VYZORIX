@@ -23,7 +23,7 @@ Google OAuth allows users to sign in with their Google account instead of creati
 2. Sign in with your Google account
 3. Click **"Select a project"** at the top left
 4. Click **"New Project"**
-5. **Project name**: `vyzorix-update-server`
+5. **Project name**: `VYZORIX`
 6. **Location**: Leave as "No organization" or select your organization
 7. Click **Create**
 8. Wait for the project to be created (notification appears)
@@ -78,14 +78,14 @@ The OAuth consent screen is what users see when they click "Sign in with Google"
 5. **Authorized JavaScript origins**: Add your domains
 
    ```
-   https://vyzorix-update-server.onrender.com   (production)
+   https://vyzorix.onrender.com   (production)
    http://localhost:5173                        (local development)
    ```
 
 6. **Authorized redirect URIs**: Add callback endpoint
 
    ```
-   https://vyzorix-update-server.onrender.com/v1/auth/google/callback
+   https://vyzorix.onrender.com/v1/auth/google/callback
    http://localhost:3000/v1/auth/google/callback
    ```
 
@@ -112,7 +112,7 @@ Test that your credentials work:
    ```
    https://accounts.google.com/o/oauth2/v2/auth?
    client_id=YOUR_CLIENT_ID&
-   redirect_uri=https://vyzorix-update-server.onrender.com/v1/auth/google/callback&
+   redirect_uri=https://vyzorix.onrender.com/v1/auth/google/callback&
    response_type=code&
    scope=email%20profile
    ```
@@ -207,7 +207,7 @@ Render is a cloud platform that hosts our Go backend and provides the server inf
 1. In the Render dashboard, click **New** → **Blueprint**
 2. If you haven't created a `render.yaml` file, click **Create a Blueprint**
 3. Connect your GitHub account if not already connected
-4. Select your repository: `vyzorix-update-server`
+4. Select your repository: `VYZORIX`
 5. Click **Connect**
 
 ### 3.3 Configure Environment Variables
@@ -219,7 +219,7 @@ On the Blueprint settings page, add these environment variables:
 | `GOOGLE_OAUTH_CLIENT_ID` | `xxx.apps.googleusercontent.com` | From Google Cloud Console |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | `xxx` | From Google Cloud Console |
 | `RESEND_API_KEY` | `re_xxx` | From Resend |
-| `BASE_URL` | `https://vyzorix-update-server.onrender.com` | Your Render URL |
+| `BASE_URL` | `https://vyzorix.onrender.com` | Your Render URL |
 | `EMAIL_FROM` | `noreply@vyzorix.app` | Your verified domain |
 | `EMAIL_FROM_NAME` | `Vyzorix` | Display name |
 | `JWT_SECRET` | (generate strong random string) | Use `openssl rand -hex 32` to generate |
@@ -245,7 +245,7 @@ If not using Blueprint, manually create a web service:
 
 | Setting | Value |
 |---------|-------|
-| **Name** | `vyzorix-update-server` |
+| **Name** | `VYZORIX` |
 | **Region** | Oregon (or closest to you) |
 | **Branch** | `main` |
 | **Runtime** | `Go` |
@@ -426,7 +426,7 @@ Use this checklist to ensure everything is configured:
 - **Google Cloud Console**: https://console.cloud.google.com/
 - **Resend Documentation**: https://resend.com/docs
 - **Render Documentation**: https://render.com/docs
-- **Project Repository**: https://github.com/VinnsEdesigner/vyzorix-update-server
+- **Project Repository**: https://github.com/VinnsEdesigner/VYZORIX
 
 ---
 

@@ -12,7 +12,7 @@ import re
 import sys
 from collections import defaultdict
 
-ROOT = "/workspace/vyzorix-update-server"
+ROOT = "/workspace/VYZORIX"
 
 
 def find_go_files(root):

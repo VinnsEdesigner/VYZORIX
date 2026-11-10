@@ -17,7 +17,7 @@ This guide explains how to set up TigerVNC, Xfce4, Websockify, and noVNC for bro
 
 - Debian-based Linux system (tested on Debian Trixie)
 - sudo access
-- GitHub repository cloned: `VinnsEdesigner/vyzorix-update-server`
+- GitHub repository cloned: `VinnsEdesigner/VYZORIX`
 
 ## Quick Setup (Copy-Paste Friendly)
 

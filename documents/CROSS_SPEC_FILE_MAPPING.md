@@ -246,7 +246,7 @@ These files exist once and are shared:
 | `DIAGNOSTICS_PAGE.md` | Diagnostics | `packages/API_Client/src/domain/diagnostics/` | `packages/API_Client/src/vyzorServer/diagnostics/` |
 | `DASHBOARD_COMMANDS_LOGS.md` | Commands, Logs | `packages/API_Client/src/domain/commands/`, `packages/API_Client/src/domain/logs/` | `packages/API_Client/src/vyzorServer/commands/`, `packages/API_Client/src/vyzorServer/logs/` |
 | `DEVICE_REGISTRATION_SYSTEM.md` | Registration | `packages/API_Client/src/domain/registration/` | `packages/API_Client/src/vyzorServer/registration/` |
-| `REALTIME_WEBSOCKET_ARCHITECTURE.md` | Real-time | `packages/API_Client/src/domain/realtime/` | `packages/API_Client/src/vyzorServer/websocket/` |
+| `DOCUMENTATION/WEBSOCKET_SYSTEM.md` | Real-time | `packages/API_Client/src/domain/realtime/` | `packages/API_Client/src/vyzorServer/websocket/` |
 
 ---
 

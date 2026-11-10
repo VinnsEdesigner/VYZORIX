@@ -313,10 +313,10 @@ func (r Requirement) SatisfiedBy(grant TagSet) bool {
 // with fs:* tags, mirroring the device's bind rules. It was removed: the server
 // has no filesystem, so it could not enforce any of it, and nothing consumed it.
 // It had also drifted — it listed `rootfs`, `overlay` and `android.sock` as an
-// "engine zone" to protect, when the rootfs is the container's own root and the
+// "sandbox zone" to protect, when the rootfs is the container's own root and the
 // socket is the door exists to open.
 //
 // Bind rules are a device concern and live in exactly one place:
-// `ProotLauncher.binds()` and `ProotLauncher.isEngineZonePath()` in the Android
-// repo, where the closed-world list and the engine-zone assertion actually run.
+// `ProotLauncher.binds()` and `ProotLauncher.isSandboxZonePath()` in the Android
+// repo, where the closed-world list and the sandbox-zone assertion actually run.
 // Duplicating them here would give two sources of truth for one boundary.

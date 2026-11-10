@@ -220,14 +220,14 @@ jobs:
           file: ./apps/api/Dockerfile
           push: false
           load: true
-          tags: vyzorix-update-server:latest
+          tags: vyzorix:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Inspect image
         run: |
-          docker images vyzorix-update-server:latest
-          docker history vyzorix-update-server:latest
+          docker images vyzorix:latest
+          docker history vyzorix:latest
 
   docker-test:
     runs-on: ubuntu-latest
@@ -245,7 +245,7 @@ jobs:
           file: ./apps/api/Dockerfile
           push: false
           load: true
-          tags: vyzorix-update-server:latest
+          tags: vyzorix:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -265,7 +265,7 @@ jobs:
             -e SSR_ENABLED=false \
             -v /tmp/vyzorix-data:/data \
             -p 3000:3000 \
-            vyzorix-update-server:latest
+            vyzorix:latest
           sleep 10
           docker logs vyzorix-test
           docker stop vyzorix-test
@@ -283,7 +283,7 @@ jobs:
             -e SSR_ENABLED=true \
             -v /tmp/vyzorix-data:/data \
             -p 3001:3000 \
-            vyzorix-update-server:latest
+            vyzorix:latest
           sleep 15
           docker logs vyzorix-ssr-test
           docker stop vyzorix-ssr-test
@@ -303,7 +303,7 @@ jobs:
             -e SSR_AUTO_BUILD=false \
             -v /tmp/vyzorix-data:/data \
             -p 3002:3000 \
-            vyzorix-update-server:latest
+            vyzorix:latest
           sleep 10
 
           # Debug: check container logs
@@ -333,12 +333,12 @@ jobs:
           file: ./apps/api/Dockerfile
           push: false
           load: true
-          tags: vyzorix-update-server:latest
+          tags: vyzorix:latest
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'vyzorix-update-server:latest'
+          image-ref: 'vyzorix:latest'
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -352,15 +352,15 @@ jobs:
       - name: Display vulnerabilities
         run: |
           echo "=== Docker Image Vulnerabilities ==="
-          trivy image --severity HIGH,CRITICAL vyzorix-update-server:latest || true
+          trivy image --severity HIGH,CRITICAL vyzorix:latest || true
           echo ""
           echo "=== Full Report ==="
-          trivy image vyzorix-update-server:latest || true
+          trivy image vyzorix:latest || true
 
       - name: Fail on critical vulnerabilities
         run: |
           # Count critical issues
-          CRITICAL_COUNT=$(trivy image --severity CRITICAL --quiet vyzorix-update-server:latest 2>/dev/null | grep -c "CRITICAL" || echo "0")
+          CRITICAL_COUNT=$(trivy image --severity CRITICAL --quiet vyzorix:latest 2>/dev/null | grep -c "CRITICAL" || echo "0")
           echo "Critical vulnerabilities found: $CRITICAL_COUNT"
 
           # Note: Using || true to not block PRs, but report in PR

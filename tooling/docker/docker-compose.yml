@@ -1,11 +1,11 @@
 version: "3.9"
 
 services:
-  vyzorix-server:
+  vyzorix:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: vyzorix-update-server
+    container_name: vyzorix
     restart: unless-stopped
     ports:
       - "${PORT:-3000}:3000"

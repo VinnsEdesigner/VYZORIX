@@ -14,11 +14,11 @@ This guide covers building and running the Vyzorix Update Server using Docker.
 
 ```bash
 # From repository root
-docker build -t vyzorix-update-server:latest -f apps/api/Dockerfile .
+docker build -t vyzorix:latest -f apps/api/Dockerfile .
 
 # Or from apps/api directory
 cd apps/api
-docker build -t vyzorix-update-server:latest .
+docker build -t vyzorix:latest .
 ```
 
 ### Run the Container
@@ -34,7 +34,7 @@ docker run -d --name vyzorix \
   -e SSR_ENABLED=true \
   -v /tmp/vyzorix-data:/data \
   -p 3000:3000 \
-  vyzorix-update-server:latest
+  vyzorix:latest
 ```
 
 ## Configuration
@@ -75,7 +75,7 @@ docker run -d --name vyzorix \
   -e SSR_ENABLED=true \
   -v /path/to/data:/data \
   -p 3000:3000 \
-  vyzorix-update-server:latest
+  vyzorix:latest
 ```
 
 ### Mode 2: SPA (Static Fallback)
@@ -89,7 +89,7 @@ docker run -d --name vyzorix \
   -e SSR_ENABLED=false \
   -v /path/to/data:/data \
   -p 3000:3000 \
-  vyzorix-update-server:latest
+  vyzorix:latest
 ```
 
 ## Docker Compose
@@ -104,7 +104,7 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    container_name: vyzorix-server
+    container_name: vyzorix
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -183,7 +183,7 @@ docker run -d --name vyzorix \
   -e SSR_ENABLED=true \
   -v /path/to/data:/data \
   -p 3000:3000 \
-  vyzorix-update-server:latest
+  vyzorix:latest
 ```
 
 ### Security Options Explained
@@ -264,7 +264,7 @@ The image includes:
 # Build for multiple architectures
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  -t vyzorix-update-server:latest \
+  -t vyzorix:latest \
   -f apps/api/Dockerfile \
   --push \
   .
@@ -277,7 +277,7 @@ docker buildx build \
 docker stop vyzorix && docker rm vyzorix
 
 # Remove image (if needed)
-docker rmi vyzorix-update-server:latest
+docker rmi vyzorix:latest
 
 # Remove data volume
 docker volume rm vyzorix_data

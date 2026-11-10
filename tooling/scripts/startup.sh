@@ -21,7 +21,7 @@ API_DIR="$(dirname "$SCRIPT_DIR")"
 WEB_DIR="$API_DIR/../web"
 PUBLIC_DIR="$API_DIR/public"
 DIST_CLIENT="$WEB_DIR/dist/client"
-GO_BINARY="$API_DIR/vyzorix-server"
+GO_BINARY="$API_DIR/vyzorix"
 SSR_SCRIPT="$API_DIR/ssr-server.js"
 
 # Colors
@@ -187,7 +187,7 @@ main() {
     if ! check_file "$GO_BINARY"; then
         print_info "Building Go server..."
         cd "$API_DIR"
-        if go build -o vyzorix-server . 2>&1; then
+        if go build -o vyzorix . 2>&1; then
             print_ok "Go server built successfully"
         else
             print_fail "Go server build FAILED"
@@ -316,9 +316,9 @@ main() {
     #---------------------------------------------------------------------------
     print_section "STEP 5: Server Status"
     
-    if pgrep -f "vyzorix-server" > /dev/null 2>&1; then
+    if pgrep -f "vyzorix" > /dev/null 2>&1; then
         print_warn "Go server already running"
-        print_info "PID: $(pgrep -f vyzorix-server)"
+        print_info "PID: $(pgrep -f vyzorix)"
     else
         print_ok "Go server not running"
     fi
@@ -335,9 +335,9 @@ main() {
     #---------------------------------------------------------------------------
     print_section "STEP 6: Cleanup"
     
-    if pgrep -f "vyzorix-server" > /dev/null 2>&1 || pgrep -f "node.*ssr-server" > /dev/null 2>&1; then
+    if pgrep -f "vyzorix" > /dev/null 2>&1 || pgrep -f "node.*ssr-server" > /dev/null 2>&1; then
         print_info "Stopping existing servers..."
-        pkill -f "vyzorix-server" 2>/dev/null || true
+        pkill -f "vyzorix" 2>/dev/null || true
         pkill -f "node.*ssr-server" 2>/dev/null || true
         sleep 2
         print_ok "Servers stopped"
@@ -374,7 +374,7 @@ main() {
     # Start Go server in background
     print_info "Starting Go server..."
     cd "$API_DIR"
-    ./vyzorix-server > server.log 2>&1 &
+    ./vyzorix > server.log 2>&1 &
     local go_pid=$!
     echo $go_pid > .server.pid
     print_ok "Go server started (PID: $go_pid)"
@@ -469,7 +469,7 @@ main() {
 # Cleanup on exit
 cleanup() {
     echo -e "\n${YELLOW}Shutting down...${RESET}"
-    pkill -f "vyzorix-server" 2>/dev/null || true
+    pkill -f "vyzorix" 2>/dev/null || true
     pkill -f "node.*ssr-server" 2>/dev/null || true
     echo -e "${GREEN}Done${RESET}"
 }
