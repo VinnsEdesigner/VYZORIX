@@ -72,9 +72,14 @@ RUN mkdir -p /data /app/bin /app/public /app/logs && \
 
 COPY --from=go-builder --chown=appuser:appuser /out/vyzorix /app/vyzorix
 
+# Materialises the provisioning file from the PROVISIONING_YAML secret at boot,
+# so the operator password is never baked into the image.
+COPY --chown=appuser:appuser apps/api/docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
 USER appuser
 
-ENTRYPOINT ["/app/vyzorix"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
