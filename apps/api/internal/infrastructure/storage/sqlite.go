@@ -580,6 +580,10 @@ var migrations = []Migration{
 	// so they survive the workspace that produced them. Not reachable from any
 	// route; it exists for out-of-band restore.
 	{Apply: migrateCreateSecretBackup, Name: "create_secret_backup", Version: 82},
+	// The notification audit table was created without the columns the repository
+	// inserts, so every audit write failed. This adds device_id, success and
+	// error_msg.
+	{Apply: migrateAddNotificationAuditColumns, Name: "add_notification_audit_columns", Version: 83},
 }
 
 // runMigrations applies all pending migrations.
