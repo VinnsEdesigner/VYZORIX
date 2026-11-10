@@ -310,7 +310,7 @@ func (s *Server) setupAuthenticatedRoutes() {
 }
 
 // setupDeployRoutes registers the deploy surface (
-//).
+// ).
 //
 // The operator endpoints live on the tenant group, so they take a session or an
 // API key plus the org context. The device's own secret fetch is registered on
@@ -643,7 +643,7 @@ func (s *Server) setupDevicesRoutes(r *gin.RouterGroup) {
 		// All device routes require organization context for multi-tenant isolation.
 		devices.Use(middleware.NewOrganizationContext(nil).Middleware())
 		devices.Use(middleware.NewOrganizationMembership(s.memberHandler.MembershipChecker()).Middleware())
-		// Apply rate limiting per spec
+		// Apply rate limiting per spec.
 		devices.GET("", s.deviceRegRateLimiter.DevicesListLimit(), s.requireScope(permission.ActionDeviceRead, permission.WildcardScope(permission.ScopeDevices)), s.devicesHandler.GetDevices)
 		devices.GET("/:imei", s.deviceRegRateLimiter.DevicesGetLimit(), s.requireScope(permission.ActionDeviceRead, permission.WildcardScope(permission.ScopeDevices)), s.devicesHandler.GetDeviceDetail)
 		devices.DELETE("/:imei", s.deviceRegRateLimiter.DevicesDeleteLimit(), s.requireScope(permission.ActionDeviceDelete, permission.WildcardScope(permission.ScopeDevices)), s.devicesHandler.DeregisterDevice)
