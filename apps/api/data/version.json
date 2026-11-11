@@ -1,8 +1,8 @@
 {
-  "version": "0.1.7",
-  "version_code": 7,
-  "apk_filename": "vyzorix-app-v0.1.7-release-arm64.apk",
-  "apk_sha256": "c1f1a6188a9cb4f4a0d1fce812ac59f6550576f658b73b58b006397df064fd3e",
+  "version": "0.1.8",
+  "version_code": 8,
+  "apk_filename": "vyzorix-app-v0.1.8-release-arm64.apk",
+  "apk_sha256": "2dd82c3b1b9c634aa91cdb54181bd6f5fda19e58f0cefbff4f93a4628fcacbbb",
   "apk_size_bytes": 73318183,
-  "release_notes": "Vyzorix agent 0.1.7 (versionCode 7). Notification now shows connection state (stable vs no network), OTA download progress with a progress bar, download-complete and post-update reconnecting states, all on a burgundy theme. Fixes the launcher icon not hiding after an update, by reconciling it at every process start."
+  "release_notes": "Vyzorix agent 0.1.8 (versionCode 8). Fixes OTA: the install now opens via a notification tap (a background service cannot start the installer directly on Android 10+), and the agent no longer re-downloads the APK on every reconnect — it reuses the staged file and offers each version once. This stops the runaway mobile-data use."
 }
