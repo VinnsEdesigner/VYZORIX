@@ -591,20 +591,26 @@ func (s *Server) wireUpdaterGitHubSource(cfg config.Config) {
 	}
 
 	client := github.NewClient("VinnsEdesigner", cfg.GitHubReleaseRepo, cfg.GitHubReleaseToken)
-	s.updaterHandler.SetGitHubSource(func(ctx context.Context) (*updaterhandlers.VersionManifest, error) {
-		m, err := client.FetchLatestAppManifest(ctx)
-		if err != nil {
-			return nil, err
-		}
+	s.updaterHandler.SetGitHubSource(
+		func(ctx context.Context) (*updaterhandlers.VersionManifest, error) {
+			m, err := client.FetchLatestAppManifest(ctx)
+			if err != nil {
+				return nil, err
+			}
 
-		return &updaterhandlers.VersionManifest{
-			Version:      m.Version,
-			VersionCode:  m.VersionCode,
-			APKFilename:  m.APKFilename,
-			APKSHA256:    m.APKSHA256,
-			APKSizeBytes: m.APKSizeBytes,
-		}, nil
-	})
+			return &updaterhandlers.VersionManifest{
+				Version:      m.Version,
+				VersionCode:  m.VersionCode,
+				APKFilename:  m.APKFilename,
+				APKSHA256:    m.APKSHA256,
+				APKSizeBytes: m.APKSizeBytes,
+			}, nil
+		},
+		// /v1/apk redirects to the release asset when the file is not on local disk.
+		func(ctx context.Context, filename string) (string, error) {
+			return client.FetchAssetURL(ctx, filename)
+		},
+	)
 }
 
 func (s *Server) createUpdatesHandler(cfg *ServerConfig) {

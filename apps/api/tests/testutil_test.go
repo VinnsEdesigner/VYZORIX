@@ -647,6 +647,7 @@ func (r *noopDeviceRepoForTests) Update(context.Context, *device.Device) error  
 func (r *noopDeviceRepoForTests) Delete(context.Context, string) error                    { return nil }
 func (r *noopDeviceRepoForTests) DeleteByDeviceID(context.Context, device.DeviceID) error { return nil }
 func (r *noopDeviceRepoForTests) UpdateFCMToken(context.Context, string, string) error    { return nil }
+func (r *noopDeviceRepoForTests) UpdateAppVersion(context.Context, string, string) error  { return nil }
 func (r *noopDeviceRepoForTests) SetOnlineByDeviceID(context.Context, device.DeviceID, bool) error {
 	return nil
 }

@@ -47,6 +47,10 @@ type Handler struct {
 	manifest         *VersionManifest
 	progress         *ProgressStore
 	latestFromGitHub func(ctx context.Context) (*VersionManifest, error)
+	// apkURLFromGitHub, when set, resolves an APK filename to its GitHub release
+	// asset URL, so /v1/apk redirects to the release instead of 404ing on an image
+	// that no longer bakes the APK.
+	apkURLFromGitHub func(ctx context.Context, filename string) (string, error)
 	gitHubCache      *VersionManifest
 	dataDir          string
 	binDir           string
@@ -73,8 +77,12 @@ func NewHandler(log *slog.Logger, cfg config.Config) *Handler {
 // Without it the server answers from the baked `version.json`, which is only as
 // current as the last deploy. With it, `check-update` reports the newest published
 // agent release, so shipping an update no longer requires a server redeploy.
-func (h *Handler) SetGitHubSource(latest func(ctx context.Context) (*VersionManifest, error)) {
+func (h *Handler) SetGitHubSource(
+	latest func(ctx context.Context) (*VersionManifest, error),
+	apkURL func(ctx context.Context, filename string) (string, error),
+) {
 	h.latestFromGitHub = latest
+	h.apkURLFromGitHub = apkURL
 }
 
 // ProgressStore exposes the store for the periodic sweep worker.
@@ -387,6 +395,18 @@ func (h *Handler) serveAPK(c *gin.Context, filename string) {
 	}
 
 	fpath := filepath.Join(h.binDir, baseFilename)
+
+	// The server no longer bakes the APK into its image, so a file the release
+	// carries is not on local disk. Redirect to the release asset rather than
+	// 404ing: the device downloads it from GitHub, which serves the same bytes the
+	// manifest's checksum describes.
+	if _, statErr := os.Stat(fpath); statErr != nil && h.apkURLFromGitHub != nil {
+		if url, uerr := h.apkURLFromGitHub(c.Request.Context(), baseFilename); uerr == nil && url != "" {
+			c.Redirect(http.StatusFound, url)
+
+			return
+		}
+	}
 
 	// This ensures the APK hasn't been tampered with since the manifest was created.
 	h.ensureManifestLoaded()

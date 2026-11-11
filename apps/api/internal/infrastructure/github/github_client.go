@@ -224,6 +224,33 @@ func (c *Client) FetchAssetChecksum(ctx context.Context, releaseTag, assetName s
 	return "", fmt.Errorf("checksum not found for asset %s", assetName)
 }
 
+// FetchAssetURL returns the download URL of a named asset on the newest release
+// that carries it.
+//
+// Used by the updater's /v1/apk route: the server no longer bakes the APK into its
+// image, so a device that asks for a release's APK is redirected to the release
+// asset rather than 404ing. Drafts and prereleases are skipped, as everywhere else.
+func (c *Client) FetchAssetURL(ctx context.Context, filename string) (string, error) {
+	releases, err := c.FetchReleases(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	for _, release := range releases {
+		if release.Draft || release.Prerelease {
+			continue
+		}
+
+		for _, asset := range release.Assets {
+			if asset.Name == filename {
+				return asset.BrowserDownloadURL, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("no release carries the asset %s", filename)
+}
+
 // AppManifest is the current agent release, as published.
 //
 // It is the same shape as the server's `VersionManifest` and the release's
