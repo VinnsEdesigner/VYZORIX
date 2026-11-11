@@ -163,7 +163,7 @@ func WireHandlers(deps HandlerDependencies) *HandlerSet {
 	if deps.ConfirmationService != nil {
 		hs.Confirmation = confirmationhandlers.NewHandler(deps.ConfirmationService, deps.DeviceService, evaluator)
 	}
-	hs.Command = cmdhandlers.NewExecuteHandler(deps.CommandService, deps.DeviceService, deps.Hub, deps.FCMNotifier, command.NewAuthorizerFromService(deps.ConfirmationService), aud, deps.ServerSigner)
+	hs.Command = cmdhandlers.NewExecuteHandler(deps.CommandService, deps.DeviceService, deps.Hub, deps.FCMNotifier, command.NewAuthorizerFromService(deps.ConfirmationService, deps.Config.RequireMFAForCriticalCommands), aud, deps.ServerSigner)
 
 	// WebSocket handler.
 	hs.Stream = websockethandlers.NewStreamHandler(deps.Log, deps.Config, deps.Hub, *deps.HmacVerifier, deps.AuditLogger, NewDevicePublicKeyProvider(deps.DeviceRepo))
@@ -305,7 +305,7 @@ func wireDeviceFrameRouting(hs *HandlerSet, deps HandlerDependencies) {
 		// The terminal-open gate delegates to the same Authorizer the command path
 		// uses, so PTY_SESSION_OPEN's critical tier (MFA + single-use confirmation)
 		// is actually enforced rather than being declared-but-unused policy.
-		ptyAuth := NewPTYAuthorizer(command.NewAuthorizerFromService(deps.ConfirmationService))
+		ptyAuth := NewPTYAuthorizer(command.NewAuthorizerFromService(deps.ConfirmationService, deps.Config.RequireMFAForCriticalCommands))
 
 		hs.RecordingHandler = websockethandlers.NewRecordingHandler(
 			NewPTYDeviceResolver(deps.DeviceRepo),

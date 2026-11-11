@@ -48,6 +48,13 @@ primary_region = "jnb"
   HMAC_WINDOW_SECONDS = "30"
   JWT_DURATION_HOURS = "168"
 
+  # Critical-tier commands (opening a terminal, factory reset, USB attach) normally
+  # require an MFA-verified session. This deployment's operator has MFA disabled, so
+  # the gate is opted out: otherwise the terminal and every critical command are
+  # unreachable — a confirmation token can never be issued without MFA. Set this back
+  # to "true" (or remove it) once the operator has a second factor.
+  REQUIRE_MFA_FOR_CRITICAL = "false"
+
   # Turnstile is wired server-side but the frontend widget is not built yet, so it
   # stays off. Turning it on without the widget rejects every /v1/auth call.
   TURNSTILE_ENABLED = "false"

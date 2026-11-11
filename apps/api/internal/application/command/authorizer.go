@@ -21,23 +21,32 @@ type ConfirmationConsumer interface {
 type Authorizer struct {
 	evaluator     *domaincommand.RiskEvaluator
 	confirmations ConfirmationConsumer
+	// requireMFAForCritical gates critical-tier commands on an MFA-verified session.
+	// It is a deployment setting, not a constant: a self-hosted deployment whose
+	// operator has no second factor (MFA off) cannot open a terminal or run any
+	// critical command otherwise, because a token alone never satisfies the gate.
+	// The safe value is true; a deployment opts out explicitly.
+	requireMFAForCritical bool
 }
 
 // NewAuthorizer builds an Authorizer. confirmations may be nil; when nil,
-// confirmation-gated commands are always blocked.
-func NewAuthorizer(confirmations ConfirmationConsumer) *Authorizer {
+// confirmation-gated commands are always blocked. requireMFAForCritical is the
+// deployment's policy for critical-tier commands (true is the safe default).
+func NewAuthorizer(confirmations ConfirmationConsumer, requireMFAForCritical bool) *Authorizer {
 	return &Authorizer{
-		evaluator:     domaincommand.NewRiskEvaluator(),
-		confirmations: confirmations,
+		evaluator:             domaincommand.NewRiskEvaluator(),
+		confirmations:         confirmations,
+		requireMFAForCritical: requireMFAForCritical,
 	}
 }
 
 // NewAuthorizerFromService adapts the application confirmation service.
-func NewAuthorizerFromService(svc *confirmationapp.Service) *Authorizer {
+func NewAuthorizerFromService(svc *confirmationapp.Service, requireMFAForCritical bool) *Authorizer {
 	if svc == nil {
-		return NewAuthorizer(nil)
+		return NewAuthorizer(nil, requireMFAForCritical)
 	}
-	return NewAuthorizer(consumerFunc(svc.ConsumeForCommand))
+
+	return NewAuthorizer(consumerFunc(svc.ConsumeForCommand), requireMFAForCritical)
 }
 
 // consumerFunc adapts the service method (which returns a PendingConfirmation)
@@ -91,7 +100,7 @@ func (a *Authorizer) confirm(ctx context.Context, actor domaincommand.ActorConte
 		return AuthorizeOutcome{Tier: profile.Tier, Reason: "confirmation required", Message: msg, NeedsConfirmation: true}
 	}
 
-	if profile.Tier == domaincommand.RiskTierCritical && !actor.MFAVerified {
+	if a.requireMFAForCritical && profile.Tier == domaincommand.RiskTierCritical && !actor.MFAVerified {
 		return blocked("This critical command requires an MFA-verified session before a confirmation token can be issued.")
 	}
 	if token == "" {

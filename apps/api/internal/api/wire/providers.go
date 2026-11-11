@@ -786,7 +786,7 @@ func ProvideHandlerSet(
 	hs.DeviceStatus = devicehandlers.NewStatusHandler(deviceService)
 	hs.DeviceUpdater = devicehandlers.NewUpdaterHandler(deviceService)
 	hs.DeviceList = devicehandlers.NewListHandler(deviceService, hubResult.Hub)
-	hs.Command = cmdhandlers.NewExecuteHandler(commandService, deviceService, hubResult.Hub, fcmNotifier, cmdapp.NewAuthorizer(nil), auditLogger, serverSigner)
+	hs.Command = cmdhandlers.NewExecuteHandler(commandService, deviceService, hubResult.Hub, fcmNotifier, cmdapp.NewAuthorizer(nil, true), auditLogger, serverSigner)
 	hs.Stream = websockethandlers.NewStreamHandler(log, cfg, hubResult.Hub, *hmacVerifier, auditLogger, NewDevicePublicKeyProvider(storage.NewDeviceRepository(db)))
 	hs.TelemetryHistory = handlers.NewTelemetryHistoryHandler(log, storage.NewTelemetryRepository(db), storage.NewDeviceRepository(db), nil)
 	hs.ConnectionStatus = handlers.NewConnectionStatusHandler(log, hubResult.Hub, storage.NewDeviceRepository(db))

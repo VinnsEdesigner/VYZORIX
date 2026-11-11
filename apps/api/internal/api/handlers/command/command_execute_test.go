@@ -50,7 +50,7 @@ func newHandlerWithFakes(t *testing.T, confirm cmdSvc.ConfirmationConsumer) (*Ex
 	t.Helper()
 	f := &fakeAudit{}
 	h := &ExecuteHandler{
-		authorizer: cmdSvc.NewAuthorizer(confirm),
+		authorizer: cmdSvc.NewAuthorizer(confirm, true),
 		audit:      f,
 	}
 	return h, f

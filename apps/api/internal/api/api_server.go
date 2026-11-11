@@ -374,7 +374,7 @@ func (s *Server) wireAuthorizationWiring(cfg *ServerConfig) {
 	// Shared command risk gate. It gates REST command execution and the GraphQL
 	// command mutation identically so neither transport can skip the MFA or
 	// confirmation requirements.
-	s.commandAuthorizer = command.NewAuthorizerFromService(cfg.ConfirmationService)
+	s.commandAuthorizer = command.NewAuthorizerFromService(cfg.ConfirmationService, cfg.Config.RequireMFAForCriticalCommands)
 
 	// Feature manager: all new authz features default ON in production,
 	// individually overridable via FEATURE_* env vars.
