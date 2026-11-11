@@ -324,22 +324,25 @@ func Load() (Config, error) {
 		GitHubOAuthClientID:       os.Getenv("GITHUB_OAUTH_CLIENT_ID"),
 		GitHubOAuthClientSecret:   os.Getenv("GITHUB_OAUTH_CLIENT_SECRET"),
 		GitHubReleaseRepo:         os.Getenv("GITHUB_RELEASE_REPO"),
-		GitHubReleaseToken:        os.Getenv("GITHUB_RELEASE_TOKEN"),
-		GitHubWebhookSecret:       os.Getenv("GITHUB_WEBHOOK_SECRET"),
-		BaseURL:                   get("BASE_URL", "http://localhost:3000"),
-		FrontendURL:               get("FRONTEND_URL", "http://localhost:5173"),
-		ResendAPIKey:              os.Getenv("RESEND_API_KEY"),
-		EmailFrom:                 get("EMAIL_FROM", "noreply@vyzorix.app"),
-		EmailFromName:             get("EMAIL_FROM_NAME", "Vyzorix"),
-		JWTDuration:               jwtDuration,
-		EmailVerifyTokenExpiry:    emailVerifyExpiry,
-		PasswordResetTokenExpiry:  passwordResetExpiry,
-		EnableGraphQL:             getBool("ENABLE_GRAPHQL", true),
-		EnablePprof:               getBool("ENABLE_PPROF", false),
-		MetricsEnabled:            getBool("METRICS_ENABLED", true),
-		MetricsToken:              get("METRICS_TOKEN", ""),
-		MetricsAllowedCIDRs:       splitCSV(get("METRICS_ALLOWED_CIDRS", "")),
-		MetricsBindAddr:           get("METRICS_BIND_ADDR", "127.0.0.1"),
+		// GITHUB_RELEASE_TOKEN, falling back to GITHUB_TOKEN. A public release repo
+		// needs no token (the anonymous GitHub API works); a private one does, and
+		// the deployment sets GITHUB_TOKEN, so both names are accepted.
+		GitHubReleaseToken:       firstNonEmpty(os.Getenv("GITHUB_RELEASE_TOKEN"), os.Getenv("GITHUB_TOKEN")),
+		GitHubWebhookSecret:      os.Getenv("GITHUB_WEBHOOK_SECRET"),
+		BaseURL:                  get("BASE_URL", "http://localhost:3000"),
+		FrontendURL:              get("FRONTEND_URL", "http://localhost:5173"),
+		ResendAPIKey:             os.Getenv("RESEND_API_KEY"),
+		EmailFrom:                get("EMAIL_FROM", "noreply@vyzorix.app"),
+		EmailFromName:            get("EMAIL_FROM_NAME", "Vyzorix"),
+		JWTDuration:              jwtDuration,
+		EmailVerifyTokenExpiry:   emailVerifyExpiry,
+		PasswordResetTokenExpiry: passwordResetExpiry,
+		EnableGraphQL:            getBool("ENABLE_GRAPHQL", true),
+		EnablePprof:              getBool("ENABLE_PPROF", false),
+		MetricsEnabled:           getBool("METRICS_ENABLED", true),
+		MetricsToken:             get("METRICS_TOKEN", ""),
+		MetricsAllowedCIDRs:      splitCSV(get("METRICS_ALLOWED_CIDRS", "")),
+		MetricsBindAddr:          get("METRICS_BIND_ADDR", "127.0.0.1"),
 		// Empty trusts no proxy, so ClientIP is the real peer (not spoofable via XFF).
 		TrustedProxies:         splitCSV(get("TRUSTED_PROXIES", "")),
 		CacheTTLSeconds:        getInt("CACHE_TTL_SECONDS", 30),
@@ -558,6 +561,18 @@ func getInt(k string, fallback int) int {
 		return fallback
 	}
 	return n
+}
+
+// firstNonEmpty returns the first non-empty value, for an env var with a
+// preferred name and a fallback name.
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if v != "" {
+			return v
+		}
+	}
+
+	return ""
 }
 
 func getBool(k string, fallback bool) bool {

@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	apperrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/config"
@@ -40,14 +42,20 @@ type VersionManifest struct {
 
 // Handler handles OTA update distribution endpoints.
 type Handler struct {
+	gitHubFetched    time.Time
 	log              *slog.Logger
 	manifest         *VersionManifest
 	progress         *ProgressStore
 	latestFromGitHub func(ctx context.Context) (*VersionManifest, error)
+	gitHubCache      *VersionManifest
 	dataDir          string
 	binDir           string
 	config           config.Config
+	gitHubMu         sync.Mutex
 }
+
+// gitHubCacheTTL is how long a resolved GitHub manifest is reused.
+const gitHubCacheTTL = 10 * time.Minute
 
 // NewHandler creates a new UpdaterHandler.
 func NewHandler(log *slog.Logger, cfg config.Config) *Handler {
@@ -168,6 +176,36 @@ func (h *Handler) Bin(c *gin.Context) {
 	h.serveAPK(c, filename)
 }
 
+// cachedGitHubManifest returns the current release from GitHub, reusing a recent
+// answer. Returns nil (so the caller falls back to the baked manifest) when GitHub
+// is not configured or the lookup fails.
+func (h *Handler) cachedGitHubManifest(ctx context.Context) *VersionManifest {
+	if h.latestFromGitHub == nil {
+		return nil
+	}
+
+	h.gitHubMu.Lock()
+	defer h.gitHubMu.Unlock()
+
+	if h.gitHubCache != nil && time.Since(h.gitHubFetched) < gitHubCacheTTL {
+		return h.gitHubCache
+	}
+
+	m, err := h.latestFromGitHub(ctx)
+	if err != nil || m == nil {
+		h.log.Warn("could not resolve the current version from GitHub; using the baked manifest", "err", err)
+
+		// Keep serving the last good answer, if any, rather than flapping to the
+		// baked manifest on a transient GitHub failure.
+		return h.gitHubCache
+	}
+
+	h.gitHubCache = m
+	h.gitHubFetched = time.Now()
+
+	return m
+}
+
 // currentManifest resolves the version the server should report as current.
 //
 // The GitHub release is preferred: it is the one place a release is published, so
@@ -176,14 +214,8 @@ func (h *Handler) Bin(c *gin.Context) {
 // transient GitHub failure, still answers with the last-known version rather than
 // erroring.
 func (h *Handler) currentManifest(ctx context.Context) (*VersionManifest, error) {
-	if h.latestFromGitHub != nil {
-		m, err := h.latestFromGitHub(ctx)
-		if err == nil && m != nil {
-			return m, nil
-		}
-		if err != nil {
-			h.log.Warn("could not resolve the current version from GitHub; using the baked manifest", "err", err)
-		}
+	if m := h.cachedGitHubManifest(ctx); m != nil {
+		return m, nil
 	}
 
 	data, err := os.ReadFile(filepath.Join(h.dataDir, "version.json"))
