@@ -1,8 +1,8 @@
 {
-  "version": "0.1.6",
-  "version_code": 6,
-  "apk_filename": "vyzorix-app-v0.1.6-release-arm64.apk",
-  "apk_sha256": "5947dd94cda5d3c6aa4252a724b5b1f7effffd7223ff88face9f108d23ee9748",
-  "apk_size_bytes": 73314087,
-  "release_notes": "Vyzorix agent 0.1.6 (versionCode 6). Adds an SMS inbox read API (sms_read, READ_SMS) so stored texts are retrievable; fixes a class of APIs that could not return results because their dangerous permissions were declared but never requested; a terminal-style notification icon; and a fuller accessibility description."
+  "version": "0.1.7",
+  "version_code": 7,
+  "apk_filename": "vyzorix-app-v0.1.7-release-arm64.apk",
+  "apk_sha256": "c1f1a6188a9cb4f4a0d1fce812ac59f6550576f658b73b58b006397df064fd3e",
+  "apk_size_bytes": 73318183,
+  "release_notes": "Vyzorix agent 0.1.7 (versionCode 7). Notification now shows connection state (stable vs no network), OTA download progress with a progress bar, download-complete and post-update reconnecting states, all on a burgundy theme. Fixes the launcher icon not hiding after an update, by reconciling it at every process start."
 }
