@@ -1,8 +1,8 @@
 {
-  "version": "0.1.8",
-  "version_code": 8,
-  "apk_filename": "vyzorix-app-v0.1.8-release-arm64.apk",
-  "apk_sha256": "2dd82c3b1b9c634aa91cdb54181bd6f5fda19e58f0cefbff4f93a4628fcacbbb",
-  "apk_size_bytes": 73318183,
-  "release_notes": "Vyzorix agent 0.1.8 (versionCode 8). Fixes OTA: the install now opens via a notification tap (a background service cannot start the installer directly on Android 10+), and the agent no longer re-downloads the APK on every reconnect — it reuses the staged file and offers each version once. This stops the runaway mobile-data use."
+  "version": "0.1.4",
+  "version_code": 4,
+  "apk_filename": "vyzorix-app-v0.1.4-sideload-release-arm64.apk",
+  "apk_sha256": "95b905b8753da3d4991fa42c9813233ebbb1caf5e5665fa09c91e283e4bd42ff",
+  "apk_size_bytes": 73305839,
+  "release_notes": "Vyzorix agent 0.1.4 (versionCode 4). Reduced-permission build: drops REQUEST_INSTALL_PACKAGES, SEND_SMS, RECEIVE_SMS, READ_LOGS, MANAGE_EXTERNAL_STORAGE, QUERY_ALL_PACKAGES and CALL_PHONE so Play Protect no longer blocks the install. In-app OTA self-update is off; update by installing the new APK."
 }
