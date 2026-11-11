@@ -135,7 +135,23 @@ func (s *Server) serveDownload(c *gin.Context, name string) {
 
 	c.Header("Content-Type", "application/vnd.android.package-archive")
 	c.Header("Cache-Control", "no-store")
-	c.File(filepath.Join(s.config.BinDir, name))
+
+	local := filepath.Join(s.config.BinDir, name)
+
+	// The server no longer bakes the APK into its image, so a file the release
+	// carries is not on local disk. Redirect to the release asset rather than
+	// 404ing: the device downloads it from GitHub, which serves the same bytes the
+	// update manifest's checksum describes. A locally staged copy still wins when
+	// present, so a deployment that bakes the APK keeps serving it from disk.
+	if _, err := os.Stat(local); err != nil && s.updaterHandler != nil {
+		if url, uerr := s.updaterHandler.AssetURL(c.Request.Context(), name); uerr == nil && url != "" {
+			c.Redirect(http.StatusFound, url)
+
+			return
+		}
+	}
+
+	c.File(local)
 }
 
 // serveStaticFile serves a static file with specified content type.

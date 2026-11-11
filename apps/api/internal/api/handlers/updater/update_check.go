@@ -85,6 +85,17 @@ func (h *Handler) SetGitHubSource(
 	h.apkURLFromGitHub = apkURL
 }
 
+// AssetURL resolves an APK filename to its release download URL, or "" when there
+// is no GitHub source. Used by the server's /v1/apk route to redirect a device to
+// the release asset the image no longer carries.
+func (h *Handler) AssetURL(ctx context.Context, filename string) (string, error) {
+	if h.apkURLFromGitHub == nil {
+		return "", nil
+	}
+
+	return h.apkURLFromGitHub(ctx, filename)
+}
+
 // ProgressStore exposes the store for the periodic sweep worker.
 func (h *Handler) ProgressStore() *ProgressStore { return h.progress }
 
