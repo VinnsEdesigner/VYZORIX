@@ -63,6 +63,9 @@ type Repository interface {
 	// UpdateFCMToken updates the FCM token for a device.
 	UpdateFCMToken(ctx context.Context, id, fcmToken string) error
 
+	// UpdateAppVersion records the app version the device reports it is running.
+	UpdateAppVersion(ctx context.Context, id, appVersion string) error
+
 	// SetOnline sets the online status of a device.
 	SetOnline(ctx context.Context, id string, online bool) error
 

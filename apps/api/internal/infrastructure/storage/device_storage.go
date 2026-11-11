@@ -399,6 +399,24 @@ func (r *DeviceRepository) Delete(ctx context.Context, id string) error {
 }
 
 // UpdateFCMToken updates the FCM token for a device.
+// UpdateAppVersion records the app version a device reports it is running.
+//
+// The version is otherwise only written at enroll, so an OTA update leaves the row
+// stale. Telemetry carries the running version, and this keeps the record current
+// without a re-enroll.
+func (r *DeviceRepository) UpdateAppVersion(ctx context.Context, id, appVersion string) error {
+	if appVersion == "" {
+		return nil
+	}
+
+	_, err := r.exec(ctx,
+		"UPDATE devices SET app_version = ?, updated_at = ? WHERE id = ?",
+		appVersion, time.Now(), id,
+	)
+
+	return err
+}
+
 func (r *DeviceRepository) UpdateFCMToken(ctx context.Context, id, fcmToken string) error {
 	result, err := r.exec(ctx,
 		"UPDATE devices SET fcm_token = ?, updated_at = ? WHERE id = ?",

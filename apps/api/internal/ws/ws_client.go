@@ -292,6 +292,21 @@ func (c *Client) processTelemetry(raw []byte, t *telemetry.TelemetryFrame) {
 	if t.DeviceID == "" {
 		t.DeviceID = c.DeviceID
 	}
+
+	// Keep the device's recorded app version current. It is otherwise only written at
+	// enroll, so an OTA update leaves the row stale; telemetry carries the running
+	// version, and this is the cheapest place to fold it in.
+	if t.AppVersion != "" && c.Hub.deviceRepo != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := c.Hub.deviceRepo.UpdateAppVersion(ctx, c.DeviceID, t.AppVersion); err != nil {
+			if c.log != nil {
+				c.log.Warn("device app version update failed",
+					"deviceId", c.DeviceID, "appVersion", t.AppVersion, "err", err)
+			}
+		}
+	}
+
 	if c.Hub.telemetryRepo != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
