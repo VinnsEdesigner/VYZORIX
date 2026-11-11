@@ -67,6 +67,7 @@ import (
 	cryptohmac "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/crypto"
 	emailService "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/email"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/fcm"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/github"
 	infraMetrics "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/metrics"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/storage"
@@ -575,11 +576,43 @@ func (s *Server) createDashboardHandlers(cfg *ServerConfig, historySvc *command.
 }
 
 // createUpdatesHandler creates the updates handler.
+// wireUpdaterGitHubSource points the updater at the GitHub release so the server
+// always reports the newest published agent version, without a redeploy.
+//
+// It is a no-op when GitHub is not configured (no repo/token) or the client cannot
+// be built; the updater then answers from the baked manifest, which is the
+// pre-existing behaviour.
+func (s *Server) wireUpdaterGitHubSource(cfg config.Config) {
+	if s.updaterHandler == nil {
+		return
+	}
+	if cfg.GitHubReleaseRepo == "" || cfg.GitHubReleaseToken == "" {
+		return
+	}
+
+	client := github.NewClient("VinnsEdesigner", cfg.GitHubReleaseRepo, cfg.GitHubReleaseToken)
+	s.updaterHandler.SetGitHubSource(func(ctx context.Context) (*updaterhandlers.VersionManifest, error) {
+		m, err := client.FetchLatestAppManifest(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		return &updaterhandlers.VersionManifest{
+			Version:      m.Version,
+			VersionCode:  m.VersionCode,
+			APKFilename:  m.APKFilename,
+			APKSHA256:    m.APKSHA256,
+			APKSizeBytes: m.APKSizeBytes,
+		}, nil
+	})
+}
+
 func (s *Server) createUpdatesHandler(cfg *ServerConfig) {
 	if cfg.UpdatesService == nil {
 		return
 	}
 	s.updaterHandler = updaterhandlers.NewHandler(cfg.Log, cfg.Config)
+	s.wireUpdaterGitHubSource(cfg.Config)
 	updatesRateLimiters := middleware.NewUpdatesRateLimiterMiddleware(middleware.DefaultUpdatesRateLimits())
 	s.updatesHandler = updateshandlers.NewUpdatesHandler(cfg.UpdatesService, cfg.UpdatesService.GetPushService(), updatesRateLimiters, cfg.AuditLogger, cfg.Config.GitHubWebhookSecret)
 }
@@ -810,6 +843,7 @@ func NewServerWithDeps(cfg *ServerConfigWithDeps) *Server {
 
 	// Create updater handler for OTA update distribution.
 	s.updaterHandler = updaterhandlers.NewHandler(cfg.Log, cfg.Config)
+	s.wireUpdaterGitHubSource(cfg.Config)
 
 	// Store deviceRepo for the deletion worker in api_main.go.
 	s.DeviceRepo = cfg.DeviceRepo

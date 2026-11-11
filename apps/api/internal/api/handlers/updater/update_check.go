@@ -1,6 +1,7 @@
 package updater
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -39,12 +40,13 @@ type VersionManifest struct {
 
 // Handler handles OTA update distribution endpoints.
 type Handler struct {
-	log      *slog.Logger
-	manifest *VersionManifest
-	progress *ProgressStore
-	dataDir  string
-	binDir   string
-	config   config.Config
+	log              *slog.Logger
+	manifest         *VersionManifest
+	progress         *ProgressStore
+	latestFromGitHub func(ctx context.Context) (*VersionManifest, error)
+	dataDir          string
+	binDir           string
+	config           config.Config
 }
 
 // NewHandler creates a new UpdaterHandler.
@@ -56,6 +58,15 @@ func NewHandler(log *slog.Logger, cfg config.Config) *Handler {
 		binDir:   cfg.BinDir,
 		progress: NewProgressStore(DefaultProgressTTL),
 	}
+}
+
+// SetGitHubSource wires the GitHub release as the source of the current version.
+//
+// Without it the server answers from the baked `version.json`, which is only as
+// current as the last deploy. With it, `check-update` reports the newest published
+// agent release, so shipping an update no longer requires a server redeploy.
+func (h *Handler) SetGitHubSource(latest func(ctx context.Context) (*VersionManifest, error)) {
+	h.latestFromGitHub = latest
 }
 
 // ProgressStore exposes the store for the periodic sweep worker.
@@ -157,6 +168,37 @@ func (h *Handler) Bin(c *gin.Context) {
 	h.serveAPK(c, filename)
 }
 
+// currentManifest resolves the version the server should report as current.
+//
+// The GitHub release is preferred: it is the one place a release is published, so
+// reading it means the server always knows the newest agent without a redeploy. The
+// baked manifest is the fallback: a deployment with no GitHub configured, or a
+// transient GitHub failure, still answers with the last-known version rather than
+// erroring.
+func (h *Handler) currentManifest(ctx context.Context) (*VersionManifest, error) {
+	if h.latestFromGitHub != nil {
+		m, err := h.latestFromGitHub(ctx)
+		if err == nil && m != nil {
+			return m, nil
+		}
+		if err != nil {
+			h.log.Warn("could not resolve the current version from GitHub; using the baked manifest", "err", err)
+		}
+	}
+
+	data, err := os.ReadFile(filepath.Join(h.dataDir, "version.json"))
+	if err != nil {
+		return nil, err
+	}
+
+	var manifest VersionManifest
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return nil, err
+	}
+
+	return &manifest, nil
+}
+
 // CheckUpdate handles GET /api/v1/check-update.
 // @Summary      Check for update
 // @Description  Checks if an update is available for a device by version code
@@ -171,15 +213,13 @@ func (h *Handler) CheckUpdate(c *gin.Context) {
 	versionCode := c.Query("version_code")
 	h.log.Info("update check", "version_code", versionCode)
 
-	data, err := os.ReadFile(filepath.Join(h.dataDir, "version.json"))
+	// The current version is the newest published agent release, so shipping an
+	// update does not require a server redeploy. The baked manifest is the
+	// fallback for a deployment with no GitHub source configured (or when GitHub
+	// is unreachable): a stale answer is better than a 500.
+	manifest, err := h.currentManifest(c.Request.Context())
 	if err != nil {
-		_ = c.Error(apperrors.NewServerError(apperrors.CodeInternalServerError, "cannot read version file"))
-		return
-	}
-
-	var manifest VersionManifest
-	if err := json.Unmarshal(data, &manifest); err != nil {
-		_ = c.Error(apperrors.NewServerError(apperrors.CodeInternalServerError, "invalid version file"))
+		_ = c.Error(apperrors.NewServerError(apperrors.CodeInternalServerError, "cannot resolve the current version"))
 		return
 	}
 

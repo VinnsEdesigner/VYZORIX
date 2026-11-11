@@ -223,3 +223,94 @@ func (c *Client) FetchAssetChecksum(ctx context.Context, releaseTag, assetName s
 
 	return "", fmt.Errorf("checksum not found for asset %s", assetName)
 }
+
+// AppManifest is the current agent release, as published.
+//
+// It is the same shape as the server's `VersionManifest` and the release's
+// `version.json` asset, so the server can serve one straight through: the release is
+// the single place a build is published, and reading it means "what is the current
+// app version" is answered without a server redeploy.
+type AppManifest struct {
+	Version      string `json:"version"`
+	APKFilename  string `json:"apk_filename"`
+	APKSHA256    string `json:"apk_sha256"`
+	VersionCode  int    `json:"version_code"`
+	APKSizeBytes int64  `json:"apk_size_bytes"`
+}
+
+// FetchLatestAppManifest returns the newest release's `version.json` asset.
+//
+// The releases are listed newest-first, and the first non-draft, non-prerelease one
+// that carries a `version.json` asset is used. The asset is read from the release's
+// download URL, so the manifest and the APK always come from the same release.
+//
+// Drafts and prereleases are skipped deliberately: an unpublished build must not be
+// offered to devices. A repository whose releases do not carry `version.json` yields
+// an error, which the caller treats as "no GitHub source" and falls back to the
+// baked manifest.
+func (c *Client) FetchLatestAppManifest(ctx context.Context) (*AppManifest, error) {
+	releases, err := c.FetchReleases(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, release := range releases {
+		if release.Draft || release.Prerelease {
+			continue
+		}
+
+		for _, asset := range release.Assets {
+			if asset.Name != "version.json" {
+				continue
+			}
+
+			manifest, err := c.fetchManifestAsset(ctx, asset.BrowserDownloadURL)
+			if err != nil {
+				return nil, err
+			}
+
+			if manifest.VersionCode == 0 || manifest.APKFilename == "" {
+				return nil, fmt.Errorf("release %s has an incomplete version.json", release.TagName)
+			}
+
+			return manifest, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no release with a version.json asset was found")
+}
+
+// fetchManifestAsset downloads and decodes a `version.json` asset.
+func (c *Client) fetchManifestAsset(ctx context.Context, url string) (*AppManifest, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	if c.token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.token)
+	}
+	req.Header.Set("Accept", "application/octet-stream")
+	req.Header.Set("User-Agent", "Vyzorix-Update-Server")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("version.json fetch failed: status %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var manifest AppManifest
+	if err := json.Unmarshal(body, &manifest); err != nil {
+		return nil, fmt.Errorf("invalid version.json: %w", err)
+	}
+
+	return &manifest, nil
+}
