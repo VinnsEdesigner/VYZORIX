@@ -18,8 +18,35 @@ model. It exposes a REST API, a GraphQL API, and a WebSocket stream.
 
 It is one half of a two-repo platform. The other half is the device agent,
 `Vyzorix-android`, which runs a Debian container on an unrooted phone and holds the
-single WebSocket this server speaks to. The operator-facing `vyzorix` CLI and the
-shared manifest schema (`vyzorix-spec`) complete the set.
+single WebSocket this server speaks to. The shared manifest schema
+(`vyzorix-spec`) completes the set.
+
+## The two CLIs
+
+There are two, and the names matter:
+
+- **The Vyzorix CLI** — the device-side tool. It runs **on the phone**, inside the
+  container, and turns the device's APIs into commands (`camera`, `battery`,
+  `wboot`, …). It ships with the agent, not from here. When an operator opens a
+  terminal from the dashboard, this is what they land in.
+- **The Deploy CLI** (`vyzorix-cli`, `vyzorix login` / `vyzorix deploy`) — the
+  operator tool. It runs **on your machine or in CI**, validates a `vyzorix.toml`
+  manifest against this server's schema, and pushes it to a device.
+
+## The terminal, and what an operator may do
+
+A terminal session is **scoped to the operator**. When one is opened, this server
+resolves the operator's capability — their **role** intersected with the device's
+**tier** and any scoped grant — and delivers it with the session, so the device
+enforces it and the CLI shows it:
+
+- the **identity** (operator, name, email, org, role and its human label, expiry);
+- the **API allowlist** the session may call.
+
+The device's `DeviceAPICatalog` is the authority for what a session can reach: an
+API absent from it is unreachable to every role, so it mirrors the device's whole
+surface. `ResolveSessionCapability` composes the role's tags, the scoped engine,
+and the tier gate; an empty resolution is a refusal, never a full grant.
 
 ## Quick start
 
@@ -63,9 +90,9 @@ document by task, and the
 | Platform | Documents |
 |:-----|:----------|
 | Start here | [Platform Overview](./DOCUMENTATION/VYZORIX_PLATFORM_OVERVIEW.md), [Docs Index](./DOCUMENTATION/VYZORIX_DOCS_INDEX.md), [Glossary](./DOCUMENTATION/VYZORIX_GLOSSARY.md) |
-| Deploy | [Pipeline](./DOCUMENTATION/DEPLOY_PIPELINE.md), [Manifest Reference](./DOCUMENTATION/MANIFEST_REFERENCE.md), [CLI Reference](./DOCUMENTATION/CLI_REFERENCE.md), [Server API](./DOCUMENTATION/DEPLOY_SERVER_API.md), [Credentials](./DOCUMENTATION/DEPLOY_CREDENTIALS.md), [Secrets](./DOCUMENTATION/DEPLOY_SECRETS.md), [App Exposure](./DOCUMENTATION/APP_EXPOSURE.md) |
+| Deploy | [Pipeline](./DOCUMENTATION/DEPLOY_PIPELINE.md), [Manifest Reference](./DOCUMENTATION/MANIFEST_REFERENCE.md), [Deploy CLI Reference](./DOCUMENTATION/CLI_REFERENCE.md), [Server API](./DOCUMENTATION/DEPLOY_SERVER_API.md), [Credentials](./DOCUMENTATION/DEPLOY_CREDENTIALS.md), [Secrets](./DOCUMENTATION/DEPLOY_SECRETS.md), [App Exposure](./DOCUMENTATION/APP_EXPOSURE.md) |
 | Device | [Onboarding](./DOCUMENTATION/DEVICE_ONBOARDING.md), [APK & OTA](./DOCUMENTATION/APK_DISTRIBUTION.md), [Commands & Signing](./DOCUMENTATION/DEVICE_COMMANDS_AND_SIGNING.md), [Telemetry & Events](./DOCUMENTATION/TELEMETRY_AND_EVENTS.md) |
-| Container | [Filesystem](./DOCUMENTATION/CONTAINER_FILESYSTEM.md), [Android APIs](./DOCUMENTATION/CONTAINER_ANDROID_APIS.md), [Terminal](./DOCUMENTATION/CONTAINER_TERMINAL.md), [App Runtime](./DOCUMENTATION/APP_RUNTIME.md) |
+| Container | [Filesystem](./DOCUMENTATION/CONTAINER_FILESYSTEM.md), [Android APIs](./DOCUMENTATION/CONTAINER_ANDROID_APIS.md), [Terminal](./DOCUMENTATION/CONTAINER_TERMINAL.md), [App Runtime](./DOCUMENTATION/APP_RUNTIME.md) — the **Vyzorix CLI** (the device-side command tool the terminal lands you in) is documented in the device repo, `Vyzorix-android/doc/CLI.md`. |
 
 The server's own operational documentation is indexed in
 [DOCUMENTATION/README.md](./DOCUMENTATION/README.md).
