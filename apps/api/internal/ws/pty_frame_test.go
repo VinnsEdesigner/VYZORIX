@@ -130,3 +130,51 @@ func TestDecodeSessionDataRejectsMalformed(t *testing.T) {
 		})
 	}
 }
+
+func TestSessionOpenCarriesTheIdentity(t *testing.T) {
+in := SessionIdentity{
+Operator:  "op-1",
+Name:      "Kamau",
+Email:     "kamau@example.com",
+Org:       "org-1",
+OrgName:   "Vyzorix",
+Role:      "operator",
+RoleLabel: "Operator",
+Tier:      1,
+ExpiresAt: 1234,
+Allowlist: []string{"camera", "battery"},
+}
+
+payload := EncodeSessionOpen("sess-1", 24, 80, in)
+
+id, rows, cols, got, err := DecodeSessionOpen(payload)
+if err != nil {
+t.Fatalf("decode: %v", err)
+}
+if id != "sess-1" || rows != 24 || cols != 80 {
+t.Fatalf("header = %q %d %d", id, rows, cols)
+}
+if got == nil {
+t.Fatal("identity missing")
+}
+if got.RoleLabel != "Operator" || got.Operator != "op-1" || len(got.Allowlist) != 2 {
+t.Fatalf("identity = %+v", got)
+}
+}
+
+// A device that predates the identity block still reads the window size: the size
+// is the first four bytes after the session id, and the rest is ignored.
+func TestSessionOpenWithoutIdentityIsSizeOnly(t *testing.T) {
+payload := EncodeSessionData("sess-2", EncodePTYResize(40, 100))
+
+id, rows, cols, got, err := DecodeSessionOpen(payload)
+if err != nil {
+t.Fatalf("decode: %v", err)
+}
+if id != "sess-2" || rows != 40 || cols != 100 {
+t.Fatalf("header = %q %d %d", id, rows, cols)
+}
+if got != nil {
+t.Fatalf("identity should be nil, got %+v", got)
+}
+}

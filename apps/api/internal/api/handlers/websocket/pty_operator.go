@@ -75,7 +75,24 @@ type PTYCapabilityResolver interface {
 
 // SessionCapabilityInfo is the resolved capability, kept as plain data so this
 // package does not import the permission domain.
+//
+// It is both the decision (what the device may call) and the identity (who the
+// caller is), because a terminal session needs both: the device enforces the
+// allowlist, and the Vyzorix CLI shows the operator who they are. They are
+// resolved together, at open, so the two cannot disagree.
 type SessionCapabilityInfo struct {
+	// Identity — shown by the CLI's `whoami`.
+	OperatorID   string
+	OperatorName string
+	Email        string
+	OrgID        string
+	OrgName      string
+	// Role is the machine value (super_admin, admin, operator, viewer); RoleLabel
+	// is its human name ("Super admin"). Both, so a client need not map.
+	Role      string
+	RoleLabel string
+
+	// Capability — enforced by the device.
 	APIAllowlist []string
 	Tier         int
 	ExpiresAt    int64
@@ -524,6 +541,7 @@ func (c *ptyOperatorClient) handleOpen(h *OperatorTerminalHandler, deviceID, ses
 	// with the device tier and the scoped grant — made once, here, rather than
 	// re-derived per call. A resolution that yields an empty allowlist is a
 	// refusal: the session would be able to call nothing, so it is not opened.
+	identity := hub.SessionIdentity{}
 	if h.capabilities != nil {
 		capability, ok := h.capabilities.ResolveForSession(
 			context.Background(), c.operator, c.orgID, session.DeviceID)
@@ -543,11 +561,23 @@ func (c *ptyOperatorClient) handleOpen(h *OperatorTerminalHandler, deviceID, ses
 		}
 
 		session.SetCapability(capability.APIAllowlist, capability.Tier, capability.ExpiresAt)
+		identity = hub.SessionIdentity{
+			Operator:  capability.OperatorID,
+			Name:      capability.OperatorName,
+			Email:     capability.Email,
+			Org:       capability.OrgID,
+			OrgName:   capability.OrgName,
+			Role:      capability.Role,
+			RoleLabel: capability.RoleLabel,
+			Tier:      capability.Tier,
+			ExpiresAt: capability.ExpiresAt,
+			Allowlist: capability.APIAllowlist,
+		}
 	}
 
 	// Ask the device to allocate the PTY. The open frame carries the session ID
 	// and window size so the device can size the pty from the first moment.
-	openPayload := hub.EncodeSessionData(sessionID, hub.EncodePTYResize(24, 80))
+	openPayload := hub.EncodeSessionOpen(sessionID, 24, 80, identity)
 	if !h.relay.SendToDevice(session.DeviceID, hub.PTYTypeOpen, openPayload) {
 		// Device offline: roll the session back so the ID is not left dangling.
 		_, _ = h.relay.Registry().Close(sessionID)

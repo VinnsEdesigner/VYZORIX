@@ -44,6 +44,24 @@ func (r OrganizationRole) IsSuperAdmin() bool {
 	return r == RoleSuperAdmin
 }
 
+// Label is the role's human name, for display in a client (the Vyzorix CLI's
+// `whoami`). The wire value stays the machine role; this is only what a person
+// reads.
+func (r OrganizationRole) Label() string {
+	switch r {
+	case RoleSuperAdmin:
+		return "Super admin"
+	case RoleAdmin:
+		return "Administrator"
+	case RoleOperator:
+		return "Operator"
+	case RoleViewer:
+		return "Viewer"
+	default:
+		return string(r)
+	}
+}
+
 // IsAdmin returns true if the role is admin or super_admin.
 func (r OrganizationRole) IsAdmin() bool {
 	return r == RoleAdmin || r == RoleSuperAdmin

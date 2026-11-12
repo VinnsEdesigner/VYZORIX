@@ -80,12 +80,16 @@ func ptyAuditLogger(logger *audit.Logger) websockethandlers.PTYAudit {
 
 // ptyCapabilityResolver resolves a session's capability at open: the operator's
 // role and grants intersected with the device's tier, per the boundary contract's
-//. It is the server-side decision, made once, so the device never re-derives
+// . It is the server-side decision, made once, so the device never re-derives
 // authority.
 type ptyCapabilityResolver struct {
 	members *orgapplication.MemberService
 	grants  *storage.GrantRepository
 	devices *storage.DeviceRepository
+	// orgs resolves the organization's display name for the session identity. It is
+	// optional: without it the name is blank and the CLI shows the id, which is still
+	// correct, just less friendly.
+	orgs *orgapplication.OrganizationService
 }
 
 // NewPTYCapabilityResolver builds the resolver. It returns nil when the pieces it
@@ -96,12 +100,13 @@ func NewPTYCapabilityResolver(
 	members *orgapplication.MemberService,
 	grants *storage.GrantRepository,
 	devices *storage.DeviceRepository,
+	orgs *orgapplication.OrganizationService,
 ) websockethandlers.PTYCapabilityResolver {
 	if members == nil || devices == nil {
 		return nil
 	}
 
-	return &ptyCapabilityResolver{members: members, grants: grants, devices: devices}
+	return &ptyCapabilityResolver{members: members, grants: grants, devices: devices, orgs: orgs}
 }
 
 // newPTYCapabilityResolver builds the resolver from the handler dependencies. The
@@ -119,7 +124,7 @@ func newPTYCapabilityResolver(deps HandlerDependencies) websockethandlers.PTYCap
 		grants = storage.NewGrantRepository(db)
 	}
 
-	return NewPTYCapabilityResolver(deps.MemberService, grants, deps.DeviceRepo)
+	return NewPTYCapabilityResolver(deps.MemberService, grants, deps.DeviceRepo, deps.OrgService)
 }
 
 // ResolveForSession evaluates the two axes and returns the allowlist the device
@@ -155,7 +160,25 @@ func (r *ptyCapabilityResolver) ResolveForSession(
 		0,
 	)
 
+	// The organization's display name, for the CLI's `whoami`. Optional: a
+	// deployment without the org service leaves it blank and the CLI shows the id.
+	var orgName string
+	if r.orgs != nil {
+		if org, oerr := r.orgs.GetOrganization(ctx, orgID); oerr == nil && org != nil {
+			orgName = org.Name
+		}
+	}
+
 	return websockethandlers.SessionCapabilityInfo{
+		// Identity, resolved here so it cannot disagree with the capability.
+		OperatorID:   operatorID,
+		OperatorName: member.OperatorName,
+		Email:        member.OperatorEmail,
+		OrgID:        orgID,
+		OrgName:      orgName,
+		Role:         string(member.Role),
+		RoleLabel:    member.Role.Label(),
+
 		APIAllowlist: capability.APIAllowlist,
 		Tier:         int(capability.Tier),
 		ExpiresAt:    capability.ExpiresAt,

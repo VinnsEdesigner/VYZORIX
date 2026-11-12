@@ -3,6 +3,7 @@ package hub
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 )
@@ -145,6 +146,77 @@ func EncodeSessionData(sessionID string, data []byte) []byte {
 	copy(out[1+len(sessionID):], data)
 
 	return out
+}
+
+// SessionIdentity is what a terminal session knows about its operator, delivered
+// with the OPEN frame so the device — and the Vyzorix CLI inside it — can show who
+// is connected and what they may call.
+//
+// It is the resolved capability, not a claim: the device enforces [Allowlist], and
+// the CLI displays it. The two come from one resolution so they cannot disagree.
+type SessionIdentity struct {
+	Operator  string   `json:"operator"`
+	Name      string   `json:"name"`
+	Email     string   `json:"email"`
+	Org       string   `json:"org"`
+	OrgName   string   `json:"orgName"`
+	Role      string   `json:"role"`
+	RoleLabel string   `json:"roleLabel"`
+	Tier      int      `json:"tier"`
+	ExpiresAt int64    `json:"expiresAt"`
+	Allowlist []string `json:"allowlist"`
+}
+
+// EncodeSessionOpen builds an OPEN payload: the session id, the window size, and
+// the operator's identity as JSON.
+//
+// The layout is additive on purpose. The window size stays the first four bytes
+// after the session id, so a device that predates the identity block still reads
+// the size it always did and ignores the trailing JSON — the OPEN frame grew a
+// field without a protocol version. The device decodes the identity only when the
+// payload is long enough to hold it.
+//
+//	[1B idLen][idLen bytes id][2B rows][2B cols][identity json...]
+func EncodeSessionOpen(sessionID string, rows, cols uint16, identity SessionIdentity) []byte {
+	if len(sessionID) > MaxPTYSessionIDLen {
+		panic("pty session id exceeds maximum length")
+	}
+
+	body := EncodePTYResize(rows, cols)
+	if encoded, err := json.Marshal(identity); err == nil {
+		body = append(body, encoded...)
+	}
+
+	return EncodeSessionData(sessionID, body)
+}
+
+// DecodeSessionOpen splits an OPEN payload into its session id, window size, and
+// identity. The identity is nil when the payload predates the identity block,
+// which a caller must treat as "unknown operator", never as a refusal.
+func DecodeSessionOpen(payload []byte) (sessionID string, rows, cols uint16, identity *SessionIdentity, err error) {
+	sessionID, data, err := DecodeSessionData(payload)
+	if err != nil {
+		return "", 0, 0, nil, err
+	}
+
+	rows, cols, err = DecodePTYResize(data)
+	if err != nil {
+		return "", 0, 0, nil, err
+	}
+
+	rest := data[4:]
+	if len(rest) == 0 {
+		return sessionID, rows, cols, nil, nil
+	}
+
+	var id SessionIdentity
+	if jerr := json.Unmarshal(rest, &id); jerr != nil {
+		// A malformed identity is not fatal to the open: the size is what the shell
+		// needs, and the operator is simply unknown.
+		return sessionID, rows, cols, nil, nil
+	}
+
+	return sessionID, rows, cols, &id, nil
 }
 
 // DecodeSessionData splits a session-prefixed payload into its session ID and
