@@ -298,3 +298,31 @@ func TestResolveSessionCapabilityComposesBothAxes(t *testing.T) {
 		t.Error("viewer must not reach usb")
 	}
 }
+
+// Super admin holds every capability the device can run at its tier: the whole
+// catalog minus the APIs the tier cannot reach. This is the "full allowlist" the
+// operator asked for, and it is asserted so a new API cannot silently be
+// unreachable to the top role — which is exactly how the catalog fell behind the
+// device's API surface before.
+func TestSuperAdminReachesTheWholeUnrootedCatalog(t *testing.T) {
+	caps := permission.ResolveSessionCapability(context.Background(), "s", "super_admin", nil, "dev-1", permission.TierUnrooted, 0)
+
+	got := map[string]bool{}
+	for _, api := range caps.APIAllowlist {
+		got[api] = true
+	}
+
+	for api, req := range permission.DeviceAPICatalog {
+		if req.MinTier > permission.TierUnrooted {
+			continue // a rooted/advanced API is not reachable on a stock device.
+		}
+		if !got[api] {
+			t.Errorf("super_admin must reach %s on an unrooted device", api)
+		}
+	}
+
+	// The tier gate still applies: a rooted-only API is not offered to a stock device.
+	if got["usb_nodes"] {
+		t.Error("usb_nodes is rooted-only and must not be in an unrooted allowlist")
+	}
+}

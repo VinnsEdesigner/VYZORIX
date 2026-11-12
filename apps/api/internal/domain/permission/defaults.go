@@ -136,6 +136,7 @@ func DefaultTagsForRole(roleName string) TagSet {
 		ProtectionSignature,
 		DataHardware,
 		HwUsb,
+		HwBluetooth,
 	)
 
 	// super_admin holds the same tags as admin. That is not an oversight: the tag

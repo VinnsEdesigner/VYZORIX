@@ -221,6 +221,10 @@ const (
 	// requirement names is inert — it would make a role look like it holds a
 	// capability that no check consults.
 	HwUsb Tag = "hw:usb"
+
+	// Bluetooth is the second hardware capability: it turns a radio on and off and
+	// pairs with physical devices, the same class as USB.
+	HwBluetooth Tag = "hw:bluetooth"
 )
 
 // Tier is a device's state capability level, read from the device record and
@@ -251,7 +255,7 @@ var AllTags = []Tag{
 	OpRead, OpWrite,
 	ProtectionNormal, ProtectionDangerous, ProtectionSignature,
 	VisibilityPublic, VisibilityPrivate,
-	HwUsb,
+	HwUsb, HwBluetooth,
 }
 
 // Has reports whether the set contains t.
