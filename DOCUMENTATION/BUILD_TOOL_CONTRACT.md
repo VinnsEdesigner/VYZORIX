@@ -685,6 +685,8 @@ Phases 0–2 are load-bearing; 3–4 expand coverage without changing the contra
   JRE opt-in.*
 - Default resource caps (R4) and the build timeout (R2): the exact numbers are a
   deployment choice; the *requirement* is that both exist and are configurable.
+  The builder now defaults the timeout to **3600s** (0 = default, negative = no
+  bound) and takes caps from the request's `limits` block.
 
 ---
 
@@ -749,9 +751,14 @@ requirement says so; that is the work list.
 ### 12.4 Network, registry, and publishing
 
 - **R13 — Published bytes are verified, not just the URL.** After publishing, the builder
-  fetches the artifact **anonymously** and hashes what it receives, comparing to the
-  pinned sha256. A 200 with the wrong bytes is a refusal, because the device would fail
-  `digest_mismatch` later.
+  fetches the artifact and hashes what it receives, comparing to the pinned sha256. A 200
+  with the wrong bytes is a refusal, because the device would fail `digest_mismatch`
+  later. The fetch performs the OCI auth handshake when the store challenges with a 401,
+  so the check mirrors what a real client must do. **Verified live:** a `ghcr.io` blob URL
+  answers an unauthenticated GET with a **401 challenge even for a public package**, and
+  its redirected CDN URL is **signed and expires in minutes** — so a registry blob URL is
+  *not* a device-fetchable URL. The device's fetch path must therefore be an object store
+  (§12.4 composite), not a registry blob endpoint.
 - **R14 — Transient failures are retried.** Registry and network operations retry with
   backoff on transient errors (connection reset, 5xx, 429), and give up with a clear
   refusal after a bounded number of attempts. Retries are not applied to a definitive
@@ -761,6 +768,12 @@ requirement says so; that is the work list.
   valid when the build started.
 - **R16 — Publish is idempotent.** Re-publishing the same bytes is a no-op (the blob
   already exists), not an error; a content-addressed store makes a re-run cheap and safe.
+- **R23 — The device path and the provenance path may differ.** A registry is a good
+  build-provenance record and a bad device fetch address (R13). The `composite` backend
+  publishes the bytes to a **device store** (an object store: a plain, unsigned,
+  credentialless URL) and records the build in a **record store** (GHCR: an OCI image with
+  a tag). The manifest's `url` is the device store's; the `tag` is the record store's. A
+  record-store failure is a warning, not a refusal — the device path already works.
 - **R17 — Registry auth uses a per-run credential that is never persisted or logged.** A
   credential is passed to `curl` via a 0600 config file (never argv), is scoped to the one
   repo, and is removed when the run ends. See also R19.

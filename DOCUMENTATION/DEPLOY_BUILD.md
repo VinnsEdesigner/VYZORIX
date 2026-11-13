@@ -181,9 +181,32 @@ https://ghcr.io/v2/<namespace>/<repo>/blobs/sha256:<digest>
 
 | Backend | When |
 |:--|:--|
-| `ghcr` (default) | a registry namespace exists; `GITHUB_TOKEN` with `packages:write` |
+| `composite` (recommended) | object store for the device, GHCR for provenance — see below |
+| `ghcr` | a registry namespace exists; `GITHUB_TOKEN` with `packages:write` |
 | `object` | S3/R2 public prefix; set `VYZORIX_BUILD_BASE_URL` and `VYZORIX_BUILD_UPLOAD_CMD` |
 | `local` | dev and dry runs only |
+
+### Why the device path is an object store, not GHCR
+
+A `ghcr.io` blob URL is **not** a device-fetchable URL. It answers an unauthenticated
+GET with a **401 challenge even for a public package**, and its redirected CDN URL is
+**signed and expires in minutes**. The device fetches with a plain GET and no
+credential, so it cannot use a registry blob URL.
+
+The `composite` backend splits the two concerns:
+
+```jsonc
+"publish": {
+  "backend": "composite",
+  "deviceBackend": "object",   // the URL the manifest pins; a plain object URL
+  "recordBackend": "ghcr",     // provenance: an OCI image with a tag
+  "namespace": "owner", "repo": "app", "visibility": "public"
+}
+```
+
+Set `VYZORIX_BUILD_BASE_URL` and `VYZORIX_BUILD_UPLOAD_CMD` for the object store. The
+result's `url` is the object store's (what the device fetches); the `tag` is the GHCR
+image (what a human browses). A record-store failure is a warning, not a refusal.
 
 A backend that cannot return an anonymous URL is refused for a non-`--dry-run` build,
 because the device cannot authenticate.
