@@ -42,7 +42,6 @@ everything else read faster.
 | `MANIFEST_REFERENCE.md` | `vyzorix.toml`, field by field. |
 | `DEPLOY_PIPELINE.md` | What happens to the manifest, stage by stage, and what a failure costs. |
 | `DEPLOY_BUILD.md` | Building the artifacts a manifest references, with `vyzorix build`. |
-| `BUILD_TOOL_CONTRACT.md` | The build tool's design, and why it is shaped this way. |
 | `DEPLOY_SERVER_API.md` | The endpoints a deploy touches. |
 | `DEPLOY_CREDENTIALS.md` | CI tokens, so a pipeline can deploy without an operator. |
 | `DEPLOY_SECRETS.md` | The encrypted side channel for values that must not be in the config. |

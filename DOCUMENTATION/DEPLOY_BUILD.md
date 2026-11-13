@@ -1,14 +1,13 @@
 # Building artifacts for deploy
 
 **Status:** shipped. `vyzorix-builder` builds and publishes; `vyzorix build` drives it.
-**Related:** `BUILD_TOOL_CONTRACT.md` (the design), `DEPLOY_PIPELINE.md` (what happens
-to the artifact after it exists), `MANIFEST_REFERENCE.md` §6 (the artifact reference),
-`CLI_REFERENCE.md` (the command surface), `DEPLOY_CREDENTIALS.md` (the CI path).
+**Related:** `DEPLOY_PIPELINE.md` (what happens to the artifact after it exists),
+`MANIFEST_REFERENCE.md` §6 (the artifact reference), `CLI_REFERENCE.md` (the command
+surface), `DEPLOY_CREDENTIALS.md` (the CI path), `ADR_003_BUILD_TOOL.md` (why the tool
+is shaped this way).
 
 This is the operator's guide to the producer side of a deploy: how to turn a project's
-source into the digest-pinned tarballs a `vyzorix.toml` references. Read
-`BUILD_TOOL_CONTRACT.md` for *why* the tool is shaped this way; read this for *how to
-use it*.
+source into the digest-pinned tarballs a `vyzorix.toml` references.
 
 ---
 
@@ -19,7 +18,7 @@ use it*.
 | `vyzorix.build.toml` | the app developer | **how to build** the project into artifacts |
 | `vyzorix.toml` | the operator | **what to deploy**: which artifact, pinned by digest |
 
-They are separate on purpose (`BUILD_TOOL_CONTRACT.md` §1.1). The recipe changes when
+They are separate on purpose. The recipe changes when
 the build changes; the manifest changes when the deployment changes. `vyzorix build`
 reads the recipe, builds, and **renders** the manifest from the result — so the digests
 in `vyzorix.toml` are never typed by hand.

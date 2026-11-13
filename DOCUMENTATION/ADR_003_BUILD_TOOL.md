@@ -2,8 +2,8 @@
 
 **Status**: Accepted
 **Date**: 2026-11-13
-**Related**: `BUILD_TOOL_CONTRACT.md` (the full design), `DEPLOY_BUILD.md` (the operator
-guide), `ADR-002` (the house style for decisions on record).
+**Related**: `DEPLOY_BUILD.md` (the operator guide), `ADR-002` (the house style for
+decisions on record).
 
 ## Context
 
@@ -90,10 +90,9 @@ unreadable and lets two artifacts silently overwrite one another.
 
 ## Decision 4 — The manifest is rendered by the CLI, not the builder
 
-An earlier draft of the contract had the builder return a `manifestFragment`. That was
-wrong, and the contract is amended (`BUILD_TOOL_CONTRACT.md` §6.2): the builder's result
-carries **artifacts only** (url, sha256, file, tag, size), and the **CLI** renders
-`vyzorix.toml`.
+An earlier draft had the builder return a `manifestFragment`. That was wrong: the
+builder's result carries **artifacts only** (url, sha256, file, tag, size), and the
+**CLI** renders `vyzorix.toml`.
 
 **Why.** The manifest's `[[app]]` block needs the recipe's app-level fields *and* the
 CLI composes `[device]` (id, org) around them, which the builder never sees. More
