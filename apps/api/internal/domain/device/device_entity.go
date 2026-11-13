@@ -48,39 +48,42 @@ func TierFromInt(v int) Tier {
 // scalars, so the GC scans a shorter region. `fieldalignment` enforces it, and a
 // string added to the scalar tail is what it flags.
 type Device struct {
-	UpdatedAt           time.Time
-	CreatedAt           time.Time
-	FCMTokenRefreshedAt *int64
-	DeregisteredAt      *int64
-	DeletionScheduledAt *int64
-	PairingExpiresAt    *int64
-	Metadata            map[string]string
-	SecurityPatch       string
-	ID                  string
-	OrganizationID      string
-	Model               string
-	OSVersion           string
-	FCMToken            string
-	Lifecycle           Lifecycle
-	FirebaseInstallID   string
-	DeviceClass         string
-	OperatorID          string
-	DeviceName          string
-	BuildID             string
-	SupportedABIs       string
-	Manufacturer        string
-	AppVersion          string
-	PublicKey           string
-	SecretPublicKey     string
-	PairingCode         string
-	Tags                []string
-	StorageBytes        int64
-	RAMBytes            int64
-	APIVersion          int
-	LastSeen            int64
-	RegisteredAt        int64
-	Tier                Tier
-	Online              bool
+	UpdatedAt             time.Time
+	CreatedAt             time.Time
+	FCMTokenRefreshedAt   *int64
+	DeregisteredAt        *int64
+	DeletionScheduledAt   *int64
+	PairingExpiresAt      *int64
+	Metadata              map[string]string
+	ReportedAppDigests    map[string]string
+	ReportedConfigVersion *int
+	BuildID               string
+	PublicKey             string
+	OSVersion             string
+	FCMToken              string
+	Lifecycle             Lifecycle
+	FirebaseInstallID     string
+	DeviceClass           string
+	OperatorID            string
+	DeviceName            string
+	OrganizationID        string
+	SupportedABIs         string
+	Manufacturer          string
+	AppVersion            string
+	Model                 string
+	SecretPublicKey       string
+	PairingCode           string
+	SecurityPatch         string
+	ID                    string
+	Tags                  []string
+	RAMBytes              int64
+	APIVersion            int
+	LastSeen              int64
+	RegisteredAt          int64
+	Tier                  Tier
+	StorageBytes          int64
+	ReportedAt            int64
+	Online                bool
 }
 
 // NewDevice creates a new Device with pending lifecycle and the least privileged

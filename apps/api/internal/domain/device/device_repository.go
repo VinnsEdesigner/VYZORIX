@@ -66,6 +66,20 @@ type Repository interface {
 	// UpdateAppVersion records the app version the device reports it is running.
 	UpdateAppVersion(ctx context.Context, id, appVersion string) error
 
+	// UpdateReportedState records what the device says it is actually running: the
+	// config version it holds and, per app, a digest of the artifacts installed.
+	//
+	// configVersion is a pointer so "the device did not report" (nil) is stored as
+	// NULL and stays distinguishable from 0 ("reports holding no config"). The two
+	// must not be conflated: the first is unknown and must never render as healthy.
+	UpdateReportedState(
+		ctx context.Context,
+		id string,
+		configVersion *int,
+		appDigestsJSON string,
+		reportedAt int64,
+	) error
+
 	// SetOnline sets the online status of a device.
 	SetOnline(ctx context.Context, id string, online bool) error
 

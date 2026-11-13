@@ -7,18 +7,20 @@ import (
 
 // TelemetryFrame represents a single telemetry data frame from a device.
 type TelemetryFrame struct {
-	Timestamp    any             `json:"timestamp,omitempty"`
-	Type         string          `json:"type"`
-	DeviceID     string          `json:"deviceId,omitempty"`
-	ActiveDevice string          `json:"activeDevice,omitempty"`
-	AppVersion   string          `json:"appVersion,omitempty"`
-	Raw          json.RawMessage `json:"-"`
-	Uptime       int64           `json:"uptime,omitempty"`
-	RiskScore    int             `json:"riskScore,omitempty"`
-	AudioMode    int             `json:"audioMode,omitempty"`
-	BufferLevel  int             `json:"bufferLevel,omitempty"`
-	ThermalTemp  float64         `json:"thermalTemp,omitempty"`
-	SpeakerOn    bool            `json:"speakerOn,omitempty"`
+	Timestamp     any               `json:"timestamp,omitempty"`
+	AppDigests    map[string]string `json:"appDigests,omitempty"`
+	ConfigVersion *int              `json:"configVersion,omitempty"`
+	AppVersion    string            `json:"appVersion,omitempty"`
+	Type          string            `json:"type"`
+	DeviceID      string            `json:"deviceId,omitempty"`
+	ActiveDevice  string            `json:"activeDevice,omitempty"`
+	Raw           json.RawMessage   `json:"-"`
+	RiskScore     int               `json:"riskScore,omitempty"`
+	ThermalTemp   float64           `json:"thermalTemp,omitempty"`
+	BufferLevel   int               `json:"bufferLevel,omitempty"`
+	AudioMode     int               `json:"audioMode,omitempty"`
+	Uptime        int64             `json:"uptime,omitempty"`
+	SpeakerOn     bool              `json:"speakerOn,omitempty"`
 }
 
 // TelemetryEntry represents a stored telemetry record.

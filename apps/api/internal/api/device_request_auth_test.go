@@ -51,7 +51,8 @@ func deviceAuthServer(t *testing.T, deviceID, publicKeyPEM string) *Server {
 			ram_bytes INTEGER NOT NULL DEFAULT 0, storage_bytes INTEGER NOT NULL DEFAULT 0,
 		deregistered_at INTEGER, deletion_scheduled_at INTEGER, fcm_token_refreshed_at INTEGER,
 		tags TEXT, tier INTEGER NOT NULL DEFAULT 1, public_key TEXT, secret_public_key TEXT, pairing_code TEXT,
-		pairing_expires_at INTEGER)`)
+		pairing_expires_at INTEGER,
+		reported_config_version INTEGER, reported_app_digests TEXT, reported_at INTEGER NOT NULL DEFAULT 0)`)
 	if err != nil {
 		t.Fatalf("schema: %v", err)
 	}

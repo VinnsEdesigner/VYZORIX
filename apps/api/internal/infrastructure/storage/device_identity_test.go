@@ -53,7 +53,8 @@ func newTestDeviceDB(t *testing.T) *sql.DB {
 			public_key TEXT,
 			secret_public_key TEXT,
 			pairing_code TEXT,
-			pairing_expires_at INTEGER)`,
+			pairing_expires_at INTEGER,
+		reported_config_version INTEGER, reported_app_digests TEXT, reported_at INTEGER NOT NULL DEFAULT 0)`,
 	}
 
 	for _, q := range stmts {
