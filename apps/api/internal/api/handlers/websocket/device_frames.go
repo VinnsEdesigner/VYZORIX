@@ -61,13 +61,26 @@ type ApplyReporter interface {
 
 // deviceReadyFrame is the wire shape of a device_ready frame:
 //
-//	{"type":"device_ready","version":7}
+//	{"type":"device_ready","version":7,"success":true}
+//	{"type":"device_ready","version":7,"success":false,"reason":"digest_mismatch"}
 //
-// It is the device's confirmation that it applied a config, which is how the
-// server knows a deploy landed rather than merely being stored (step 8).
+// It is the device's report after an apply, which is how the server knows a deploy
+// landed rather than merely being stored (step 8). `success` and the refusal fields
+// are the device's own verdict: a frame that reports a refusal must NOT be recorded
+// as applied, or the console shows a deploy that never took effect.
 type deviceReadyFrame struct {
 	Type    string `json:"type"`
 	Version int    `json:"version"`
+	Success *bool  `json:"success"`
+	Reason  string `json:"reason"`
+	Detail  string `json:"detail"`
+}
+
+// succeeded reports whether the device says the apply worked. A frame with no
+// `success` field is treated as success: the original wire shape had no field, and
+// a device sending only a version is reporting that it applied one.
+func (f deviceReadyFrame) succeeded() bool {
+	return f.Success == nil || *f.Success
 }
 
 // DeviceFrameHandler routes non-telemetry device frames to the feature that owns
@@ -222,6 +235,19 @@ func (h *DeviceFrameHandler) handleDeviceReady(frame hub.DeviceFrame) {
 
 	if payload.Version <= 0 {
 		h.log.Warn("device_ready frame missing a version", "deviceId", frame.DeviceID)
+
+		return
+	}
+
+	// A refused apply is reported, not recorded. The device keeps running what it
+	// had and reports why; recording it as applied would show the console a deploy
+	// that never took effect, and would hide the refusal from the operator.
+	if !payload.succeeded() {
+		h.log.Warn("device refused a config",
+			"deviceId", frame.DeviceID,
+			"version", payload.Version,
+			"reason", payload.Reason,
+			"detail", payload.Detail)
 
 		return
 	}

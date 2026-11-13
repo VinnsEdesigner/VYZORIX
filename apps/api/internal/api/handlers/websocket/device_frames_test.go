@@ -190,6 +190,55 @@ func TestHandleDeviceReadyDropsAMalformedFrame(t *testing.T) {
 	}
 }
 
+// TestHandleDeviceReadyRecordsARefusalAsNotApplied pins the rule that a device's
+// own verdict is honoured: a frame carrying success=false is a deploy that did not
+// land, and recording it as applied would show the console a version the device is
+// not running.
+func TestHandleDeviceReadyRecordsARefusalAsNotApplied(t *testing.T) {
+	reporter := &fakeReporter{}
+	h := NewDeviceFrameHandler(nil, nil, discardLogger())
+	h.SetApplyReporter(reporter)
+
+	raw := []byte(`{"type":"device_ready","version":4,"success":false,"reason":"digest_mismatch","detail":"extractors"}`)
+	if handled := h.HandleDeviceFrame(context.Background(), hub.DeviceFrame{DeviceID: "dev-1", Type: "device_ready", Raw: raw, Kind: hub.FrameText}); !handled {
+		t.Fatal("device_ready must be reported as handled")
+	}
+
+	if len(reporter.calls) != 0 {
+		t.Fatalf("reporter calls = %+v, want none for a refused apply", reporter.calls)
+	}
+}
+
+// TestHandleDeviceReadyTreatsAnAbsentSuccessFieldAsSuccess keeps the original wire
+// shape working: a frame with only a version is a device reporting it applied one.
+func TestHandleDeviceReadyTreatsAnAbsentSuccessFieldAsSuccess(t *testing.T) {
+	reporter := &fakeReporter{}
+	h := NewDeviceFrameHandler(nil, nil, discardLogger())
+	h.SetApplyReporter(reporter)
+
+	raw := []byte(`{"type":"device_ready","version":5}`)
+	h.HandleDeviceFrame(context.Background(), hub.DeviceFrame{DeviceID: "dev-1", Type: "device_ready", Raw: raw, Kind: hub.FrameText})
+
+	if len(reporter.calls) != 1 || reporter.calls[0] != (appliedCall{"dev-1", 5}) {
+		t.Fatalf("reporter calls = %+v, want [{dev-1 5}]", reporter.calls)
+	}
+}
+
+// TestHandleDeviceReadyRecordsAnExplicitSuccess is the positive twin of the
+// refusal test: success=true is recorded.
+func TestHandleDeviceReadyRecordsAnExplicitSuccess(t *testing.T) {
+	reporter := &fakeReporter{}
+	h := NewDeviceFrameHandler(nil, nil, discardLogger())
+	h.SetApplyReporter(reporter)
+
+	raw := []byte(`{"type":"device_ready","version":6,"success":true}`)
+	h.HandleDeviceFrame(context.Background(), hub.DeviceFrame{DeviceID: "dev-1", Type: "device_ready", Raw: raw, Kind: hub.FrameText})
+
+	if len(reporter.calls) != 1 || reporter.calls[0] != (appliedCall{"dev-1", 6}) {
+		t.Fatalf("reporter calls = %+v, want [{dev-1 6}]", reporter.calls)
+	}
+}
+
 func TestHandleDeviceReadyWithoutAReporterIsHandled(t *testing.T) {
 	h := NewDeviceFrameHandler(nil, nil, discardLogger())
 
