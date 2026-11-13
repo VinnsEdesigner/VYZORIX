@@ -584,6 +584,10 @@ var migrations = []Migration{
 	// inserts, so every audit write failed. This adds device_id, success and
 	// error_msg.
 	{Apply: migrateAddNotificationAuditColumns, Name: "add_notification_audit_columns", Version: 83},
+	// What a device reports it is actually running, from the telemetry heartbeat, so
+	// drift between the server's expectation and the device's reality is visible
+	// continuously rather than only when someone deploys.
+	{Apply: migrateAddDeviceReportedState, Name: "add_device_reported_state", Version: 84},
 }
 
 // runMigrations applies all pending migrations.

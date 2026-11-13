@@ -307,6 +307,11 @@ func (c *Client) processTelemetry(raw []byte, t *telemetry.TelemetryFrame) {
 		}
 	}
 
+	// Record what the device says it is actually running. Folded in here for the same
+	// reason appVersion is: the heartbeat already carries it and this is the cheapest
+	// place to store it.
+	c.recordReportedState(t)
+
 	if c.Hub.telemetryRepo != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -338,6 +343,41 @@ func (c *Client) processTelemetry(raw []byte, t *telemetry.TelemetryFrame) {
 				c.log.Warn("telemetry event processing failed", "deviceId", c.DeviceID, "err", err)
 			}
 		}
+	}
+}
+
+// recordReportedState stores what the device says it is actually running: the config
+// version it holds and, per app, a digest of the artifacts installed.
+//
+// Extracted from processTelemetry, which was at the complexity limit — and it earns
+// its own function anyway, because it is the one place the "does not report" case is
+// decided and that decision deserves to be readable on its own.
+//
+// A nil ConfigVersion means the device did not report state (an older build), so
+// nothing is written: the column stays NULL and reads as unknown, never as healthy.
+// That is deliberately different from a reported 0, which is a real state ("holds no
+// config") and IS written.
+func (c *Client) recordReportedState(t *telemetry.TelemetryFrame) {
+	if t.ConfigVersion == nil || c.Hub.deviceRepo == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	digests := ""
+	if len(t.AppDigests) > 0 {
+		if encoded, err := json.Marshal(t.AppDigests); err == nil {
+			digests = string(encoded)
+		}
+	}
+
+	err := c.Hub.deviceRepo.UpdateReportedState(
+		ctx, c.DeviceID, t.ConfigVersion, digests, time.Now().UnixMilli(),
+	)
+	if err != nil && c.log != nil {
+		c.log.Warn("device reported-state update failed",
+			"deviceId", c.DeviceID, "configVersion", *t.ConfigVersion, "err", err)
 	}
 }
 

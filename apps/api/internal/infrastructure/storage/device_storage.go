@@ -62,8 +62,30 @@ const deviceColumns = `
 	created_at, updated_at, device_name, manufacturer, model, os_version, security_patch,
 	build_id, api_level, supported_abis, ram_bytes, storage_bytes,
 	deregistered_at, deletion_scheduled_at, fcm_token_refreshed_at, tags, tier,
-	public_key, secret_public_key, pairing_code, pairing_expires_at
+	public_key, secret_public_key, pairing_code, pairing_expires_at,
+	reported_config_version, reported_app_digests, reported_at
 `
+
+// applyReportedState copies the reported-state columns onto a device.
+//
+// Shared by the single-row and list scans so the two cannot drift apart — the same
+// reason the columns are declared once. A NULL version leaves the pointer nil, which
+// is "does not report" and stays distinguishable from a reported 0.
+func applyReportedState(
+	d *device.Device,
+	configVersion sql.NullInt64,
+	appDigests sql.NullString,
+	reportedAt sql.NullInt64,
+) {
+	if configVersion.Valid {
+		v := int(configVersion.Int64)
+		d.ReportedConfigVersion = &v
+	}
+	if appDigests.Valid && appDigests.String != "" {
+		_ = json.Unmarshal([]byte(appDigests.String), &d.ReportedAppDigests)
+	}
+	d.ReportedAt = reportedAt.Int64
+}
 
 // scanDevice scans a device from a row.
 func scanDevice(row *sql.Row) (*device.Device, error) {
@@ -73,6 +95,10 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 	var publicKey, secretPublicKey, pairingCode sql.NullString
 	var deregisteredAt, deletionScheduledAt, fcmTokenRefreshedAt, tier, pairingExpiresAt sql.NullInt64
 	var apiLevel, ramBytes, storageBytes sql.NullInt64
+	// What the device reports it is running. reported_config_version is nullable so
+	// "does not report" (NULL) stays distinct from "reports 0".
+	var reportedConfigVersion, reportedAt sql.NullInt64
+	var reportedAppDigests sql.NullString
 	// created_at/updated_at are declared TIMESTAMP but the driver hands back whatever
 	// was written, which is an ISO8601 string. Scanning them straight into time.Time
 	// fails at runtime with "unsupported Scan, storing driver.Value type string into
@@ -88,6 +114,7 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 		&buildID, &apiLevel, &supportedABIs, &ramBytes, &storageBytes,
 		&deregisteredAt, &deletionScheduledAt, &fcmTokenRefreshedAt, &tagsJSON, &tier,
 		&publicKey, &secretPublicKey, &pairingCode, &pairingExpiresAt,
+		&reportedConfigVersion, &reportedAppDigests, &reportedAt,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -125,6 +152,7 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 	if tagsJSON.Valid && tagsJSON.String != "" {
 		_ = json.Unmarshal([]byte(tagsJSON.String), &d.Tags)
 	}
+	applyReportedState(&d, reportedConfigVersion, reportedAppDigests, reportedAt)
 
 	if deregisteredAt.Valid {
 		d.DeregisteredAt = &deregisteredAt.Int64
@@ -156,6 +184,8 @@ func scanDevices(rows *sql.Rows) ([]*device.Device, error) {
 		var publicKey, secretPublicKey, pairingCode sql.NullString
 		var deregisteredAt, deletionScheduledAt, fcmTokenRefreshedAt, tier, pairingExpiresAt sql.NullInt64
 		var apiLevel, ramBytes, storageBytes sql.NullInt64
+		var reportedConfigVersion, reportedAt sql.NullInt64
+		var reportedAppDigests sql.NullString
 		var createdAt, updatedAt any
 
 		if err := rows.Scan(
@@ -166,6 +196,7 @@ func scanDevices(rows *sql.Rows) ([]*device.Device, error) {
 			&buildID, &apiLevel, &supportedABIs, &ramBytes, &storageBytes,
 			&deregisteredAt, &deletionScheduledAt, &fcmTokenRefreshedAt, &tagsJSON, &tier,
 			&publicKey, &secretPublicKey, &pairingCode, &pairingExpiresAt,
+			&reportedConfigVersion, &reportedAppDigests, &reportedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -197,6 +228,7 @@ func scanDevices(rows *sql.Rows) ([]*device.Device, error) {
 		if tagsJSON.Valid && tagsJSON.String != "" {
 			_ = json.Unmarshal([]byte(tagsJSON.String), &d.Tags)
 		}
+		applyReportedState(&d, reportedConfigVersion, reportedAppDigests, reportedAt)
 
 		if deregisteredAt.Valid {
 			d.DeregisteredAt = &deregisteredAt.Int64
@@ -412,6 +444,29 @@ func (r *DeviceRepository) UpdateAppVersion(ctx context.Context, id, appVersion 
 	_, err := r.exec(ctx,
 		"UPDATE devices SET app_version = ?, updated_at = ? WHERE id = ?",
 		appVersion, time.Now(), id,
+	)
+
+	return err
+}
+
+// UpdateReportedState records what the device says it is actually running.
+//
+// The device reports this on every telemetry heartbeat, so the comparison against
+// the stored config can happen on read rather than only at apply time. A nil
+// configVersion is stored as NULL, which is how "this device does not report state"
+// stays distinguishable from "it reports holding no config".
+func (r *DeviceRepository) UpdateReportedState(
+	ctx context.Context,
+	id string,
+	configVersion *int,
+	appDigestsJSON string,
+	reportedAt int64,
+) error {
+	_, err := r.exec(ctx,
+		`UPDATE devices
+		    SET reported_config_version = ?, reported_app_digests = ?, reported_at = ?, updated_at = ?
+		  WHERE id = ?`,
+		configVersion, appDigestsJSON, reportedAt, time.Now(), id,
 	)
 
 	return err

@@ -1,6 +1,7 @@
 package deployhandlers
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
@@ -8,6 +9,8 @@ import (
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/deploy"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/deploystate"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/deployconfig"
 )
 
 // The deploy config surface: POST /v1/deploy, GET /v1/deploy/{imei},
@@ -146,6 +149,26 @@ type currentResponse struct {
 	Kind      string `json:"kind"`
 	Version   int    `json:"version"`
 	CreatedAt int64  `json:"createdAt"`
+	// Drift is how the device's *reported* state relates to this stored config. It
+	// is the answer to "is the device running what the server expects", computed on
+	// read so it is current on every call rather than only at apply time.
+	//
+	// `state` is one of in_sync | unknown | behind | ahead | app_changed. `unknown`
+	// covers both "the device does not report state" and "no config is stored", and
+	// is never rendered as healthy.
+	Drift driftResponse `json:"drift"`
+}
+
+// driftResponse is the drift verdict as the console reads it.
+type driftResponse struct {
+	State string `json:"state"`
+	// Detail names what differs, for a human: "app vfd: expected 3f2a…, running 9c11…".
+	Detail string `json:"detail"`
+	// ReportedVersion is what the device says it holds, or null when it does not
+	// report state. Null and 0 are different: null is unknown, 0 is "holds no config".
+	ReportedVersion *int `json:"reportedVersion"`
+	// ReportedAt is when the device last reported, epoch millis, or 0 when never.
+	ReportedAt int64 `json:"reportedAt"`
 }
 
 // Current handles GET /v1/deploy/{imei}.
@@ -187,7 +210,63 @@ func (h *Handler) Current(c *gin.Context) {
 		Kind:      string(record.Kind),
 		Document:  record.Document,
 		CreatedAt: record.CreatedAt.UnixMilli(),
+		Drift:     h.driftFor(c.Request.Context(), orgID, record),
 	})
+}
+
+// driftFor compares the config the server expects against what the device says it is
+// running, and returns the verdict for the console.
+//
+// It is computed on read rather than stored, so it is current on every call — a
+// device that drifted ten minutes ago and has since re-applied reads as in-sync,
+// without anything having to notice the recovery. The comparison itself is one pure
+// function (`deploystate.Compare`), so this method only gathers its inputs.
+//
+// A device that cannot be loaded reads as unknown rather than in-sync: an error must
+// never be reported as health.
+func (h *Handler) driftFor(
+	ctx context.Context,
+	orgID string,
+	record *deployconfig.Record,
+) driftResponse {
+	expected := deploystate.ExpectedFromDocument(record.Document)
+	// The stored config's own version is the authority on what is expected — the
+	// document's `version` node and the record agree, and the record is what the
+	// device is told to fetch.
+	expected.Version = record.Version
+
+	dev, err := h.devices.FindForOrg(ctx, record.DeviceID, orgID)
+	if err != nil || dev == nil {
+		return driftResponse{
+			State:  string(deploystate.DriftUnknown),
+			Detail: "the device could not be read",
+		}
+	}
+
+	reported := deploystate.Reported{
+		Version:       versionOrZero(dev.ReportedConfigVersion),
+		AppDigests:    dev.ReportedAppDigests,
+		ReportedState: dev.ReportedConfigVersion != nil,
+	}
+
+	drift := deploystate.Compare(expected, reported)
+
+	return driftResponse{
+		State:           string(drift.State),
+		Detail:          drift.Detail,
+		ReportedVersion: dev.ReportedConfigVersion,
+		ReportedAt:      dev.ReportedAt,
+	}
+}
+
+// versionOrZero dereferences an optional version. A nil pointer is "not reported",
+// and the caller has already marked that as such; this only avoids a nil deref.
+func versionOrZero(v *int) int {
+	if v == nil {
+		return 0
+	}
+
+	return *v
 }
 
 // Document handles GET /v1/deploy/{imei}/document: the signed config verbatim,

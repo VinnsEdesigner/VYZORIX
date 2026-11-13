@@ -21,6 +21,17 @@ type TelemetryFrame struct {
 	// AppVersion is the app version the device reports it is running, so the
 	// device record tracks the current build rather than the one at enroll.
 	AppVersion string `json:"appVersion,omitempty"`
+	// ConfigVersion is the config version the device says it actually holds. It is
+	// what the applier recorded on a successful apply, not what was requested, so
+	// comparing it to the stored config is what makes drift visible continuously.
+	//
+	// A pointer, so "the device did not report" (nil) is distinguishable from "the
+	// device reports version 0" (no config installed). The first is unknown and must
+	// never read as healthy; the second is a real state.
+	ConfigVersion *int `json:"configVersion,omitempty"`
+	// AppDigests is app name → a digest of the artifacts installed for it. It catches
+	// the drift the version cannot: an app edited or replaced in place.
+	AppDigests map[string]string `json:"appDigests,omitempty"`
 }
 
 // TelemetryEntry represents a stored telemetry record.

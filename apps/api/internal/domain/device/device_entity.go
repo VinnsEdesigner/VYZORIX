@@ -81,6 +81,16 @@ type Device struct {
 	RegisteredAt        int64
 	Tier                Tier
 	Online              bool
+	// ReportedConfigVersion is the config version the device says it actually holds,
+	// from its telemetry heartbeat. Nil means the device does not report state (an
+	// older build), which is distinguishable from 0 ("reports holding no config") —
+	// the first is unknown and must never render as healthy.
+	ReportedConfigVersion *int
+	// ReportedAppDigests is app name → the digest of the artifacts the device says are
+	// installed, as reported. Empty when the device does not report state.
+	ReportedAppDigests map[string]string
+	// ReportedAt is when the device last reported, epoch millis, or 0 when never.
+	ReportedAt int64
 }
 
 // NewDevice creates a new Device with pending lifecycle and the least privileged

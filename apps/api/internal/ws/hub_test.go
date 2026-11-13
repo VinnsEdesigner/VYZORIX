@@ -69,6 +69,16 @@ func (r *noopDeviceRepo) Delete(context.Context, string) error                  
 func (r *noopDeviceRepo) DeleteByDeviceID(context.Context, device.DeviceID) error { return nil }
 func (r *noopDeviceRepo) UpdateFCMToken(context.Context, string, string) error    { return nil }
 func (r *noopDeviceRepo) UpdateAppVersion(context.Context, string, string) error  { return nil }
+
+func (r *noopDeviceRepo) UpdateReportedState(
+	context.Context,
+	string,
+	*int,
+	string,
+	int64,
+) error {
+	return nil
+}
 func (r *noopDeviceRepo) SetOnlineByDeviceID(context.Context, device.DeviceID, bool) error {
 	return nil
 }
