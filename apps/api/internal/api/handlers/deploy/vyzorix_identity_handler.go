@@ -2,6 +2,7 @@ package deployhandlers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -39,11 +40,12 @@ type identityResponse struct {
 }
 
 // deviceSummary is the device half of the identity, present only when the request
-// named a device.
+// named a device. SupportedABIs is what the device reported at enroll.
 type deviceSummary struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Tier string `json:"tier"`
+	ID            string   `json:"id"`
+	Name          string   `json:"name"`
+	Tier          string   `json:"tier"`
+	SupportedABIs []string `json:"supportedAbis,omitempty"`
 }
 
 // Identity handles GET /v1/deploy/whoami: who the caller is, which org, and — if
@@ -148,8 +150,8 @@ func (h *Handler) orgName(ctx context.Context, orgID string) string {
 	return org.Name
 }
 
-// deviceSummary resolves the named device's tier. A device the caller cannot see
-// yields no summary rather than a refusal: the identity call is not the
+// deviceSummary resolves the named device's tier and ABIs. A device the caller
+// cannot see yields no summary rather than a refusal: the identity call is not the
 // authorization point, and the deploy itself still enforces the scope.
 func (h *Handler) deviceSummary(ctx context.Context, orgID, deviceID string) *deviceSummary {
 	if deviceID == "" || h.devices == nil {
@@ -161,7 +163,30 @@ func (h *Handler) deviceSummary(ctx context.Context, orgID, deviceID string) *de
 		return nil
 	}
 
-	return &deviceSummary{ID: dev.ID, Name: dev.DeviceName, Tier: tierLabel(int(dev.Tier))}
+	return &deviceSummary{
+		ID:            dev.ID,
+		Name:          dev.DeviceName,
+		Tier:          tierLabel(int(dev.Tier)),
+		SupportedABIs: splitABIs(dev.SupportedABIs),
+	}
+}
+
+// splitABIs turns the stored comma-joined ABI list into a slice.
+func splitABIs(joined string) []string {
+	if joined == "" {
+		return nil
+	}
+
+	parts := strings.Split(joined, ",")
+	abis := make([]string, 0, len(parts))
+
+	for _, p := range parts {
+		if p = strings.TrimSpace(p); p != "" {
+			abis = append(abis, p)
+		}
+	}
+
+	return abis
 }
 
 // tierLabel names a device tier for a human. The numbers are the contract between

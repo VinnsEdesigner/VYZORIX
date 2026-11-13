@@ -3,9 +3,9 @@
 **Status:** shipped. The schema lives in the public module
 `github.com/VinnsEdesigner/vyzorix-spec`; the server serves it at
 `GET /v1/deploy/schema/{version}` and the CLI validates against that served copy.
-**Related:** `DEPLOY_PIPELINE.md` (what happens to the file) and `CLI_REFERENCE.md` (the
-command that uploads it). This reference is the authoritative description of the
-manifest.
+**Related:** `DEPLOY_PIPELINE.md` (what happens to the file), `CLI_REFERENCE.md` (the
+command that uploads it), and `DEPLOY_BUILD.md` (how the artifacts a manifest references
+are built). This reference is the authoritative description of the manifest.
 
 This is the reference for the one file a human writes. Read the top half once, then
 keep the tables open while you write a manifest.

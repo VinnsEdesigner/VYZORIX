@@ -15,8 +15,8 @@ import (
 
 // recordingFrameHandler captures the frames ReadPump routes to the handler.
 type recordingFrameHandler struct {
-	mu     sync.Mutex
 	frames []recordedFrame
+	mu     sync.Mutex
 }
 
 type recordedFrame struct {

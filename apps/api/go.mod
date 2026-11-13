@@ -5,7 +5,7 @@ go 1.27.3
 require (
 	firebase.google.com/go/v4 v4.21.0
 	github.com/VinnsEdesigner/libv/go v0.0.0-20261101223253-61e45396f71a
-	github.com/VinnsEdesigner/vyzorix-spec v0.1.0
+	github.com/VinnsEdesigner/vyzorix-spec v0.2.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-ldap/ldap/v3 v3.4.13
 	github.com/golang-jwt/jwt/v5 v5.2.2

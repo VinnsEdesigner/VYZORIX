@@ -123,6 +123,8 @@ github.com/VinnsEdesigner/libv/go v0.0.0-20261101223253-61e45396f71a h1:ll9WWMnq
 github.com/VinnsEdesigner/libv/go v0.0.0-20261101223253-61e45396f71a/go.mod h1:GQn/e57AgT6QFDY2DPMk39HiggmatwYCRgwl3xfUz+s=
 github.com/VinnsEdesigner/vyzorix-spec v0.1.0 h1:9h8dSTM6xVIymdtmPXUtSXde57ZF8AEqfA+/rE9DM3w=
 github.com/VinnsEdesigner/vyzorix-spec v0.1.0/go.mod h1:B3x6jr/XpW4XjAr0+T/Z6zMad+u4ScrnaueXgTYvPpU=
+github.com/VinnsEdesigner/vyzorix-spec v0.2.0 h1:AoEB8TLOayidaHtWOUk5d9TbxVoOk9EO4aBCqgTfjpw=
+github.com/VinnsEdesigner/vyzorix-spec v0.2.0/go.mod h1:B3x6jr/XpW4XjAr0+T/Z6zMad+u4ScrnaueXgTYvPpU=
 github.com/alecthomas/assert/v2 v2.11.0 h1:2Q9r3ki8+JYXvGsDyBXwH3LcJ+WK5D0gc5E8vS6K3D0=
 github.com/alecthomas/assert/v2 v2.11.0/go.mod h1:Bze95FyfUr7x34QZrjL+XP+0qgp/zg8yS+TtBj1WA3k=
 github.com/alecthomas/chroma/v2 v2.27.0 h1:FodwmyOBgJULFYmDqibcp9pvfDLWdtPRh9v/r5BXYZs=

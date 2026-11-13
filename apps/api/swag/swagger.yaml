@@ -81,6 +81,10 @@ definitions:
         type: string
       name:
         type: string
+      supportedAbis:
+        items:
+          type: string
+        type: array
       tier:
         type: string
     type: object
@@ -6909,6 +6913,31 @@ paths:
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
       summary: Fetch a secret's ciphertext (device)
+      tags:
+      - deploy
+  /deploy/build-schema/{version}:
+    get:
+      description: The versioned JSON Schema for vyzorix.build.toml. Generated from
+        the vyzorix-spec module.
+      parameters:
+      - description: schema version
+        in: path
+        name: version
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: the JSON Schema
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: unknown schema version
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: The build-recipe JSON Schema
       tags:
       - deploy
   /deploy/schema/{version}:

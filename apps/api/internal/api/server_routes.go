@@ -360,6 +360,9 @@ func (s *Server) setupDeploySchemaRoute(public *gin.RouterGroup) {
 	// Registered on the public /v1 group, beside the tenant group rather than
 	// inside it, so no auth middleware runs.
 	public.GET("/deploy/schema/:version", s.deployHandler.Schema)
+
+	// The build-recipe schema is public for the same reason.
+	public.GET("/deploy/build-schema/:version", s.deployHandler.BuildSchema)
 }
 
 // resolveDeployCredential resolves a presented deploy credential to the device

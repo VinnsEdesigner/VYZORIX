@@ -4,8 +4,8 @@
 and applies. The CLI drives it.
 **Related:** `MANIFEST_REFERENCE.md` (the input), `CLI_REFERENCE.md` (the command),
 `DEPLOY_SERVER_API.md` (the endpoints), `DEPLOY_SECRETS.md` (the secret channel),
-`DEPLOY_CREDENTIALS.md` (the CI path). This is the authoritative walkthrough of the
-deploy path.
+`DEPLOY_CREDENTIALS.md` (the CI path), `DEPLOY_BUILD.md` (producing the artifacts this
+pipeline delivers). This is the authoritative walkthrough of the deploy path.
 
 This document walks the whole path a deployment takes, from the file on the operator's
 laptop to apps running on a phone, and says at each stage **who decides** and **what

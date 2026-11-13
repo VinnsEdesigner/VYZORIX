@@ -5427,6 +5427,42 @@ const docTemplate = `{
                 }
             }
         },
+        "/deploy/build-schema/{version}": {
+            "get": {
+                "description": "The versioned JSON Schema for vyzorix.build.toml. Generated from the vyzorix-spec module.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deploy"
+                ],
+                "summary": "The build-recipe JSON Schema",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "schema version",
+                        "name": "version",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "the JSON Schema",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "unknown schema version",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/deploy/schema/{version}": {
             "get": {
                 "description": "The versioned JSON Schema for vyzorix.toml. Generated from the vyzorix-spec module.",
@@ -11824,6 +11860,12 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "supportedAbis": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "tier": {
                     "type": "string"

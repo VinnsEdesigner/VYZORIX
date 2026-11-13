@@ -5,7 +5,7 @@ this document is the reference for it, kept beside the server because the CLI an
 server are two halves of one contract.
 **Related:** `DEPLOY_PIPELINE.md` (what a deploy does, stage by stage),
 `MANIFEST_REFERENCE.md` (the file it uploads), `DEPLOY_SERVER_API.md` (the endpoints the
-CLI calls).
+CLI calls), and `DEPLOY_BUILD.md` (the `build` command and the tool it delegates to).
 
 ---
 

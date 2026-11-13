@@ -162,9 +162,9 @@ type SessionIdentity struct {
 	OrgName   string   `json:"orgName"`
 	Role      string   `json:"role"`
 	RoleLabel string   `json:"roleLabel"`
+	Allowlist []string `json:"allowlist"`
 	Tier      int      `json:"tier"`
 	ExpiresAt int64    `json:"expiresAt"`
-	Allowlist []string `json:"allowlist"`
 }
 
 // EncodeSessionOpen builds an OPEN payload: the session id, the window size, and
@@ -210,13 +210,13 @@ func DecodeSessionOpen(payload []byte) (sessionID string, rows, cols uint16, ide
 	}
 
 	var id SessionIdentity
-	if jerr := json.Unmarshal(rest, &id); jerr != nil {
-		// A malformed identity is not fatal to the open: the size is what the shell
-		// needs, and the operator is simply unknown.
-		return sessionID, rows, cols, nil, nil
+	if json.Unmarshal(rest, &id) == nil {
+		return sessionID, rows, cols, &id, nil
 	}
 
-	return sessionID, rows, cols, &id, nil
+	// A malformed identity is not fatal to the open: the size is what the shell
+	// needs, and the operator is simply unknown.
+	return sessionID, rows, cols, nil, nil
 }
 
 // DecodeSessionData splits a session-prefixed payload into its session ID and

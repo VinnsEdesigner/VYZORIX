@@ -11,6 +11,7 @@ type TelemetryFrame struct {
 	Type         string          `json:"type"`
 	DeviceID     string          `json:"deviceId,omitempty"`
 	ActiveDevice string          `json:"activeDevice,omitempty"`
+	AppVersion   string          `json:"appVersion,omitempty"`
 	Raw          json.RawMessage `json:"-"`
 	Uptime       int64           `json:"uptime,omitempty"`
 	RiskScore    int             `json:"riskScore,omitempty"`
@@ -18,9 +19,6 @@ type TelemetryFrame struct {
 	BufferLevel  int             `json:"bufferLevel,omitempty"`
 	ThermalTemp  float64         `json:"thermalTemp,omitempty"`
 	SpeakerOn    bool            `json:"speakerOn,omitempty"`
-	// AppVersion is the app version the device reports it is running, so the
-	// device record tracks the current build rather than the one at enroll.
-	AppVersion string `json:"appVersion,omitempty"`
 }
 
 // TelemetryEntry represents a stored telemetry record.
