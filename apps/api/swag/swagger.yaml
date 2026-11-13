@@ -53,6 +53,8 @@ definitions:
         type: string
       document:
         type: string
+      drift:
+        $ref: '#/definitions/internal_api_handlers_deploy.driftResponse'
       kind:
         type: string
       version:
@@ -86,6 +88,17 @@ definitions:
           type: string
         type: array
       tier:
+        type: string
+    type: object
+  internal_api_handlers_deploy.driftResponse:
+    properties:
+      detail:
+        type: string
+      reportedAt:
+        type: integer
+      reportedVersion:
+        type: integer
+      state:
         type: string
     type: object
   internal_api_handlers_deploy.identityResponse:

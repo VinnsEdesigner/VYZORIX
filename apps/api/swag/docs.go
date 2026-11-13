@@ -11818,6 +11818,9 @@ const docTemplate = `{
                 "document": {
                     "type": "string"
                 },
+                "drift": {
+                    "$ref": "#/definitions/internal_api_handlers_deploy.driftResponse"
+                },
                 "kind": {
                     "type": "string"
                 },
@@ -11868,6 +11871,23 @@ const docTemplate = `{
                     }
                 },
                 "tier": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_deploy.driftResponse": {
+            "type": "object",
+            "properties": {
+                "detail": {
+                    "type": "string"
+                },
+                "reportedAt": {
+                    "type": "integer"
+                },
+                "reportedVersion": {
+                    "type": "integer"
+                },
+                "state": {
                     "type": "string"
                 }
             }
