@@ -144,31 +144,20 @@ func markApps(markings []deploy.AppMarking) []appMarking {
 // because the console shows it and the operator can compare it to what the device
 // reports.
 type currentResponse struct {
-	DeviceID  string `json:"deviceId"`
-	Document  string `json:"document"`
-	Kind      string `json:"kind"`
-	Version   int    `json:"version"`
-	CreatedAt int64  `json:"createdAt"`
-	// Drift is how the device's *reported* state relates to this stored config. It
-	// is the answer to "is the device running what the server expects", computed on
-	// read so it is current on every call rather than only at apply time.
-	//
-	// `state` is one of in_sync | unknown | behind | ahead | app_changed. `unknown`
-	// covers both "the device does not report state" and "no config is stored", and
-	// is never rendered as healthy.
-	Drift driftResponse `json:"drift"`
+	DeviceID  string        `json:"deviceId"`
+	Document  string        `json:"document"`
+	Kind      string        `json:"kind"`
+	Drift     driftResponse `json:"drift"`
+	Version   int           `json:"version"`
+	CreatedAt int64         `json:"createdAt"`
 }
 
 // driftResponse is the drift verdict as the console reads it.
 type driftResponse struct {
-	State string `json:"state"`
-	// Detail names what differs, for a human: "app vfd: expected 3f2a…, running 9c11…".
-	Detail string `json:"detail"`
-	// ReportedVersion is what the device says it holds, or null when it does not
-	// report state. Null and 0 are different: null is unknown, 0 is "holds no config".
-	ReportedVersion *int `json:"reportedVersion"`
-	// ReportedAt is when the device last reported, epoch millis, or 0 when never.
-	ReportedAt int64 `json:"reportedAt"`
+	ReportedVersion *int   `json:"reportedVersion"`
+	State           string `json:"state"`
+	Detail          string `json:"detail"`
+	ReportedAt      int64  `json:"reportedAt"`
 }
 
 // Current handles GET /v1/deploy/{imei}.

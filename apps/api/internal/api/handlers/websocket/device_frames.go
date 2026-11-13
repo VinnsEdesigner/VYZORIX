@@ -69,11 +69,11 @@ type ApplyReporter interface {
 // are the device's own verdict: a frame that reports a refusal must NOT be recorded
 // as applied, or the console shows a deploy that never took effect.
 type deviceReadyFrame struct {
-	Type    string `json:"type"`
-	Version int    `json:"version"`
 	Success *bool  `json:"success"`
+	Type    string `json:"type"`
 	Reason  string `json:"reason"`
 	Detail  string `json:"detail"`
+	Version int    `json:"version"`
 }
 
 // succeeded reports whether the device says the apply worked. A frame with no
