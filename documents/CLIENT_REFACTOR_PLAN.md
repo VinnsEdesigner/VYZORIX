@@ -14,7 +14,7 @@ This document outlines all client-side changes needed to support the multi-tenan
 API_Client/src/
 ├── domain/                    # Domain entities & mappers
 │   ├── auth/
-│   │   ├── auth-entity.ts          # Operator, Session types
+│   │   ├── auth-entity.ts          # User, Session types
 │   │   ├── auth-mappers.ts        # API → Domain mapping
 │   │   └── auth-validators.ts
 │   ├── oauth/
@@ -187,7 +187,7 @@ packages/API_Client/src/vyzorServer/graphql/
 type Organization {
   id: ID!
   name: String!
-  createdBy: Operator!
+  createdBy: User!
   members: [OrganizationMembership!]!
   memberCount: Int!
   createdAt: DateTime!
@@ -197,10 +197,10 @@ type Organization {
 type OrganizationMembership {
   id: ID!
   organization: Organization!
-  operator: Operator!
+  user: User!
   role: OrgRole!
   joinedAt: DateTime!
-  invitedBy: Operator
+  invitedBy: User
 }
 
 enum OrgRole {
@@ -216,7 +216,7 @@ type Invitation {
   email: String!
   role: OrgRole!
   status: InvitationStatus!
-  invitedBy: Operator!
+  invitedBy: User!
   invitedAt: DateTime!
   expiresAt: DateTime!
   inviterNotes: String
@@ -229,8 +229,8 @@ enum InvitationStatus {
   EXPIRED
 }
 
-# UPDATED: Operator type
-type Operator {
+# UPDATED: User type
+type User {
   id: ID!
   email: String!
   name: String!
@@ -243,14 +243,14 @@ type Device {
   id: ID!
   imei: String!
   organization: Organization!  # NEW
-  operator: Operator!
+  user: User!
   # ... other fields
 }
 
 # UPDATED: Session type
 type Session {
   id: ID!
-  operator: Operator!
+  user: User!
   selectedOrganization: Organization  # NEW
   memberships: [OrganizationMembership!]!  # NEW
   createdAt: DateTime!
@@ -316,7 +316,7 @@ apps/web/src/routes/
 | `auth.callback.tsx` | Handle new OAuth error codes (email_required, etc.) |
 | `login.tsx` | Add "Join Organization" option |
 | `create-account.tsx` | Show "Create or Join Organization" after signup |
-| `settings.tsx` | Update operator settings page |
+| `settings.tsx` | Update user settings page |
 | `device.tsx` | Add org context to device operations |
 | `__root.tsx` | Add org context provider |
 
@@ -448,7 +448,7 @@ apps/web/src/components/
 ┌─────────────────────────────────────────────────────────────┐
 │  1. User signs up (OAuth or Email)                          │
 │                                                              │
-│  2. Operator created (no org membership)                    │
+│  2. User created (no org membership)                    │
 │                                                              │
 │  3. Redirect to "Join or Create Organization" page         │
 │                                                              │
@@ -664,7 +664,7 @@ const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ organizationId, o
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="operator">Operator</SelectItem>
+                  <SelectItem value="operator">User</SelectItem>
                   <SelectItem value="viewer">Viewer</SelectItem>
                 </SelectContent>
               </Select>
@@ -875,15 +875,15 @@ export interface OrganizationWithMembers extends Organization {
 // domain/membership/membership-entity.ts
 
 import type { OrgRole, Organization } from "../organization";
-import type { Operator } from "../auth";
+import type { User } from "../auth";
 
 export interface OrganizationMembership {
   id: string;
   organization: Organization;
-  operator: Operator;
+  user: User;
   role: OrgRole;
   joinedAt: string;
-  invitedBy?: Operator;
+  invitedBy?: User;
   status: "active" | "removed";
 }
 
@@ -898,7 +898,7 @@ export interface UpdateMemberRoleRequest {
 // domain/invitation/invitation-entity.ts
 
 import type { OrgRole, Organization } from "../organization";
-import type { Operator } from "../auth";
+import type { User } from "../auth";
 
 export type InvitationStatus = "pending" | "approved" | "rejected" | "expired";
 
@@ -911,7 +911,7 @@ export interface Invitation {
   token: string;
   inviterNotes?: string;
   inviteeNotes?: string;
-  invitedBy: Operator;
+  invitedBy: User;
   invitedAt: string;
   respondedAt?: string;
   expiresAt: string;

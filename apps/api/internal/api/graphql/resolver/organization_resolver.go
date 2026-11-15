@@ -26,12 +26,12 @@ func (r *Resolver) GetOrganization(p graphql.ResolveParams) (interface{}, error)
 		return nil, r.Presenter.BadRequestError("organization ID is required")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
 
-	// Check if operator is a member of the organization.
+	// Check if user is a member of the organization.
 	if err := r.MemberService.CheckCanManageOrganization(ctx, op.ID, id); err != nil {
 		return nil, r.Presenter.ForbiddenError("not a member of this organization")
 	}
@@ -48,7 +48,7 @@ func (r *Resolver) GetOrganization(p graphql.ResolveParams) (interface{}, error)
 func (r *Resolver) GetOrganizations(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -85,7 +85,7 @@ func (r *Resolver) GetOrganizations(p graphql.ResolveParams) (interface{}, error
 func (r *Resolver) GetMyMemberships(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -101,7 +101,7 @@ func (r *Resolver) GetMyMemberships(p graphql.ResolveParams) (interface{}, error
 	}
 
 	// Use paginated service method.
-	result, err := r.MemberService.ListOperatorMembershipsPaginated(ctx, op.ID, page, limit)
+	result, err := r.MemberService.ListUserMembershipsPaginated(ctx, op.ID, page, limit)
 	if err != nil {
 		return nil, r.Presenter.InternalError("failed to list memberships")
 	}
@@ -127,12 +127,12 @@ func (r *Resolver) GetOrganizationMembers(p graphql.ResolveParams) (interface{},
 		return nil, err
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
 
-	// Check if operator is a member.
+	// Check if user is a member.
 	err = r.MemberService.CheckCanManageOrganization(ctx, op.ID, orgID)
 	if err != nil {
 		return nil, r.Presenter.ForbiddenError("not a member of this organization")
@@ -175,12 +175,12 @@ func (r *Resolver) GetOrganizationInvitations(p graphql.ResolveParams) (interfac
 		return nil, err
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
 
-	// Check if operator is a member.
+	// Check if user is a member.
 	err = r.MemberService.CheckCanManageOrganization(ctx, op.ID, orgID)
 	if err != nil {
 		return nil, r.Presenter.ForbiddenError("not a member of this organization")
@@ -218,12 +218,12 @@ func (r *Resolver) GetOrganizationInvitations(p graphql.ResolveParams) (interfac
 func (r *Resolver) GetMyInvitations(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
 
-	// Validate operator has an email set.
+	// Validate user has an email set.
 	if op.Email == "" {
 		// Return empty array if no email - user needs to set their email first.
 		return []map[string]interface{}{}, nil
@@ -277,7 +277,7 @@ func (r *Resolver) CreateOrganization(p graphql.ResolveParams) (interface{}, err
 		maxMembers = 100
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -307,7 +307,7 @@ func (r *Resolver) CreateOrganization(p graphql.ResolveParams) (interface{}, err
 			"id":             fmt.Sprintf("evt-%d", time.Now().UnixNano()),
 			"type":           "created",
 			"organizationId": org.ID,
-			"operatorId":     op.ID,
+			"userId":     op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -339,12 +339,12 @@ func (r *Resolver) UpdateOrganization(p graphql.ResolveParams) (interface{}, err
 		isActive = false // false means don't update.
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
 
-	// Check if operator has admin rights.
+	// Check if user has admin rights.
 	if err := r.MemberService.CheckCanManageOrganization(ctx, op.ID, id); err != nil {
 		return nil, r.Presenter.ForbiddenError("insufficient permissions to update organization")
 	}
@@ -382,7 +382,7 @@ func (r *Resolver) UpdateOrganization(p graphql.ResolveParams) (interface{}, err
 			"id":             fmt.Sprintf("evt-%d", time.Now().UnixNano()),
 			"type":           eventType,
 			"organizationId": id,
-			"operatorId":     op.ID,
+			"userId":     op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -399,12 +399,12 @@ func (r *Resolver) DeleteOrganization(p graphql.ResolveParams) (interface{}, err
 		return nil, r.Presenter.BadRequestError("organization ID is required")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
 
-	// Check if operator is a super_admin of this organization.
+	// Check if user is a super_admin of this organization.
 	membership, err := r.MemberService.GetMembership(ctx, op.ID, id)
 	if err != nil {
 		return nil, r.Presenter.ForbiddenError("must be a super_admin to delete organization")
@@ -425,7 +425,7 @@ func (r *Resolver) DeleteOrganization(p graphql.ResolveParams) (interface{}, err
 			"id":             fmt.Sprintf("evt-%d", time.Now().UnixNano()),
 			"type":           "deleted",
 			"organizationId": id,
-			"operatorId":     op.ID,
+			"userId":     op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -454,12 +454,12 @@ func (r *Resolver) InviteMember(p graphql.ResolveParams) (interface{}, error) {
 		notes = "" // optional field.
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
 
-	// Check if operator can manage members.
+	// Check if user can manage members.
 	err = r.MemberService.CheckCanManageMembers(ctx, op.ID, orgID)
 	if err != nil {
 		return nil, r.Presenter.ForbiddenError("insufficient permissions to invite members")
@@ -480,7 +480,7 @@ func (r *Resolver) InviteMember(p graphql.ResolveParams) (interface{}, error) {
 			"type":           "member_invited",
 			"organizationId": orgID,
 			"memberId":       invitation.ID,
-			"operatorId":     op.ID,
+			"userId":     op.ID,
 			"timestamp":      time.Now().UTC(),
 			"data": map[string]interface{}{
 				"email": email,
@@ -505,7 +505,7 @@ func (r *Resolver) RemoveMember(p graphql.ResolveParams) (interface{}, error) {
 		return nil, r.Presenter.BadRequestError("memberId must be a string")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -531,7 +531,7 @@ func (r *Resolver) RemoveMember(p graphql.ResolveParams) (interface{}, error) {
 		return nil, r.Presenter.BadRequestError("cannot remove the last super_admin")
 	}
 
-	// Check if operator can manage members.
+	// Check if user can manage members.
 	if err = r.MemberService.CheckCanManageMembers(ctx, op.ID, orgID); err != nil {
 		return nil, r.Presenter.ForbiddenError("insufficient permissions to remove members")
 	}
@@ -548,7 +548,7 @@ func (r *Resolver) RemoveMember(p graphql.ResolveParams) (interface{}, error) {
 			"type":           "member_removed",
 			"organizationId": orgID,
 			"memberId":       memberID,
-			"operatorId":     op.ID,
+			"userId":     op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -614,7 +614,7 @@ func (r *Resolver) UpdateMemberRole(p graphql.ResolveParams) (interface{}, error
 		return nil, r.Presenter.BadRequestError("role must be a string")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -649,10 +649,10 @@ func (r *Resolver) UpdateMemberRole(p graphql.ResolveParams) (interface{}, error
 	return r.membershipToMap(membership), nil
 }
 
-// isSelfRoleChange checks if the operator is trying to change their own role.
-func (r *Resolver) isSelfRoleChange(memberships []*orgdomain.OrganizationMember, memberID, operatorID string) bool {
+// isSelfRoleChange checks if the user is trying to change their own role.
+func (r *Resolver) isSelfRoleChange(memberships []*orgdomain.OrganizationMember, memberID, userID string) bool {
 	for _, m := range memberships {
-		if m.OperatorID == operatorID && m.ID == memberID {
+		if m.UserID == userID && m.ID == memberID {
 			return true
 		}
 	}
@@ -687,7 +687,7 @@ func (r *Resolver) findMemberRoleByID(memberships []*orgdomain.OrganizationMembe
 }
 
 // publishRoleChangedEvent publishes a role changed event to the hub.
-func (r *Resolver) publishRoleChangedEvent(orgID, memberID, operatorID, oldRole, newRole string) {
+func (r *Resolver) publishRoleChangedEvent(orgID, memberID, userID, oldRole, newRole string) {
 	if r.Hub == nil {
 		return
 	}
@@ -696,7 +696,7 @@ func (r *Resolver) publishRoleChangedEvent(orgID, memberID, operatorID, oldRole,
 		"type":           "role_changed",
 		"organizationId": orgID,
 		"memberId":       memberID,
-		"operatorId":     operatorID,
+		"userId":     userID,
 		"timestamp":      time.Now().UTC(),
 		"data": map[string]interface{}{
 			"oldRole": oldRole,
@@ -736,12 +736,12 @@ func (r *Resolver) AcceptInvitation(p graphql.ResolveParams) (interface{}, error
 		notes = "" // optional field.
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
 
-	// Validate operator has an email set.
+	// Validate user has an email set.
 	if op.Email == "" {
 		return nil, r.Presenter.BadRequestError("operator email not set, please update your profile first")
 	}
@@ -769,7 +769,7 @@ func (r *Resolver) AcceptInvitation(p graphql.ResolveParams) (interface{}, error
 			"type":           "member_joined",
 			"organizationId": membership.OrganizationID,
 			"memberId":       membership.ID,
-			"operatorId":     op.ID,
+			"userId":     op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -790,12 +790,12 @@ func (r *Resolver) RejectInvitation(p graphql.ResolveParams) (interface{}, error
 	if !ok {
 		notes = "" // optional field.
 	}
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
 
-	// Validate operator has an email set.
+	// Validate user has an email set.
 	if op.Email == "" {
 		return nil, r.Presenter.BadRequestError("operator email not set, please update your profile first")
 	}
@@ -827,7 +827,7 @@ func (r *Resolver) CancelInvitation(p graphql.ResolveParams) (interface{}, error
 		return nil, r.Presenter.BadRequestError("invitation ID is required")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -838,7 +838,7 @@ func (r *Resolver) CancelInvitation(p graphql.ResolveParams) (interface{}, error
 		return nil, r.Presenter.NotFoundError("invitation not found")
 	}
 
-	// Check if operator can manage members in this org.
+	// Check if user can manage members in this org.
 	if err = r.MemberService.CheckCanManageMembers(ctx, op.ID, inv.OrganizationID); err != nil {
 		return nil, r.Presenter.ForbiddenError("insufficient permissions to cancel invitation")
 	}
@@ -868,7 +868,7 @@ func (r *Resolver) TransferDevice(p graphql.ResolveParams) (interface{}, error) 
 		return nil, r.Presenter.BadRequestError("targetOrganizationId must be a string")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -908,12 +908,12 @@ func (r *Resolver) TransferOwnership(p graphql.ResolveParams) (interface{}, erro
 		return nil, r.Presenter.BadRequestError("memberId must be a string")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
 
-	// Check if operator is super_admin of this org.
+	// Check if user is super_admin of this org.
 	membership, err := r.MemberService.GetMembership(ctx, op.ID, orgID)
 	if err != nil {
 		return nil, r.Presenter.ForbiddenError("not a member of this organization")
@@ -939,7 +939,7 @@ func (r *Resolver) TransferOwnership(p graphql.ResolveParams) (interface{}, erro
 			"type":           "ownership_transferred",
 			"organizationId": orgID,
 			"memberId":       memberID,
-			"operatorId":     op.ID,
+			"userId":     op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -960,12 +960,12 @@ func (r *Resolver) SuspendMember(p graphql.ResolveParams) (interface{}, error) {
 		return nil, r.Presenter.BadRequestError("memberId must be a string")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
 
-	// Check if operator can manage members.
+	// Check if user can manage members.
 	err = r.MemberService.CheckCanManageMembers(ctx, op.ID, orgID)
 	if err != nil {
 		return nil, r.Presenter.ForbiddenError("insufficient permissions to suspend member")
@@ -995,7 +995,7 @@ func (r *Resolver) SuspendMember(p graphql.ResolveParams) (interface{}, error) {
 			"type":           "member_suspended",
 			"organizationId": orgID,
 			"memberId":       memberID,
-			"operatorId":     op.ID,
+			"userId":     op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -1016,12 +1016,12 @@ func (r *Resolver) ReinstateMember(p graphql.ResolveParams) (interface{}, error)
 		return nil, r.Presenter.BadRequestError("memberId must be a string")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
 
-	// Check if operator can manage members.
+	// Check if user can manage members.
 	err = r.MemberService.CheckCanManageMembers(ctx, op.ID, orgID)
 	if err != nil {
 		return nil, r.Presenter.ForbiddenError("insufficient permissions to reinstate member")
@@ -1051,7 +1051,7 @@ func (r *Resolver) ReinstateMember(p graphql.ResolveParams) (interface{}, error)
 			"type":           "member_reinstated",
 			"organizationId": orgID,
 			"memberId":       memberID,
-			"operatorId":     op.ID,
+			"userId":     op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -1086,7 +1086,7 @@ func (r *Resolver) membershipToMap(m *orgdomain.OrganizationMember) map[string]i
 	result := map[string]interface{}{
 		"id":             m.ID,
 		"organizationId": m.OrganizationID,
-		"operatorId":     m.OperatorID,
+		"userId":     m.UserID,
 		"role":           string(m.Role),
 		"lifecycle":      string(m.Lifecycle),
 	}

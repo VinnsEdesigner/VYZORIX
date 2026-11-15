@@ -15,11 +15,11 @@ type MemberRepository interface {
 	// FindByMemberID retrieves a member by MemberID value object.
 	FindByMemberID(ctx context.Context, id MemberID) (*OrganizationMember, error)
 
-	// FindByOperatorAndOrg finds a membership by operator ID and organization ID.
-	FindByOperatorAndOrg(ctx context.Context, operatorID, orgID string) (*OrganizationMember, error)
+	// FindByUserAndOrg finds a membership by user ID and organization ID.
+	FindByUserAndOrg(ctx context.Context, userID, orgID string) (*OrganizationMember, error)
 
-	// FindByOperatorAndOrgID finds a membership by OperatorID and OrganizationID value objects.
-	FindByOperatorAndOrgID(ctx context.Context, operatorID OperatorID, orgID OrganizationID) (*OrganizationMember, error)
+	// FindByUserAndOrgID finds a membership by UserID and OrganizationID value objects.
+	FindByUserAndOrgID(ctx context.Context, userID UserID, orgID OrganizationID) (*OrganizationMember, error)
 
 	// FindByOrganization lists all members of an organization.
 	FindByOrganization(ctx context.Context, orgID string) ([]*OrganizationMember, error)
@@ -45,11 +45,11 @@ type MemberRepository interface {
 	// SoftDeleteByMemberID soft-deletes a membership by MemberID.
 	SoftDeleteByMemberID(ctx context.Context, id MemberID) error
 
-	// SoftDeleteByOperator soft-deletes all memberships for an operator (used during operator deletion).
-	SoftDeleteByOperator(ctx context.Context, operatorID string) error
+	// SoftDeleteByUser soft-deletes all memberships for a user (used during user deletion).
+	SoftDeleteByUser(ctx context.Context, userID string) error
 
-	// SoftDeleteByOperatorID soft-deletes all memberships for an OperatorID.
-	SoftDeleteByOperatorID(ctx context.Context, operatorID OperatorID) error
+	// SoftDeleteByUserID soft-deletes all memberships for an UserID.
+	SoftDeleteByUserID(ctx context.Context, userID UserID) error
 
 	// SoftDeleteByOrganization soft-deletes all memberships for an organization (used during org deletion).
 	SoftDeleteByOrganization(ctx context.Context, orgID string) error
@@ -72,12 +72,12 @@ type MemberRepository interface {
 	// CountSuperAdminsByOrganizationID counts super_admin members by OrganizationID.
 	CountSuperAdminsByOrganizationID(ctx context.Context, orgID OrganizationID) (int, error)
 
-	// ListByOperator lists all memberships for an operator.
-	ListByOperator(ctx context.Context, operatorID string) ([]*OrganizationMember, error)
+	// ListByUser lists all memberships for a user.
+	ListByUser(ctx context.Context, userID string) ([]*OrganizationMember, error)
 
-	// ListByOperatorPaginated lists memberships for an operator with pagination.
-	ListByOperatorPaginated(ctx context.Context, operatorID string, limit, offset int) ([]*OrganizationMember, int, error)
+	// ListByUserPaginated lists memberships for a user with pagination.
+	ListByUserPaginated(ctx context.Context, userID string, limit, offset int) ([]*OrganizationMember, int, error)
 
-	// ListByOperatorID lists all memberships by OperatorID.
-	ListByOperatorID(ctx context.Context, operatorID OperatorID) ([]*OrganizationMember, error)
+	// ListByUserID lists all memberships by UserID.
+	ListByUserID(ctx context.Context, userID UserID) ([]*OrganizationMember, error)
 }

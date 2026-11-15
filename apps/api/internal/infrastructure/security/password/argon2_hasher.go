@@ -222,7 +222,7 @@ func VerifySecret(secret, hash string) error {
 	return nil
 }
 
-// HashPassword creates an Argon2id hash of a password for operator login.
+// HashPassword creates an Argon2id hash of a password for user login.
 // Uses OWASP 2023 recommended parameters for strong protection against GPU/ASIC attacks.
 func HashPassword(password string) (string, error) {
 	if password == "" {

@@ -9,7 +9,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/email"
 	infranotification "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/notification"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/webhook"
@@ -33,9 +33,9 @@ type EventData struct {
 	Timestamp     time.Time
 	AlertType     string
 	Threshold     string
-	OperatorID    string
-	OperatorEmail string
-	OperatorName  string
+	UserID    string
+	UserEmail string
+	UserName  string
 	EventType     EventType
 	CurrentValue  string
 	DeviceName    string
@@ -47,9 +47,9 @@ type EventData struct {
 	DeviceID      string
 }
 
-// Service handles sending notifications based on operator preferences.
+// Service handles sending notifications based on user preferences.
 type Service struct {
-	operatorRepo  operator.Repository
+	userRepo  user.Repository
 	emailService  *email.Service
 	webhookClient *webhook.Client
 	auditRepo     *infranotification.Repository
@@ -59,7 +59,7 @@ type Service struct {
 
 // NewService creates a new notification service.
 func NewService(
-	operatorRepo operator.Repository,
+	userRepo user.Repository,
 	emailSvc *email.Service,
 	webhookClient *webhook.Client,
 	auditRepo *infranotification.Repository,
@@ -67,7 +67,7 @@ func NewService(
 	logger *slog.Logger,
 ) *Service {
 	return &Service{
-		operatorRepo:  operatorRepo,
+		userRepo:  userRepo,
 		emailService:  emailSvc,
 		webhookClient: webhookClient,
 		auditRepo:     auditRepo,
@@ -76,37 +76,37 @@ func NewService(
 	}
 }
 
-// SendNotification sends a notification based on operator preferences and event type.
+// SendNotification sends a notification based on user preferences and event type.
 func (s *Service) SendNotification(ctx context.Context, data EventData) error {
-	// Get operator's notification settings if not provided.
-	if data.OperatorEmail == "" || data.OperatorName == "" {
-		op, err := s.operatorRepo.FindByID(ctx, data.OperatorID)
+	// Get user's notification settings if not provided.
+	if data.UserEmail == "" || data.UserName == "" {
+		op, err := s.userRepo.FindByID(ctx, data.UserID)
 		if err != nil {
 			return fmt.Errorf("failed to get operator: %w", err)
 		}
-		if data.OperatorEmail == "" {
-			data.OperatorEmail = op.Email
+		if data.UserEmail == "" {
+			data.UserEmail = op.Email
 		}
-		if data.OperatorName == "" {
-			data.OperatorName = op.Name
+		if data.UserName == "" {
+			data.UserName = op.Name
 		}
 	}
 
-	// Get operator's notification settings.
-	settings, err := s.operatorRepo.GetNotifications(ctx, data.OperatorID)
+	// Get user's notification settings.
+	settings, err := s.userRepo.GetNotifications(ctx, data.UserID)
 	if err != nil {
 		return fmt.Errorf("failed to get notification settings: %w", err)
 	}
 
 	// Check if notifications are enabled.
 	if !settings.Enabled {
-		s.logger.Debug("notifications disabled for operator", "operatorID", data.OperatorID)
+		s.logger.Debug("notifications disabled for operator", "operatorID", data.UserID)
 		return nil
 	}
 
 	// Build common email data.
 	emailData := email.NotificationData{
-		OperatorName:  data.OperatorName,
+		UserName:  data.UserName,
 		DeviceID:      data.DeviceID,
 		DeviceName:    data.DeviceName,
 		AlertType:     data.AlertType,
@@ -124,14 +124,14 @@ func (s *Service) SendNotification(ctx context.Context, data EventData) error {
 	// Send email if enabled for this event type.
 	if s.shouldSendEmail(settings, data.EventType) {
 		if err := s.sendEmail(ctx, data, emailData); err != nil {
-			s.logger.Error("failed to send email notification", "error", err, "operatorID", data.OperatorID)
+			s.logger.Error("failed to send email notification", "error", err, "operatorID", data.UserID)
 			// Don't return error - try webhook even if email fails.
 		}
 	}
 
 	// Send webhook if configured.
 	if err := s.sendWebhook(ctx, data, settings); err != nil {
-		s.logger.Error("failed to send webhook notification", "error", err, "operatorID", data.OperatorID)
+		s.logger.Error("failed to send webhook notification", "error", err, "operatorID", data.UserID)
 		// Don't return error for webhook failures.
 	}
 
@@ -139,7 +139,7 @@ func (s *Service) SendNotification(ctx context.Context, data EventData) error {
 }
 
 // shouldSendEmail checks if email should be sent for this event type.
-func (s *Service) shouldSendEmail(settings *operator.NotificationSettings, eventType EventType) bool {
+func (s *Service) shouldSendEmail(settings *user.NotificationSettings, eventType EventType) bool {
 	switch eventType {
 	case EventTypeThresholdBreach:
 		return settings.Email.ThresholdBreach
@@ -162,7 +162,7 @@ func (s *Service) shouldSendEmail(settings *operator.NotificationSettings, event
 }
 
 // shouldSendWebhook checks if webhook should be sent for this event type.
-func (s *Service) shouldSendWebhook(settings *operator.NotificationSettings, eventType EventType) bool {
+func (s *Service) shouldSendWebhook(settings *user.NotificationSettings, eventType EventType) bool {
 	if !settings.Webhook.Enabled || settings.Webhook.URL == "" {
 		return false
 	}
@@ -193,19 +193,19 @@ func (s *Service) sendEmail(ctx context.Context, data EventData, emailData email
 
 	switch data.EventType {
 	case EventTypeThresholdBreach:
-		err = s.emailService.SendThresholdBreachEmail(ctx, data.OperatorEmail, emailData)
+		err = s.emailService.SendThresholdBreachEmail(ctx, data.UserEmail, emailData)
 	case EventTypeDeviceOffline:
-		err = s.emailService.SendDeviceOfflineEmail(ctx, data.OperatorEmail, emailData)
+		err = s.emailService.SendDeviceOfflineEmail(ctx, data.UserEmail, emailData)
 	case EventTypeDeviceOnline:
-		err = s.emailService.SendDeviceOnlineEmail(ctx, data.OperatorEmail, emailData)
+		err = s.emailService.SendDeviceOnlineEmail(ctx, data.UserEmail, emailData)
 	case EventTypeCommandFailed:
-		err = s.emailService.SendCommandFailedEmail(ctx, data.OperatorEmail, emailData)
+		err = s.emailService.SendCommandFailedEmail(ctx, data.UserEmail, emailData)
 	case EventTypeUpdateAvailable:
-		err = s.emailService.SendUpdateAvailableEmail(ctx, data.OperatorEmail, emailData)
+		err = s.emailService.SendUpdateAvailableEmail(ctx, data.UserEmail, emailData)
 	case EventTypeRegistrationRequest:
-		err = s.emailService.SendRegistrationRequestEmail(ctx, data.OperatorEmail, emailData)
+		err = s.emailService.SendRegistrationRequestEmail(ctx, data.UserEmail, emailData)
 	case EventTypeError:
-		err = s.emailService.SendErrorAlertEmail(ctx, data.OperatorEmail, emailData)
+		err = s.emailService.SendErrorAlertEmail(ctx, data.UserEmail, emailData)
 	default:
 		s.logger.Warn("unknown event type for email", "eventType", data.EventType)
 		return nil
@@ -219,7 +219,7 @@ func (s *Service) sendEmail(ctx context.Context, data EventData, emailData email
 	s.auditNotification(ctx, data, "email", true, "")
 	s.logger.Info("email notification sent",
 		"eventType", data.EventType,
-		"operatorID", data.OperatorID,
+		"operatorID", data.UserID,
 		"deviceID", data.DeviceID,
 	)
 
@@ -227,7 +227,7 @@ func (s *Service) sendEmail(ctx context.Context, data EventData, emailData email
 }
 
 // sendWebhook sends a webhook notification.
-func (s *Service) sendWebhook(ctx context.Context, data EventData, settings *operator.NotificationSettings) error {
+func (s *Service) sendWebhook(ctx context.Context, data EventData, settings *user.NotificationSettings) error {
 	if s.webhookClient == nil {
 		s.logger.Warn("webhook client not configured")
 		return nil
@@ -241,7 +241,7 @@ func (s *Service) sendWebhook(ctx context.Context, data EventData, settings *ope
 		Type:       webhook.EventType(data.EventType),
 		Timestamp:  data.Timestamp,
 		DeviceID:   data.DeviceID,
-		OperatorID: data.OperatorID,
+		UserID: data.UserID,
 		Data: map[string]interface{}{
 			"deviceName":    data.DeviceName,
 			"alertType":     data.AlertType,
@@ -264,7 +264,7 @@ func (s *Service) sendWebhook(ctx context.Context, data EventData, settings *ope
 	s.auditNotification(ctx, data, "webhook", true, "")
 	s.logger.Info("webhook notification sent",
 		"eventType", data.EventType,
-		"operatorID", data.OperatorID,
+		"operatorID", data.UserID,
 		"deviceID", data.DeviceID,
 		"webhookURL", settings.Webhook.URL,
 	)
@@ -280,7 +280,7 @@ func (s *Service) auditNotification(ctx context.Context, data EventData, channel
 
 	entry := &infranotification.AuditEntry{
 		ID:         generateID(),
-		OperatorID: data.OperatorID,
+		UserID: data.UserID,
 		EventType:  string(data.EventType),
 		Channel:    channel,
 		DeviceID:   data.DeviceID,

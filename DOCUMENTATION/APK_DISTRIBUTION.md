@@ -108,7 +108,7 @@ strips `/api`.
 ### 3.5 Download progress
 
 The device reports progress as it downloads, fired when the whole-percent changes (a
-64 MB download in 8 KB reads would otherwise be thousands of requests). An operator
+64 MB download in 8 KB reads would otherwise be thousands of requests). A user
 reads it back with `GET /v1/download-progress/:deviceId`.
 
 The report is stored in an in-memory store keyed by device, with a 2-minute TTL — a
@@ -154,7 +154,7 @@ from it. This is the same trap the container rootfs assets hit.
 
 A device is therefore **not** wired to GitHub: it downloads from the **server's**
 `/v1/apk/<name>` route. The public release exists for the case where a device, or an
-operator, should fetch the APK without the server in the path.
+user, should fetch the APK without the server in the path.
 
 ### The `make_latest: false` trap
 

@@ -321,7 +321,7 @@ func (s *Service) ScanForLeaks(ctx context.Context, orgID string) (int, error) {
 					members, _ := s.memberRepo.FindActiveByOrganization(ctx, orgID)
 					for _, m := range members {
 						if m.Role == organization.RoleAdmin || m.Role == organization.RoleSuperAdmin {
-							_ = s.emailService.SendLeakAlertEmail(ctx, m.OperatorEmail, sa.Name, token.KeyPrefix, leaks)
+							_ = s.emailService.SendLeakAlertEmail(ctx, m.UserEmail, sa.Name, token.KeyPrefix, leaks)
 						}
 					}
 				}
@@ -448,7 +448,7 @@ func (s *Service) Secretscan(ctx context.Context, orgID string, payload []byte) 
 				account, _ := s.repo.GetByID(ctx, leaked.ServiceID)
 				for _, m := range members {
 					if m.Role == organization.RoleAdmin || m.Role == organization.RoleSuperAdmin {
-						_ = s.emailService.SendLeakAlertEmail(ctx, m.OperatorEmail, account.Name, leaked.KeyPrefix, leaks)
+						_ = s.emailService.SendLeakAlertEmail(ctx, m.UserEmail, account.Name, leaked.KeyPrefix, leaks)
 					}
 				}
 			}

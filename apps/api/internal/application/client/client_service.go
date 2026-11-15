@@ -23,7 +23,7 @@ func NewService(clientRepo client.Repository) *Service {
 
 // CreateClientRequest is the request to create a new client.
 type CreateClientRequest struct {
-	OperatorID     string
+	UserID     string
 	Name           string
 	Platform       string
 	AllowedOrigins []string
@@ -34,7 +34,7 @@ type CreateClientRequest struct {
 // Create creates a new API client.
 func (s *Service) Create(ctx context.Context, req *CreateClientRequest) (*dto.ClientResponse, string, error) {
 	c := &client.Client{
-		OperatorID:     req.OperatorID,
+		UserID:     req.UserID,
 		Name:           req.Name,
 		Platform:       req.Platform,
 		AllowedOrigins: req.AllowedOrigins,
@@ -50,7 +50,7 @@ func (s *Service) Create(ctx context.Context, req *CreateClientRequest) (*dto.Cl
 
 	return &dto.ClientResponse{
 		ID:             created.ID,
-		OperatorID:     created.OperatorID,
+		UserID:     created.UserID,
 		Name:           created.Name,
 		Platform:       created.Platform,
 		AllowedOrigins: created.AllowedOrigins,
@@ -83,9 +83,9 @@ func (s *Service) ListAll(ctx context.Context, limit, offset int) ([]dto.ClientR
 	return response, total, nil
 }
 
-// ListByOperatorID lists all clients for a specific operator.
-func (s *Service) ListByOperatorID(ctx context.Context, operatorID string) ([]dto.ClientResponse, error) {
-	clients, err := s.clientRepo.FindByOperatorID(ctx, operatorID)
+// ListByUserID lists all clients for a specific user.
+func (s *Service) ListByUserID(ctx context.Context, userID string) ([]dto.ClientResponse, error) {
+	clients, err := s.clientRepo.FindByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (s *Service) RotateKey(ctx context.Context, clientID string) (int, error) {
 
 // RotateSecret rotates the client secret and returns the new secret.
 // The old secret is invalidated immediately.
-func (s *Service) RotateSecret(ctx context.Context, clientID, operatorID string) (string, error) {
+func (s *Service) RotateSecret(ctx context.Context, clientID, userID string) (string, error) {
 	// Verify ownership first.
 	c, err := s.clientRepo.FindByID(ctx, clientID)
 	if err != nil {
@@ -183,8 +183,8 @@ func (s *Service) RotateSecret(ctx context.Context, clientID, operatorID string)
 		return "", err
 	}
 
-	// Verify the client belongs to the operator.
-	if c.OperatorID != operatorID {
+	// Verify the client belongs to the user.
+	if c.UserID != userID {
 		return "", application.ErrClientNotFound
 	}
 
@@ -209,8 +209,8 @@ func (s *Service) Deactivate(ctx context.Context, clientID string) error {
 	return s.clientRepo.Update(ctx, c)
 }
 
-// GetByOperatorID retrieves a client by ID and verifies it belongs to the operator.
-func (s *Service) GetByOperatorID(ctx context.Context, clientID, operatorID string) (*dto.ClientResponse, error) {
+// GetByUserID retrieves a client by ID and verifies it belongs to the user.
+func (s *Service) GetByUserID(ctx context.Context, clientID, userID string) (*dto.ClientResponse, error) {
 	c, err := s.clientRepo.FindByID(ctx, clientID)
 	if err != nil {
 		if err == client.ErrNotFound {
@@ -221,7 +221,7 @@ func (s *Service) GetByOperatorID(ctx context.Context, clientID, operatorID stri
 	}
 
 	// Verify ownership.
-	if c.OperatorID != operatorID {
+	if c.UserID != userID {
 		return nil, application.ErrClientNotFound
 	}
 
@@ -240,7 +240,7 @@ func (s *Service) GetHmacKey(ctx context.Context, clientID string) (string, bool
 func toClientResponse(c *client.Client) dto.ClientResponse {
 	return dto.ClientResponse{
 		ID:             c.ID,
-		OperatorID:     c.OperatorID,
+		UserID:     c.UserID,
 		Name:           c.Name,
 		Platform:       c.Platform,
 		AllowedOrigins: c.AllowedOrigins,

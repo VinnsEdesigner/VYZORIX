@@ -51,7 +51,7 @@ package vyzorix
 
 // MFAVerifyRequest.
 #MFAVerifyRequest: {
-        operator_id: string
+        user_id: string
         code: string
 }
 
@@ -61,13 +61,13 @@ package vyzorix
         access_token: string
         refresh_token: string
         signing_key: string
-        operator: #MFAOperator
+        user: #MFAUser
         expires_at: int64
         success: bool
 }
 
-// MFAOperator.
-#MFAOperator: {
+// MFAUser.
+#MFAUser: {
         id: string
         email: string
         name: string

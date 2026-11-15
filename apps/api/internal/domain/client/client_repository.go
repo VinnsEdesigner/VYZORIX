@@ -10,8 +10,8 @@ type Repository interface {
 	// FindByID retrieves a client by ID.
 	FindByID(ctx context.Context, id string) (*Client, error)
 
-	// FindByOperatorID retrieves all clients for an operator.
-	FindByOperatorID(ctx context.Context, operatorID string) ([]*Client, error)
+	// FindByUserID retrieves all clients for a user.
+	FindByUserID(ctx context.Context, userID string) ([]*Client, error)
 
 	// FindAll retrieves all clients (admin use).
 	FindAll(ctx context.Context, limit, offset int) ([]*Client, int, error)

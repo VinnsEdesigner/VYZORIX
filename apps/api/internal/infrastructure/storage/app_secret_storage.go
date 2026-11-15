@@ -57,7 +57,7 @@ func (r *AppSecretRepository) Get(ctx context.Context, name appsecret.Name) (*ap
 }
 
 // List returns names and generations for an app, without ciphertext. The
-// operator confirms what is set; the value is never returned by a list.
+// user confirms what is set; the value is never returned by a list.
 func (r *AppSecretRepository) List(ctx context.Context, deviceID, app string) ([]*appsecret.Record, error) {
 	rows, err := r.db.QueryContext(ctx,
 		`SELECT device_id, app, key, '', generation, updated_at FROM device_app_secrets

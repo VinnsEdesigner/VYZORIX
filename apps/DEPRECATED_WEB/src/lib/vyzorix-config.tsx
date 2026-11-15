@@ -135,9 +135,9 @@ export const VyzorixConfigProvider = ({ children }: { children: ReactNode }): Re
         };
         setS((prev) => {
           if (
-            prev.operator.email === stored.email &&
-            prev.operator.name === stored.name &&
-            prev.operator.role === stored.role
+            prev.user.email === stored.email &&
+            prev.user.name === stored.name &&
+            prev.user.role === stored.role
           ) {
             return prev;
           }
@@ -154,8 +154,8 @@ export const VyzorixConfigProvider = ({ children }: { children: ReactNode }): Re
         // ignore parse/storage error
       }
     };
-    window.addEventListener("vyz.operator.updated", syncOperator);
-    return () => window.removeEventListener("vyz.operator.updated", syncOperator);
+    window.addEventListener("vyz.user.updated", syncOperator);
+    return () => window.removeEventListener("vyz.user.updated", syncOperator);
   }, []);
 
   const update = (patch: Partial<VyzorixSettings>): void => setS((prev) => ({ ...prev, ...patch }));

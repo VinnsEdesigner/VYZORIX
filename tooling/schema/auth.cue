@@ -11,7 +11,7 @@ package vyzorix
 // LoginResult.
 #LoginResult: {
         selected_organization?: #OrganizationInfo
-        operator_id: string
+        user_id: string
         email: string
         name: string
         last_organization_id?: string
@@ -39,7 +39,7 @@ package vyzorix
         refresh_token: string
         session_id: string
         signing_key: string
-        operator_id: string
+        user_id: string
         device_fingerprint?: string
         organizations?: [...#OrganizationInfo]
         expires_at: int64
@@ -62,7 +62,7 @@ package vyzorix
 
 // RegisterResult.
 #RegisterResult: {
-        operator_id: string
+        user_id: string
         email: string
         name: string
 }

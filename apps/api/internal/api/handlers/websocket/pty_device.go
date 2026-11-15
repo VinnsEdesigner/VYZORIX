@@ -11,44 +11,44 @@ import (
 // the relay. It implements the PTYDeviceSink the device frame handler calls.
 //
 // The device only ever sends data and acknowledgements upstream; open, resize
-// and close are operator-driven and travel the other way.
+// and close are user-driven and travel the other way.
 type PTYDeviceHandler struct {
 	relay *hub.PTYRelay
-	// operators resolves the operator side for a session so output can be
+	// users resolves the user side for a session so output can be
 	// delivered. It is a lookup rather than a stored reference because the
-	// operator's connection can be replaced on reconnect.
-	operators PTYOperatorLookup
+	// user's connection can be replaced on reconnect.
+	users PTYUserLookup
 	log       *slog.Logger
 }
 
-// PTYOperatorLookup returns the operator endpoint for a session, or nil if the
-// session has no live operator (the operator's browser closed, for instance).
-type PTYOperatorLookup interface {
-	OperatorFor(sessionID string) hub.PTYOperator
+// PTYUserLookup returns the user endpoint for a session, or nil if the
+// session has no live user (the user's browser closed, for instance).
+type PTYUserLookup interface {
+	UserFor(sessionID string) hub.PTYUser
 }
 
 // NewPTYDeviceHandler creates the device-side PTY handler.
-func NewPTYDeviceHandler(relay *hub.PTYRelay, operators PTYOperatorLookup, log *slog.Logger) *PTYDeviceHandler {
+func NewPTYDeviceHandler(relay *hub.PTYRelay, users PTYUserLookup, log *slog.Logger) *PTYDeviceHandler {
 	if log == nil {
 		log = slog.Default()
 	}
 
-	return &PTYDeviceHandler{relay: relay, operators: operators, log: log}
+	return &PTYDeviceHandler{relay: relay, users: users, log: log}
 }
 
-// operatorsFor resolves the operator lookup, or nil when it was not wired.
+// usersFor resolves the user lookup, or nil when it was not wired.
 //
 // A nil lookup is a wiring mistake, but it must not be a panic: this runs on the
 // device's read pump, so dereferencing it would drop the device's connection and
 // lose every terminal on it. Returning nil makes it a logged drop instead.
-func (h *PTYDeviceHandler) operatorsFor() PTYOperatorLookup {
-	if h.operators == nil {
+func (h *PTYDeviceHandler) usersFor() PTYUserLookup {
+	if h.users == nil {
 		h.log.Error("pty device handler has no operator lookup; terminal output cannot be delivered")
 
 		return nil
 	}
 
-	return h.operators
+	return h.users
 }
 
 // HandleDeviceBinary handles one binary frame from a device. It returns whether
@@ -71,7 +71,7 @@ func (h *PTYDeviceHandler) HandleDeviceBinary(deviceID string, raw []byte) bool 
 	case hub.PTYTypeData:
 		h.handleDeviceData(deviceID, payload)
 	case hub.PTYTypeAck:
-		// The device acknowledged receipt of operator input. Nothing to do on the
+		// The device acknowledged receipt of user input. Nothing to do on the
 		// server side today; the device's own credit accounting governs input.
 	case hub.PTYTypeClose:
 		h.handleDeviceClose(deviceID, payload)
@@ -84,7 +84,7 @@ func (h *PTYDeviceHandler) HandleDeviceBinary(deviceID string, raw []byte) bool 
 	return true
 }
 
-// handleDeviceData forwards terminal output to the session's operator.
+// handleDeviceData forwards terminal output to the session's user.
 //
 // The device sends only the session ID and payload; the relay looks up the
 // session, so a device cannot address an arbitrary session by crafting a frame.
@@ -105,12 +105,12 @@ func (h *PTYDeviceHandler) handleDeviceData(deviceID string, payload []byte) {
 		return
 	}
 
-	operator := h.operatorsFor()
-	if operator == nil {
+	user := h.usersFor()
+	if user == nil {
 		return
 	}
 
-	op := operator.OperatorFor(sessionID)
+	op := user.UserFor(sessionID)
 	if op == nil {
 		return
 	}
@@ -130,7 +130,7 @@ func (h *PTYDeviceHandler) handleDeviceClose(deviceID string, payload []byte) {
 		return
 	}
 
-	h.relay.CloseSession(sessionID, "device_closed", h.operators.OperatorFor(sessionID))
+	h.relay.CloseSession(sessionID, "device_closed", h.users.UserFor(sessionID))
 }
 
 // Compile-time assertion that the device handler satisfies the sink.

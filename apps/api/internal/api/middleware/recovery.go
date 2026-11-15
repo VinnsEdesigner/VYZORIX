@@ -31,7 +31,7 @@ func GinPanicRecovery(logger *slog.Logger) func(c *gin.Context) {
 					slog.String("remote_addr", c.Request.RemoteAddr),
 					slog.String("user_agent", c.Request.UserAgent()),
 				}
-				if userID := c.GetString("operator_id"); userID != "" {
+				if userID := c.GetString("user_id"); userID != "" {
 					args = append(args, slog.String("actor_id", userID))
 				}
 				if orgID := c.GetString("org_id"); orgID != "" {

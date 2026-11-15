@@ -9,5 +9,5 @@
 export interface RegisterResult {
   email?: string;
   name?: string;
-  operator_id?: string;
+  user_id?: string;
 }

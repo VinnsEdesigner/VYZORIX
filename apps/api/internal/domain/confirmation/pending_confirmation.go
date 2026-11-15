@@ -1,6 +1,6 @@
 // Package confirmation models short-lived, single-use authorization tokens.
 // that gate risky device commands. A confirmation is issued for a specific.
-// (operator, command, device) triple and must be presented back when the.
+// (user, command, device) triple and must be presented back when the.
 // command is actually executed. It expires after the command's risk profile.
 // TTL and can be consumed at most once.
 package confirmation
@@ -22,7 +22,7 @@ var ErrExpired = errors.New("confirmation expired")
 var ErrAlreadyConsumed = errors.New("confirmation already consumed")
 
 // ErrMismatch is returned when a confirmation token does not match the.
-// operator/command/device it was issued for.
+// user/command/device it was issued for.
 var ErrMismatch = errors.New("confirmation does not match the request")
 
 // PendingConfirmation is a single-use, TTL-bounded authorization for a risky.
@@ -32,7 +32,7 @@ var ErrMismatch = errors.New("confirmation does not match the request")
 //nolint:govet // fieldalignment: reordered for best packing
 type PendingConfirmation struct {
 	Token      string
-	OperatorID string
+	UserID string
 	OrgID      string
 	Command    string
 	DeviceID   string
@@ -52,11 +52,11 @@ func (p *PendingConfirmation) IsConsumed() bool {
 	return p.ConsumedAt != nil
 }
 
-// Matches reports whether the confirmation was issued for the given operator,
+// Matches reports whether the confirmation was issued for the given user,
 // command, and device. An empty deviceID matches any device (the confirmation.
-// is scoped to operator+command when issued without a specific device).
-func (p *PendingConfirmation) Matches(operatorID, command, deviceID string) bool {
-	if p.OperatorID != operatorID || p.Command != command {
+// is scoped to user+command when issued without a specific device).
+func (p *PendingConfirmation) Matches(userID, command, deviceID string) bool {
+	if p.UserID != userID || p.Command != command {
 		return false
 	}
 	if p.DeviceID != "" && p.DeviceID != deviceID {

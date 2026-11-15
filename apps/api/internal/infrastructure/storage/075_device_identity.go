@@ -11,7 +11,7 @@ import (
 //. The device generates its own signing keypair
 // and sends only the public half, so nothing secret is ever transmitted — which is
 // what removes the FCM delivery of the old command secret. `pairing_code` and
-// `pairing_expires_at` carry the short code an operator types to claim the device.
+// `pairing_expires_at` carry the short code a user types to claim the device.
 func migrateAddDeviceIdentity(tx *sql.Tx) error {
 	statements := []string{
 		`ALTER TABLE devices ADD COLUMN public_key TEXT`,

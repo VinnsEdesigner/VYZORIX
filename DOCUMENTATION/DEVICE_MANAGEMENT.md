@@ -34,7 +34,7 @@ Devices go through lifecycle states: `pending` → `registered` → `deregistere
 
 ## Multi-tenancy
 
-Every device belongs to an organization (`OrganizationID` field). The organization context is set by the `NewOrganizationContext` middleware, which extracts the org ID from the URL or session. The `NewOrganizationMembership` middleware verifies the operator is a member of that org.
+Every device belongs to an organization (`OrganizationID` field). The organization context is set by the `NewOrganizationContext` middleware, which extracts the org ID from the URL or session. The `NewOrganizationMembership` middleware verifies the user is a member of that org.
 
 Handlers call `middleware.GetOrganizationID(c)` to get the org ID and scope their queries accordingly.
 
@@ -42,8 +42,8 @@ Handlers call `middleware.GetOrganizationID(c)` to get the org ID and scope thei
 
 Each device has per-device settings stored in the `device_settings` table:
 
-- Custom name (operator-assigned label)
-- Location (operator-assigned)
+- Custom name (user-assigned label)
+- Location (user-assigned)
 - Metadata (key-value pairs)
 - Thresholds (telemetry alert thresholds — battery, temperature, etc.)
 

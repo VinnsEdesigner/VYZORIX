@@ -6,7 +6,7 @@
 surface), `DEPLOY_CREDENTIALS.md` (the CI path), `ADR_003_BUILD_TOOL.md` (why the tool
 is shaped this way).
 
-This is the operator's guide to the producer side of a deploy: how to turn a project's
+This is the user's guide to the producer side of a deploy: how to turn a project's
 source into the digest-pinned tarballs a `vyzorix.toml` references.
 
 ---
@@ -16,7 +16,7 @@ source into the digest-pinned tarballs a `vyzorix.toml` references.
 | File | Owner | Purpose |
 |:--|:--|:--|
 | `vyzorix.build.toml` | the app developer | **how to build** the project into artifacts |
-| `vyzorix.toml` | the operator | **what to deploy**: which artifact, pinned by digest |
+| `vyzorix.toml` | the user | **what to deploy**: which artifact, pinned by digest |
 
 They are separate on purpose. The recipe changes when
 the build changes; the manifest changes when the deployment changes. `vyzorix build`
@@ -242,7 +242,7 @@ on a filename are a **refusal naming both**, not a last-writer-wins.
 - run: vyzorix deploy --device $DEVICE --file vyzorix.toml
 ```
 
-Use a **deploy credential** (`DEPLOY_CREDENTIALS.md`) rather than an operator key. The
+Use a **deploy credential** (`DEPLOY_CREDENTIALS.md`) rather than a user key. The
 job needs a token with `packages:write` for the GHCR push.
 
 ---

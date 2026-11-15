@@ -30,7 +30,7 @@ level=INFO msg=http_request method=POST path=/v1/auth/login status=200 duration_
 
 **Audit log entries (the `trace_id` column in `audit_logs`):**
 ```
-action=login_success result=success trace=aabbccddeeff00112233445566778899 risk= actor_type=operator
+action=login_success result=success trace=aabbccddeeff00112233445566778899 risk= actor_type=user
 ```
 
 **Error middleware log (when a handler records an error via `c.Error`):**

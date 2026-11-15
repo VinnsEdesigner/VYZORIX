@@ -59,8 +59,8 @@ func (h *UpdatesPushHandler) PushUpdate(c *gin.Context) {
 		return
 	}
 
-	operator := middleware.GetOperatorFromContext(c)
-	if operator == nil {
+	user := middleware.GetUserFromContext(c)
+	if user == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "Operator not found"))
 		return
 	}
@@ -80,7 +80,7 @@ func (h *UpdatesPushHandler) PushUpdate(c *gin.Context) {
 		OrganizationID: orgID,
 	}
 
-	pushResp, err := h.service.PushUpdate(c.Request.Context(), pushReq, operator.ID)
+	pushResp, err := h.service.PushUpdate(c.Request.Context(), pushReq, user.ID)
 	if err != nil {
 		if se := updates.AsServiceError(err); se != nil {
 			_ = c.Error(apperrors.NewServerErrorFromStatus(se.Status, se.Message))
@@ -94,7 +94,7 @@ func (h *UpdatesPushHandler) PushUpdate(c *gin.Context) {
 	if h.auditLogger != nil {
 		h.auditLogger.UpdatePushed(
 			c.Request.Context(),
-			operator.ID,
+			user.ID,
 			pushResp.PushID,
 			pushResp.Version,
 			pushResp.Devices.Total,

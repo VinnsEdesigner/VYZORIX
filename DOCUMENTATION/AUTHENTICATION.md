@@ -1,6 +1,6 @@
 # Authentication & Sessions
 
-The server uses cookie-based session auth for browser clients and API key auth for programmatic access. Both go through the same operator identity system.
+The server uses cookie-based session auth for browser clients and API key auth for programmatic access. Both go through the same user identity system.
 
 ## Login flow
 
@@ -8,14 +8,14 @@ The server uses cookie-based session auth for browser clients and API key auth f
 
 1. Validates the request (CSRF token required for browser clients)
 2. Calls `AuthService.LoginWithDevice` which:
-   - Looks up the operator by email
+   - Looks up the user by email
    - Verifies the password against the argon2id hash
    - Checks account lockout (5 failed attempts locks for a duration)
    - If MFA is enabled, returns `mfa_required: true` instead of a session
 3. On success, creates a `Session` (with `MFAVerifiedAt` if MFA was completed)
 4. Encrypts the session ID and sets it in the `vyz_session` cookie
 5. Audits the login (`login_success` audit entry with trace_id and actor_type)
-6. Returns the operator profile, organizations, and signing key
+6. Returns the user profile, organizations, and signing key
 
 ## Password hashing
 
@@ -36,11 +36,11 @@ The hasher in `internal/infrastructure/security/password/argon2_hasher.go` also 
 Sessions are stored in the `auth_sessions` table. Each session has:
 
 - An encrypted ID (the cookie value is AES-GCM encrypted, not the raw session ID)
-- Operator ID
+- User ID
 - Expiration time (default 24 hours, configurable via `JWT_DURATION_HOURS`)
 - `MFAVerifiedAt` — when MFA was completed during this session
 - `SigningKey` — per-session HMAC key for request signing
-- `SelectedOrganizationID` — the org the operator is currently working in
+- `SelectedOrganizationID` — the org the user is currently working in
 
 The `SessionManager` in `internal/infrastructure/security/session/session.go` handles encryption, decryption, and cookie creation.
 
@@ -70,7 +70,7 @@ Each key has:
 - An expiry date
 - A per-month usage limit
 
-API keys are stored as argon2id hashes (not plaintext). The `TenantAPIKeyAuth` middleware verifies the key, checks the scope, and sets the operator context.
+API keys are stored as argon2id hashes (not plaintext). The `TenantAPIKeyAuth` middleware verifies the key, checks the scope, and sets the user context.
 
 ## CSRF protection
 
@@ -82,7 +82,7 @@ CSRF is required on all state-changing requests (POST, PATCH, DELETE) for browse
 
 TOTP-based. Operators enroll via `POST /v1/mfa/enroll` (generates a QR code), verify setup via `POST /v1/mfa/verify-setup`, and then must provide a TOTP code on login.
 
-When MFA is enabled for an operator, login returns `mfa_required: true` with the operator ID. The client then calls `POST /v1/mfa/verify` with the TOTP code. On success, the session's `MFAVerifiedAt` is set.
+When MFA is enabled for a user, login returns `mfa_required: true` with the user ID. The client then calls `POST /v1/mfa/verify` with the TOTP code. On success, the session's `MFAVerifiedAt` is set.
 
 Critical-tier commands (factory reset) require `MFAVerifiedAt` to be set on the session.
 
@@ -93,8 +93,8 @@ Google and GitHub OAuth are supported for "Sign in with..." flows. The OAuth flo
 1. Client redirects to Google/GitHub
 2. OAuth provider redirects back to `/v1/auth/google/callback` or `/v1/auth/github/callback`
 3. Server exchanges the auth code for user info
-4. If the email matches an existing operator, creates a session
-5. If not, creates a new operator (if registration is open)
+4. If the email matches an existing user, creates a session
+5. If not, creates a new user (if registration is open)
 
 OAuth state is stored in the `oauth_states` table to prevent CSRF during the OAuth flow.
 
@@ -106,11 +106,11 @@ During lockout, login returns 429 with `retry_after` indicating how long until t
 
 ## New-device login notifications
 
-After a successful login, `AuthService.ShouldNotifyLogin` decides whether to email the operator that their account was accessed from an unrecognised device or IP.
+After a successful login, `AuthService.ShouldNotifyLogin` decides whether to email the user that their account was accessed from an unrecognised device or IP.
 
 The signal is a device fingerprint built from the request's IP, User-Agent, `Accept-Language` and `Accept-Encoding` (`LoginHandler.generateDeviceFingerprint`). Because the fingerprint already includes the IP, a change in either the network or the client produces a new fingerprint and therefore a notification; a repeat login from the same device on the same IP does not.
 
-Known devices are **persisted** in the `known_devices` and `known_device_signals` tables (migration 72), so a device stays known across restarts and deployments. The store is keyed per operator, and both tables are bounded (50 devices per operator, 20 IP/User-Agent values per device) so a client that changes its IP or User-Agent repeatedly cannot grow them without limit. Eviction removes the least-recently-seen device / oldest signal.
+Known devices are **persisted** in the `known_devices` and `known_device_signals` tables (migration 72), so a device stays known across restarts and deployments. The store is keyed per user, and both tables are bounded (50 devices per user, 20 IP/User-Agent values per device) so a client that changes its IP or User-Agent repeatedly cannot grow them without limit. Eviction removes the least-recently-seen device / oldest signal.
 
 The port is `domain/devicestore.Store`. The production implementation is `storage.KnownDeviceRepository` (wired in `ProvideAuthService`); the in-memory `auth.DeviceStore` is used in tests.
 

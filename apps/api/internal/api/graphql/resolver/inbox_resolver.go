@@ -18,7 +18,7 @@ import (
 func (r *Resolver) GetInbox(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -70,7 +70,7 @@ func (r *Resolver) GetInbox(p graphql.ResolveParams) (interface{}, error) {
 			"approvedAt":        req.ApprovedAt,
 			"rejectedAt":        req.RejectedAt,
 			"notes":             req.Notes,
-			"operatorId":        req.OperatorID,
+			"userId":        req.UserID,
 		})
 	}
 
@@ -99,7 +99,7 @@ func (r *Resolver) GetInboxEntry(p graphql.ResolveParams) (interface{}, error) {
 		return nil, err
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -129,7 +129,7 @@ func (r *Resolver) GetInboxEntry(p graphql.ResolveParams) (interface{}, error) {
 		"approvedAt":        entry.ApprovedAt,
 		"rejectedAt":        entry.RejectedAt,
 		"notes":             entry.Notes,
-		"operatorId":        entry.OperatorID,
+		"userId":        entry.UserID,
 	}, nil
 }
 
@@ -158,7 +158,7 @@ func (r *Resolver) AckInbox(p graphql.ResolveParams) (interface{}, error) {
 
 	notes, _ := p.Args["notes"].(string)
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -216,12 +216,12 @@ func (r *Resolver) DeregisterDeviceGraphQL(p graphql.ResolveParams) (interface{}
 
 	hard, _ := p.Args["hard"].(bool)
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
 
-	result, err := r.DeviceService.DeregisterDeviceByOperator(ctx, imei, op.ID, orgID, hard)
+	result, err := r.DeviceService.DeregisterDeviceByUser(ctx, imei, op.ID, orgID, hard)
 	if err != nil {
 		if errors.Is(err, device.ErrNotFound) {
 			return nil, r.Presenter.NotFoundError("device not found or not owned by operator")

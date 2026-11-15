@@ -31,7 +31,7 @@ func adminClientToSchema(r *dto.ClientResponse) openapi.AdminClient {
 		ID:             r.ID,
 		LastRequestAt:  r.LastRequestAt,
 		Name:           r.Name,
-		OperatorID:     r.OperatorID,
+		UserID:     r.UserID,
 		Platform:       r.Platform,
 		AllowedOrigins: r.AllowedOrigins,
 		AllowedPaths:   r.AllowedPaths,
@@ -55,7 +55,7 @@ func NewClientsHandler(clientService *client.Service) *ClientsHandler {
 
 // requireAdmin is middleware that ensures the request is from an admin user in the org context.
 func requireAdmin(c *gin.Context) bool {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "unauthorized"))
 		return false
@@ -68,7 +68,7 @@ func requireAdmin(c *gin.Context) bool {
 		return false
 	}
 
-	// Check if operator is super_admin in this specific organization.
+	// Check if user is super_admin in this specific organization.
 	if !op.IsSuperAdminIn(orgID) {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthzInsufficientPermissions, "admin access required"))
 		return false

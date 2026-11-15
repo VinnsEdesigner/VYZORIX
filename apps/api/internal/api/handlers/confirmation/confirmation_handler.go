@@ -99,7 +99,7 @@ func (h *Handler) RequestConfirmation(c *gin.Context) {
 		}
 	}
 
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		responses.RespondStructured(c, http.StatusUnauthorized, "authentication required")
 		return
@@ -138,8 +138,8 @@ func (h *Handler) RequestConfirmation(c *gin.Context) {
 // the command handler without coupling it to the confirmation service's.
 // internals. It is the single consume path; the handler calls it when a.
 // confirmation token is presented on command execution.
-func (h *Handler) ConsumeForCommand(c *gin.Context, token, operatorID, commandName, deviceID string) (*command.CommandRiskProfile, error) {
-	pending, err := h.confirmationService.ConsumeForCommand(c.Request.Context(), token, operatorID, commandName, deviceID)
+func (h *Handler) ConsumeForCommand(c *gin.Context, token, userID, commandName, deviceID string) (*command.CommandRiskProfile, error) {
+	pending, err := h.confirmationService.ConsumeForCommand(c.Request.Context(), token, userID, commandName, deviceID)
 	if err != nil {
 		// Translate confirmation errors into a sentinel that the caller maps.
 		// to an HTTP status; the profile is still useful for the audit body.

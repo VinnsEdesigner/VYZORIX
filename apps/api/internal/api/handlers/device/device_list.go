@@ -165,28 +165,28 @@ func (h *ListHandler) isDeviceOnline(deviceID string) bool {
 	return h.hub.Online(deviceID)
 }
 
-// ListByOperator handles GET /v1/dashboard/devices?operatorId=<id>.
-// @Summary      List devices by operator
-// @Description  Returns devices assigned to a specific operator
+// ListByUser handles GET /v1/dashboard/devices?userId=<id>.
+// @Summary      List devices by user
+// @Description  Returns devices assigned to a specific user
 // @Tags         devices
 // @Accept       json
 // @Produce      json
 // @Param        X-Organization-ID  header  string  true  "Organization ID"
-// @Param        operatorId  query string  false  "operator ID"
+// @Param        userId  query string  false  "user ID"
 // @Success      200  {object}  openapi.DeviceListResult  "devices"
 // @Failure      400  {object}  openapi.ErrorResponse  "organization context required"
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
-// @Router       /dashboard/devices/operator [get]
-func (h *ListHandler) ListByOperator(c *gin.Context) {
+// @Router       /dashboard/devices/user [get]
+func (h *ListHandler) ListByUser(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	operatorID := c.Query("operatorId")
-	if operatorID == "" {
+	userID := c.Query("userId")
+	if userID == "" {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeValidationFailed, "operatorId is required"))
 		return
 	}
 
-	devices, err := h.deviceService.ListByOperatorEntity(ctx, operatorID)
+	devices, err := h.deviceService.ListByUserEntity(ctx, userID)
 	if err != nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeInternalServerError, "failed to list devices by operator"))
 		return

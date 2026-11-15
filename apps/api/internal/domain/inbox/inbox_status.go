@@ -17,9 +17,9 @@ type InboxStatus string
 const (
 	StatusPending      InboxStatus = "pending"      // Initial state after device registration.
 	StatusAcknowledged InboxStatus = "acknowledged" // Device has acknowledged the request.
-	StatusApproving    InboxStatus = "approving"    // Operator is approving; the device is being created.
+	StatusApproving    InboxStatus = "approving"    // User is approving; the device is being created.
 	StatusApproved     InboxStatus = "approved"     // Fully approved; the device may connect.
-	StatusRejected     InboxStatus = "rejected"     // Rejected by operator.
+	StatusRejected     InboxStatus = "rejected"     // Rejected by user.
 	StatusExpired      InboxStatus = "expired"      // Auto-cleanup after 30 days.
 )
 
@@ -117,7 +117,7 @@ func (s InboxStatus) CanBeAcknowledged() bool {
 	return s == StatusPending
 }
 
-// CanBeApproved checks if the entry can be approved by operator.
+// CanBeApproved checks if the entry can be approved by user.
 func (s InboxStatus) CanBeApproved() bool {
 	return s == StatusAcknowledged
 }
@@ -134,17 +134,17 @@ const (
 	DeviceAckActionAcknowledge DeviceAckAction = "acknowledge" // Device acknowledges receipt.
 )
 
-// OperatorAction represents actions an operator can take.
-type OperatorAction string
+// UserAction represents actions a user can take.
+type UserAction string
 
 const (
-	OperatorActionApprove OperatorAction = "approve" // Operator approves registration.
-	OperatorActionReject  OperatorAction = "reject"  // Operator rejects registration.
-	OperatorActionDelete  OperatorAction = "delete"  // Operator deletes entry.
+	UserActionApprove UserAction = "approve" // User approves registration.
+	UserActionReject  UserAction = "reject"  // User rejects registration.
+	UserActionDelete  UserAction = "delete"  // User deletes entry.
 )
 
 // AckAction represents the action for legacy compatibility.
-// Deprecated: Use DeviceAckAction or OperatorAction instead.
+// Deprecated: Use DeviceAckAction or UserAction instead.
 type AckAction string
 
 const (

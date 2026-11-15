@@ -18,18 +18,18 @@ type Repository interface {
 	// FindByFirebaseInstallID retrieves a device by Firebase install ID.
 	FindByFirebaseInstallID(ctx context.Context, fid string) (*Device, error)
 
-	// FindByIDAndOperator retrieves a device by ID and verifies ownership.
-	// Returns ErrNotFound if device doesn't exist or doesn't belong to operator.
+	// FindByIDAndUser retrieves a device by ID and verifies ownership.
+	// Returns ErrNotFound if device doesn't exist or doesn't belong to user.
 	// This is used for DOA (Data Ownership Attribution) checks.
-	FindByIDAndOperator(ctx context.Context, id, operatorID string) (*Device, error)
+	FindByIDAndUser(ctx context.Context, id, userID string) (*Device, error)
 
-	// FindByIDAndOperatorID retrieves a device by DeviceID and OperatorID value objects.
-	FindByIDAndOperatorID(ctx context.Context, id DeviceID, operatorID OperatorID) (*Device, error)
+	// FindByIDAndUserID retrieves a device by DeviceID and UserID value objects.
+	FindByIDAndUserID(ctx context.Context, id DeviceID, userID UserID) (*Device, error)
 
-	// FindByIMEIAndOperator retrieves a device by IMEI and verifies ownership.
-	// Returns ErrNotFound if device doesn't exist or doesn't belong to operator.
+	// FindByIMEIAndUser retrieves a device by IMEI and verifies ownership.
+	// Returns ErrNotFound if device doesn't exist or doesn't belong to user.
 	// This is used for DOA (Data Ownership Attribution) checks on deregistration.
-	FindByIMEIAndOperator(ctx context.Context, imei, operatorID string) (*Device, error)
+	FindByIMEIAndUser(ctx context.Context, imei, userID string) (*Device, error)
 
 	// FindByIMEIAndOrganization retrieves a device by IMEI within an organization.
 	// Returns ErrNotFound if device doesn't exist or doesn't belong to the organization.
@@ -39,7 +39,7 @@ type Repository interface {
 	// Returns ErrNotFound if device doesn't exist or doesn't belong to the organization.
 	FindByIDAndOrganization(ctx context.Context, id, orgID string) (*Device, error)
 
-	// FindByPairingCode retrieves a pending device by the code an operator types
+	// FindByPairingCode retrieves a pending device by the code a user types
 	// to claim it. Only a live code matches, so an expired notification cannot
 	// be claimed.
 	FindByPairingCode(ctx context.Context, code string) (*Device, error)
@@ -95,11 +95,11 @@ type Repository interface {
 	// List returns a paginated list of devices filtered by organization.
 	List(ctx context.Context, orgID string, limit, offset int) ([]*Device, int, error)
 
-	// ListByOperator returns all devices for an operator.
-	ListByOperator(ctx context.Context, operatorID string) ([]*Device, error)
+	// ListByUser returns all devices for a user.
+	ListByUser(ctx context.Context, userID string) ([]*Device, error)
 
-	// ListByOperatorID returns all devices for an OperatorID.
-	ListByOperatorID(ctx context.Context, operatorID OperatorID) ([]*Device, error)
+	// ListByUserID returns all devices for an UserID.
+	ListByUserID(ctx context.Context, userID UserID) ([]*Device, error)
 
 	// ListByOrganization returns all devices for an organization.
 	ListByOrganization(ctx context.Context, orgID string) ([]*Device, error)
@@ -110,8 +110,8 @@ type Repository interface {
 	// Count returns the total number of devices filtered by organization.
 	Count(ctx context.Context, orgID string) (int, error)
 
-	// CountByOperator returns the number of devices for an operator.
-	CountByOperator(ctx context.Context, operatorID string) (int, error)
+	// CountByUser returns the number of devices for a user.
+	CountByUser(ctx context.Context, userID string) (int, error)
 
 	// CountByOrganization returns the number of devices for an organization.
 	CountByOrganization(ctx context.Context, orgID string) (int, error)
@@ -126,14 +126,14 @@ type Repository interface {
 	// ListActive returns all non-deregistered devices.
 	ListActive(ctx context.Context, limit, offset int) ([]*Device, int, error)
 
-	// ListActiveByOperator returns all non-deregistered devices for an operator.
-	ListActiveByOperator(ctx context.Context, operatorID string) ([]*Device, error)
+	// ListActiveByUser returns all non-deregistered devices for a user.
+	ListActiveByUser(ctx context.Context, userID string) ([]*Device, error)
 
 	// ListPending returns all devices in pending lifecycle state.
 	ListPending(ctx context.Context) ([]*Device, error)
 
-	// ListPendingByOperator returns all pending devices for an operator.
-	ListPendingByOperator(ctx context.Context, operatorID OperatorID) ([]*Device, error)
+	// ListPendingByUser returns all pending devices for a user.
+	ListPendingByUser(ctx context.Context, userID UserID) ([]*Device, error)
 
 	// DeleteScheduled deletes all devices where deletion_scheduled_at <= now AND deregistered_at IS NOT NULL.
 	// Returns the number of devices deleted.

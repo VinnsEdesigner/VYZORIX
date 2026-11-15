@@ -3,9 +3,9 @@
 ## Executive Summary
 
 Transform the flat role-based system into a multi-tenant organization model where:
-- **Operators** are global identities (email, password, OAuth)
+- **Users** are global identities (email, password, OAuth)
 - **Organizations** are tenants that own resources
-- **Memberships** link operators to organizations with scoped roles
+- **Memberships** link users to organizations with scoped roles
 - **Invitations** manage the join request flow
 
 ---
@@ -19,13 +19,13 @@ Transform the flat role-based system into a multi-tenant organization model wher
 CREATE TABLE organizations (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    created_by TEXT NOT NULL,  -- FK to operators.id (first super_admin)
+    created_by TEXT NOT NULL,  -- FK to users.id (first super_admin)
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
     deleted_at INTEGER,  -- soft delete
     is_active BOOLEAN DEFAULT true,
-    max_members INTEGER DEFAULT 2,  -- limit to 2 active orgs per operator
-    FOREIGN KEY (created_by) REFERENCES operators(id)
+    max_members INTEGER DEFAULT 2,  -- limit to 2 active orgs per user
+    FOREIGN KEY (created_by) REFERENCES users(id)
 );
 
 -- organization_members table (replaces global role)
@@ -34,13 +34,13 @@ CREATE TABLE organization_members (
     organization_id TEXT NOT NULL,
     operator_id TEXT NOT NULL,
     role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin', 'operator', 'viewer')),
-    invited_by TEXT,  -- FK to operators.id
+    invited_by TEXT,  -- FK to users.id
     joined_at INTEGER NOT NULL,
     removed_at INTEGER,  -- soft delete
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'removed')),
     UNIQUE(organization_id, operator_id),
     FOREIGN KEY (organization_id) REFERENCES organizations(id),
-    FOREIGN KEY (operator_id) REFERENCES operators(id)
+    FOREIGN KEY (operator_id) REFERENCES users(id)
 );
 
 -- invitations table
@@ -53,12 +53,12 @@ CREATE TABLE invitations (
     token TEXT NOT NULL UNIQUE,  -- secure token for invite link
     inviter_notes TEXT,  -- notes from inviter
     invitee_notes TEXT,  -- notes from invitee on accept/reject
-    invited_by TEXT NOT NULL,  -- FK to operators.id
+    invited_by TEXT NOT NULL,  -- FK to users.id
     invited_at INTEGER NOT NULL,
     responded_at INTEGER,
     expires_at INTEGER NOT NULL,  -- token expiry
     FOREIGN KEY (organization_id) REFERENCES organizations(id),
-    FOREIGN KEY (invited_by) REFERENCES operators(id)
+    FOREIGN KEY (invited_by) REFERENCES users(id)
 );
 
 -- Indexes for performance
@@ -73,7 +73,7 @@ CREATE INDEX idx_invitations_org_status ON invitations(organization_id, status);
 
 | Table | Change | Action |
 |-------|--------|--------|
-| `operators` | Remove `role` column | Migration drops column |
+| `users` | Remove `role` column | Migration drops column |
 | `devices` | Add `organization_id` column | Migration adds nullable FK |
 | `sessions` | Add `organization_id` column | Migration adds nullable FK |
 | `api_keys` | Add `organization_id` column | Migration adds nullable FK |
@@ -137,7 +137,7 @@ ALTER TABLE sessions ADD COLUMN organization_id TEXT;
 -- Add organization_id to api_keys (nullable for backward compat)
 ALTER TABLE api_keys ADD COLUMN organization_id TEXT;
 
--- Note: Global 'role' column in operators table will be deprecated
+-- Note: Global 'role' column in users table will be deprecated
 -- Use organization_members.role instead for permission checks
 ```
 
@@ -163,9 +163,9 @@ internal/domain/
 
 | File | Changes |
 |------|---------|
-| `domain/operator/operator_entity.go` | Remove `Role` field, add `Memberships` field |
-| `domain/operator/role.go` | Add org-scoped role methods |
-| `domain/operator/permissions.go` | Remove global permissions, add membership-based checks |
+| `domain/user/user_entity.go` | Remove `Role` field, add `Memberships` field |
+| `domain/user/role.go` | Add org-scoped role methods |
+| `domain/user/permissions.go` | Remove global permissions, add membership-based checks |
 | `domain/device/device_entity.go` | Add `OrganizationID` field |
 
 ### 2.3 Files to CREATE
@@ -227,7 +227,7 @@ internal/application/
 
 | File | Changes |
 |------|---------|
-| `application/auth/auth_register.go` | Create operator without role |
+| `application/auth/auth_register.go` | Create user without role |
 | `application/auth/auth_google_oauth.go` | No auto-role assignment |
 | `application/auth/auth_github_oauth.go` | No auto-role assignment |
 
@@ -307,7 +307,7 @@ internal/api/handlers/
 
 | Endpoint | Replacement |
 |----------|-------------|
-| `/v1/auth/admin/operators` | `/v1/organizations/:id/members` |
+| `/v1/auth/admin/users` | `/v1/organizations/:id/members` |
 
 ---
 
@@ -318,7 +318,7 @@ internal/api/handlers/
 | File | Purpose |
 |------|---------|
 | `middleware/org_context.go` | Extract and validate org_id from request/session |
-| `middleware/org_membership.go` | Verify operator is member of target org |
+| `middleware/org_membership.go` | Verify user is member of target org |
 
 ### 7.2 Modified Middleware
 
@@ -326,18 +326,18 @@ internal/api/handlers/
 |------|---------|
 | `middleware/super_admin.go` | Refactor to check org membership + super_admin role in that org |
 | `middleware/rbac_authorize.go` | Add org-scoped permission checks |
-| `middleware/cookie_auth.go` | Load operator with memberships |
+| `middleware/cookie_auth.go` | Load user with memberships |
 
 ### 7.3 Middleware Flow
 
 ```
 Request
   ↓
-cookie_auth → Load Operator + Memberships
+cookie_auth → Load User + Memberships
   ↓
 org_context → Extract org_id from URL/body/header
   ↓
-org_membership → Verify operator is member of that org
+org_membership → Verify user is member of that org
   ↓
 org_role_check → Verify role level for action
   ↓
@@ -409,8 +409,8 @@ apps/api/internal/
 ```
 apps/api/internal/
 ├── domain/
-│   ├── operator/
-│   │   ├── operator_entity.go      # Remove Role, add Memberships
+│   ├── user/
+│   │   ├── user_entity.go      # Remove Role, add Memberships
 │   │   ├── role.go                # Add org-scoped methods
 │   │   └── permissions.go         # Remove global, add org-scoped
 │   └── device/
@@ -466,7 +466,7 @@ apps/api/internal/infrastructure/storage/
 2. Domain Layer
    - Create organization package
    - Create invitation package
-   - Modify operator entity (remove Role)
+   - Modify user entity (remove Role)
 
 3. Storage Layer
    - Create organization_storage.go
@@ -513,7 +513,7 @@ apps/api/internal/infrastructure/storage/
 
 ## Key Design Decisions Documented
 
-1. **Max 2 Active Organizations**: Capped at 2 per operator as specified. Only ACTIVE orgs count toward max.
+1. **Max 2 Active Organizations**: Capped at 2 per user as specified. Only ACTIVE orgs count toward max.
 2. **Invitation Required for Join**: Users cannot join by org_id alone
 3. **Org-Context from Session**: Selected org stored in session, not JWT
 4. **Soft Delete**: Organizations and members use soft delete
@@ -686,7 +686,7 @@ func (s *DeviceService) RegisterDevice(ctx context.Context, req *RegisterRequest
 
 ```go
 // Middleware checks role on EVERY request
-func OrgMembershipMiddleware(ctx context.Context, op *Operator, orgID string) error {
+func OrgMembershipMiddleware(ctx context.Context, op *User, orgID string) error {
     membership := op.GetMembership(orgID)
     if membership == nil {
         return ErrNotOrgMember
@@ -699,14 +699,14 @@ func OrgMembershipMiddleware(ctx context.Context, op *Operator, orgID string) er
 }
 ```
 
-### 9. Operator Account Deletion
+### 9. User Account Deletion
 
-**Problem**: What happens to org memberships when operator deletes account?
+**Problem**: What happens to org memberships when user deletes account?
 
 **Solution**:
-- **Cascade delete memberships** when operator deleted
-- **Cancel pending invitations** sent by operator
-- **Delete operator** - cascades handle rest
+- **Cascade delete memberships** when user deleted
+- **Cancel pending invitations** sent by user
+- **Delete user** - cascades handle rest
 - Log audit event
 
 ```go
@@ -716,11 +716,11 @@ func (s *OperatorService) DeleteOperator(ctx context.Context, operatorID string)
         if err := s.removeFromAllOrgsTx(ctx, tx, operatorID); err != nil {
             return err
         }
-        // Cancel invitations sent by this operator
+        // Cancel invitations sent by this user
         if err := s.cancelSentInvitationsTx(ctx, tx, operatorID); err != nil {
             return err
         }
-        // Delete operator (other cascades handle devices, sessions, etc)
+        // Delete user (other cascades handle devices, sessions, etc)
         return s.deleteOperatorTx(ctx, tx, operatorID)
     })
 }
@@ -810,7 +810,7 @@ func RequireOrgMiddleware(c *gin.Context) {
 
 **Solution**:
 - **Per org**: Max 20 pending invitations
-- **Per operator**: Max 5 invitations per hour
+- **Per user**: Max 5 invitations per hour
 - **Per email**: No duplicate pending invitations
 
 ```go
@@ -827,7 +827,7 @@ func (s *InvitationService) CreateInvitation(ctx context.Context, req *CreateInv
         return ErrMaxInvitationsReached
     }
     
-    // Check per-operator rate limit (redis sliding window)
+    // Check per-user rate limit (redis sliding window)
     if err := s.rateLimiter.Check(ctx, "invite:"+req.InvitedBy, 5, time.Hour); err != nil {
         return ErrRateLimitExceeded
     }
@@ -943,8 +943,8 @@ var (
 
 // Membership errors
 var (
-    ErrNotOrgMember        = errors.New("operator is not a member of this organization")
-    ErrAlreadyOrgMember    = errors.New("operator is already a member of this organization")
+    ErrNotOrgMember        = errors.New("user is not a member of this organization")
+    ErrAlreadyOrgMember    = errors.New("user is already a member of this organization")
     ErrCannotRemoveSelf    = errors.New("cannot remove yourself from organization")
     ErrCannotRemoveOwner   = errors.New("cannot remove organization owner")
     ErrInsufficientRole    = errors.New("insufficient role for this action")
@@ -1063,7 +1063,7 @@ const (
 
 ### Migration Execution
 - [ ] Phase 1: Run 040_organizations.sql
-- [ ] Phase 2: Backfill existing operators to "default org"
+- [ ] Phase 2: Backfill existing users to "default org"
 - [ ] Phase 3: Enable require_org_id for new device registrations
 - [ ] Phase 4: Enable strict mode (all operations require org)
 
@@ -1116,7 +1116,7 @@ Option C: Automatic org on first device registration
 
 ### 2. API Key Organization Scope
 
-**Problem**: Currently API keys are per-operator. How do they work with orgs?
+**Problem**: Currently API keys are per-user. How do they work with orgs?
 
 **Options**:
 ```
@@ -1126,9 +1126,9 @@ Option A: API keys are org-scoped
 ├── Key includes org_id in payload
 └── Cleaner isolation
 
-Option B: API keys are operator-scoped, inherit operator's org
+Option B: API keys are user-scoped, inherit user's org
 ├── Same as current
-├── Operator with multiple orgs: which org for device?
+├── User with multiple orgs: which org for device?
 └── Need to specify org on each registration
 ```
 
@@ -1161,7 +1161,7 @@ Option B: Per-org unique IMEI
 **Options**:
 ```
 Option A: Strict email match required
-├── Invitation email must match signed-in operator's email exactly
+├── Invitation email must match signed-in user's email exactly
 ├── Prevents wrong-account acceptance
 └── User must correct invitation or admin must re-invite
 
@@ -1214,17 +1214,17 @@ Option B: Allow, org becomes unmanageable
 
 **Invitation Permissions**:
 ```
-super_admin can invite → admin, operator, viewer (NOT super_admin)
-admin can invite → operator, viewer (NOT admin or super_admin)
-operator cannot invite
+super_admin can invite → admin, user, viewer (NOT super_admin)
+admin can invite → user, viewer (NOT admin or super_admin)
+user cannot invite
 viewer cannot invite
 ```
 
 **Demotion Permissions**:
 ```
-super_admin can demote → admin, operator, viewer
-admin can demote → operator, viewer (NOT super_admin or other admin)
-operator cannot demote
+super_admin can demote → admin, user, viewer
+admin can demote → user, viewer (NOT super_admin or other admin)
+user cannot demote
 viewer cannot demote
 ```
 
@@ -1232,7 +1232,7 @@ viewer cannot demote
 
 ### 8. Organization Name Uniqueness
 
-**Problem**: Can two operators have orgs with the same name?
+**Problem**: Can two users have orgs with the same name?
 
 **Options**:
 ```
@@ -1240,17 +1240,17 @@ Option A: Globally unique org names
 ├── "My Company" can only exist once
 └── Cleaner, but conflicts possible
 
-Option B: Per-operator unique org names
-├── Each operator can have "My Company"
+Option B: Per-user unique org names
+├── Each user can have "My Company"
 ├── Org identity = operator_id + name
 └── More flexible
 ```
 
-**Recommendation**: Option B - per-operator unique names. Two users can both have "Personal" org.
+**Recommendation**: Option B - per-user unique names. Two users can both have "Personal" org.
 
 ### 9. Webhook Scope
 
-**Problem**: Currently webhooks are per-operator. How do they work with orgs?
+**Problem**: Currently webhooks are per-user. How do they work with orgs?
 
 **Options**:
 ```
@@ -1259,7 +1259,7 @@ Option A: Webhooks are org-scoped
 ├── Device events in org trigger org's webhook
 └── Clean separation
 
-Option B: Operator webhooks span all org memberships
+Option B: User webhooks span all org memberships
 ├── Same as current
 ├── Events include org_id in payload
 └── Less change, but more complex routing
@@ -1269,7 +1269,7 @@ Option B: Operator webhooks span all org memberships
 
 ### 10. Cross-Organization Dashboard
 
-**Problem**: If operator in multiple orgs, how do they view data?
+**Problem**: If user in multiple orgs, how do they view data?
 
 **Options**:
 ```
@@ -1389,14 +1389,14 @@ Option C: Invitation required even for first user
 | # | Question | Options | Recommendation | Status |
 |---|----------|---------|---------------|--------|
 | 1 | Device registration without org | Require org / Personal space / Auto-create | Require org |  CONFIRMED |
-| 2 | API key org scope | Org-scoped / Operator-scoped | Org-scoped |  CONFIRMED |
+| 2 | API key org scope | Org-scoped / User-scoped | Org-scoped |  CONFIRMED |
 | 3 | IMEI uniqueness | Global / Per-org | Global (IMEI is device hardware ID) |  CONFIRMED |
 | 4 | Invitation email match | Strict / Loose | Strict |  CONFIRMED |
 | 5 | Last super_admin leaving | Block / Allow | Block |  CONFIRMED |
 | 6 | Org deletion prerequisites | Checklist enforced | Enforce all |  CONFIRMED |
 | 7 | Role hierarchy | As specified | As specified |  CONFIRMED |
-| 8 | Org name uniqueness | Global / Per-operator | Per-operator |  CONFIRMED |
-| 9 | Webhook scope | Org-scoped / Operator-scoped | Org-scoped |  CONFIRMED |
+| 8 | Org name uniqueness | Global / Per-user | Per-user |  CONFIRMED |
+| 9 | Webhook scope | Org-scoped / User-scoped | Org-scoped |  CONFIRMED |
 | 10 | Cross-org dashboard | Org-scoped only / Aggregate / Both | Org-scoped only |  CONFIRMED |
 | 11 | Device transfer feature | Required | Implement |  CONFIRMED |
 | 12 | Membership limits | Default 100 | Implement |  CONFIRMED |
@@ -1451,7 +1451,7 @@ graphql/
 type Organization struct {
     ID        string    `json:"id"`
     Name      string    `json:"name"`
-    CreatedBy *Operator  `json:"createdBy"`
+    CreatedBy *User  `json:"createdBy"`
     Members   []*Member `json:"members"`
     CreatedAt time.Time `json:"createdAt"`
     IsActive  bool      `json:"isActive"`
@@ -1460,10 +1460,10 @@ type Organization struct {
 // ADD: OrganizationMembership type
 type OrganizationMembership struct {
     Organization *Organization `json:"organization"`
-    Operator    *Operator     `json:"operator"`
+    User    *User     `json:"user"`
     Role        OrgRole       `json:"role"`
     JoinedAt    time.Time     `json:"joinedAt"`
-    InvitedBy   *Operator     `json:"invitedBy,omitempty"`
+    InvitedBy   *User     `json:"invitedBy,omitempty"`
 }
 
 // ADD: Invitation type (for GraphQL)
@@ -1477,8 +1477,8 @@ type Invitation struct {
     ExpiresAt     time.Time `json:"expiresAt"`
 }
 
-// UPDATE: Operator type - add memberships field
-type Operator struct {
+// UPDATE: User type - add memberships field
+type User struct {
     // ... existing fields
     Memberships []*OrganizationMembership `json:"memberships"`
 }
@@ -1602,10 +1602,10 @@ memberEvent: &graphql.Field{
 // ADD: Organization queries
 func (r *Resolver) OrganizationQuery(p graphql.ResolveParams) (interface{}, error) {
     orgID := p.Args["id"].(string)
-    operator := GetOperatorFromContext(p.Context)
+    user := GetOperatorFromContext(p.Context)
     
     // Check membership
-    membership := operator.GetMembership(orgID)
+    membership := user.GetMembership(orgID)
     if membership == nil {
         return nil, gqlerror.Errorf("Not a member of this organization")
     }
@@ -1614,22 +1614,22 @@ func (r *Resolver) OrganizationQuery(p graphql.ResolveParams) (interface{}, erro
 }
 
 func (r *Resolver) OrganizationsQuery(p graphql.ResolveParams) (interface{}, error) {
-    operator := GetOperatorFromContext(p.Context)
-    return operator.GetOrganizations(), nil
+    user := GetOperatorFromContext(p.Context)
+    return user.GetOrganizations(), nil
 }
 
 func (r *Resolver) MyMembershipsQuery(p graphql.ResolveParams) (interface{}, error) {
-    operator := GetOperatorFromContext(p.Context)
-    return operator.GetMemberships(), nil
+    user := GetOperatorFromContext(p.Context)
+    return user.GetMemberships(), nil
 }
 
 // UPDATE: Existing device queries - add org filter
 func (r *Resolver) DevicesQuery(p graphql.ResolveParams) (interface{}, error) {
-    operator := GetOperatorFromContext(p.Context)
+    user := GetOperatorFromContext(p.Context)
     orgID := p.Args["orgId"] // Optional, defaults to selected org
     
     if orgID == nil {
-        orgID = operator.GetSelectedOrgID()
+        orgID = user.GetSelectedOrgID()
     }
     
     // Check membership and return org-scoped devices
@@ -1642,47 +1642,47 @@ func (r *Resolver) DevicesQuery(p graphql.ResolveParams) (interface{}, error) {
 ```go
 // ADD: Organization mutations
 func (r *Resolver) CreateOrganizationMutation(p graphql.ResolveParams) (interface{}, error) {
-    operator := GetOperatorFromContext(p.Context)
+    user := GetOperatorFromContext(p.Context)
     name := p.Args["name"].(string)
     
-    return CreateOrganization(operator, name)
+    return CreateOrganization(user, name)
 }
 
 func (r *Resolver) DeleteOrganizationMutation(p graphql.ResolveParams) (interface{}, error) {
-    operator := GetOperatorFromContext(p.Context)
+    user := GetOperatorFromContext(p.Context)
     orgID := p.Args["id"].(string)
     
     // Check: must be super_admin of org
     // Check: must have no devices (or transfer/delete first)
     // Check: must have no other members (or remove first)
     
-    return DeleteOrganization(operator, orgID)
+    return DeleteOrganization(user, orgID)
 }
 
 // ADD: Membership mutations
 func (r *Resolver) InviteMemberMutation(p graphql.ResolveParams) (interface{}, error) {
-    operator := GetOperatorFromContext(p.Context)
+    user := GetOperatorFromContext(p.Context)
     orgID := p.Args["orgId"].(string)
     email := p.Args["email"].(string)
     role := p.Args["role"].(OrgRole)
     
-    // Check: operator must be admin+
+    // Check: user must be admin+
     // Create invitation, send email
 }
 
 func (r *Resolver) AcceptInvitationMutation(p graphql.ResolveParams) (interface{}, error) {
-    operator := GetOperatorFromContext(p.Context)
+    user := GetOperatorFromContext(p.Context)
     token := p.Args["token"].(string)
     notes := p.Args["notes"].(string)
     
     // Validate token
-    // Check email matches operator
+    // Check email matches user
     // Create membership
     // Send notification to inviter
 }
 
 func (r *Resolver) RejectInvitationMutation(p graphql.ResolveParams) (interface{}, error) {
-    operator := GetOperatorFromContext(p.Context)
+    user := GetOperatorFromContext(p.Context)
     token := p.Args["token"].(string)
     notes := p.Args["notes"].(string)
     
@@ -1696,16 +1696,16 @@ func (r *Resolver) RejectInvitationMutation(p graphql.ResolveParams) (interface{
 
 ```go
 // ADD: Org context helpers
-func GetOperatorFromContext(ctx context.Context) *Operator {
-    // Extract operator from context
+func GetOperatorFromContext(ctx context.Context) *User {
+    // Extract user from context
 }
 
 func GetOrgFromContext(ctx context.Context) (*Organization, error) {
     // Get selected org from context
 }
 
-func RequireOrgMembership(operator *Operator, orgID string, minRole OrgRole) error {
-    membership := operator.GetMembership(orgID)
+func RequireOrgMembership(user *User, orgID string, minRole OrgRole) error {
+    membership := user.GetMembership(orgID)
     if membership == nil {
         return ErrNotOrgMember
     }
@@ -1715,8 +1715,8 @@ func RequireOrgMembership(operator *Operator, orgID string, minRole OrgRole) err
     return nil
 }
 
-func GetOrgDevice(operator *Operator, deviceID string) (*Device, error) {
-    // Get device, verify operator is org member
+func GetOrgDevice(user *User, deviceID string) (*Device, error) {
+    // Get device, verify user is org member
 }
 ```
 
@@ -1726,9 +1726,9 @@ func GetOrgDevice(operator *Operator, deviceID string) (*Device, error) {
 // UPDATE: Role checks to org-scoped
 func RequireOrgRole(orgID string, minRole OrgRole) func(graphql.ResolveParams) (interface{}, error) {
     return func(p graphql.ResolveParams) (interface{}, error) {
-        operator := GetOperatorFromContext(p.Context)
+        user := GetOperatorFromContext(p.Context)
         
-        membership := operator.GetMembership(orgID)
+        membership := user.GetMembership(orgID)
         if membership == nil {
             return nil, gqlerror.Errorf("Not a member of this organization")
         }
@@ -1785,7 +1785,7 @@ CURRENT STATE (Greenfield):
 
 TARGET STATE (With Organizations):
 ┌────────────┐     ┌────────────┐     ┌────────────┐
-│  Operator  │────│ Membership │────│Organization│
+│  User  │────│ Membership │────│Organization│
 │           │     │  (role)   │     │            │
 └────────────┘     └────────────┘     └────────────┘
                          │
@@ -1815,7 +1815,7 @@ CREATE TABLE IF NOT EXISTS organizations (
     deleted_at INTEGER,
     is_active INTEGER DEFAULT 1,
     max_members INTEGER DEFAULT 100,
-    UNIQUE(created_by, name)  -- Per-operator unique names
+    UNIQUE(created_by, name)  -- Per-user unique names
 );
 
 -- Create organization_members table
@@ -1830,8 +1830,8 @@ CREATE TABLE IF NOT EXISTS organization_members (
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'removed')),
     UNIQUE(organization_id, operator_id),
     FOREIGN KEY (organization_id) REFERENCES organizations(id),
-    FOREIGN KEY (operator_id) REFERENCES operators(id),
-    FOREIGN KEY (invited_by) REFERENCES operators(id)
+    FOREIGN KEY (operator_id) REFERENCES users(id),
+    FOREIGN KEY (invited_by) REFERENCES users(id)
 );
 
 -- Create invitations table
@@ -1850,8 +1850,8 @@ CREATE TABLE IF NOT EXISTS invitations (
     expires_at INTEGER NOT NULL,
     responder_id TEXT,
     FOREIGN KEY (organization_id) REFERENCES organizations(id),
-    FOREIGN KEY (invited_by) REFERENCES operators(id),
-    FOREIGN KEY (responder_id) REFERENCES operators(id)
+    FOREIGN KEY (invited_by) REFERENCES users(id),
+    FOREIGN KEY (responder_id) REFERENCES users(id)
 );
 
 -- Create indexes
@@ -1889,7 +1889,7 @@ PRAGMA table_info(devices);
 
 -- Verify constraints
 PRAGMA foreign_key_list('organization_members');
--- Should show FK to organizations and operators
+-- Should show FK to organizations and users
 ```
 
 ### Migration Rollback (if needed)
@@ -1967,14 +1967,14 @@ COMMIT;
 
 ---
 
-## MFA & BACKUP CODES (Per-Operator)
+## MFA & BACKUP CODES (Per-User)
 
 ### Design Decision
 
-**MFA and Backup Codes remain per-operator, NOT org-scoped.**
+**MFA and Backup Codes remain per-user, NOT org-scoped.**
 
 - MFA/Backup codes are GLOBAL - work across ALL org memberships
-- Stored in `operators` table (already exists)
+- Stored in `users` table (already exists)
 - **No changes needed**
 
 ---
@@ -1991,15 +1991,15 @@ COMMIT;
 3. User confirms with password
 4. System cascade deletes:
    - Remove from all org memberships
-   - Cancel all invitations sent by operator
+   - Cancel all invitations sent by user
    - Delete sessions
-   - Delete operator record
+   - Delete user record
 5. Devices remain but orphaned (historical reference kept)
 
 ### Transfer Ownership (Optional)
 
 Before deletion, user can transfer org ownership:
-1. Select new owner (must be admin or operator)
+1. Select new owner (must be admin or user)
 2. New owner receives confirmation email
 3. New owner accepts transfer
 4. Old owner becomes admin

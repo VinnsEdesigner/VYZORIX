@@ -8,5 +8,5 @@
 
 export interface MFAVerifyRequest {
   code?: string;
-  operator_id?: string;
+  user_id?: string;
 }

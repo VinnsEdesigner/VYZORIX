@@ -80,7 +80,7 @@ const postAuthMfaRegenerateBackupCodes = (
       options);
     }
   /**
- * Returns whether MFA is enabled for the current operator
+ * Returns whether MFA is enabled for the current user
  * @summary Get MFA status
  */
 const getAuthMfaStatus = (
@@ -106,7 +106,7 @@ const postAuthMfaVerify = (
       options);
     }
   /**
- * Verifies a backup code for an operator with MFA enabled
+ * Verifies a backup code for a user with MFA enabled
  * @summary Verify MFA backup code
  */
 const postAuthMfaVerifyBackup = (

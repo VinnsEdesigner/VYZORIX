@@ -43,18 +43,6 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
   export const getAuth = () => {
 /**
- * Clears an operator's account lockout. Requires org-scoped super_admin
- * @summary Unlock account
- */
-const postAuthAdminLockoutUnlockOperatorId = (
-    operatorId: string,
- options?: SecondParameter<typeof customAxios<SuccessResult>>,) => {
-      return customAxios<SuccessResult>(
-      {url: `/auth/admin/lockout/unlock/${operatorId}`, method: 'POST'
-    },
-      options);
-    }
-  /**
  * Cancels a pending email verification for an email address
  * @summary Cancel verification
  */
@@ -83,7 +71,7 @@ const postAuthForgotPassword = (
       options);
     }
   /**
- * Returns the current account lockout status for the authenticated operator
+ * Returns the current account lockout status for the authenticated user
  * @summary Get lockout status
  */
 const getAuthLockoutStatus = (
@@ -95,8 +83,8 @@ const getAuthLockoutStatus = (
       options);
     }
   /**
- * Authenticates an operator with email/password and starts a session
- * @summary Operator login
+ * Authenticates a user with email/password and starts a session
+ * @summary User login
  */
 const postAuthLogin = (
     loginRequest: LoginRequest,
@@ -109,8 +97,8 @@ const postAuthLogin = (
       options);
     }
   /**
- * Authenticates an operator and returns access/refresh tokens instead of a cookie
- * @summary Operator login (token response)
+ * Authenticates a user and returns access/refresh tokens instead of a cookie
+ * @summary User login (token response)
  */
 const postAuthLoginTokens = (
     loginRequest: LoginRequest,
@@ -137,8 +125,8 @@ const postAuthLogout = (
       options);
     }
   /**
- * Returns the authenticated operator's profile and organization context
- * @summary Get current operator
+ * Returns the authenticated user's profile and organization context
+ * @summary Get current user
  */
 const getAuthMe = (
 
@@ -183,7 +171,7 @@ const postAuthOauthGoogle = (
       options);
     }
   /**
- * Switches the operator's active organization context
+ * Switches the user's active organization context
  * @summary Select organization
  */
 const postAuthOrganizationsSelect = (
@@ -224,8 +212,8 @@ const postAuthRefresh = (
       options);
     }
   /**
- * Registers a new operator account and sends a verification email
- * @summary Register operator
+ * Registers a new user account and sends a verification email
+ * @summary Register user
  */
 const postAuthRegister = (
     registerRequest: RegisterRequest,
@@ -265,7 +253,7 @@ const getAuthResendVerification = (
       options);
     }
   /**
- * Resends the verification email to an operator
+ * Resends the verification email to a user
  * @summary Resend verification email
  */
 const postAuthResendVerification = (
@@ -293,7 +281,7 @@ const postAuthResetPassword = (
       options);
     }
   /**
- * Verifies an operator's email via a token query parameter (alternative to POST)
+ * Verifies a user's email via a token query parameter (alternative to POST)
  * @summary Verify email (GET)
  */
 const getAuthVerifyEmail = (
@@ -306,7 +294,7 @@ const getAuthVerifyEmail = (
       options);
     }
   /**
- * Verifies an operator's email using a verification token
+ * Verifies a user's email using a verification token
  * @summary Verify email
  */
 const postAuthVerifyEmail = (
@@ -319,8 +307,7 @@ const postAuthVerifyEmail = (
     },
       options);
     }
-  return {postAuthAdminLockoutUnlockOperatorId,postAuthCancelVerification,postAuthForgotPassword,getAuthLockoutStatus,postAuthLogin,postAuthLoginTokens,postAuthLogout,getAuthMe,postAuthOauthGithub,postAuthOauthGoogle,getAuthOrganizations,postAuthOrganizationsSelect,getAuthPollVerification,postAuthRefresh,postAuthRegister,postAuthResendPasswordReset,getAuthResendVerification,postAuthResendVerification,postAuthResetPassword,getAuthVerifyEmail,postAuthVerifyEmail}};
-export type PostAuthAdminLockoutUnlockOperatorIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['postAuthAdminLockoutUnlockOperatorId']>>>
+  return {postAuthCancelVerification,postAuthForgotPassword,getAuthLockoutStatus,postAuthLogin,postAuthLoginTokens,postAuthLogout,getAuthMe,postAuthOauthGithub,postAuthOauthGoogle,getAuthOrganizations,postAuthOrganizationsSelect,getAuthPollVerification,postAuthRefresh,postAuthRegister,postAuthResendPasswordReset,getAuthResendVerification,postAuthResendVerification,postAuthResetPassword,getAuthVerifyEmail,postAuthVerifyEmail}};
 export type PostAuthCancelVerificationResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['postAuthCancelVerification']>>>
 export type PostAuthForgotPasswordResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['postAuthForgotPassword']>>>
 export type GetAuthLockoutStatusResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['getAuthLockoutStatus']>>>

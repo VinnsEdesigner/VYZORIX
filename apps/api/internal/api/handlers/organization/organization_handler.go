@@ -57,7 +57,7 @@ func NewOrganizationHandler(
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations [post]
 func (h *OrganizationHandler) Create(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -120,7 +120,7 @@ func (h *OrganizationHandler) Create(c *gin.Context) {
 
 // List handles GET /v1/organizations.
 // @Summary      List organizations
-// @Description  Returns all organizations the operator is a member of
+// @Description  Returns all organizations the user is a member of
 // @Tags         organizations
 // @Accept       json
 // @Produce      json
@@ -130,7 +130,7 @@ func (h *OrganizationHandler) Create(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations [get]
 func (h *OrganizationHandler) List(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -181,7 +181,7 @@ func (h *OrganizationHandler) List(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id} [get]
 func (h *OrganizationHandler) Get(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -204,7 +204,7 @@ func (h *OrganizationHandler) Get(c *gin.Context) {
 			return
 		}
 	} else {
-		// Check minimum role: require at least operator role.
+		// Check minimum role: require at least user role.
 		if member.Role.Level() < organization.RoleOperator.Level() {
 			h.presenter.Forbidden(c, "insufficient permissions: operator role required")
 			return
@@ -249,7 +249,7 @@ func (h *OrganizationHandler) Get(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id} [patch]
 func (h *OrganizationHandler) Update(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -283,7 +283,7 @@ func (h *OrganizationHandler) Update(c *gin.Context) {
 			return
 		}
 	} else {
-		// For non-sensitive fields, just check if operator can manage organization.
+		// For non-sensitive fields, just check if user can manage organization.
 		if err := h.memberService.CheckCanManageOrganization(c.Request.Context(), op.ID, orgID); err != nil {
 			h.presenter.Forbidden(c, "access denied")
 			return
@@ -328,7 +328,7 @@ func (h *OrganizationHandler) Update(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id} [delete]
 func (h *OrganizationHandler) Delete(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return

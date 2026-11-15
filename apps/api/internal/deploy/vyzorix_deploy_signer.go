@@ -21,7 +21,7 @@ func CompileAndSign(m *Manifest, in Injection, sign DocumentSigner) (string, err
 
 // SignConfig renders a compiled config, refuses it if it carries a secret, signs
 // it, and re-parses the result with the format's own parser. The scan runs
-// before the signature, so an unsigned refusal is what an operator sees.
+// before the signature, so an unsigned refusal is what a user sees.
 func SignConfig(cfg *Config, sign DocumentSigner) (string, error) {
 	if sign == nil {
 		return "", ErrNoSigner

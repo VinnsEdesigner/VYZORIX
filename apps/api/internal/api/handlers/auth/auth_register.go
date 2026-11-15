@@ -51,13 +51,13 @@ func NewRegisterHandler(authService *auth.AuthService, emailSvc *emailService.Se
 }
 
 // Handle handles POST /v1/auth/register.
-// @Summary      Register operator
-// @Description  Registers a new operator account and sends a verification email
+// @Summary      Register user
+// @Description  Registers a new user account and sends a verification email
 // @Tags         auth
 // @Accept       json
 // @Produce      json
 // @Param        body  body  openapi.RegisterRequest  true  "registration credentials"
-// @Success      201  {object}  openapi.RegisterResult  "created operator"
+// @Success      201  {object}  openapi.RegisterResult  "created user"
 // @Failure      400  {object}  openapi.ErrorResponse  "invalid input"
 // @Failure      409  {object}  openapi.ErrorResponse  "account exists"
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
@@ -118,10 +118,10 @@ func (h *RegisterHandler) Handle(c *gin.Context) {
 	}
 
 	// Log successful registration.
-	h.presenter.RegisterSuccess(c, result.OperatorID)
+	h.presenter.RegisterSuccess(c, result.UserID)
 
 	// Send verification email after successful registration.
-	if err := h.sendVerificationEmail(c.Request.Context(), req.Email, req.Name, result.OperatorID); err != nil {
+	if err := h.sendVerificationEmail(c.Request.Context(), req.Email, req.Name, result.UserID); err != nil {
 		h.presenter.InternalError(c, "Registration successful but failed to send verification email: "+err.Error())
 		return
 	}
@@ -130,14 +130,14 @@ func (h *RegisterHandler) Handle(c *gin.Context) {
 }
 
 // sendVerificationEmail creates a verification token and sends the verification email synchronously.
-// If email sending fails, the failure is recorded in the database so the operator can see it on the verification page.
-func (h *RegisterHandler) sendVerificationEmail(ctx context.Context, email, name, operatorID string) error {
+// If email sending fails, the failure is recorded in the database so the user can see it on the verification page.
+func (h *RegisterHandler) sendVerificationEmail(ctx context.Context, email, name, userID string) error {
 	if h.emailSvc == nil || !h.emailSvc.IsConfigured() {
 		return nil
 	}
 
 	// Create verification token - MUST succeed for email verification to work.
-	token, verificationID, err := h.authService.CreateEmailVerification(ctx, operatorID)
+	token, verificationID, err := h.authService.CreateEmailVerification(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func (h *RegisterHandler) sendVerificationEmail(ctx context.Context, email, name
 	defer cancel()
 
 	if err := h.emailSvc.SendVerificationEmail(sendCtx, email, name, token); err != nil {
-		// Record the email failure in the database so the operator can see it.
+		// Record the email failure in the database so the user can see it.
 		if h.emailVerifyRepo != nil {
 			if markErr := h.emailVerifyRepo.MarkEmailFailed(ctx, verificationID, err.Error()); markErr != nil {
 				h.log.Error("failed to record email failure",
@@ -159,7 +159,7 @@ func (h *RegisterHandler) sendVerificationEmail(ctx context.Context, email, name
 		}
 		h.log.Error("failed to send verification email",
 			"email", redaction.DefaultRedactor.Redact(email),
-			"operatorID", operatorID,
+			"operatorID", userID,
 			"error", redaction.DefaultRedactor.Redact(err.Error()),
 		)
 		return err

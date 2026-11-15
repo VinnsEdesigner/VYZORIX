@@ -165,8 +165,8 @@ func (s *OrganizationStorage) FindByOrganizationID(ctx context.Context, id organ
 	return s.FindByID(ctx, id.String())
 }
 
-// FindByName finds an organization by name for a specific operator.
-func (s *OrganizationStorage) FindByName(ctx context.Context, operatorID, name string) (*organization.Organization, error) {
+// FindByName finds an organization by name for a specific user.
+func (s *OrganizationStorage) FindByName(ctx context.Context, userID, name string) (*organization.Organization, error) {
 	query := `
 		SELECT o.id, o.name, o.created_by, o.created_at, o.updated_at, o.deleted_at, o.is_active, o.max_members,
 			   COUNT(DISTINCT om.id) as member_count
@@ -181,7 +181,7 @@ func (s *OrganizationStorage) FindByName(ctx context.Context, operatorID, name s
 	var createdBy string
 	var isActive bool
 
-	err := s.getQuerier(ctx).QueryRowContext(ctx, query, operatorID, name).Scan(
+	err := s.getQuerier(ctx).QueryRowContext(ctx, query, userID, name).Scan(
 		&org.ID,
 		&org.Name,
 		&createdBy,
@@ -269,19 +269,19 @@ func (s *OrganizationStorage) SoftDelete(ctx context.Context, id string) error {
 	return nil
 }
 
-// ListByOperator lists all organizations for an operator (via memberships).
-func (s *OrganizationStorage) ListByOperator(ctx context.Context, operatorID string) ([]*organization.Organization, error) {
+// ListByUser lists all organizations for a user (via memberships).
+func (s *OrganizationStorage) ListByUser(ctx context.Context, userID string) ([]*organization.Organization, error) {
 	query := `
 		SELECT o.id, o.name, o.created_by, o.created_at, o.updated_at, o.deleted_at, o.is_active, o.max_members,
 			   COUNT(DISTINCT om2.id) as member_count
 		FROM organizations o
 		INNER JOIN organization_members om ON o.id = om.organization_id AND om.status = 'active'
 		LEFT JOIN organization_members om2 ON o.id = om2.organization_id AND om2.status = 'active'
-		WHERE om.operator_id = ? AND o.deleted_at IS NULL
+		WHERE om.user_id = ? AND o.deleted_at IS NULL
 		GROUP BY o.id
 		ORDER BY o.created_at DESC`
 
-	rows, err := s.getQuerier(ctx).QueryContext(ctx, query, operatorID)
+	rows, err := s.getQuerier(ctx).QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -329,17 +329,17 @@ func (s *OrganizationStorage) ListByOperator(ctx context.Context, operatorID str
 	return orgs, rows.Err()
 }
 
-// ListByOperatorPaginated lists organizations for an operator with pagination.
-func (s *OrganizationStorage) ListByOperatorPaginated(ctx context.Context, operatorID string, limit, offset int) ([]*organization.Organization, int, error) {
+// ListByUserPaginated lists organizations for a user with pagination.
+func (s *OrganizationStorage) ListByUserPaginated(ctx context.Context, userID string, limit, offset int) ([]*organization.Organization, int, error) {
 	// Get total count first.
 	countQuery := `
 		SELECT COUNT(DISTINCT o.id)
 		FROM organizations o
 		INNER JOIN organization_members om ON o.id = om.organization_id AND om.status = 'active'
-		WHERE om.operator_id = ? AND o.deleted_at IS NULL`
+		WHERE om.user_id = ? AND o.deleted_at IS NULL`
 
 	var total int
-	err := s.getQuerier(ctx).QueryRowContext(ctx, countQuery, operatorID).Scan(&total)
+	err := s.getQuerier(ctx).QueryRowContext(ctx, countQuery, userID).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -351,12 +351,12 @@ func (s *OrganizationStorage) ListByOperatorPaginated(ctx context.Context, opera
 		FROM organizations o
 		INNER JOIN organization_members om ON o.id = om.organization_id AND om.status = 'active'
 		LEFT JOIN organization_members om2 ON o.id = om2.organization_id AND om2.status = 'active'
-		WHERE om.operator_id = ? AND o.deleted_at IS NULL
+		WHERE om.user_id = ? AND o.deleted_at IS NULL
 		GROUP BY o.id
 		ORDER BY o.created_at DESC
 		LIMIT ? OFFSET ?`
 
-	rows, err := s.getQuerier(ctx).QueryContext(ctx, query, operatorID, limit, offset)
+	rows, err := s.getQuerier(ctx).QueryContext(ctx, query, userID, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -419,9 +419,9 @@ func (s *OrganizationStorage) CountActiveMembers(ctx context.Context, orgID stri
 	return count, nil
 }
 
-// FindByNameAndOperatorID finds an organization by name for a specific operator.
-func (s *OrganizationStorage) FindByNameAndOperatorID(ctx context.Context, operatorID organization.OperatorID, name string) (*organization.Organization, error) {
-	return s.FindByName(ctx, operatorID.String(), name)
+// FindByNameAndUserID finds an organization by name for a specific user.
+func (s *OrganizationStorage) FindByNameAndUserID(ctx context.Context, userID organization.UserID, name string) (*organization.Organization, error) {
+	return s.FindByName(ctx, userID.String(), name)
 }
 
 // SoftDeleteByID soft-deletes an organization by OrganizationID.
@@ -429,9 +429,9 @@ func (s *OrganizationStorage) SoftDeleteByID(ctx context.Context, id organizatio
 	return s.SoftDelete(ctx, id.String())
 }
 
-// ListByOperatorID lists all organizations for an OperatorID.
-func (s *OrganizationStorage) ListByOperatorID(ctx context.Context, operatorID organization.OperatorID) ([]*organization.Organization, error) {
-	return s.ListByOperator(ctx, operatorID.String())
+// ListByUserID lists all organizations for an UserID.
+func (s *OrganizationStorage) ListByUserID(ctx context.Context, userID organization.UserID) ([]*organization.Organization, error) {
+	return s.ListByUser(ctx, userID.String())
 }
 
 // ListActive lists all active (non-archived) organizations.

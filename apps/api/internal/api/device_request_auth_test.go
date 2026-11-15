@@ -45,7 +45,7 @@ func deviceAuthServer(t *testing.T, deviceID, publicKeyPEM string) *Server {
 		id TEXT PRIMARY KEY, firebase_install_id TEXT, fcm_token TEXT, app_version TEXT,
 		device_class TEXT, online INTEGER NOT NULL DEFAULT 0,
 		registered_at INTEGER NOT NULL DEFAULT 0, last_seen INTEGER NOT NULL DEFAULT 0,
-		operator_id TEXT, organization_id TEXT, created_at TIMESTAMP, updated_at TIMESTAMP,
+		user_id TEXT, organization_id TEXT, created_at TIMESTAMP, updated_at TIMESTAMP,
 		device_name TEXT, manufacturer TEXT, model TEXT, os_version TEXT, security_patch TEXT,
 			build_id TEXT, api_level INTEGER NOT NULL DEFAULT 0, supported_abis TEXT,
 			ram_bytes INTEGER NOT NULL DEFAULT 0, storage_bytes INTEGER NOT NULL DEFAULT 0,

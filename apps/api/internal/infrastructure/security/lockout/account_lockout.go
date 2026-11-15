@@ -40,15 +40,15 @@ type Reason struct {
 
 // Storage interface for account lockout operations.
 type Storage interface {
-	GetAccountLockout(ctx context.Context, operatorID string) (int64, error)
-	SetAccountLockout(ctx context.Context, operatorID string, until int64) error
-	ClearAccountLockout(ctx context.Context, operatorID string) error
-	GetFailedAttempts(ctx context.Context, operatorID string) (int, error)
-	SetFailedAttempts(ctx context.Context, operatorID string, attempts int) error
-	ClearFailedAttempts(ctx context.Context, operatorID string) error
+	GetAccountLockout(ctx context.Context, userID string) (int64, error)
+	SetAccountLockout(ctx context.Context, userID string, until int64) error
+	ClearAccountLockout(ctx context.Context, userID string) error
+	GetFailedAttempts(ctx context.Context, userID string) (int, error)
+	SetFailedAttempts(ctx context.Context, userID string, attempts int) error
+	ClearFailedAttempts(ctx context.Context, userID string) error
 	// IncrementFailedAttempts atomically increments and returns the new count.
 	// This prevents race conditions in concurrent login attempts.
-	IncrementFailedAttempts(ctx context.Context, operatorID string) (int, error)
+	IncrementFailedAttempts(ctx context.Context, userID string) (int, error)
 }
 
 // Handler provides account lockout functionality.
@@ -68,12 +68,12 @@ func New(storage Storage, config Config) *Handler {
 }
 
 // IsLocked checks if an account is currently locked.
-func (h *Handler) IsLocked(ctx context.Context, operatorID string) (bool, *Reason, error) {
+func (h *Handler) IsLocked(ctx context.Context, userID string) (bool, *Reason, error) {
 	if !h.config.Enabled {
 		return false, nil, nil
 	}
 
-	lockedUntil, err := h.storage.GetAccountLockout(ctx, operatorID)
+	lockedUntil, err := h.storage.GetAccountLockout(ctx, userID)
 	if err != nil {
 		return false, nil, err
 	}
@@ -91,14 +91,14 @@ func (h *Handler) IsLocked(ctx context.Context, operatorID string) (bool, *Reaso
 	}
 
 	// Expired lockout - clear it and log any errors.
-	if err := h.storage.ClearAccountLockout(ctx, operatorID); err != nil {
+	if err := h.storage.ClearAccountLockout(ctx, userID); err != nil {
 		h.logger.Warn("failed to clear expired lockout",
-			"operator_id", operatorID,
+			"user_id", userID,
 			"error", err)
 	}
-	if err := h.storage.ClearFailedAttempts(ctx, operatorID); err != nil {
+	if err := h.storage.ClearFailedAttempts(ctx, userID); err != nil {
 		h.logger.Warn("failed to clear failed attempts",
-			"operator_id", operatorID,
+			"user_id", userID,
 			"error", err)
 	}
 
@@ -106,32 +106,32 @@ func (h *Handler) IsLocked(ctx context.Context, operatorID string) (bool, *Reaso
 }
 
 // RecordFailedAttempt records a failed login attempt using atomic increment.
-func (h *Handler) RecordFailedAttempt(ctx context.Context, operatorID string) error {
+func (h *Handler) RecordFailedAttempt(ctx context.Context, userID string) error {
 	if !h.config.Enabled {
 		return nil
 	}
 
 	// Use atomic increment to prevent race conditions.
-	attempts, err := h.storage.IncrementFailedAttempts(ctx, operatorID)
+	attempts, err := h.storage.IncrementFailedAttempts(ctx, userID)
 	if err != nil {
 		return err
 	}
 
 	if attempts >= h.config.MaxAttempts {
 		lockoutUntil := time.Now().Add(time.Duration(h.config.LockoutDuration) * time.Second).UnixMilli()
-		return h.storage.SetAccountLockout(ctx, operatorID, lockoutUntil)
+		return h.storage.SetAccountLockout(ctx, userID, lockoutUntil)
 	}
 
 	return nil
 }
 
 // ClearLockout clears the lockout for an account.
-func (h *Handler) ClearLockout(ctx context.Context, operatorID string) error {
-	if err := h.storage.ClearAccountLockout(ctx, operatorID); err != nil {
+func (h *Handler) ClearLockout(ctx context.Context, userID string) error {
+	if err := h.storage.ClearAccountLockout(ctx, userID); err != nil {
 		return err
 	}
 
-	return h.storage.ClearFailedAttempts(ctx, operatorID)
+	return h.storage.ClearFailedAttempts(ctx, userID)
 }
 
 var (

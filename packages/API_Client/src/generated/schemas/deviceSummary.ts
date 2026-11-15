@@ -9,5 +9,6 @@
 export interface DeviceSummary {
   id?: string;
   name?: string;
+  supportedAbis?: string[];
   tier?: string;
 }

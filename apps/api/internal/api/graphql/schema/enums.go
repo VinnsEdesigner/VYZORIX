@@ -265,7 +265,7 @@ var MemberLifecycleEnum = graphql.NewEnum(graphql.EnumConfig{
 })
 
 // OrgRoleEnum represents the role of an organization member.
-// Maps to domain/organization.OrganizationRole: super_admin, admin, operator, viewer.
+// Maps to domain/organization.OrganizationRole: super_admin, admin, user, viewer.
 var OrgRoleEnum = graphql.NewEnum(graphql.EnumConfig{
 	Name:        "OrgRole",
 	Description: "Role of an organization member",

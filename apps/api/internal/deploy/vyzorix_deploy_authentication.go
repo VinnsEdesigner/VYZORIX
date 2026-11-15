@@ -13,7 +13,7 @@ import (
 // drift into the handler.
 
 // Denial is why a deploy was refused. Each value maps to one HTTP response, so
-// the reason an operator sees is decided here rather than in the handler.
+// the reason a user sees is decided here rather than in the handler.
 type Denial string
 
 const (

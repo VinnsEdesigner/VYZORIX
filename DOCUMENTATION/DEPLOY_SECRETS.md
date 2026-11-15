@@ -123,7 +123,7 @@ it into the registry. See `CONTAINER_FILESYSTEM.md` for where these paths sit.
   ciphertext and bumps the app's secret generation. The device re-fetches when the
   generation differs from the one it holds.
 - **A wiped device has lost its Keystore key**, so it cannot decrypt anything sent
-  before the wipe. It re-enrolls as a new identity and the operator re-sets the secret.
+  before the wipe. It re-enrolls as a new identity and the user re-sets the secret.
   There is no recovery of a secret encrypted to a key that no longer exists — by design.
 - **A secret the device cannot decrypt is a refusal, not a silent skip.** If the
   ciphertext will not open, the agent reports `secret_undecryptable {app, key}` and
@@ -142,16 +142,16 @@ vyzorix secrets unset <app> KEY    --device <id>
 
 | Endpoint | Group | Returns |
 |:--|:--|:--|
-| `POST /v1/deploy/{device}/secrets/{app}` | operator | nothing; stores the ciphertext |
-| `GET /v1/deploy/{device}/secrets/{app}` | operator | names and generation **only** |
-| `DELETE /v1/deploy/{device}/secrets/{app}/{key}` | operator | nothing; removes one |
+| `POST /v1/deploy/{device}/secrets/{app}` | user | nothing; stores the ciphertext |
+| `GET /v1/deploy/{device}/secrets/{app}` | user | names and generation **only** |
+| `DELETE /v1/deploy/{device}/secrets/{app}/{key}` | user | nothing; removes one |
 | `GET /v1/device/{imei}/secrets/{app}/{key}` | device-signed | the **ciphertext**, to the device |
 
 `set`/`unset` are authorised by `device.deploy` — the same grant as a deploy, because
 writing a credential is the same kind of act as writing what runs.
 
 A value is never logged, never returned by any `GET`, and never written into any state
-the deploy feature reads back. `list` shows names, which is what an operator needs to
+the deploy feature reads back. `list` shows names, which is what a user needs to
 confirm the right thing is set.
 
 ---
@@ -168,9 +168,9 @@ confirm the right thing is set.
   reaches the ciphertext store does not yield a plaintext secret for a device whose key
   the attacker does not have.
 
-**Does not protect:** the device itself. A rooted phone, or the operator's own container
+**Does not protect:** the device itself. A rooted phone, or the user's own container
 running as fake-root, can read `files/apps/<app>/.env` once the app has started. This is
-the same limit as every secret on a device the operator controls, and it is stated
+the same limit as every secret on a device the user controls, and it is stated
 rather than implied. The envelope defends the *transport and the store*, not a
 compromised endpoint.
 
@@ -182,6 +182,6 @@ compromised endpoint.
   device B, because it is encrypted to A's key. A fleet of ten means ten `secrets set`
   calls, or a loop.
 - **A wiped device loses its secret key**, so old ciphertext is unrecoverable. The
-  device re-enrolls and the operator re-sets the secret.
+  device re-enrolls and the user re-sets the secret.
 - **`app.secrets` names must be set before the app will start.** An app that expects a
   secret it does not have will not be started with the variable absent.

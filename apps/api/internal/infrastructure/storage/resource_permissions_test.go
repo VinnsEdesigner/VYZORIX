@@ -24,8 +24,8 @@ func newTestResourcePermissionDB(t *testing.T) *sql.DB {
 			is_managed INTEGER NOT NULL DEFAULT 0, is_inherited INTEGER NOT NULL DEFAULT 0,
 			created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)`,
 		`CREATE TABLE device_group_members (
-			group_id TEXT NOT NULL, operator_id TEXT NOT NULL, created_at INTEGER NOT NULL,
-			PRIMARY KEY (group_id, operator_id))`,
+			group_id TEXT NOT NULL, user_id TEXT NOT NULL, created_at INTEGER NOT NULL,
+			PRIMARY KEY (group_id, user_id))`,
 		`CREATE UNIQUE INDEX idx_rp_test_unique ON resource_permissions(org_id, subject_type, subject_id, scope)`,
 	}
 	for _, q := range stmts {
@@ -36,7 +36,7 @@ func newTestResourcePermissionDB(t *testing.T) *sql.DB {
 	return db
 }
 
-func TestGrantRepository_SaveAndListEffectiveOperatorGrants(t *testing.T) {
+func TestGrantRepository_SaveAndListEffectiveUserGrants(t *testing.T) {
 	db := newTestResourcePermissionDB(t)
 	r := NewGrantRepository(db)
 	ctx := context.Background()
@@ -101,7 +101,7 @@ func TestGrantRepository_TeamGrantsJoinedViaMembership(t *testing.T) {
 	}
 
 	// Add op-1 to team-1.
-	if _, err := db.Exec(`INSERT INTO device_group_members (group_id, operator_id, created_at) VALUES (?, ?, 0)`, "team-1", "op-1"); err != nil {
+	if _, err := db.Exec(`INSERT INTO device_group_members (group_id, user_id, created_at) VALUES (?, ?, 0)`, "team-1", "op-1"); err != nil {
 		t.Fatalf("insert membership: %v", err)
 	}
 

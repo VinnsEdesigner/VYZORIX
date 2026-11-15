@@ -13,7 +13,7 @@ what is written here.
 ## The system as a whole
 
 **Vyzorix** — The platform: a Debian userspace on an unrooted Android phone, reachable
-from anywhere, with an operator console, a terminal and application deployment.
+from anywhere, with a user console, a terminal and application deployment.
 
 **Agent** — The app running on the device. "The agent" and "the app" mean the same thing;
 the former is used when the device is the subject.
@@ -21,7 +21,7 @@ the former is used when the device is the subject.
 **Server** — The Go service and console in this repository. It compiles and signs
 deploys, holds secrets, serves the API, and owns the WebSocket.
 
-**CLI** — The `vyzorix` command-line tool (`vyzorix-cli`), the operator's handle on the
+**CLI** — The `vyzorix` command-line tool (`vyzorix-cli`), the user's handle on the
 server.
 
 **Spec** — `vyzorix-spec`, the shared module declaring the manifest shape and wire types,
@@ -89,11 +89,11 @@ running, output is buffered (bounded), and a reconnect re-binds the same session
 
 ## Deploy
 
-**Manifest** — `vyzorix.toml`, the operator's declarative file. The only artifact a human
+**Manifest** — `vyzorix.toml`, the user's declarative file. The only artifact a human
 writes.
 
 **Config** — The compiled, signed `vyzorix.v` document the device receives. The manifest
-never leaves the operator's machine; the config is what travels.
+never leaves the user's machine; the config is what travels.
 
 **`vyzorix.v`** — The line-based, depth-encoded document format of the config. Depth is
 the number of leading `v` characters.
@@ -114,7 +114,7 @@ generated `site.webmanifest`. Off by default.
 `cloud` (refused in v1).
 
 **Deploy credential** — A long-lived, device-scoped token so CI can deploy without an
-operator session. Shown once, revocable, never returned by a `GET`.
+user session. Shown once, revocable, never returned by a `GET`.
 
 **Version** — The server-assigned, monotonic number of a config. A device compares the
 version it holds to the server's and pulls when it is behind.
@@ -157,10 +157,10 @@ config and command signatures. What makes an offline device able to trust a conf
 **Enroll** — `POST /v1/device/enroll`. A device with no credential yet announces its
 public key and its facts; the server creates a pending record and returns a pairing code.
 
-**Pairing code** — The short Crockford-base32 code a device shows and an operator types
+**Pairing code** — The short Crockford-base32 code a device shows and a user types
 to claim it. Server-issued, single-use, TTL-bounded, rate-limited.
 
-**Claim** — The operator action that binds a pending device to an owner and an org,
+**Claim** — The user action that binds a pending device to an owner and an org,
 consuming the pairing code and triggering config delivery.
 
 **Lifecycle** — A device's state: `pending`, `registered`, `deregistered`. There is no
@@ -179,7 +179,7 @@ cap, never to grant.
 **`apps.json`** — The registry: what should run, and the supervisor's `pid` /
 `pid_start_ticks` for what is running.
 
-**`app-*`** — The operator's CLI inside the container: `app-start`, `app-stop`,
+**`app-*`** — The user's CLI inside the container: `app-start`, `app-stop`,
 `app-list`, and friends. One binary, one name per op.
 
 **Control socket** — The supervisor's socket, `VYZORIX_APPS_SOCKET`

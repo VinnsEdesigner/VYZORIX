@@ -31,7 +31,7 @@ apps/api/
         dashboard/   -- dashboard stats
         diagnostics/ -- device diagnostics
         admin/       -- admin-only endpoints
-        operator/    -- operator settings, notifications
+        operator/    -- user settings, notifications
         organization/-- org management, invitations
       responses/     -- structured error response helpers
       adapters/      -- response presenter, GraphQL adapters
@@ -56,7 +56,7 @@ apps/api/
       command/       -- Command entity, risk catalog, risk evaluator
       confirmation/  -- PendingConfirmation model, Repository interface
       device/        -- Device entity, lifecycle, repository interface
-      operator/      -- Operator entity, membership
+      operator/      -- User entity, membership
       organization/  -- Organization entity, invitations
       session/       -- Session entity, revocation
       event/         -- Device event entity

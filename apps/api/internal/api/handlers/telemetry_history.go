@@ -523,9 +523,9 @@ func (h *TelemetryHistoryHandler) GetStats(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /telemetry/cleanup [delete]
 func (h *TelemetryHistoryHandler) CleanupOld(c *gin.Context) {
-	// Require admin or operator role.
-	op := middleware.GetOperatorFromContext(c)
-	if op == nil || (!op.IsAdmin() && !op.IsOperator()) {
+	// Require admin or user role.
+	op := middleware.GetUserFromContext(c)
+	if op == nil || (!op.IsAdmin() && !op.IsUser()) {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthzInsufficientPermissions, "authentication required"))
 
 		return
@@ -564,7 +564,7 @@ func (h *TelemetryHistoryHandler) CleanupOld(c *gin.Context) {
 
 	h.log.Info("telemetry cleanup completed",
 		"deletedCount", deleted,
-		"operatorId", op.ID,
+		"userId", op.ID,
 	)
 
 	c.JSON(http.StatusOK, openapi.TelemetryCleanupResult{

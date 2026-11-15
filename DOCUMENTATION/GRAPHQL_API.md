@@ -4,7 +4,7 @@ The server has a GraphQL endpoint alongside the REST API. It's used by the dashb
 
 ## Endpoint
 
-`POST /:org/graphql` — the org ID is in the URL path, not the query. Requires operator auth (session cookie or API key).
+`POST /:org/graphql` — the org ID is in the URL path, not the query. Requires user auth (session cookie or API key).
 
 `GET /:org/playground` — GraphQL Playground UI for development (disabled in production via `GIN_MODE=release`).
 
@@ -12,7 +12,7 @@ The server has a GraphQL endpoint alongside the REST API. It's used by the dashb
 
 ## Auth
 
-GraphQL routes go through the same middleware chain as REST: cookie auth, API key auth, org context, membership check, request signing. The operator is extracted from the gin context and passed into the GraphQL resolver context via `gqlcontext`.
+GraphQL routes go through the same middleware chain as REST: cookie auth, API key auth, org context, membership check, request signing. The user is extracted from the gin context and passed into the GraphQL resolver context via `gqlcontext`.
 
 ## Schema
 
@@ -55,13 +55,13 @@ description (the generator output is checked for this in review).
 
 ## Resolvers
 
-Resolvers are in `internal/api/graphql/resolver/`. They call the same application services as the REST handlers — no duplicated business logic. The resolver gets the operator from `gqlcontext.GetOperator(ctx)` and the org ID from `gqlcontext.GetOrganizationID(ctx)`.
+Resolvers are in `internal/api/graphql/resolver/`. They call the same application services as the REST handlers — no duplicated business logic. The resolver gets the user from `gqlcontext.GetOperator(ctx)` and the org ID from `gqlcontext.GetOrganizationID(ctx)`.
 
 ### Subscription handler
 
 WebSocket subscriptions are handled by `internal/api/graphql/subscription/subscription_handler.go`. It upgrades the connection and manages subscription lifecycle. Clients send `subscribe` messages with a query and receive `next` messages with data.
 
-The connection is authenticated by the same middleware chain as REST (`/:org/graphql/ws`), so the operator and organization come from the session/API key and the URL `:org`.
+The connection is authenticated by the same middleware chain as REST (`/:org/graphql/ws`), so the user and organization come from the session/API key and the URL `:org`.
 
 ### Subscriptions and organization scoping
 
@@ -72,7 +72,7 @@ All five are scoped to the connection's organization:
 - `organizationEvent` / `memberEvent` reject a client-supplied `orgId` that differs from the connection's org.
 - `deviceUpdated` / `telemetryReceived` / `commandStatusChanged` reject a client-supplied `deviceId` / `dispatchId` that does not belong to the connection's org.
 
-Events are keyed by organization, so every operator in an org receives that org's events (not just the operator who triggered them). Subscribing without a `deviceId` receives events for all devices in the org. Publishing is done by the Hub: device connect/disconnect, inbound telemetry, and command delivery (both the synchronous send path and the asynchronous outbox).
+Events are keyed by organization, so every user in an org receives that org's events (not just the user who triggered them). Subscribing without a `deviceId` receives events for all devices in the org. Publishing is done by the Hub: device connect/disconnect, inbound telemetry, and command delivery (both the synchronous send path and the asynchronous outbox).
 
 For the transport-level view (hub, rate limiting, FCM fallback) see [REALTIME_COMMUNICATION.md](REALTIME_COMMUNICATION.md).
 

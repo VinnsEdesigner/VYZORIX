@@ -12,11 +12,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func orgThresholdsToOpenAPI(t *organization.Thresholds) *openapi.OperatorThresholds {
+func orgThresholdsToOpenAPI(t *organization.Thresholds) *openapi.UserThresholds {
 	if t == nil {
 		return nil
 	}
-	return &openapi.OperatorThresholds{
+	return &openapi.UserThresholds{
 		RiskWarn:    t.RiskWarn,
 		RiskCrit:    t.RiskCrit,
 		ThermalWarn: t.ThermalWarn,
@@ -70,7 +70,7 @@ func NewSettingsHandler(
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id}/settings [get]
 func (h *SettingsHandler) GetSettings(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -118,7 +118,7 @@ func (h *SettingsHandler) GetSettings(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id}/settings [patch]
 func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -174,7 +174,7 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id}/settings/thresholds [get]
 func (h *SettingsHandler) GetThresholds(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -223,7 +223,7 @@ func (h *SettingsHandler) GetThresholds(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id}/settings/thresholds [patch]
 func (h *SettingsHandler) UpdateThresholds(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return

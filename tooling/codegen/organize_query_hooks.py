@@ -22,7 +22,7 @@ TAG_RENAMES = {
     "admin": "admin-operations",
     "alerts": "alert-rules",
     "annotations": "dashboard-annotations",
-    "api-keys": "operator-api-keys",
+    "api-keys": "user-api-keys",
     "auth": "auth-session",
     "channels": "websocket-channels",
     "client-credentials": "oauth-client-credentials",
@@ -40,7 +40,7 @@ TAG_RENAMES = {
     "organizations": "organization-management",
     "service-accounts": "service-accounts-management",
     "sessions": "auth-sessions",
-    "settings": "operator-settings",
+    "settings": "user-settings",
     "telemetry": "device-telemetry",
     "updater": "ota-updater",
     "updates": "update-management",
@@ -68,30 +68,58 @@ _EMPTY_INVALIDATION_GUARD = re.compile(
 )
 
 
-def fix_empty_invalidate_calls(content):
-    """Remove `invalidateQueries` calls that omit a required query-key argument.
+def fix_empty_invalidate_calls(content, key_owner=None, self_module=None):
+    """Rewrite orval's `onSuccess` invalidations so the file compiles.
 
-    Returns the (possibly) rewritten content. `content` must already have had
-    its schemas import rewritten, so the file is self-contained.
+    orval's `mutationInvalidates` emits
+        queryClient.invalidateQueries({ queryKey: getGetXQueryKey() });
+    for every invalidated query, in *every* file of the mutation's tag. Three
+    cases:
+
+    1. the key is defined here and callable with no args -> keep as-is;
+    2. the key is defined here but takes a required argument -> the `()` call is
+       a type error, so drop it (a hand-written hook re-issues it with the path
+       params it knows);
+    3. the key is defined in another tag file -> orval does not import it, so the
+       name is unresolvable. Import it from its owner module and keep the call
+       (when it is callable with no args), rather than silently losing the
+       invalidation.
+
+    Returns `(content, imports)` where `imports` maps a module specifier to the
+    set of key names to import from it. `key_owner` maps a key name to its module
+    specifier relative to the generated-rq root.
     """
-    # Collect key functions whose first parameter is required (no `?`).
+    key_owner = key_owner or {}
+
+    # Every key function this file actually defines.
+    defined = set(name for name, _ in _REQUIRED_ARG_KEY.findall(content))
+    defined |= set(re.findall(r"export const (get\w+QueryKey) = \(\) =>", content))
+
+    # Key functions whose first parameter is required (no `?`).
     required = set()
     for name, params in _REQUIRED_ARG_KEY.findall(content):
         first = params.split(",")[0].strip()
         if not first:
             continue  # `() =>` — no parameters, callable with no args
-        # `params?: Foo` -> name `params?`; `imei: string` -> name `imei`
         param_name = first.split(":")[0].strip()
         if param_name and not param_name.endswith("?"):
             required.add(name)
 
-    if not required:
-        return content
+    imports = {}
 
     def _sub(match):
         key_fn = match.group(1)
-        # Drop the whole line when the key needs an argument we cannot supply here.
-        return "" if key_fn in required else match.group(0)
+        # Case 2: a locally-defined key that needs an argument we cannot supply.
+        if key_fn in required:
+            return ""
+        # Case 3: a key owned by another tag file — import it and keep the call.
+        if key_fn not in defined:
+            owner = key_owner.get(key_fn)
+            if owner is None or owner == self_module:
+                return ""  # unknown, or self (shouldn't happen) — drop, fail safe
+            spec = "../" + owner  # owner is "tag/file", relative from "tag/file.ts"
+            imports.setdefault(spec, set()).add(key_fn)
+        return match.group(0)
 
     rewritten = _EMPTY_KEY_CALL.sub(_sub, content)
     # When every call inside the guard was removed, drop the empty guard too.
@@ -99,7 +127,7 @@ def fix_empty_invalidate_calls(content):
     # With the calls gone, a mutation-options function may no longer use its
     # `queryClient` parameter; rename it so `noUnusedParameters` stays happy.
     rewritten = _rename_unused_query_client(rewritten)
-    return rewritten
+    return rewritten, imports
 
 
 _MUT_OPTIONS_PARAM = "(queryClient: QueryClient, options?:"
@@ -141,6 +169,23 @@ def main():
         if os.path.isdir(full):
             tag_dirs.append((name, full))
 
+    # Pass 1: map every query-key function to the module (tag/new_basename) that
+    # defines it, so a mutation in one tag can import the keys it invalidates in
+    # another. orval emits cross-tag invalidations but never the import.
+    key_owner = {}
+    for tag_name, tag_dir in tag_dirs:
+        ts_files = [f for f in os.listdir(tag_dir) if f.endswith(".ts")]
+        raw_name = f"{tag_name}.ts"
+        old_filename = raw_name if raw_name in ts_files else (ts_files[0] if ts_files else None)
+        if old_filename is None:
+            continue
+        new_basename = TAG_RENAMES.get(tag_name, tag_name)
+        module = f"{tag_name}/{new_basename}"
+        with open(os.path.join(tag_dir, old_filename)) as f:
+            text = f.read()
+        for name in re.findall(r"export const (get\w+QueryKey)\b", text):
+            key_owner[name] = module
+
     index_lines = []
 
     for tag_name, tag_dir in tag_dirs:
@@ -176,8 +221,25 @@ def main():
             "from '@vyzorix/api-client'",
         )
 
-        # Drop auto-invalidation calls that omit a required query-key argument.
-        content = fix_empty_invalidate_calls(content)
+        # Fix auto-invalidation: drop calls whose key needs an argument, and
+        # import (rather than drop) keys owned by another tag file.
+        self_module = f"{tag_name}/{new_basename}"
+        content, extra_imports = fix_empty_invalidate_calls(
+            content, key_owner=key_owner, self_module=self_module
+        )
+        if extra_imports:
+            block = "".join(
+                "import { %s } from '%s';\n" % (", ".join(sorted(names)), spec)
+                for spec, names in sorted(extra_imports.items())
+            )
+            # Insert after the last top-level import line.
+            lines = content.split("\n")
+            last = max(
+                (i for i, l in enumerate(lines) if l.startswith("import ")),
+                default=-1,
+            )
+            lines.insert(last + 1, block.rstrip("\n"))
+            content = "\n".join(lines)
 
         # Create new dir and write file
         os.makedirs(new_dir, exist_ok=True)

@@ -2,7 +2,7 @@
 
 **Status**: Accepted
 **Date**: 2026-11-13
-**Related**: `DEPLOY_BUILD.md` (the operator guide), `ADR-002` (the house style for
+**Related**: `DEPLOY_BUILD.md` (the user guide), `ADR-002` (the house style for
 decisions on record).
 
 ## Context

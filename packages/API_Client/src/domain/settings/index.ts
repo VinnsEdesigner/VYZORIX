@@ -2,19 +2,19 @@
 // business rules (.refine). Entity types and Raw mappers are eliminated; the
 // generated schemas ARE the wire types.
 import {
-  OperatorThresholdsSchema,
+  UserThresholdsSchema,
   ClientSettingsSchema,
   WebhookNotificationsSchema,
 } from '../../generated/vyzorixUpdateServerAPI.zod';
 import type {
-  OperatorThresholds,
+  UserThresholds,
   ClientSettings,
   NotificationSettings,
   WebhookNotifications,
   ThresholdUpdateRequest,
   NotificationUpdateRequest,
   UpdateSettingsRequest,
-  OperatorSettingsResult,
+  UserSettingsResult,
   SettingsResponseResult,
   ThresholdsResult,
   WebhookTestResult,
@@ -23,15 +23,15 @@ import type {
 
 // Re-export generated types so domain consumers don't import from generated directly.
 export type {
-  OperatorThresholds,
-  OperatorThresholds as Thresholds,
+  UserThresholds,
+  UserThresholds as Thresholds,
   ClientSettings,
   NotificationSettings,
   WebhookNotifications,
   ThresholdUpdateRequest,
   NotificationUpdateRequest,
   UpdateSettingsRequest,
-  OperatorSettingsResult,
+  UserSettingsResult,
   SettingsResponseResult,
   ThresholdsResult,
   WebhookTestResult,
@@ -62,7 +62,7 @@ export type NotificationEvent =
 
 // ---- Threshold validators (business rules on top of generated zod) ----
 
-export const thresholdsValidator = OperatorThresholdsSchema
+export const thresholdsValidator = UserThresholdsSchema
   // Range checks: all threshold values must be 0-100
   .refine(
     (t) => t.riskWarn === undefined || (t.riskWarn >= 0 && t.riskWarn <= 100),

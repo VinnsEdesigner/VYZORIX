@@ -27,7 +27,7 @@ type APIKey struct {
 	LastRequest    *int64
 	ExpiresAt      *int64
 	RevokedAt      *int64
-	OperatorID     string
+	UserID     string
 	Name           string
 	KeyPrefix      string
 	KeyHash        string
@@ -40,18 +40,18 @@ type APIKey struct {
 	IsActive       bool
 }
 
-// APIKeyWithOperator joins an API key with its operator's display name.
-// Used by ListAllWithOperator for the super-admin "all keys" view.
-type APIKeyWithOperator struct {
-	OperatorName string
+// APIKeyWithUser joins an API key with its user's display name.
+// Used by ListAllWithUser for the super-admin "all keys" view.
+type APIKeyWithUser struct {
+	UserName string
 	APIKey
 }
 
-// OperatorRequestTotal is a per-operator cumulative request-count aggregate.
-// used by the super-admin global stats "top operators" view.
-type OperatorRequestTotal struct {
-	OperatorID    string
-	OperatorName  string
+// UserRequestTotal is a per-user cumulative request-count aggregate.
+// used by the super-admin global stats "top users" view.
+type UserRequestTotal struct {
+	UserID    string
+	UserName  string
 	TotalRequests int64
 }
 
@@ -60,27 +60,27 @@ type APIKeyRepository interface {
 	Create(ctx context.Context, key *APIKey) error
 	GetByID(ctx context.Context, id string) (*APIKey, error)
 	GetByKeyHash(ctx context.Context, keyHash string) (*APIKey, error)
-	ListByOperator(ctx context.Context, operatorID string, limit, offset int) ([]*APIKey, int, error)
+	ListByUser(ctx context.Context, userID string, limit, offset int) ([]*APIKey, int, error)
 	ListAll(ctx context.Context, limit, offset int) ([]*APIKey, int, error)
-	// ListAllWithOperator lists all API keys joined with the operator's display.
-	// name, for the super-admin "all keys" view that needs operator identity.
-	// operatorID and search are optional filters (empty = unfiltered).
-	ListAllWithOperator(ctx context.Context, limit, offset int, operatorID, search string) ([]APIKeyWithOperator, int, error)
+	// ListAllWithUser lists all API keys joined with the user's display.
+	// name, for the super-admin "all keys" view that needs user identity.
+	// userID and search are optional filters (empty = unfiltered).
+	ListAllWithUser(ctx context.Context, limit, offset int, userID, search string) ([]APIKeyWithUser, int, error)
 	Update(ctx context.Context, key *APIKey) error
 	Revoke(ctx context.Context, id string) error
 	Delete(ctx context.Context, id string) error
-	CountByOperatorThisMonth(ctx context.Context, operatorID string) (int, error)
+	CountByUserThisMonth(ctx context.Context, userID string) (int, error)
 	CountAll(ctx context.Context) (int, error)
 	CountAllIncludingRevoked(ctx context.Context) (int, error)
 	CountRevoked(ctx context.Context) (int, error)
 	// SumRequestsByScope returns the cumulative request totals grouped by scope.
 	SumRequestsByScope(ctx context.Context) (map[string]int64, error)
-	// TopOperatorsByRequests returns the top operators by cumulative request.
-	// count, joined with the operator's display name, limited to `limit` rows.
-	TopOperatorsByRequests(ctx context.Context, limit int) ([]OperatorRequestTotal, int, error)
+	// TopUsersByRequests returns the top users by cumulative request.
+	// count, joined with the user's display name, limited to `limit` rows.
+	TopUsersByRequests(ctx context.Context, limit int) ([]UserRequestTotal, int, error)
 	IncrementRequestCount(ctx context.Context, id string) error
-	ExistsByOperatorAndName(ctx context.Context, operatorID, name string) (bool, error)
-	ExistsByOperatorAndNameExcluding(ctx context.Context, operatorID, name, excludeKeyID string) (bool, error)
+	ExistsByUserAndName(ctx context.Context, userID, name string) (bool, error)
+	ExistsByUserAndNameExcluding(ctx context.Context, userID, name, excludeKeyID string) (bool, error)
 }
 
 // APIKeyRepositoryImpl handles API key persistence.
@@ -96,11 +96,11 @@ func NewAPIKeyRepository(db *sql.DB) APIKeyRepository {
 // Create inserts a new API key.
 func (r *APIKeyRepositoryImpl) Create(ctx context.Context, key *APIKey) error {
 	query := `
-		INSERT INTO api_keys (id, operator_id, name, key_prefix, key_hash, signing_secret, scope, expires_at, is_active, request_count, last_request_at, created_at, updated_at, revoked_at, organization_id)
+		INSERT INTO api_keys (id, user_id, name, key_prefix, key_hash, signing_secret, scope, expires_at, is_active, request_count, last_request_at, created_at, updated_at, revoked_at, organization_id)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 	_, err := r.db.ExecContext(ctx, query,
-		key.ID, key.OperatorID, key.Name, key.KeyPrefix, key.KeyHash,
+		key.ID, key.UserID, key.Name, key.KeyPrefix, key.KeyHash,
 		key.SigningSecret, key.Scope, key.ExpiresAt, key.IsActive, key.RequestCount,
 		key.LastRequest, key.CreatedAt, key.UpdatedAt, key.RevokedAt, nullString(key.OrganizationID),
 	)
@@ -110,7 +110,7 @@ func (r *APIKeyRepositoryImpl) Create(ctx context.Context, key *APIKey) error {
 // GetByID retrieves an API key by its ID.
 func (r *APIKeyRepositoryImpl) GetByID(ctx context.Context, id string) (*APIKey, error) {
 	query := `
-		SELECT id, operator_id, name, key_prefix, key_hash, signing_secret, scope, expires_at, is_active, request_count, last_request_at, created_at, updated_at, revoked_at, organization_id
+		SELECT id, user_id, name, key_prefix, key_hash, signing_secret, scope, expires_at, is_active, request_count, last_request_at, created_at, updated_at, revoked_at, organization_id
 		FROM api_keys WHERE id = ?
 	`
 	row := r.db.QueryRowContext(ctx, query, id)
@@ -120,30 +120,30 @@ func (r *APIKeyRepositoryImpl) GetByID(ctx context.Context, id string) (*APIKey,
 // GetByKeyHash retrieves an API key by its hash.
 func (r *APIKeyRepositoryImpl) GetByKeyHash(ctx context.Context, keyHash string) (*APIKey, error) {
 	query := `
-		SELECT id, operator_id, name, key_prefix, key_hash, signing_secret, scope, expires_at, is_active, request_count, last_request_at, created_at, updated_at, revoked_at, organization_id
+		SELECT id, user_id, name, key_prefix, key_hash, signing_secret, scope, expires_at, is_active, request_count, last_request_at, created_at, updated_at, revoked_at, organization_id
 		FROM api_keys WHERE key_hash = ? AND is_active = 1
 	`
 	row := r.db.QueryRowContext(ctx, query, keyHash)
 	return r.scanAPIKey(row)
 }
 
-// ListByOperator retrieves all API keys for an operator with pagination.
-func (r *APIKeyRepositoryImpl) ListByOperator(ctx context.Context, operatorID string, limit, offset int) ([]*APIKey, int, error) {
+// ListByUser retrieves all API keys for a user with pagination.
+func (r *APIKeyRepositoryImpl) ListByUser(ctx context.Context, userID string, limit, offset int) ([]*APIKey, int, error) {
 	// Get total count.
 	var total int
-	countQuery := `SELECT COUNT(*) FROM api_keys WHERE operator_id = ?`
-	if err := r.db.QueryRowContext(ctx, countQuery, operatorID).Scan(&total); err != nil {
+	countQuery := `SELECT COUNT(*) FROM api_keys WHERE user_id = ?`
+	if err := r.db.QueryRowContext(ctx, countQuery, userID).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
 	// Get paginated results.
 	query := `
-		SELECT id, operator_id, name, key_prefix, key_hash, signing_secret, scope, expires_at, is_active, request_count, last_request_at, created_at, updated_at, revoked_at, organization_id
-		FROM api_keys WHERE operator_id = ?
+		SELECT id, user_id, name, key_prefix, key_hash, signing_secret, scope, expires_at, is_active, request_count, last_request_at, created_at, updated_at, revoked_at, organization_id
+		FROM api_keys WHERE user_id = ?
 		ORDER BY created_at DESC
 		LIMIT ? OFFSET ?
 	`
-	rows, err := r.db.QueryContext(ctx, query, operatorID, limit, offset)
+	rows, err := r.db.QueryContext(ctx, query, userID, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -191,17 +191,17 @@ func (r *APIKeyRepositoryImpl) Delete(ctx context.Context, id string) error {
 	return err
 }
 
-// CountByOperatorThisMonth counts all API keys created by an operator this month (including revoked).
-// This enforces the "20 keys per operator per month" limit properly, preventing bypass via rotation.
-func (r *APIKeyRepositoryImpl) CountByOperatorThisMonth(ctx context.Context, operatorID string) (int, error) {
+// CountByUserThisMonth counts all API keys created by a user this month (including revoked).
+// This enforces the "20 keys per user per month" limit properly, preventing bypass via rotation.
+func (r *APIKeyRepositoryImpl) CountByUserThisMonth(ctx context.Context, userID string) (int, error) {
 	// Get start of current month.
 	now := currentTimeMillis()
 	monthStart := getMonthStartMillis(now)
 
 	// Count ALL keys including revoked - this prevents circumvention via rotation.
-	query := `SELECT COUNT(*) FROM api_keys WHERE operator_id = ? AND created_at >= ?`
+	query := `SELECT COUNT(*) FROM api_keys WHERE user_id = ? AND created_at >= ?`
 	var count int
-	if err := r.db.QueryRowContext(ctx, query, operatorID, monthStart).Scan(&count); err != nil {
+	if err := r.db.QueryRowContext(ctx, query, userID, monthStart).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -226,7 +226,7 @@ func (r *APIKeyRepositoryImpl) scanAPIKey(row *sql.Row) (*APIKey, error) {
 	var organizationID sql.NullString
 
 	err := row.Scan(
-		&key.ID, &key.OperatorID, &key.Name, &key.KeyPrefix, &key.KeyHash,
+		&key.ID, &key.UserID, &key.Name, &key.KeyPrefix, &key.KeyHash,
 		&key.SigningSecret, &key.Scope, &expiresAt, &key.IsActive, &key.RequestCount,
 		&lastRequest, &key.CreatedAt, &key.UpdatedAt, &revokedAt, &organizationID,
 	)
@@ -255,7 +255,7 @@ func (r *APIKeyRepositoryImpl) scanAPIKeyFromRows(rows *sql.Rows) (*APIKey, erro
 	var organizationID sql.NullString
 
 	err := rows.Scan(
-		&key.ID, &key.OperatorID, &key.Name, &key.KeyPrefix, &key.KeyHash,
+		&key.ID, &key.UserID, &key.Name, &key.KeyPrefix, &key.KeyHash,
 		&key.SigningSecret, &key.Scope, &expiresAt, &key.IsActive, &key.RequestCount,
 		&lastRequest, &key.CreatedAt, &key.UpdatedAt, &revokedAt, &organizationID,
 	)
@@ -277,7 +277,7 @@ func (r *APIKeyRepositoryImpl) scanAPIKeyFromRows(rows *sql.Rows) (*APIKey, erro
 	return &key, nil
 }
 
-// ListAll returns all API keys across all operators with pagination.
+// ListAll returns all API keys across all users with pagination.
 func (r *APIKeyRepositoryImpl) ListAll(ctx context.Context, limit, offset int) ([]*APIKey, int, error) {
 	if limit <= 0 {
 		limit = 20
@@ -295,7 +295,7 @@ func (r *APIKeyRepositoryImpl) ListAll(ctx context.Context, limit, offset int) (
 
 	// Get keys.
 	query := `
-		SELECT id, operator_id, name, key_prefix, key_hash, signing_secret, scope, expires_at,
+		SELECT id, user_id, name, key_prefix, key_hash, signing_secret, scope, expires_at,
 		       is_active, request_count, last_request_at, created_at, updated_at, revoked_at, organization_id
 		FROM api_keys
 		WHERE is_active = 1
@@ -326,12 +326,12 @@ func (r *APIKeyRepositoryImpl) ListAll(ctx context.Context, limit, offset int) (
 	return keys, total, nil
 }
 
-// ListAllWithOperator lists all API keys joined with the owning operator's.
+// ListAllWithUser lists all API keys joined with the owning user's.
 // display name. Used by the super-admin "all keys" view, which must show which.
-// operator owns each key — information the plain ListAll/ToResponse path drops.
-// operatorID (non-empty) filters to a single operator; search (non-empty) does.
-// a case-insensitive LIKE match on key name, prefix, and operator name/email.
-func (r *APIKeyRepositoryImpl) ListAllWithOperator(ctx context.Context, limit, offset int, operatorID, search string) ([]APIKeyWithOperator, int, error) {
+// user owns each key — information the plain ListAll/ToResponse path drops.
+// userID (non-empty) filters to a single user; search (non-empty) does.
+// a case-insensitive LIKE match on key name, prefix, and user name/email.
+func (r *APIKeyRepositoryImpl) ListAllWithUser(ctx context.Context, limit, offset int, userID, search string) ([]APIKeyWithUser, int, error) {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -343,9 +343,9 @@ func (r *APIKeyRepositoryImpl) ListAllWithOperator(ctx context.Context, limit, o
 	// the admin list view (revoked keys are excluded); filters are appended.
 	where := "WHERE k.is_active = 1"
 	var args []interface{}
-	if operatorID != "" {
-		where += " AND k.operator_id = ?"
-		args = append(args, operatorID)
+	if userID != "" {
+		where += " AND k.user_id = ?"
+		args = append(args, userID)
 	}
 	if search != "" {
 		where += " AND (k.name LIKE ? OR k.key_prefix LIKE ? OR o.name LIKE ? OR o.email LIKE ?)"
@@ -354,17 +354,17 @@ func (r *APIKeyRepositoryImpl) ListAllWithOperator(ctx context.Context, limit, o
 	}
 
 	var total int
-	countQuery := "SELECT COUNT(*) FROM api_keys k LEFT JOIN operators o ON o.id = k.operator_id " + where
+	countQuery := "SELECT COUNT(*) FROM api_keys k LEFT JOIN users o ON o.id = k.user_id " + where
 	if err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("failed to count all keys: %w", err)
 	}
 
 	query := `
-		SELECT k.id, k.operator_id, k.name, k.key_prefix, k.key_hash, k.signing_secret, k.scope,
+		SELECT k.id, k.user_id, k.name, k.key_prefix, k.key_hash, k.signing_secret, k.scope,
 		       k.expires_at, k.is_active, k.request_count, k.last_request_at,
 		       k.created_at, k.updated_at, k.revoked_at, k.organization_id, o.name
 		FROM api_keys k
-		LEFT JOIN operators o ON o.id = k.operator_id
+		LEFT JOIN users o ON o.id = k.user_id
 	` + where + `
 		ORDER BY k.created_at DESC
 		LIMIT ? OFFSET ?
@@ -376,15 +376,15 @@ func (r *APIKeyRepositoryImpl) ListAllWithOperator(ctx context.Context, limit, o
 	}
 	defer func() { _ = rows.Close() }()
 
-	var results []APIKeyWithOperator
+	var results []APIKeyWithUser
 	for rows.Next() {
-		var item APIKeyWithOperator
+		var item APIKeyWithUser
 		var expiresAt, lastRequest, revokedAt sql.NullInt64
-		var organizationID, operatorName sql.NullString
+		var organizationID, userName sql.NullString
 		if err := rows.Scan(
-			&item.ID, &item.OperatorID, &item.Name, &item.KeyPrefix, &item.KeyHash,
+			&item.ID, &item.UserID, &item.Name, &item.KeyPrefix, &item.KeyHash,
 			&item.SigningSecret, &item.Scope, &expiresAt, &item.IsActive, &item.RequestCount,
-			&lastRequest, &item.CreatedAt, &item.UpdatedAt, &revokedAt, &organizationID, &operatorName,
+			&lastRequest, &item.CreatedAt, &item.UpdatedAt, &revokedAt, &organizationID, &userName,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -398,14 +398,14 @@ func (r *APIKeyRepositoryImpl) ListAllWithOperator(ctx context.Context, limit, o
 			item.RevokedAt = &revokedAt.Int64
 		}
 		item.OrganizationID = organizationID.String
-		item.OperatorName = operatorName.String
+		item.UserName = userName.String
 		results = append(results, item)
 	}
 
 	return results, total, rows.Err()
 }
 
-// CountAll returns the total number of active API keys across all operators.
+// CountAll returns the total number of active API keys across all users.
 func (r *APIKeyRepositoryImpl) CountAll(ctx context.Context) (int, error) {
 	var count int
 	query := `SELECT COUNT(*) FROM api_keys WHERE is_active = 1`
@@ -457,10 +457,10 @@ func (r *APIKeyRepositoryImpl) SumRequestsByScope(ctx context.Context) (map[stri
 	return result, rows.Err()
 }
 
-// TopOperatorsByRequests returns the top operators by cumulative request count,
+// TopUsersByRequests returns the top users by cumulative request count,
 // joined with their display name. limit caps the result set; the second return.
-// is the total number of distinct operators that have at least one key.
-func (r *APIKeyRepositoryImpl) TopOperatorsByRequests(ctx context.Context, limit int) ([]OperatorRequestTotal, int, error) {
+// is the total number of distinct users that have at least one key.
+func (r *APIKeyRepositoryImpl) TopUsersByRequests(ctx context.Context, limit int) ([]UserRequestTotal, int, error) {
 	if limit <= 0 {
 		limit = 5
 	}
@@ -468,52 +468,52 @@ func (r *APIKeyRepositoryImpl) TopOperatorsByRequests(ctx context.Context, limit
 		limit = 50
 	}
 
-	var totalOperators int
-	countQuery := `SELECT COUNT(DISTINCT operator_id) FROM api_keys`
-	if err := r.db.QueryRowContext(ctx, countQuery).Scan(&totalOperators); err != nil {
-		return nil, 0, fmt.Errorf("failed to count distinct operators: %w", err)
+	var totalUsers int
+	countQuery := `SELECT COUNT(DISTINCT user_id) FROM api_keys`
+	if err := r.db.QueryRowContext(ctx, countQuery).Scan(&totalUsers); err != nil {
+		return nil, 0, fmt.Errorf("failed to count distinct users: %w", err)
 	}
 
 	query := `
-		SELECT k.operator_id, COALESCE(o.name, ''), COALESCE(SUM(k.request_count), 0)
+		SELECT k.user_id, COALESCE(o.name, ''), COALESCE(SUM(k.request_count), 0)
 		FROM api_keys k
-		LEFT JOIN operators o ON o.id = k.operator_id
-		GROUP BY k.operator_id
+		LEFT JOIN users o ON o.id = k.user_id
+		GROUP BY k.user_id
 		ORDER BY COALESCE(SUM(k.request_count), 0) DESC
 		LIMIT ?
 	`
 	rows, err := r.db.QueryContext(ctx, query, limit)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to query top operators: %w", err)
+		return nil, 0, fmt.Errorf("failed to query top users: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 
-	var results []OperatorRequestTotal
+	var results []UserRequestTotal
 	for rows.Next() {
-		var item OperatorRequestTotal
-		if err := rows.Scan(&item.OperatorID, &item.OperatorName, &item.TotalRequests); err != nil {
+		var item UserRequestTotal
+		if err := rows.Scan(&item.UserID, &item.UserName, &item.TotalRequests); err != nil {
 			return nil, 0, err
 		}
 		results = append(results, item)
 	}
-	return results, totalOperators, rows.Err()
+	return results, totalUsers, rows.Err()
 }
 
-// ExistsByOperatorAndName checks if an active API key with the given name exists for the operator.
-func (r *APIKeyRepositoryImpl) ExistsByOperatorAndName(ctx context.Context, operatorID, name string) (bool, error) {
-	query := `SELECT COUNT(*) FROM api_keys WHERE operator_id = ? AND name = ? AND is_active = 1`
+// ExistsByUserAndName checks if an active API key with the given name exists for the user.
+func (r *APIKeyRepositoryImpl) ExistsByUserAndName(ctx context.Context, userID, name string) (bool, error) {
+	query := `SELECT COUNT(*) FROM api_keys WHERE user_id = ? AND name = ? AND is_active = 1`
 	var count int
-	if err := r.db.QueryRowContext(ctx, query, operatorID, name).Scan(&count); err != nil {
+	if err := r.db.QueryRowContext(ctx, query, userID, name).Scan(&count); err != nil {
 		return false, fmt.Errorf("failed to check key existence: %w", err)
 	}
 	return count > 0, nil
 }
 
-// ExistsByOperatorAndNameExcluding checks if an active API key with the given name exists for the operator, excluding a specific key ID.
-func (r *APIKeyRepositoryImpl) ExistsByOperatorAndNameExcluding(ctx context.Context, operatorID, name, excludeKeyID string) (bool, error) {
-	query := `SELECT COUNT(*) FROM api_keys WHERE operator_id = ? AND name = ? AND is_active = 1 AND id != ?`
+// ExistsByUserAndNameExcluding checks if an active API key with the given name exists for the user, excluding a specific key ID.
+func (r *APIKeyRepositoryImpl) ExistsByUserAndNameExcluding(ctx context.Context, userID, name, excludeKeyID string) (bool, error) {
+	query := `SELECT COUNT(*) FROM api_keys WHERE user_id = ? AND name = ? AND is_active = 1 AND id != ?`
 	var count int
-	if err := r.db.QueryRowContext(ctx, query, operatorID, name, excludeKeyID).Scan(&count); err != nil {
+	if err := r.db.QueryRowContext(ctx, query, userID, name, excludeKeyID).Scan(&count); err != nil {
 		return false, fmt.Errorf("failed to check key existence: %w", err)
 	}
 	return count > 0, nil
@@ -525,7 +525,7 @@ func SetupAPIKeysTable(db *sql.DB) error {
 	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS api_keys (
 			id TEXT PRIMARY KEY,
-			operator_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
 			name TEXT NOT NULL,
 			key_prefix TEXT NOT NULL,
 			key_hash TEXT NOT NULL,
@@ -538,7 +538,7 @@ func SetupAPIKeysTable(db *sql.DB) error {
 			created_at INTEGER NOT NULL,
 			updated_at INTEGER NOT NULL,
 			revoked_at INTEGER,
-			FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE
+			FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 		)
 	`)
 	if err != nil {
@@ -547,7 +547,7 @@ func SetupAPIKeysTable(db *sql.DB) error {
 
 	// Create indexes.
 	indexes := []string{
-		`CREATE INDEX IF NOT EXISTS idx_api_keys_operator_id ON api_keys(operator_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys(key_hash)`,
 		`CREATE INDEX IF NOT EXISTS idx_api_keys_created_at ON api_keys(created_at)`,
 		`CREATE INDEX IF NOT EXISTS idx_api_keys_is_active ON api_keys(is_active)`,

@@ -25,7 +25,7 @@ func NewSessionRepository(db *sql.DB) *SessionRepository {
 
 // FindByID retrieves a session by ID.
 func (r *SessionRepository) FindByID(ctx context.Context, id string) (*session.Session, error) {
-	query := `SELECT id, operator_id, expires_at, created_at, ip_address, user_agent, organization_id, mfa_verified_at, signing_key FROM auth_sessions WHERE id = ?`
+	query := `SELECT id, user_id, expires_at, created_at, ip_address, user_agent, organization_id, mfa_verified_at, signing_key FROM auth_sessions WHERE id = ?`
 
 	var s session.Session
 
@@ -33,7 +33,7 @@ func (r *SessionRepository) FindByID(ctx context.Context, id string) (*session.S
 	var expiresAt, createdAt, mfaVerifiedAt sql.NullInt64
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&s.ID, &s.OperatorID, &expiresAt, &createdAt, &ipAddress, &userAgent, &orgID, &mfaVerifiedAt, &signingKey,
+		&s.ID, &s.UserID, &expiresAt, &createdAt, &ipAddress, &userAgent, &orgID, &mfaVerifiedAt, &signingKey,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -64,11 +64,11 @@ func (r *SessionRepository) FindByID(ctx context.Context, id string) (*session.S
 	return &s, nil
 }
 
-// FindByOperatorID retrieves all sessions for an operator.
-func (r *SessionRepository) FindByOperatorID(ctx context.Context, operatorID string) ([]*session.Session, error) {
-	query := `SELECT id, operator_id, expires_at, created_at, ip_address, user_agent, organization_id, mfa_verified_at FROM auth_sessions WHERE operator_id = ?`
+// FindByUserID retrieves all sessions for a user.
+func (r *SessionRepository) FindByUserID(ctx context.Context, userID string) ([]*session.Session, error) {
+	query := `SELECT id, user_id, expires_at, created_at, ip_address, user_agent, organization_id, mfa_verified_at FROM auth_sessions WHERE user_id = ?`
 
-	rows, err := r.db.QueryContext(ctx, query, operatorID)
+	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (r *SessionRepository) FindByOperatorID(ctx context.Context, operatorID str
 		var ipAddress, userAgent, orgID sql.NullString
 		var expiresAt, createdAt, mfaVerifiedAt sql.NullInt64
 
-		if err := rows.Scan(&s.ID, &s.OperatorID, &expiresAt, &createdAt, &ipAddress, &userAgent, &orgID, &mfaVerifiedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.UserID, &expiresAt, &createdAt, &ipAddress, &userAgent, &orgID, &mfaVerifiedAt); err != nil {
 			return nil, err
 		}
 
@@ -109,14 +109,14 @@ func (r *SessionRepository) FindByOperatorID(ctx context.Context, operatorID str
 	return sessions, rows.Err()
 }
 
-// ListActiveByOperator retrieves active (non-expired) sessions for an operator, ordered by creation time.
-func (r *SessionRepository) ListActiveByOperator(ctx context.Context, operatorID string) ([]*session.Session, error) {
-	query := `SELECT id, operator_id, expires_at, created_at, ip_address, user_agent, organization_id, mfa_verified_at
+// ListActiveByUser retrieves active (non-expired) sessions for a user, ordered by creation time.
+func (r *SessionRepository) ListActiveByUser(ctx context.Context, userID string) ([]*session.Session, error) {
+	query := `SELECT id, user_id, expires_at, created_at, ip_address, user_agent, organization_id, mfa_verified_at
 		FROM auth_sessions
-		WHERE operator_id = ? AND expires_at > ?
+		WHERE user_id = ? AND expires_at > ?
 		ORDER BY created_at ASC`
 
-	rows, err := r.db.QueryContext(ctx, query, operatorID, time.Now())
+	rows, err := r.db.QueryContext(ctx, query, userID, time.Now())
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func (r *SessionRepository) ListActiveByOperator(ctx context.Context, operatorID
 		var ipAddress, userAgent, orgID sql.NullString
 		var expiresAt, createdAt, mfaVerifiedAt sql.NullInt64
 
-		if err := rows.Scan(&s.ID, &s.OperatorID, &expiresAt, &createdAt, &ipAddress, &userAgent, &orgID, &mfaVerifiedAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.UserID, &expiresAt, &createdAt, &ipAddress, &userAgent, &orgID, &mfaVerifiedAt); err != nil {
 			return nil, err
 		}
 
@@ -159,7 +159,7 @@ func (r *SessionRepository) ListActiveByOperator(ctx context.Context, operatorID
 
 // Create creates a new session.
 func (r *SessionRepository) Create(ctx context.Context, s *session.Session) error {
-	query := `INSERT INTO auth_sessions (id, operator_id, token_hash, expires_at, created_at, ip_address, user_agent, organization_id, mfa_verified_at, signing_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	query := `INSERT INTO auth_sessions (id, user_id, token_hash, expires_at, created_at, ip_address, user_agent, organization_id, mfa_verified_at, signing_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	var mfaVerifiedAt interface{}
 	if s.MFAVerifiedAt != nil {
@@ -167,7 +167,7 @@ func (r *SessionRepository) Create(ctx context.Context, s *session.Session) erro
 	}
 
 	_, err := r.db.ExecContext(ctx, query,
-		s.ID, s.OperatorID, s.ID, s.ExpiresAt.UnixMilli(), s.CreatedAt.UnixMilli(),
+		s.ID, s.UserID, s.ID, s.ExpiresAt.UnixMilli(), s.CreatedAt.UnixMilli(),
 		nullString(s.IPAddress), nullString(s.UserAgent), nullString(s.SelectedOrganizationID), mfaVerifiedAt, nullString(s.SigningKey),
 	)
 
@@ -193,9 +193,9 @@ func (r *SessionRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-// DeleteByOperatorID deletes all sessions for an operator.
-func (r *SessionRepository) DeleteByOperatorID(ctx context.Context, operatorID string) error {
-	_, err := r.db.ExecContext(ctx, "DELETE FROM auth_sessions WHERE operator_id = ?", operatorID)
+// DeleteByUserID deletes all sessions for a user.
+func (r *SessionRepository) DeleteByUserID(ctx context.Context, userID string) error {
+	_, err := r.db.ExecContext(ctx, "DELETE FROM auth_sessions WHERE user_id = ?", userID)
 	return err
 }
 
@@ -255,12 +255,12 @@ func (r *SessionRepository) UpdateOrganizationID(ctx context.Context, sessionID,
 	return nil
 }
 
-// UpdateOperatorSessionsOrgID sets the selected org on all active sessions
-// for an operator (used when an invite is accepted).
-func (r *SessionRepository) UpdateOperatorSessionsOrgID(ctx context.Context, operatorID, organizationID string) error {
+// UpdateUserSessionsOrgID sets the selected org on all active sessions
+// for a user (used when an invite is accepted).
+func (r *SessionRepository) UpdateUserSessionsOrgID(ctx context.Context, userID, organizationID string) error {
 	_, err := r.db.ExecContext(ctx,
-		"UPDATE auth_sessions SET organization_id = ? WHERE operator_id = ? AND expires_at > ?",
-		nullString(organizationID), operatorID, time.Now().Unix(),
+		"UPDATE auth_sessions SET organization_id = ? WHERE user_id = ? AND expires_at > ?",
+		nullString(organizationID), userID, time.Now().Unix(),
 	)
 	return err
 }
@@ -385,11 +385,11 @@ func (r *SessionRepository) CleanupSessionRevocations(ctx context.Context, older
 	return int(n), nil
 }
 
-// RevokeAllOperatorSessions revokes all sessions for a specific operator.
-func (r *SessionRepository) RevokeAllOperatorSessions(ctx context.Context, operatorID string) error {
-	query := `SELECT id FROM auth_sessions WHERE operator_id = ?`
+// RevokeAllUserSessions revokes all sessions for a specific user.
+func (r *SessionRepository) RevokeAllUserSessions(ctx context.Context, userID string) error {
+	query := `SELECT id FROM auth_sessions WHERE user_id = ?`
 
-	rows, err := r.db.QueryContext(ctx, query, operatorID)
+	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
 		return err
 	}
@@ -430,7 +430,7 @@ func NewRefreshTokenRepository(db *sql.DB) *RefreshTokenRepository {
 // Create creates a new refresh token.
 func (r *RefreshTokenRepository) Create(ctx context.Context, rt *refresh_token.RefreshToken) error {
 	query := `
-		INSERT INTO refresh_tokens (id, token_hash, operator_id, session_id, expires_at, created_at, revoked_at, replaced_by_id, is_revoked)
+		INSERT INTO refresh_tokens (id, token_hash, user_id, session_id, expires_at, created_at, revoked_at, replaced_by_id, is_revoked)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	// replaced_by_id is a self-reference (refresh-token rotation). An unset value
@@ -438,7 +438,7 @@ func (r *RefreshTokenRepository) Create(ctx context.Context, rt *refresh_token.R
 	// empty string is not a row, so it fails the constraint. This made every login
 	// 500 with "FOREIGN KEY constraint failed".
 	_, err := r.db.ExecContext(ctx, query,
-		rt.ID, rt.TokenHash, rt.OperatorID, rt.SessionID, rt.ExpiresAt, rt.CreatedAt, rt.RevokedAt, nullString(rt.ReplacedByID), rt.IsRevoked,
+		rt.ID, rt.TokenHash, rt.UserID, rt.SessionID, rt.ExpiresAt, rt.CreatedAt, rt.RevokedAt, nullString(rt.ReplacedByID), rt.IsRevoked,
 	)
 
 	return err
@@ -447,13 +447,13 @@ func (r *RefreshTokenRepository) Create(ctx context.Context, rt *refresh_token.R
 // FindByID retrieves a refresh token by ID.
 func (r *RefreshTokenRepository) FindByID(ctx context.Context, id string) (*refresh_token.RefreshToken, error) {
 	query := `
-		SELECT id, token_hash, operator_id, session_id, expires_at, created_at, revoked_at, replaced_by_id, is_revoked
+		SELECT id, token_hash, user_id, session_id, expires_at, created_at, revoked_at, replaced_by_id, is_revoked
 		FROM refresh_tokens WHERE id = ?`
 
 	var rt refresh_token.RefreshToken
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&rt.ID, &rt.TokenHash, &rt.OperatorID, &rt.SessionID, &rt.ExpiresAt, &rt.CreatedAt, &rt.RevokedAt, &rt.ReplacedByID, &rt.IsRevoked,
+		&rt.ID, &rt.TokenHash, &rt.UserID, &rt.SessionID, &rt.ExpiresAt, &rt.CreatedAt, &rt.RevokedAt, &rt.ReplacedByID, &rt.IsRevoked,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, refresh_token.ErrNotFound
@@ -465,13 +465,13 @@ func (r *RefreshTokenRepository) FindByID(ctx context.Context, id string) (*refr
 // FindByTokenHash retrieves a refresh token by its hash.
 func (r *RefreshTokenRepository) FindByTokenHash(ctx context.Context, tokenHash string) (*refresh_token.RefreshToken, error) {
 	query := `
-		SELECT id, token_hash, operator_id, session_id, expires_at, created_at, revoked_at, replaced_by_id, is_revoked
+		SELECT id, token_hash, user_id, session_id, expires_at, created_at, revoked_at, replaced_by_id, is_revoked
 		FROM refresh_tokens WHERE token_hash = ?`
 
 	var rt refresh_token.RefreshToken
 
 	err := r.db.QueryRowContext(ctx, query, tokenHash).Scan(
-		&rt.ID, &rt.TokenHash, &rt.OperatorID, &rt.SessionID, &rt.ExpiresAt, &rt.CreatedAt, &rt.RevokedAt, &rt.ReplacedByID, &rt.IsRevoked,
+		&rt.ID, &rt.TokenHash, &rt.UserID, &rt.SessionID, &rt.ExpiresAt, &rt.CreatedAt, &rt.RevokedAt, &rt.ReplacedByID, &rt.IsRevoked,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, refresh_token.ErrNotFound
@@ -509,10 +509,10 @@ func (r *RefreshTokenRepository) RevokeByTokenHash(ctx context.Context, tokenHas
 	return err
 }
 
-// RevokeAllForOperator revokes all refresh tokens for an operator.
-func (r *RefreshTokenRepository) RevokeAllForOperator(ctx context.Context, operatorID string) error {
-	query := `UPDATE refresh_tokens SET is_revoked = true, revoked_at = ? WHERE operator_id = ? AND is_revoked = false`
-	_, err := r.db.ExecContext(ctx, query, time.Now(), operatorID)
+// RevokeAllForUser revokes all refresh tokens for a user.
+func (r *RefreshTokenRepository) RevokeAllForUser(ctx context.Context, userID string) error {
+	query := `UPDATE refresh_tokens SET is_revoked = true, revoked_at = ? WHERE user_id = ? AND is_revoked = false`
+	_, err := r.db.ExecContext(ctx, query, time.Now(), userID)
 
 	return err
 }

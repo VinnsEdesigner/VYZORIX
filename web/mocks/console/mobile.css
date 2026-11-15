@@ -1,0 +1,230 @@
+/* mobile.css — Vyzorix console, mobile-first layer.
+ *
+ * Loaded AFTER styles.css, so it only overrides. Three changes:
+ *
+ *  1. MOBILE FIRST. The viewport is locked (position:fixed, 100dvh, no
+ *     overflow) and the chrome collapses to one row. Every touch target is
+ *     >=44px and every text input is >=16px so iOS does not zoom on focus.
+ *
+ *  2. THE NAV DOCKS END TO END. Grafana animates the menu's *width* and
+ *     leaves the three bars visible above it. On a phone the nav instead
+ *     covers the whole screen and slides in from the left — the MEGA
+ *     pattern — with its own close button.
+ *
+ *  3. BREADCRUMB MENUS COME UP FROM THE BOTTOM. A menu attached to the
+ *     breadcrumb or the app bar is a bottom sheet on a phone: full width,
+ *     rounded top, scrim behind, drag handle on top.
+ */
+
+/* ═══════════════════════════════════════════════════════════════
+   1. Viewport lock + mobile chrome
+   ═══════════════════════════════════════════════════════════════ */
+html { height: 100%; overflow: hidden; overscroll-behavior: none; }
+body {
+  height: 100%; overflow: hidden; overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+.chrome {
+  position: fixed; inset: 0;
+  height: 100dvh; max-height: 100dvh; width: 100%; max-width: 100vw;
+}
+/* every text control is 16px or iOS zooms the page and never zooms back */
+input, select, textarea { font-size: 16px; }
+
+/* Safe areas for a notched phone. */
+:root {
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --touch: 44px;          /* the minimum comfortable target */
+  --sheet-r: 16px;        /* bottom-sheet top radius */
+}
+.topbar { padding-top: var(--safe-t); height: calc(var(--topbar-height) + var(--safe-t)); }
+.appbar, .tabbar { padding-left: max(calc(var(--grid) * 1.5), var(--safe-l));
+                   padding-right: max(calc(var(--grid) * 1.5), var(--safe-r)); }
+.body { padding-bottom: var(--safe-b); }
+
+/* Touch targets: 44px on a phone, and the icon buttons stay square. */
+@media (max-width: 700px) {
+  .topbar__icon-btn { width: var(--touch); height: var(--touch); }
+  .nav__item { height: var(--touch); }
+  .nav__group-head { height: var(--touch); }
+  .btn { min-height: var(--touch); }
+  .appbar__tab { min-height: var(--touch); }
+  /* The top bar cannot hold everything on a phone: the search collapses to an
+     icon-only affordance, kiosk/help drop out, and the org chip shrinks — so the
+     account avatar (the profile menu) always stays on screen. */
+  .topbar { gap: 8px; }
+  .topbar__search { flex: 1 1 auto; width: auto; min-width: 0; }
+  .topbar__search-input { display: none; }
+  .topbar__icon-btn--kiosk, .topbar__icon-btn--help { display: none; }
+  .org-chip { padding: 0 6px; gap: 6px; }
+  .org-chip__name { display: none; }
+  .user, .avatar { flex: 0 0 auto; }
+  /* Terminal: the on-screen keys are the only way to send control codes, so
+     they get a full touch target and scroll horizontally rather than wrap. */
+  .term-key { min-height: var(--touch); min-width: var(--touch); }
+  .term__keybar { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .term__keybar::-webkit-scrollbar { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   2. The nav — a full-screen panel below the bars
+   ═══════════════════════════════════════════════════════════════
+   It opens by covering the whole screen and stays there: no settle back to a
+   narrow width, so it is never a column beside the content.
+
+   The three bars are not covered — the panel is docked below them — so the top
+   bar, breadcrumb and page tabs stay visible and reachable while it is open:
+
+       closed : width 0
+       open   : full width, full height below the bars
+*/
+
+/* Closed: zero width, off to the side, inert. */
+.meganav {
+  position: fixed;
+  top: calc(var(--topbar-height) + var(--safe-t) + var(--appbar-height) + var(--tabbar-height));
+  bottom: 0;
+  left: 0;
+  width: 0;
+  max-width: 100vw;
+  height: auto;                 /* NOT 100% — a full-height column is a sidebar */
+  z-index: 30;
+  background: var(--gray-05);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: width 200ms ease-in-out, opacity 200ms ease-in-out;
+}
+
+/* Open: cover the screen, then settle back to the panel width. */
+.chrome.is-menu-open .meganav {
+  width: 100%;
+  opacity: 1;
+  pointer-events: auto;
+  box-shadow: none;
+}
+
+/* The panel is docked under the bars, so its own head is the first row. */
+.meganav__head {
+  height: 40px; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: flex-end;
+  padding: 0 calc(var(--grid) * 1.5);
+  border-bottom: 1px solid var(--border-weak);
+}
+.meganav__brand { display: none; }
+.meganav__dock { width: var(--touch); height: var(--touch); }
+.meganav__scroll { flex: 1; overflow-y: auto; padding: 4px 8px calc(var(--safe-b) + 16px); }
+
+/* The scrim starts below the bars too, so the bars stay lit. */
+.scrim {
+  position: fixed;
+  inset: calc(var(--topbar-height) + var(--safe-t) + var(--appbar-height) + var(--tabbar-height)) 0 0 0;
+  z-index: 25;
+  background: rgba(0, 0, 0, .45);
+  opacity: 0; pointer-events: none;
+  transition: opacity .18s ease;
+}
+.chrome.is-menu-open .scrim { opacity: 1; pointer-events: auto; }
+
+/* ═══════════════════════════════════════════════════════════════
+   3. Menus on the breadcrumb / app bar come up from the bottom
+   ═══════════════════════════════════════════════════════════════ */
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
+  background: var(--gray-10);
+  border-top: 1px solid var(--border-medium);
+  border-radius: var(--sheet-r) var(--sheet-r) 0 0;
+  transform: translateY(101%);
+  transition: transform .24s cubic-bezier(.2, .8, .2, 1);
+  padding-bottom: var(--safe-b);
+  max-height: 86dvh;
+  display: flex; flex-direction: column;
+  box-shadow: var(--shadow-z3);
+}
+.sheet.is-open { transform: none; }
+.sheet__grab {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--border-strong); margin: 8px auto 4px; flex: 0 0 auto;
+}
+.sheet__title {
+  padding: 6px 20px 2px; font-size: var(--fs-md); font-weight: 600;
+  letter-spacing: -.01em;
+}
+.sheet__sub { padding: 0 20px 10px; font-size: var(--fs-sm); color: var(--text-secondary); }
+.sheet__body { overflow-y: auto; padding-bottom: 10px; }
+.sheet__item {
+  display: flex; align-items: center; gap: 14px;
+  width: 100%; min-height: var(--touch); padding: 10px 20px;
+  border: 0; background: transparent; color: var(--text-primary);
+  font-size: var(--fs-base); text-align: left; cursor: pointer;
+}
+.sheet__item:hover, .sheet__item:active { background: var(--hover); }
+.sheet__item svg { width: 18px; height: 18px; color: var(--text-secondary); flex: 0 0 auto; }
+.sheet__item--danger, .sheet__item--danger svg { color: var(--error-text); }
+.sheet__item .sheet__check { margin-left: auto; color: var(--primary-text); }
+.sheet__sep { border: 0; height: 1px; background: var(--border-weak); margin: 6px 0; }
+.sheet-scrim {
+  position: fixed; inset: 0; z-index: 44;
+  background: rgba(0, 0, 0, .5);
+  opacity: 0; pointer-events: none; transition: opacity .18s ease;
+}
+.sheet-scrim.is-open { opacity: 1; pointer-events: auto; }
+
+/* The breadcrumb is a control on a phone: it opens the sheet. */
+.crumbs { cursor: pointer; }
+.crumbs::after {
+  content: "▾"; font-size: 10px; margin-left: 6px; color: var(--text-disabled);
+}
+
+/* On a wider screen the sheet becomes an ordinary popover under the bar,
+   so the same markup works on desktop without a bottom sheet. */
+@media (min-width: 701px) {
+  .sheet {
+    left: auto; right: calc(var(--grid) * 1.5); bottom: auto;
+    top: calc(var(--topbar-height) + var(--appbar-height) + 6px);
+    width: 320px; border-radius: var(--radius-lg);
+    border: 1px solid var(--border-medium);
+    transform: translateY(-8px); opacity: 0; pointer-events: none;
+    max-height: 60vh;
+  }
+  .sheet.is-open { transform: none; opacity: 1; pointer-events: auto; }
+  .sheet__grab { display: none; }
+  .sheet-scrim { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Tables: a 7-column table does not fit a phone. Stack it into cards.
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 700px) {
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table.table thead { display: none; }
+  table.table tr {
+    display: block; border: 1px solid var(--border-weak);
+    border-radius: var(--radius-md); margin-bottom: 8px; padding: 6px 2px;
+    background: var(--gray-10);
+  }
+  table.table td {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 16px; padding: 6px 12px; border: 0 !important;
+    white-space: normal; text-align: right;
+  }
+  table.table td::before {
+    content: attr(data-label);
+    color: var(--text-disabled); font-size: var(--fs-sm);
+    text-align: left; flex: 0 0 auto;
+  }
+  table.table td:first-child { font-weight: 600; }
+}
+
+/* Charts and the stat grid already stack at 700px; make the page padding
+   a phone padding and let panels go full width. */
+@media (max-width: 700px) {
+  .main, .page { padding-left: calc(var(--grid) * 1.5) !important;
+                 padding-right: calc(var(--grid) * 1.5) !important; }
+  .grid--4, .grid--3, .grid--2 { grid-template-columns: 1fr !important; }
+  .panel { grid-column: auto !important; }
+}

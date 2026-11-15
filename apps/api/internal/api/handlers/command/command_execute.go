@@ -190,9 +190,9 @@ func (h *ExecuteHandler) Handle(c *gin.Context) {
 	// OldValue/NewValue record the command state transition for change-tracking.
 	// compliance: a newly-created command starts at "pending" and may transition.
 	// to "delivered" if the device is online. The actor type/email are sourced.
-	// from the authenticated operator.
-	op := middleware.GetOperatorFromContext(c)
-	actorType, actorEmail := "operator", ""
+	// from the authenticated user.
+	op := middleware.GetUserFromContext(c)
+	actorType, actorEmail := "user", ""
 	if op != nil {
 		actorEmail = op.Email
 	}
@@ -202,7 +202,7 @@ func (h *ExecuteHandler) Handle(c *gin.Context) {
 	}
 
 	h.audit.CommandExecuted(c.Request.Context(), audit.CommandExecutedEvent{
-		OperatorID: operatorIDFromContext(c),
+		UserID: userIDFromContext(c),
 		DeviceID:   imei,
 		Command:    req.Command,
 		DispatchID: cmdResp.DispatchID,
@@ -233,10 +233,10 @@ func (h *ExecuteHandler) Handle(c *gin.Context) {
 // "blocked" entry on denial, returning false if the handler should abort.
 func (h *ExecuteHandler) authorizeCommand(c *gin.Context, req commandRequest, imei string) bool {
 	actor := command.ActorContext{
-		OperatorID: operatorIDFromContext(c),
+		UserID: userIDFromContext(c),
 		OrgID:      middleware.GetOrganizationID(c),
 	}
-	if op := middleware.GetOperatorFromContext(c); op != nil {
+	if op := middleware.GetUserFromContext(c); op != nil {
 		actor.IsSuperAdmin = op.IsSuperAdmin()
 	}
 	// MFA-verified is derived from the authenticated session. Critical-tier.
@@ -252,7 +252,7 @@ func (h *ExecuteHandler) authorizeCommand(c *gin.Context, req commandRequest, im
 	}
 
 	h.audit.CommandExecuted(c.Request.Context(), audit.CommandExecutedEvent{
-		OperatorID: actor.OperatorID,
+		UserID: actor.UserID,
 		DeviceID:   imei,
 		Command:    req.Command,
 		IPAddress:  c.ClientIP(),
@@ -270,10 +270,10 @@ func (h *ExecuteHandler) authorizeCommand(c *gin.Context, req commandRequest, im
 	return false
 }
 
-// operatorIDFromContext returns the authenticated operator's ID, or "" for.
+// userIDFromContext returns the authenticated user's ID, or "" for.
 // system-originated requests.
-func operatorIDFromContext(c *gin.Context) string {
-	if op := middleware.GetOperatorFromContext(c); op != nil {
+func userIDFromContext(c *gin.Context) string {
+	if op := middleware.GetUserFromContext(c); op != nil {
 		return op.ID
 	}
 	return ""
@@ -480,8 +480,8 @@ func (h *ExecuteHandler) Retry(c *gin.Context) {
 		return
 	}
 
-	// Get operator from context.
-	op := middleware.GetOperatorFromContext(c)
+	// Get user from context.
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		_ = c.Error(domainerrors.NewServerError(domainerrors.CodeAuthTokenInvalid, "authentication required"))
 		return
@@ -544,8 +544,8 @@ func (h *ExecuteHandler) GetPending(c *gin.Context) {
 		return
 	}
 
-	// Get operator from context.
-	op := middleware.GetOperatorFromContext(c)
+	// Get user from context.
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		_ = c.Error(domainerrors.NewServerError(domainerrors.CodeAuthTokenInvalid, "authentication required"))
 		return
@@ -598,8 +598,8 @@ func (h *ExecuteHandler) Cancel(c *gin.Context) {
 		return
 	}
 
-	// Get operator from context.
-	op := middleware.GetOperatorFromContext(c)
+	// Get user from context.
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		_ = c.Error(domainerrors.NewServerError(domainerrors.CodeAuthTokenInvalid, "authentication required"))
 		return

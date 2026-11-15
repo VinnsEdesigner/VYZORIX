@@ -24,7 +24,7 @@ type E2ETestCredentials struct {
 // E2EGraphQLClient is an authenticated GraphQL client.
 type E2EGraphQLClient struct {
 	client   *http.Client
-	Operator *struct {
+	User *struct {
 		ID    string `json:"id"`
 		Email string `json:"email"`
 		Role  string `json:"role"`

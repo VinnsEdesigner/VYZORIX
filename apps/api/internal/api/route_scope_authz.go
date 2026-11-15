@@ -19,8 +19,10 @@ import (
 // ("devices:*"); per-resource narrowing happens in the handler (e.g. the
 // command path's owner-or-group check).
 func (s *Server) requireScope(action permission.Action, scope string) gin.HandlerFunc {
+	s.recordGuard(guardStoreOrg, action, scope)
+
 	return func(c *gin.Context) {
-		// Service accounts authenticate without an operator; evaluate scope
+		// Service accounts authenticate without a user; evaluate scope
 		// based on the token's own scope list instead.
 		if c.GetString("auth_type") == "service_account" {
 			scopes := c.GetStringSlice("service_account_scopes")
@@ -33,7 +35,7 @@ func (s *Server) requireScope(action permission.Action, scope string) gin.Handle
 			return
 		}
 
-		op := middleware.GetOperatorFromContext(c)
+		op := middleware.GetUserFromContext(c)
 		if op == nil {
 			responses.RespondStructured(c, http.StatusUnauthorized, "authentication required")
 			c.Abort()
@@ -50,7 +52,7 @@ func (s *Server) requireScope(action permission.Action, scope string) gin.Handle
 		m := op.GetMembership(orgID)
 		if m == nil || !m.IsActive() {
 			// The in-memory memberships are only populated on the session/login
-			// path. API-key auth builds a minimal operator (ID only), so fall
+			// path. API-key auth builds a minimal user (ID only), so fall
 			// back to the authoritative DB membership check before denying.
 			if s.memberHandler != nil {
 				if loaded, err := s.memberHandler.MembershipChecker().GetMembership(c.Request.Context(), op.ID, orgID); err == nil {
@@ -73,6 +75,37 @@ func (s *Server) requireScope(action permission.Action, scope string) gin.Handle
 		eval := permission.NewEvaluator(string(m.Role), grants)
 		if !eval.Grants(action, scope) {
 			responses.RespondStructured(c, http.StatusForbidden, "insufficient permissions")
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
+// requireInstanceScope returns gin middleware that enforces an instance-scoped
+// permission: the caller must hold `action` on the deployment (instance:*),
+// resolved from the user's InstanceRole. It consults exactly one grant store —
+// the instance one — so a route in the instance group can never be reached by an
+// org role, and an org route can never be reached by instance authority. This is
+// what keeps the two axes orthogonal rather than hierarchical.
+//
+// The personal store is not consulted here: a personal grant is identity-derived
+// and belongs to the caller's own account, not to the deployment.
+func (s *Server) requireInstanceScope(action permission.Action) gin.HandlerFunc {
+	scope := permission.WildcardScope(permission.ScopeInstance)
+	s.recordGuard(guardStoreInstance, action, scope)
+
+	return func(c *gin.Context) {
+		op := middleware.GetUserFromContext(c)
+		if op == nil {
+			responses.RespondStructured(c, http.StatusUnauthorized, "authentication required")
+			c.Abort()
+			return
+		}
+
+		if !permission.DefaultScopesForInstanceRole(op.InstanceRole).Grants(action, scope) {
+			responses.RespondStructured(c, http.StatusForbidden, "insufficient instance authority")
 			c.Abort()
 			return
 		}

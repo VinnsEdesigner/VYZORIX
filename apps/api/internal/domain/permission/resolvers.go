@@ -12,7 +12,7 @@ import (
 // that into ["devices:imei:356938...", "devices:group:field-ops", "devices:*"]
 // — the set of scopes whose grants would satisfy the request. This is the
 // attribute-resolution layer: it maps a runtime resource identifier to the
-// scope paths an operator might be granted on.
+// scope paths a user might be granted on.
 type ScopeResolver interface {
 	// Resolve returns the concrete scopes that grant access to the requested
 	// scope. The requested scope is always included as the first element so an

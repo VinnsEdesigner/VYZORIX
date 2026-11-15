@@ -10,17 +10,17 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func setupPrefsTestDB(t *testing.T) (*storage.OperatorRepository, *sql.DB) {
+func setupPrefsTestDB(t *testing.T) (*storage.UserRepository, *sql.DB) {
 	t.Helper()
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	_, err = db.Exec(`CREATE TABLE operator_settings (operator_id TEXT PRIMARY KEY, risk_warn INTEGER DEFAULT 70, risk_crit INTEGER DEFAULT 85, thermal_warn INTEGER DEFAULT 45, thermal_crit INTEGER DEFAULT 50, buffer_warn INTEGER DEFAULT 30, buffer_crit INTEGER DEFAULT 15, preferences TEXT DEFAULT '{}')`)
+	_, err = db.Exec(`CREATE TABLE user_settings (user_id TEXT PRIMARY KEY, risk_warn INTEGER DEFAULT 70, risk_crit INTEGER DEFAULT 85, thermal_warn INTEGER DEFAULT 45, thermal_crit INTEGER DEFAULT 50, buffer_warn INTEGER DEFAULT 30, buffer_crit INTEGER DEFAULT 15, preferences TEXT DEFAULT '{}')`)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	repo := storage.NewOperatorRepository(db)
+	repo := storage.NewUserRepository(db)
 	return repo, db
 }
 

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device_group"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
 )
@@ -25,14 +25,14 @@ func (f *fakeOrgRepo) FindByName(_ context.Context, _, name string) (*organizati
 }
 
 type fakeOpRepo struct {
-	ops map[string]*operator.Operator
+	ops map[string]*user.User
 }
 
-func (f *fakeOpRepo) FindByEmail(_ context.Context, email string) (*operator.Operator, error) {
+func (f *fakeOpRepo) FindByEmail(_ context.Context, email string) (*user.User, error) {
 	if op, ok := f.ops[email]; ok {
 		return op, nil
 	}
-	return nil, operator.ErrNotFound
+	return nil, user.ErrNotFound
 }
 
 type fakeGroupRepo struct {
@@ -48,14 +48,14 @@ func (f *fakeGroupRepo) Save(_ context.Context, g *device_group.Group) error {
 	return nil
 }
 
-func (f *fakeGroupRepo) AddMember(_ context.Context, groupID, operatorID string) error {
+func (f *fakeGroupRepo) AddMember(_ context.Context, groupID, userID string) error {
 	if f.members == nil {
 		f.members = make(map[string]map[string]bool)
 	}
 	if f.members[groupID] == nil {
 		f.members[groupID] = make(map[string]bool)
 	}
-	f.members[groupID][operatorID] = true
+	f.members[groupID][userID] = true
 	return nil
 }
 
@@ -94,13 +94,13 @@ func (f *fakeOrgCreator) CreateOrganization(_ context.Context, _, name, desc str
 }
 
 type fakeOpCreator struct {
-	ops map[string]*operator.Operator
+	ops map[string]*user.User
 }
 
-func (f *fakeOpCreator) CreateOperator(_ context.Context, email, name, _, _ string) (*operator.Operator, error) {
-	op := &operator.Operator{ID: "op-" + email, Email: email, Name: name}
+func (f *fakeOpCreator) CreateUser(_ context.Context, email, name, _, _ string) (*user.User, error) {
+	op := &user.User{ID: "op-" + email, Email: email, Name: name}
 	if f.ops == nil {
-		f.ops = make(map[string]*operator.Operator)
+		f.ops = make(map[string]*user.User)
 	}
 	f.ops[email] = op
 	return op, nil
@@ -154,11 +154,11 @@ func TestLoadAndApply_NonexistentFile_NoOp(t *testing.T) {
 func TestLoadAndApply_CreatesOrg(t *testing.T) {
 	json := `{
 		"organizations": [{"name": "Test Org", "description": "test"}],
-		"operators": [{"email": "owner@test.local", "name": "Owner", "password": "pass123", "org_name": "Test Org", "role": "admin"}]
+		"users": [{"email": "owner@test.local", "name": "Owner", "password": "pass123", "org_name": "Test Org", "role": "admin"}]
 	}`
 	path := writeProvisioningFile(t, json)
 	orgRepo := &fakeOrgRepo{orgs: make(map[string]*organization.Organization)}
-	opRepo := &fakeOpRepo{ops: make(map[string]*operator.Operator)}
+	opRepo := &fakeOpRepo{ops: make(map[string]*user.User)}
 	orgCreator := &fakeOrgCreator{}
 	opCreator := &fakeOpCreator{}
 	p := New(slog.Default()).
@@ -195,13 +195,13 @@ func TestLoadAndApply_OrgAlreadyExists_SkipsCreation(t *testing.T) {
 	}
 }
 
-func TestLoadAndApply_CreatesOperator(t *testing.T) {
+func TestLoadAndApply_CreatesUser(t *testing.T) {
 	json := `{
 		"organizations": [{"name": "Test Org"}],
-		"operators": [{"email": "admin@test.local", "name": "Admin", "password": "pass", "org_name": "Test Org", "role": "super_admin"}]
+		"users": [{"email": "admin@test.local", "name": "Admin", "password": "pass", "org_name": "Test Org", "role": "super_admin"}]
 	}`
 	path := writeProvisioningFile(t, json)
-	opRepo := &fakeOpRepo{ops: make(map[string]*operator.Operator)}
+	opRepo := &fakeOpRepo{ops: make(map[string]*user.User)}
 	opCreator := &fakeOpCreator{}
 	orgCreator := &fakeOrgCreator{}
 	p := New(slog.Default()).
@@ -220,8 +220,8 @@ func TestLoadAndApply_CreatesOperator(t *testing.T) {
 func TestLoadAndApply_CreatesGroupWithMembers(t *testing.T) {
 	json := `{
 		"organizations": [{"name": "Test Org"}],
-		"operators": [{"email": "op1@test.local", "name": "Op1", "password": "p", "org_name": "Test Org", "role": "admin"}],
-		"device_groups": [{"name": "production", "org_name": "Test Org", "operator_emails": ["op1@test.local"]}]
+		"users": [{"email": "op1@test.local", "name": "Op1", "password": "p", "org_name": "Test Org", "role": "admin"}],
+		"device_groups": [{"name": "production", "org_name": "Test Org", "user_emails": ["op1@test.local"]}]
 	}`
 	path := writeProvisioningFile(t, json)
 	groupRepo := &fakeGroupRepo{}
@@ -248,14 +248,14 @@ func TestLoadAndApply_CreatesGroupWithMembers(t *testing.T) {
 func TestLoadAndApply_CreatesGrant(t *testing.T) {
 	json := `{
 		"organizations": [{"name": "Test Org"}],
-		"operators": [{"email": "op1@test.local", "name": "Op1", "password": "p", "org_name": "Test Org", "role": "admin"}],
+		"users": [{"email": "op1@test.local", "name": "Op1", "password": "p", "org_name": "Test Org", "role": "admin"}],
 		"permission_grants": [{"subject_type": "operator", "subject_id": "op1@test.local", "org_name": "Test Org", "scope": "devices:*", "actions": ["device.read"]}]
 	}`
 	path := writeProvisioningFile(t, json)
 	grantRepo := &fakeGrantRepo{}
 	opCreator := &fakeOpCreator{}
 	orgCreator := &fakeOrgCreator{}
-	opRepo := &fakeOpRepo{ops: make(map[string]*operator.Operator)}
+	opRepo := &fakeOpRepo{ops: make(map[string]*user.User)}
 	p := New(slog.Default()).
 		WithRepositories(nil, opRepo, nil, grantRepo).
 		WithCreators(orgCreator, opCreator, nil)

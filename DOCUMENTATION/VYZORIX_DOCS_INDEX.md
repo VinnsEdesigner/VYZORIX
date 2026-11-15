@@ -43,7 +43,7 @@ everything else read faster.
 | `DEPLOY_PIPELINE.md` | What happens to the manifest, stage by stage, and what a failure costs. |
 | `DEPLOY_BUILD.md` | Building the artifacts a manifest references, with `vyzorix build`. |
 | `DEPLOY_SERVER_API.md` | The endpoints a deploy touches. |
-| `DEPLOY_CREDENTIALS.md` | CI tokens, so a pipeline can deploy without an operator. |
+| `DEPLOY_CREDENTIALS.md` | CI tokens, so a pipeline can deploy without a user. |
 | `DEPLOY_SECRETS.md` | The encrypted side channel for values that must not be in the config. |
 | `APP_EXPOSURE.md` | Reaching an app over the network. |
 

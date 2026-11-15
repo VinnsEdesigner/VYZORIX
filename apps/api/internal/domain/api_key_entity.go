@@ -47,7 +47,7 @@ type APIKey struct {
 	LastRequest *time.Time `json:"last_request"`
 	RevokedAt   *time.Time `json:"revoked_at"`
 	ID          string     `json:"id"`
-	OperatorID  string     `json:"operator_id"`
+	UserID  string     `json:"user_id"`
 	// OrganizationID binds this key to a specific organization. Org context is
 	// resolved from this binding server-side rather than a client header.
 	OrganizationID string `json:"organization_id,omitempty"`
@@ -146,12 +146,12 @@ type ListAllAPIKeysResponse struct {
 	Pagination Pagination            `json:"pagination"`
 }
 
-// AdminAPIKeyResponse extends APIKeyResponse with operator identity, which the.
-// super-admin "list all keys" view requires. APIKeyResponse omits operator_id.
-// because operator-scoped responses imply the operator; the admin view does not.
+// AdminAPIKeyResponse extends APIKeyResponse with user identity, which the.
+// super-admin "list all keys" view requires. APIKeyResponse omits user_id.
+// because user-scoped responses imply the user; the admin view does not.
 type AdminAPIKeyResponse struct {
-	OperatorID   string `json:"operator_id"`
-	OperatorName string `json:"operator_name"`
+	UserID   string `json:"user_id"`
+	UserName string `json:"user_name"`
 	APIKeyResponse
 }
 
@@ -161,20 +161,20 @@ type AdminAPIKeyResponse struct {
 // total_requests is the sum of every key's lifetime request_count.
 type GlobalAPIKeyStats struct {
 	RequestsByScope map[string]int64  `json:"requests_by_scope"`
-	TopOperators    []TopOperatorStat `json:"top_operators"`
+	TopUsers    []TopUserStat `json:"top_users"`
 	TotalKeys       int               `json:"total_keys"`
 	ActiveKeys      int               `json:"active_keys"`
 	RevokedKeys     int               `json:"revoked_keys"`
-	TotalOperators  int               `json:"total_operators"`
+	TotalUsers  int               `json:"total_users"`
 	MaxPerMonth     int               `json:"max_per_month"`
 	TotalRequests   int64             `json:"total_requests"`
 }
 
-// TopOperatorStat is a per-operator cumulative request aggregate returned in.
-// GlobalAPIKeyStats.TopOperators.
-type TopOperatorStat struct {
-	OperatorID     string `json:"operator_id"`
-	OperatorName   string `json:"operator_name"`
+// TopUserStat is a per-user cumulative request aggregate returned in.
+// GlobalAPIKeyStats.TopUsers.
+type TopUserStat struct {
+	UserID     string `json:"user_id"`
+	UserName   string `json:"user_name"`
 	TotalRequests  int64  `json:"total_requests"`
 	ActiveKeyCount int    `json:"active_key_count"`
 }

@@ -150,13 +150,13 @@ func (h *UpdatesHistoryHandler) CancelPush(c *gin.Context) {
 		return
 	}
 
-	operator := middleware.GetOperatorFromContext(c)
-	if operator == nil {
+	user := middleware.GetUserFromContext(c)
+	if user == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "Operator not found"))
 		return
 	}
 
-	result, err := h.service.CancelPush(c.Request.Context(), pushID, operator.ID, orgID)
+	result, err := h.service.CancelPush(c.Request.Context(), pushID, user.ID, orgID)
 	if err != nil {
 		if se := updates.AsServiceError(err); se != nil {
 			_ = c.Error(apperrors.NewServerErrorFromStatus(se.Status, se.Message))
@@ -170,7 +170,7 @@ func (h *UpdatesHistoryHandler) CancelPush(c *gin.Context) {
 	if h.auditLogger != nil {
 		h.auditLogger.UpdateCancelled(
 			c.Request.Context(),
-			operator.ID,
+			user.ID,
 			pushID,
 			c.ClientIP(),
 			c.GetHeader("User-Agent"),

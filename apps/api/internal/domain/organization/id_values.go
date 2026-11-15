@@ -11,58 +11,58 @@ var ErrInvalidOrganizationID = errors.New("invalid organization ID")
 // ErrInvalidMemberID is returned when a member ID is invalid.
 var ErrInvalidMemberID = errors.New("invalid member ID")
 
-// ErrInvalidOperatorID is returned when an operator ID is invalid.
-var ErrInvalidOperatorID = errors.New("invalid operator ID")
+// ErrInvalidUserID is returned when a user ID is invalid.
+var ErrInvalidUserID = errors.New("invalid operator ID")
 
-// OperatorID is a value object representing an operator's unique identifier.
-type OperatorID struct {
+// UserID is a value object representing a user's unique identifier.
+type UserID struct {
 	value string
 }
 
-// NewOperatorID creates a new OperatorID from a string value.
-// Returns ErrInvalidOperatorID if the value is empty.
-func NewOperatorID(value string) (OperatorID, error) {
+// NewUserID creates a new UserID from a string value.
+// Returns ErrInvalidUserID if the value is empty.
+func NewUserID(value string) (UserID, error) {
 	if value == "" {
-		return OperatorID{}, ErrInvalidOperatorID
+		return UserID{}, ErrInvalidUserID
 	}
-	return OperatorID{value: value}, nil
+	return UserID{value: value}, nil
 }
 
-// MustNewOperatorID creates a new OperatorID from a string value.
+// MustNewUserID creates a new UserID from a string value.
 // Panics if the value is empty.
-func MustNewOperatorID(value string) OperatorID {
-	id, err := NewOperatorID(value)
+func MustNewUserID(value string) UserID {
+	id, err := NewUserID(value)
 	if err != nil {
 		panic(err)
 	}
 	return id
 }
 
-// String returns the string value of the OperatorID.
-func (id OperatorID) String() string {
+// String returns the string value of the UserID.
+func (id UserID) String() string {
 	return id.value
 }
 
-// IsZero returns true if the OperatorID is the zero value.
-func (id OperatorID) IsZero() bool {
+// IsZero returns true if the UserID is the zero value.
+func (id UserID) IsZero() bool {
 	return id.value == ""
 }
 
-// Equals returns true if two OperatorIDs are equal.
-func (id OperatorID) Equals(other OperatorID) bool {
+// Equals returns true if two UserIDs are equal.
+func (id UserID) Equals(other UserID) bool {
 	return id.value == other.value
 }
 
 // Validate returns an error if the ID is invalid.
-func (id OperatorID) Validate() error {
+func (id UserID) Validate() error {
 	if id.IsZero() {
-		return ErrInvalidOperatorID
+		return ErrInvalidUserID
 	}
 	return nil
 }
 
 // Format implements fmt.Formatter for pretty printing.
-func (id OperatorID) Format(s fmt.State, verb rune) {
+func (id UserID) Format(s fmt.State, verb rune) {
 	format := "%s"
 	if verb == 'v' && s.Flag('#') {
 		format = "%q"

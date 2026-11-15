@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 )
 
 // ErrValidationError is returned when validation fails.
@@ -34,18 +34,18 @@ type ClientSettingsInput struct {
 
 // ClientSettingsService handles client settings operations.
 type ClientSettingsService struct {
-	operatorRepo operator.Repository
+	userRepo user.Repository
 }
 
 // NewClientSettingsService creates a new ClientSettingsService.
-func NewClientSettingsService(repo operator.Repository) *ClientSettingsService {
-	return &ClientSettingsService{operatorRepo: repo}
+func NewClientSettingsService(repo user.Repository) *ClientSettingsService {
+	return &ClientSettingsService{userRepo: repo}
 }
 
-// GetSettings retrieves all settings for an operator.
-func (s *ClientSettingsService) GetSettings(ctx context.Context, operatorID string) (*SettingsResponse, error) {
-	// Get full operator settings in single query.
-	settings, err := s.operatorRepo.GetOperatorSettings(ctx, operatorID)
+// GetSettings retrieves all settings for a user.
+func (s *ClientSettingsService) GetSettings(ctx context.Context, userID string) (*SettingsResponse, error) {
+	// Get full user settings in single query.
+	settings, err := s.userRepo.GetUserSettings(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -56,24 +56,24 @@ func (s *ClientSettingsService) GetSettings(ctx context.Context, operatorID stri
 	}, nil
 }
 
-// UpdateClientSettings updates client settings for an operator.
-func (s *ClientSettingsService) UpdateClientSettings(ctx context.Context, operatorID string, input *ClientSettingsInput) (*SettingsResponse, error) {
+// UpdateClientSettings updates client settings for a user.
+func (s *ClientSettingsService) UpdateClientSettings(ctx context.Context, userID string, input *ClientSettingsInput) (*SettingsResponse, error) {
 	if err := s.validateClientSettings(input); err != nil {
 		return nil, err
 	}
 
-	currentSettings, err := s.operatorRepo.GetOperatorSettings(ctx, operatorID)
+	currentSettings, err := s.userRepo.GetUserSettings(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
 	s.applyClientSettingsUpdates(&currentSettings.Client, input)
 
-	if err = s.operatorRepo.UpdateClientSettings(ctx, operatorID, currentSettings.Client); err != nil {
+	if err = s.userRepo.UpdateClientSettings(ctx, userID, currentSettings.Client); err != nil {
 		return nil, err
 	}
 
-	notifications, err := s.operatorRepo.GetNotifications(ctx, operatorID)
+	notifications, err := s.userRepo.GetNotifications(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (s *ClientSettingsService) validateServerURL(serverURL *string) error {
 }
 
 // applyClientSettingsUpdates applies input updates to client settings.
-func (s *ClientSettingsService) applyClientSettingsUpdates(client *operator.ClientSettings, input *ClientSettingsInput) {
+func (s *ClientSettingsService) applyClientSettingsUpdates(client *user.ClientSettings, input *ClientSettingsInput) {
 	if input.ServerURL != nil {
 		client.ServerURL = *input.ServerURL
 	}
@@ -148,19 +148,19 @@ func (s *ClientSettingsService) applyClientSettingsUpdates(client *operator.Clie
 }
 
 // ResetSettings resets all settings to defaults.
-func (s *ClientSettingsService) ResetSettings(ctx context.Context, operatorID string) (*SettingsResponse, error) {
-	err := s.operatorRepo.ResetSettings(ctx, operatorID)
+func (s *ClientSettingsService) ResetSettings(ctx context.Context, userID string) (*SettingsResponse, error) {
+	err := s.userRepo.ResetSettings(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.GetSettings(ctx, operatorID)
+	return s.GetSettings(ctx, userID)
 }
 
 // SettingsResponse represents the complete settings response.
 type SettingsResponse struct {
-	Notifications *operator.NotificationSettings `json:"notifications"`
-	Client        *operator.ClientSettings       `json:"client,omitempty"`
+	Notifications *user.NotificationSettings `json:"notifications"`
+	Client        *user.ClientSettings       `json:"client,omitempty"`
 	Preferences   map[string]any                 `json:"preferences,omitempty"`
 }
 
@@ -171,8 +171,8 @@ var defaultPreferences = map[string]any{
 	"language":            "en",
 }
 
-func (s *ClientSettingsService) GetPreferences(ctx context.Context, operatorID string) (map[string]any, error) {
-	raw, err := s.operatorRepo.GetPreferencesRaw(ctx, operatorID)
+func (s *ClientSettingsService) GetPreferences(ctx context.Context, userID string) (map[string]any, error) {
+	raw, err := s.userRepo.GetPreferencesRaw(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("get preferences: %w", err)
 	}
@@ -191,8 +191,8 @@ func (s *ClientSettingsService) GetPreferences(ctx context.Context, operatorID s
 	return prefs, nil
 }
 
-func (s *ClientSettingsService) UpdatePreferences(ctx context.Context, operatorID string, updates map[string]any) (map[string]any, error) {
-	current, err := s.GetPreferences(ctx, operatorID)
+func (s *ClientSettingsService) UpdatePreferences(ctx context.Context, userID string, updates map[string]any) (map[string]any, error) {
+	current, err := s.GetPreferences(ctx, userID)
 	if err != nil {
 		current = make(map[string]any)
 	}
@@ -207,7 +207,7 @@ func (s *ClientSettingsService) UpdatePreferences(ctx context.Context, operatorI
 	if err != nil {
 		return nil, ErrValidationError
 	}
-	if err := s.operatorRepo.SavePreferencesRaw(ctx, operatorID, string(data)); err != nil {
+	if err := s.userRepo.SavePreferencesRaw(ctx, userID, string(data)); err != nil {
 		return nil, err
 	}
 	return current, nil

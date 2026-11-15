@@ -47,3 +47,14 @@ package vyzorix
         min: float64
         max: float64
 }
+
+// CapabilitiesResult — the caller's effective permissions across the three
+// grant stores. Each entry is the wire form "action:scope"; the three lists are
+// kept separate because they come from different stores and a client shows them
+// in different contexts.
+#CapabilitiesResult: {
+        personal: [...string]
+        instance: [...string]
+        org: [...string]
+        instance_role: string
+}

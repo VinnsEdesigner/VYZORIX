@@ -33,10 +33,10 @@ func (s *Service) SetStatsCache(c *cache.Section) {
 	s.statsCache = c
 }
 
-// GetDashboardStats retrieves aggregated dashboard statistics for an operator.
-func (s *Service) GetDashboardStats(ctx context.Context, operatorID string) (*DashboardStatsResponse, error) {
-	// Get device stats filtered by operator.
-	allDevices, err := s.deviceRepo.ListByOperator(ctx, operatorID)
+// GetDashboardStats retrieves aggregated dashboard statistics for a user.
+func (s *Service) GetDashboardStats(ctx context.Context, userID string) (*DashboardStatsResponse, error) {
+	// Get device stats filtered by user.
+	allDevices, err := s.deviceRepo.ListByUser(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list devices: %w", err)
 	}

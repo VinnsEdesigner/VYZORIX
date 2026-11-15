@@ -22,7 +22,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
   export const getApiKeys = () => {
 /**
- * Returns paginated API keys for the operator with monthly quota usage
+ * Returns paginated API keys for the user with monthly quota usage
  * @summary List API keys
  */
 const getAuthApiKeys = (

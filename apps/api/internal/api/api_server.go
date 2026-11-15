@@ -58,9 +58,9 @@ import (
 	devicedomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/featuremgmt"
 	notificationdomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/notification"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/appcheck"
 	infracache "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/cache"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/config"
@@ -86,7 +86,7 @@ type ServerConfig struct {
 	AlertConfig    config.AlertConfig
 	Version        string
 	FCMNotifier    fcm.Notifier
-	OperatorRepo   operator.Repository
+	UserRepo       user.Repository
 	OAuthStateRepo authhandlers.OAuthStateProvider
 	AuthService    *auth.AuthService
 	Lockout        *middleware.Lockout
@@ -162,6 +162,7 @@ type Server struct {
 	confirmationHandler         *confirmationhandlers.Handler
 	commandAuthorizer           *command.Authorizer
 	grantRepo                   *storage.GrantRepository
+	scopeGuards                 []scopeGuard
 	groupRepo                   *storage.DeviceGroupRepository
 	InvitationStorage           *storage.InvitationStorage
 	features                    *featuremgmt.Manager
@@ -171,7 +172,7 @@ type Server struct {
 	alertHandler                *alerthandlers.Handler
 	AlertEvaluator              *alertapp.Evaluator
 	streamHandler               *websockethandlers.StreamHandler
-	operatorTerminalHandler     *websockethandlers.OperatorTerminalHandler
+	userTerminalHandler         *websockethandlers.UserTerminalHandler
 	recordingHandler            *websockethandlers.RecordingHandler
 	deviceFrameHandler          *websockethandlers.DeviceFrameHandler
 	ptyRelay                    *hub.PTYRelay
@@ -324,11 +325,11 @@ func (s *Server) wireDeployHandler(cfg *ServerConfig) {
 		grants = s.grantRepo
 	}
 
-	// The identity endpoint resolves a name and an org for the caller. The operator
+	// The identity endpoint resolves a name and an org for the caller. The user
 	// repo comes from the config; the org repo is built over the same DB.
-	var operators deployhandlers.OperatorLookup
-	if cfg.OperatorRepo != nil {
-		operators = cfg.OperatorRepo
+	var users deployhandlers.UserLookup
+	if cfg.UserRepo != nil {
+		users = cfg.UserRepo
 	}
 
 	organizations := deployhandlers.OrganizationLookup(storage.NewOrganizationStorage(db))
@@ -341,7 +342,7 @@ func (s *Server) wireDeployHandler(cfg *ServerConfig) {
 		s.DeviceRepo,
 		membershipChecker,
 		grants,
-		operators,
+		users,
 		organizations,
 		cfg.Log,
 	)
@@ -800,7 +801,7 @@ func NewServerWithDeps(cfg *ServerConfigWithDeps) *Server {
 	s.commandHandler = cfg.HandlerSet.Command
 	s.confirmationHandler = cfg.HandlerSet.Confirmation
 	s.streamHandler = cfg.HandlerSet.Stream
-	s.operatorTerminalHandler = cfg.HandlerSet.OperatorTerminal
+	s.userTerminalHandler = cfg.HandlerSet.UserTerminal
 	s.recordingHandler = cfg.HandlerSet.RecordingHandler
 	s.deviceFrameHandler = cfg.HandlerSet.DeviceFrames
 	s.ptyRelay = cfg.HandlerSet.PTYRelay

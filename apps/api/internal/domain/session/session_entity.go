@@ -11,13 +11,13 @@ var ErrNotFound = errors.New("session not found")
 // Session represents an authentication session.
 type Session struct {
 	ID                     string
-	OperatorID             string
+	UserID             string
 	ExpiresAt              time.Time
 	CreatedAt              time.Time
 	SelectedOrganizationID string
 
 	// MFA verification - if set, this session was created after MFA was verified.
-	// Required when operator has MFA enabled.
+	// Required when user has MFA enabled.
 	MFAVerifiedAt *time.Time
 
 	// SigningKey is the per-session HMAC secret used to sign client requests.

@@ -25,7 +25,7 @@ func TestService_CollectAndSnapshot(t *testing.T) {
 	if snap == nil {
 		t.Fatal("expected snapshot after collect")
 	}
-	if snap.Counts.Devices < 0 || snap.Counts.Operators < 0 {
+	if snap.Counts.Devices < 0 || snap.Counts.Users < 0 {
 		t.Errorf("unexpected counts: %+v", snap.Counts)
 	}
 	if snap.CollectedAt.IsZero() {

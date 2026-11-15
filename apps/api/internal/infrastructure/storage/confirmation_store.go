@@ -30,9 +30,9 @@ func (r *ConfirmationRepository) Create(ctx context.Context, c *confirmation.Pen
 	}
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO command_confirmations
-			(token, operator_id, org_id, command, device_id, risk_tier, created_at, expires_at, consumed_at)
+			(token, user_id, org_id, command, device_id, risk_tier, created_at, expires_at, consumed_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		c.Token, c.OperatorID, c.OrgID, c.Command, c.DeviceID, c.RiskTier,
+		c.Token, c.UserID, c.OrgID, c.Command, c.DeviceID, c.RiskTier,
 		c.CreatedAt, c.ExpiresAt, consumedAt,
 	)
 	return err
@@ -43,9 +43,9 @@ func (r *ConfirmationRepository) Get(ctx context.Context, token string) (*confir
 	var c confirmation.PendingConfirmation
 	var consumedAt sql.NullTime
 	err := r.db.QueryRowContext(ctx, `
-		SELECT token, operator_id, org_id, command, device_id, risk_tier, created_at, expires_at, consumed_at
+		SELECT token, user_id, org_id, command, device_id, risk_tier, created_at, expires_at, consumed_at
 		FROM command_confirmations WHERE token = ?`, token).Scan(
-		&c.Token, &c.OperatorID, &c.OrgID, &c.Command, &c.DeviceID, &c.RiskTier,
+		&c.Token, &c.UserID, &c.OrgID, &c.Command, &c.DeviceID, &c.RiskTier,
 		&c.CreatedAt, &c.ExpiresAt, &consumedAt,
 	)
 	if errors.Is(err, sql.ErrNoRows) {

@@ -49,14 +49,14 @@ describe('auth core (generated SDK)', () => {
   });
 
   describe('login (browser — cookie-based)', () => {
-    it('returns the operator payload on success', async () => {
+    it('returns the user payload on success', async () => {
       const result = await getAuth().postAuthLogin({
         email: 'test@vyzorix.com',
         password: 'password123',
       });
-      expect(result.operator_id).toBe('operator-test-1');
+      expect(result.user_id).toBe('operator-test-1');
       expect(result.email).toBe('test@vyzorix.com');
-      expect(result.name).toBe('Test Operator');
+      expect(result.name).toBe('Test User');
       expect(result.organizations?.[0]?.id).toBe('org-test-1');
     });
 
@@ -68,14 +68,14 @@ describe('auth core (generated SDK)', () => {
   });
 
   describe('loginWithTokens (JWT + refresh token)', () => {
-    it('returns tokens and operator fields', async () => {
+    it('returns tokens and user fields', async () => {
       const result = await getAuth().postAuthLoginTokens({
         email: 'test@vyzorix.com',
         password: 'password123',
       });
       expect(result.access_token).toBe('mock-access-token');
       expect(result.refresh_token).toBe('mock-refresh-token');
-      expect(result.operator_id).toBe('operator-test-1');
+      expect(result.user_id).toBe('operator-test-1');
       expect(result.selected_organization?.id).toBe('org-test-1');
     });
 
@@ -87,13 +87,13 @@ describe('auth core (generated SDK)', () => {
   });
 
   describe('register', () => {
-    it('returns the created operator (no auto-login)', async () => {
+    it('returns the created user (no auto-login)', async () => {
       const result = await getAuth().postAuthRegister({
         email: 'new@vyzorix.com',
         password: 'password123',
         name: 'New User',
       });
-      expect(result.operator_id).toBe('operator-test-2');
+      expect(result.user_id).toBe('operator-test-2');
       expect(result.email).toBe('new@vyzorix.com');
     });
 
@@ -111,7 +111,7 @@ describe('auth core (generated SDK)', () => {
   });
 
   describe('getMe', () => {
-    it('returns the operator profile', async () => {
+    it('returns the user profile', async () => {
       const result = await getAuth().getAuthMe();
       expect(result.id).toBe('operator-test-1');
       expect(result.email).toBe('test@vyzorix.com');
@@ -121,8 +121,8 @@ describe('auth core (generated SDK)', () => {
   });
 
   describe('updateName', () => {
-    it('patches the operator name', async () => {
-      const result = await getSettings().patchAuthMe({ name: 'Renamed Operator' });
+    it('patches the user name', async () => {
+      const result = await getSettings().patchAuthMe({ name: 'Renamed User' });
       expect(result).toBeDefined();
     });
   });
@@ -155,7 +155,7 @@ describe('organization context (generated SDK)', () => {
     expect(result).toBeDefined();
   });
 
-  it('lists invitations pending for the current operator', async () => {
+  it('lists invitations pending for the current user', async () => {
     const result = await getInvitations().getMeInvitations();
     expect(result).toBeDefined();
   });
@@ -194,17 +194,17 @@ describe('MFA endpoints (generated SDK)', () => {
 
   it('verify completes login and returns tokens', async () => {
     const result = await getMfa().postAuthMfaVerify({
-      operator_id: 'operator-test-1',
+      user_id: 'operator-test-1',
       code: '123456',
     });
     expect(result.success).toBe(true);
     expect(result.access_token).toBe('mock-access-token-mfa');
-    expect(result.operator?.id).toBe('operator-test-1');
+    expect(result.user?.id).toBe('operator-test-1');
   });
 
   it('verify rejects a wrong code', async () => {
     await expect(
-      getMfa().postAuthMfaVerify({ operator_id: 'operator-test-1', code: '000000' }),
+      getMfa().postAuthMfaVerify({ user_id: 'operator-test-1', code: '000000' }),
     ).rejects.toThrow();
   });
 

@@ -50,15 +50,15 @@ func NewHistoryHandler(historySvc *command.HistoryService, devRepo device.Reposi
 // @Param        startTime  query int64  false  "epoch-millis lower bound"
 // @Param        endTime    query int64  false  "epoch-millis upper bound"
 // @Success      200  {object}  openapi.CommandHistoryResult  "command history"
-// @Failure      401  {object}  openapi.ErrorResponse  "operator context required"
+// @Failure      401  {object}  openapi.ErrorResponse  "user context required"
 // @Failure      404  {object}  openapi.ErrorResponse  "device not found"
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /dashboard/device/{imei}/commands [get]
 func (h *HistoryHandler) GetHistory(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// Extract operator for auth check.
-	op := middleware.GetOperatorFromContext(c)
+	// Extract user for auth check.
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "Operator context required"))
 		return

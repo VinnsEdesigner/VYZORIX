@@ -23,6 +23,6 @@ var (
 	// ErrNoTelemetryData indicates no telemetry data exists for the device.
 	ErrNoTelemetryData = errors.New("no telemetry data found")
 
-	// ErrUnauthorized indicates the operator is not authorized.
+	// ErrUnauthorized indicates the user is not authorized.
 	ErrUnauthorized = errors.New("unauthorized access")
 )

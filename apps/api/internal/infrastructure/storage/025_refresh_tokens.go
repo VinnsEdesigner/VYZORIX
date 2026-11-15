@@ -11,14 +11,14 @@ func migrateCreateRefreshTokens(tx *sql.Tx) error {
 		CREATE TABLE IF NOT EXISTS refresh_tokens (
 			id              TEXT PRIMARY KEY,
 			token_hash      TEXT NOT NULL UNIQUE,
-			operator_id     TEXT NOT NULL,
+			user_id     TEXT NOT NULL,
 			session_id      TEXT NOT NULL,
 			expires_at      INTEGER NOT NULL,
 			created_at      INTEGER NOT NULL,
 			replaced_by_id  TEXT,
 			is_revoked      INTEGER NOT NULL DEFAULT 0,
 			revoked_at      INTEGER,
-			FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE,
+			FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
 			FOREIGN KEY(session_id) REFERENCES auth_sessions(id) ON DELETE CASCADE,
 			FOREIGN KEY(replaced_by_id) REFERENCES refresh_tokens(id)
 		)
@@ -36,10 +36,10 @@ func migrateCreateRefreshTokens(tx *sql.Tx) error {
 		return err
 	}
 
-	// Create index for querying tokens by operator.
+	// Create index for querying tokens by user.
 	_, err = tx.ExecContext(context.Background(), `
-		CREATE INDEX IF NOT EXISTS idx_refresh_tokens_operator_id 
-		ON refresh_tokens(operator_id)
+		CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id 
+		ON refresh_tokens(user_id)
 	`)
 	if err != nil {
 		return err

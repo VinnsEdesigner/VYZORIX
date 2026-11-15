@@ -57,15 +57,15 @@ func (h *LogoutHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	// Get operator ID from the validated session already in context.
-	var operatorID string
+	// Get user ID from the validated session already in context.
+	var userID string
 	if sess := middleware.GetSession(c); sess != nil {
-		operatorID = sess.OperatorID
+		userID = sess.UserID
 	}
 
 	// Attempt to logout - fail if session deletion fails.
 	if err := h.authService.Logout(c.Request.Context(), sessionID); err != nil {
-		h.presenter.LogoutFailure(c, operatorID, err.Error())
+		h.presenter.LogoutFailure(c, userID, err.Error())
 		h.presenter.InternalError(c, "logout failed")
 		return
 	}
@@ -74,8 +74,8 @@ func (h *LogoutHandler) Handle(c *gin.Context) {
 	h.presenter.ClearSessionCookie(c)
 
 	// Log successful logout.
-	if operatorID != "" {
-		h.presenter.LogoutSuccess(c, operatorID)
+	if userID != "" {
+		h.presenter.LogoutSuccess(c, userID)
 	}
 
 	h.presenter.OK(c, openapi.MessageResult{Message: "logged out"})

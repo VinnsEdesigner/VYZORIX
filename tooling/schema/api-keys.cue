@@ -15,7 +15,7 @@ package vyzorix
         last_request_at?: int64
         revoked_at?: int64
         id: string
-        operator_id?: string
+        user_id?: string
         name: string
         key_prefix: string
         scope: string
@@ -34,7 +34,7 @@ package vyzorix
         scope: string
         id: string
         name: string
-        operator_id?: string
+        user_id?: string
         api_key: string
         request_count: int64
         is_active: bool
@@ -51,11 +51,11 @@ package vyzorix
 // GlobalAPIKeyStatsResult.
 #GlobalAPIKeyStatsResult: {
         requests_by_scope: {[string]: int64}
-        top_operators: [...#TopOperatorStat]
+        top_users: [...#TopUserStat]
         total_keys: int
         active_keys: int
         revoked_keys: int
-        total_operators: int
+        total_users: int
         max_per_month: int
         total_requests: int64
 }
@@ -66,8 +66,8 @@ package vyzorix
         expires_at?: int64
         last_request_at?: int64
         revoked_at?: int64
-        operator_id?: string
-        operator_name?: string
+        user_id?: string
+        user_name?: string
         id: string
         name: string
         key_prefix: string

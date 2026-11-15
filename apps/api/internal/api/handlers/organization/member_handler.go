@@ -51,12 +51,12 @@ type MemberServiceAdapter struct {
 	memberService *appOrganization.MemberService
 }
 
-// GetMembership checks if an operator is a member of an organization.
-func (a *MemberServiceAdapter) GetMembership(ctx context.Context, operatorID, orgID string) (interface{}, error) {
+// GetMembership checks if a user is a member of an organization.
+func (a *MemberServiceAdapter) GetMembership(ctx context.Context, userID, orgID string) (interface{}, error) {
 	if a.memberService == nil {
 		return nil, errors.New("member service not configured")
 	}
-	return a.memberService.GetMembership(ctx, operatorID, orgID)
+	return a.memberService.GetMembership(ctx, userID, orgID)
 }
 
 // List handles GET /v1/organizations/:id/members.
@@ -73,7 +73,7 @@ func (a *MemberServiceAdapter) GetMembership(ctx context.Context, operatorID, or
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id}/members [get]
 func (h *MemberHandler) List(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -96,7 +96,7 @@ func (h *MemberHandler) List(c *gin.Context) {
 			return
 		}
 	} else {
-		// Check minimum role: require at least operator role to list members.
+		// Check minimum role: require at least user role to list members.
 		if member.Role.Level() < organization.RoleOperator.Level() {
 			h.presenter.Forbidden(c, "insufficient permissions: operator role required")
 			return
@@ -114,11 +114,11 @@ func (h *MemberHandler) List(c *gin.Context) {
 		item := openapi.OrganizationMember{
 			ID:             member.ID,
 			OrganizationID: member.OrganizationID,
-			OperatorID:     member.OperatorID,
+			UserID:     member.UserID,
 			Role:           string(member.Role),
 			Status:         string(member.Lifecycle),
-			OperatorName:   member.OperatorName,
-			OperatorEmail:  member.OperatorEmail,
+			UserName:   member.UserName,
+			UserEmail:  member.UserEmail,
 		}
 		if member.InvitedBy != nil {
 			item.InvitedBy = *member.InvitedBy
@@ -151,7 +151,7 @@ func (h *MemberHandler) List(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id}/members/{memberId} [get]
 func (h *MemberHandler) Get(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -196,11 +196,11 @@ func (h *MemberHandler) Get(c *gin.Context) {
 	single := openapi.OrganizationMember{
 		ID:             member.ID,
 		OrganizationID: member.OrganizationID,
-		OperatorID:     member.OperatorID,
+		UserID:     member.UserID,
 		Role:           string(member.Role),
 		Status:         string(member.Lifecycle),
-		OperatorName:   member.OperatorName,
-		OperatorEmail:  member.OperatorEmail,
+		UserName:   member.UserName,
+		UserEmail:  member.UserEmail,
 	}
 	if member.InvitedBy != nil {
 		single.InvitedBy = *member.InvitedBy
@@ -232,7 +232,7 @@ func (h *MemberHandler) Get(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id}/members/{memberId}/role [patch]
 func (h *MemberHandler) UpdateRole(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -246,7 +246,7 @@ func (h *MemberHandler) UpdateRole(c *gin.Context) {
 		return
 	}
 
-	// Check if operator can manage members.
+	// Check if user can manage members.
 	if err := h.memberService.CheckCanManageMembers(c.Request.Context(), op.ID, orgID); err != nil {
 		h.presenter.Forbidden(c, "access denied")
 		return
@@ -295,11 +295,11 @@ func (h *MemberHandler) UpdateRole(c *gin.Context) {
 	h.presenter.OK(c, openapi.OrganizationMember{
 		ID:             member.ID,
 		OrganizationID: member.OrganizationID,
-		OperatorID:     member.OperatorID,
+		UserID:     member.UserID,
 		Role:           string(member.Role),
 		Status:         string(member.Lifecycle),
-		OperatorName:   member.OperatorName,
-		OperatorEmail:  member.OperatorEmail,
+		UserName:   member.UserName,
+		UserEmail:  member.UserEmail,
 	})
 }
 
@@ -320,7 +320,7 @@ func (h *MemberHandler) UpdateRole(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id}/members/{memberId} [delete]
 func (h *MemberHandler) Remove(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -378,7 +378,7 @@ func (h *MemberHandler) Remove(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id}/members/{memberId}/transfer [post]
 func (h *MemberHandler) TransferOwnership(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -428,7 +428,7 @@ func (h *MemberHandler) TransferOwnership(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id}/members/{memberId}/suspend [post]
 func (h *MemberHandler) Suspend(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -486,7 +486,7 @@ func (h *MemberHandler) Suspend(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id}/members/{memberId}/reinstate [post]
 func (h *MemberHandler) Reinstate(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return

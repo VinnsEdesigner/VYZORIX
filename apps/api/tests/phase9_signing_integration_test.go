@@ -22,7 +22,7 @@ import (
 // Phase 9: Signing integration test.
 //
 // This test starts the real server (assumed already running on localhost:3000),
-// inserts a verified operator into the Turso DB, logs in to obtain a session.
+// inserts a verified user into the Turso DB, logs in to obtain a session.
 // signing key, then exercises the full signing pipeline:
 //
 //   1. Signed REST tenant request succeeds.
@@ -99,39 +99,39 @@ func TestPhase9SigningIntegration(t *testing.T) {
 		t.Skip("TURSO_DB_URL or TURSO_VYZOR_SCOPE_DB_TOKEN not set — skipping")
 	}
 
-	// ── Setup: insert verified operator ──.
+	// ── Setup: insert verified user ──.
 	hasher := password.NewArgon2idHasher()
 	hash, err := hasher.Hash(phase9Password)
 	if err != nil {
 		t.Fatalf("password hash: %v", err)
 	}
 
-	// Clean up any prior operator.
+	// Clean up any prior user.
 	tursoExec(t, []map[string]any{{"q": fmt.Sprintf(
-		`DELETE FROM organization_members WHERE operator_id IN (SELECT id FROM operators WHERE email = '%s')`, phase9Email)}})
+		`DELETE FROM organization_members WHERE user_id IN (SELECT id FROM users WHERE email = '%s')`, phase9Email)}})
 	tursoExec(t, []map[string]any{{"q": fmt.Sprintf(
-		`DELETE FROM organizations WHERE created_by IN (SELECT id FROM operators WHERE email = '%s')`, phase9Email)}})
+		`DELETE FROM organizations WHERE created_by IN (SELECT id FROM users WHERE email = '%s')`, phase9Email)}})
 	tursoExec(t, []map[string]any{{"q": fmt.Sprintf(
-		`DELETE FROM auth_sessions WHERE operator_id IN (SELECT id FROM operators WHERE email = '%s')`, phase9Email)}})
+		`DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM users WHERE email = '%s')`, phase9Email)}})
 	tursoExec(t, []map[string]any{{"q": fmt.Sprintf(
-		`DELETE FROM operators WHERE email = '%s'`, phase9Email)}})
+		`DELETE FROM users WHERE email = '%s'`, phase9Email)}})
 
-	operatorID := "op-phase9-" + newUUID()
+	userID := "op-phase9-" + newUUID()
 	nowMs := time.Now().UnixMilli()
 
 	tursoExec(t, []map[string]any{{"q": fmt.Sprintf(
-		`INSERT INTO operators (id, email, name, password_hash, role, mfa_enabled, email_verified, created_at, updated_at) VALUES ('%s', '%s', '%s', '%s', 'operator', 0, 1, %d, %d)`,
-		operatorID, phase9Email, phase9Name, hash, nowMs, nowMs)}})
+		`INSERT INTO users (id, email, name, password_hash, role, mfa_enabled, email_verified, created_at, updated_at) VALUES ('%s', '%s', '%s', '%s', 'operator', 0, 1, %d, %d)`,
+		userID, phase9Email, phase9Name, hash, nowMs, nowMs)}})
 
 	t.Cleanup(func() {
 		tursoExec(t, []map[string]any{{"q": fmt.Sprintf(
-			`DELETE FROM organization_members WHERE operator_id IN (SELECT id FROM operators WHERE email = '%s')`, phase9Email)}})
+			`DELETE FROM organization_members WHERE user_id IN (SELECT id FROM users WHERE email = '%s')`, phase9Email)}})
 		tursoExec(t, []map[string]any{{"q": fmt.Sprintf(
-			`DELETE FROM organizations WHERE created_by IN (SELECT id FROM operators WHERE email = '%s')`, phase9Email)}})
+			`DELETE FROM organizations WHERE created_by IN (SELECT id FROM users WHERE email = '%s')`, phase9Email)}})
 		tursoExec(t, []map[string]any{{"q": fmt.Sprintf(
-			`DELETE FROM auth_sessions WHERE operator_id IN (SELECT id FROM operators WHERE email = '%s')`, phase9Email)}})
+			`DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM users WHERE email = '%s')`, phase9Email)}})
 		tursoExec(t, []map[string]any{{"q": fmt.Sprintf(
-			`DELETE FROM operators WHERE email = '%s'`, phase9Email)}})
+			`DELETE FROM users WHERE email = '%s'`, phase9Email)}})
 	})
 
 	// ── Login ──.

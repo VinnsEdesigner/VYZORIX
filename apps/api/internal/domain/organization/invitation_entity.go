@@ -36,8 +36,8 @@ type Invitation struct {
 	InviteeNotes string // Notes from invitee on accept/reject.
 
 	// References.
-	InvitedBy   string // OperatorID of inviter.
-	RespondedBy string // OperatorID of responder (when responded).
+	InvitedBy   string // UserID of inviter.
+	RespondedBy string // UserID of responder (when responded).
 
 	// Timestamps.
 	InvitedAt   time.Time

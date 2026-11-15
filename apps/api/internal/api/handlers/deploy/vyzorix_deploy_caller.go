@@ -6,7 +6,7 @@
 //
 // The handler is the authentication boundary. The service takes a resolved
 // *deploy.Caller, because a resolver inside the service cannot see the request
-// context the operator, the membership and the grants are carried in.
+// context the user, the membership and the grants are carried in.
 package deployhandlers
 
 import (
@@ -16,21 +16,21 @@ import (
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/deploy"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
 )
 
-// MembershipChecker resolves an operator's membership in an organization. It is
+// MembershipChecker resolves a user's membership in an organization. It is
 // the middleware's own interface, so the checker the org-scope middleware uses is
 // the one the caller resolver uses.
 type MembershipChecker interface {
-	GetMembership(ctx context.Context, operatorID, orgID string) (interface{}, error)
+	GetMembership(ctx context.Context, userID, orgID string) (interface{}, error)
 }
 
-// GrantLister returns an operator's effective scoped grants in an organization.
+// GrantLister returns a user's effective scoped grants in an organization.
 type GrantLister interface {
-	ListEffective(ctx context.Context, operatorID, orgID string) ([]*permission.ResourcePermission, error)
+	ListEffective(ctx context.Context, userID, orgID string) ([]*permission.ResourcePermission, error)
 }
 
 // resolveCaller builds the deploy.Caller for the request's organization and the
@@ -38,10 +38,10 @@ type GrantLister interface {
 //
 // Two credentials reach here. A deploy credential is a grant scoped to the
 // one device it names, so it is represented as exactly that — not as a super
-// admin, which would be a lie the predicate could later act on. An operator
+// admin, which would be a lie the predicate could later act on. A user
 // session or API key is resolved through the same membership check requireScope
 // performs: the in-memory memberships are populated on the session path, but
-// API-key auth builds a minimal operator, so the database is the fallback.
+// API-key auth builds a minimal user, so the database is the fallback.
 func (h *Handler) resolveCaller(c *gin.Context, orgID string) (*deploy.Caller, string, bool) {
 	if identity, ok := middleware.DeployCredentialFromContext(c); ok {
 		// The credential's org is the authority; a caller cannot move it with a
@@ -62,7 +62,7 @@ func (h *Handler) resolveCaller(c *gin.Context, orgID string) (*deploy.Caller, s
 		}, identity.CreatedBy, true
 	}
 
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		return nil, "", false
 	}
@@ -85,9 +85,9 @@ func (h *Handler) resolveCaller(c *gin.Context, orgID string) (*deploy.Caller, s
 	}, op.ID, true
 }
 
-// membership returns the active membership for the operator in the org, from the
+// membership returns the active membership for the user in the org, from the
 // in-memory set first and the database second.
-func (h *Handler) membership(c *gin.Context, op *operator.Operator, orgID string) *organization.OrganizationMember {
+func (h *Handler) membership(c *gin.Context, op *user.User, orgID string) *organization.OrganizationMember {
 	if m := op.GetMembership(orgID); m != nil && m.IsActive() {
 		return m
 	}

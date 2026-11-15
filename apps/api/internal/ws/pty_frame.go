@@ -9,7 +9,7 @@ import (
 )
 
 // PTY frames travel as WebSocket binary messages on the device stream and on the
-// operator terminal stream. Per-chunk JSON (the shape used for control traffic)
+// user terminal stream. Per-chunk JSON (the shape used for control traffic)
 // would mean base64 and escaping overhead on every keystroke and every byte of
 // output, and would not survive binary payloads such as a `cat` of a file.
 //
@@ -42,7 +42,7 @@ const (
 
 // PTY frame types.
 const (
-	// PTYTypeData is terminal data: output device->operator, input operator->device.
+	// PTYTypeData is terminal data: output device->user, input user->device.
 	PTYTypeData byte = 0x01
 	// PTYTypeAck returns flow-control credit (see the registry's credit window).
 	PTYTypeAck byte = 0x02
@@ -148,14 +148,14 @@ func EncodeSessionData(sessionID string, data []byte) []byte {
 	return out
 }
 
-// SessionIdentity is what a terminal session knows about its operator, delivered
+// SessionIdentity is what a terminal session knows about its user, delivered
 // with the OPEN frame so the device — and the Vyzorix CLI inside it — can show who
 // is connected and what they may call.
 //
 // It is the resolved capability, not a claim: the device enforces [Allowlist], and
 // the CLI displays it. The two come from one resolution so they cannot disagree.
 type SessionIdentity struct {
-	Operator  string   `json:"operator"`
+	User  string   `json:"user"`
 	Name      string   `json:"name"`
 	Email     string   `json:"email"`
 	Org       string   `json:"org"`
@@ -168,7 +168,7 @@ type SessionIdentity struct {
 }
 
 // EncodeSessionOpen builds an OPEN payload: the session id, the window size, and
-// the operator's identity as JSON.
+// the user's identity as JSON.
 //
 // The layout is additive on purpose. The window size stays the first four bytes
 // after the session id, so a device that predates the identity block still reads
@@ -192,7 +192,7 @@ func EncodeSessionOpen(sessionID string, rows, cols uint16, identity SessionIden
 
 // DecodeSessionOpen splits an OPEN payload into its session id, window size, and
 // identity. The identity is nil when the payload predates the identity block,
-// which a caller must treat as "unknown operator", never as a refusal.
+// which a caller must treat as "unknown user", never as a refusal.
 func DecodeSessionOpen(payload []byte) (sessionID string, rows, cols uint16, identity *SessionIdentity, err error) {
 	sessionID, data, err := DecodeSessionData(payload)
 	if err != nil {
@@ -215,7 +215,7 @@ func DecodeSessionOpen(payload []byte) (sessionID string, rows, cols uint16, ide
 	}
 
 	// A malformed identity is not fatal to the open: the size is what the shell
-	// needs, and the operator is simply unknown.
+	// needs, and the user is simply unknown.
 	return sessionID, rows, cols, nil, nil
 }
 

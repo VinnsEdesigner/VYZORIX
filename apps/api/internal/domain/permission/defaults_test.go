@@ -19,7 +19,7 @@ func allowlistFor(role string, tier permission.Tier) []string {
 
 // TestShellAndUsbAreAdminOnly is the guard on the most dangerous capabilities:
 // a shell is unbounded code execution and a USB attach can flash external
-// hardware. Neither may be implied by the operator defaults.
+// hardware. Neither may be implied by the user defaults.
 func TestShellAndUsbAreAdminOnly(t *testing.T) {
 	devicesAll := permission.WildcardScope(permission.ScopeDevices)
 
@@ -48,7 +48,7 @@ func TestShellAndUsbAreAdminOnly(t *testing.T) {
 	}
 }
 
-// TestAppPermissionsByRole pins the app lifecycle split: operators may start and
+// TestAppPermissionsByRole pins the app lifecycle split: users may start and
 // stop supervised apps, viewers may only see them.
 func TestAppPermissionsByRole(t *testing.T) {
 	devicesAll := permission.WildcardScope(permission.ScopeDevices)
@@ -61,8 +61,8 @@ func TestAppPermissionsByRole(t *testing.T) {
 		t.Error("a viewer must not be able to start or stop apps")
 	}
 
-	operator := permission.DefaultScopesForRole("operator")
-	if !operator.Grants(permission.ActionAppsWrite, devicesAll) {
+	user := permission.DefaultScopesForRole("operator")
+	if !user.Grants(permission.ActionAppsWrite, devicesAll) {
 		t.Error("an operator must be able to start and stop apps")
 	}
 }
@@ -71,12 +71,12 @@ func TestAppPermissionsByRole(t *testing.T) {
 // command.execute must not confer shell access.
 func TestShellNotImpliedByCommand(t *testing.T) {
 	devicesAll := permission.WildcardScope(permission.ScopeDevices)
-	operator := permission.DefaultScopesForRole("operator")
+	user := permission.DefaultScopesForRole("operator")
 
-	if !operator.Grants(permission.ActionCommand, devicesAll) {
+	if !user.Grants(permission.ActionCommand, devicesAll) {
 		t.Fatal("an operator must be able to execute commands")
 	}
-	if operator.Grants(permission.ActionShell, devicesAll) {
+	if user.Grants(permission.ActionShell, devicesAll) {
 		t.Fatal("command.execute must not imply shell.execute")
 	}
 }
@@ -106,7 +106,7 @@ func TestAllowlistIsDenyByDefault(t *testing.T) {
 }
 
 // TestAllowlistIsAMonotoneLadder proves each role reaches a superset of the one
-// below it: a viewer can never call an API an operator cannot.
+// below it: a viewer can never call an API a user cannot.
 func TestAllowlistIsAMonotoneLadder(t *testing.T) {
 	roles := []string{"viewer", "operator", "admin", "super_admin"}
 	prev := map[string]bool{}
@@ -128,7 +128,7 @@ func TestAllowlistIsAMonotoneLadder(t *testing.T) {
 // TestUSBAPIsRequireTheHardwareTags proves the concrete USB APIs resolve only for
 // a role that holds the hardware capability. usb_state is a read; usb_attach and
 // usb_detach are the write half. All three are gated on hw:usb + data:hardware,
-// which only admin/super_admin hold — so a viewer or operator reaches none of them.
+// which only admin/super_admin hold — so a viewer or user reaches none of them.
 func TestUSBAPIsRequireTheHardwareTags(t *testing.T) {
 	usbAPIs := []string{"usb_state", "usb_attach", "usb_detach"}
 
@@ -301,7 +301,7 @@ func TestResolveSessionCapabilityComposesBothAxes(t *testing.T) {
 
 // Super admin holds every capability the device can run at its tier: the whole
 // catalog minus the APIs the tier cannot reach. This is the "full allowlist" the
-// operator asked for, and it is asserted so a new API cannot silently be
+// user asked for, and it is asserted so a new API cannot silently be
 // unreachable to the top role — which is exactly how the catalog fell behind the
 // device's API surface before.
 func TestSuperAdminReachesTheWholeUnrootedCatalog(t *testing.T) {

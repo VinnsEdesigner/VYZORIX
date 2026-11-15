@@ -8,7 +8,7 @@ import (
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/session"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/telemetry"
@@ -24,8 +24,8 @@ const (
 
 // Organization limits.
 const (
-	// MaxActiveOrgsPerOperator is the maximum number of active organizations an operator can have.
-	MaxActiveOrgsPerOperator = 2
+	// MaxActiveOrgsPerUser is the maximum number of active organizations a user can have.
+	MaxActiveOrgsPerUser = 2
 	// DefaultOrgMaxMembers is the default maximum members per organization.
 	DefaultOrgMaxMembers = 100
 )
@@ -72,7 +72,7 @@ type OrganizationService struct {
 	orgRepo        organization.OrganizationRepository
 	memberRepo     organization.MemberRepository
 	invitationRepo organization.InvitationRepository
-	operatorRepo   operator.Repository
+	userRepo   user.Repository
 	sessionRepo    session.Repository
 	deviceRepo     device.Repository
 	telemetryRepo  telemetry.Repository
@@ -86,7 +86,7 @@ func NewOrganizationService(
 	orgRepo organization.OrganizationRepository,
 	memberRepo organization.MemberRepository,
 	invitationRepo organization.InvitationRepository,
-	operatorRepo operator.Repository,
+	userRepo user.Repository,
 	sessionRepo session.Repository,
 	deviceRepo device.Repository,
 	telemetryRepo telemetry.Repository,
@@ -101,7 +101,7 @@ func NewOrganizationService(
 		orgRepo:        orgRepo,
 		memberRepo:     memberRepo,
 		invitationRepo: invitationRepo,
-		operatorRepo:   operatorRepo,
+		userRepo:   userRepo,
 		sessionRepo:    sessionRepo,
 		deviceRepo:     deviceRepo,
 		telemetryRepo:  telemetryRepo,
@@ -112,18 +112,18 @@ func NewOrganizationService(
 }
 
 // CreateOrganization creates a new organization with the creator as a member with the specified role.
-func (s *OrganizationService) CreateOrganization(ctx context.Context, operatorID, name, description string, maxMembers int, role string) (*organization.Organization, error) {
+func (s *OrganizationService) CreateOrganization(ctx context.Context, userID, name, description string, maxMembers int, role string) (*organization.Organization, error) {
 	name, maxMembers, memberRole, err := s.validateAndPrepareOrg(name, maxMembers, role)
 	if err != nil {
 		return nil, err
 	}
 
-	createdOrg, err := s.createOrgWithTx(ctx, operatorID, name, description, maxMembers, memberRole)
+	createdOrg, err := s.createOrgWithTx(ctx, userID, name, description, maxMembers, memberRole)
 	if err != nil {
 		return nil, err
 	}
 
-	s.updateOperatorLastOrg(ctx, operatorID, createdOrg.ID)
+	s.updateUserLastOrg(ctx, userID, createdOrg.ID)
 
 	return createdOrg, nil
 }
@@ -158,33 +158,33 @@ func (s *OrganizationService) validateAndPrepareOrg(name string, maxMembers int,
 }
 
 // createOrgWithTx creates the organization within a transaction.
-func (s *OrganizationService) createOrgWithTx(ctx context.Context, operatorID, name, description string, maxMembers int, memberRole organization.OrganizationRole) (*organization.Organization, error) {
+func (s *OrganizationService) createOrgWithTx(ctx context.Context, userID, name, description string, maxMembers int, memberRole organization.OrganizationRole) (*organization.Organization, error) {
 	var createdOrg *organization.Organization
 
 	txErr := s.txManager.WithTx(ctx, func(txCtx context.Context) error {
-		activeCount, countErr := s.countActiveOrgs(txCtx, operatorID)
+		activeCount, countErr := s.countActiveOrgs(txCtx, userID)
 		if countErr != nil {
 			return countErr
 		}
-		if activeCount >= MaxActiveOrgsPerOperator {
+		if activeCount >= MaxActiveOrgsPerUser {
 			return ErrMaxOrgsReached
 		}
 
-		if err := s.checkOrgNameUnique(txCtx, operatorID, name); err != nil {
+		if err := s.checkOrgNameUnique(txCtx, userID, name); err != nil {
 			return err
 		}
 
 		var buildErr error
-		createdOrg, buildErr = s.buildAndCreateOrg(txCtx, operatorID, name, description, maxMembers, memberRole)
+		createdOrg, buildErr = s.buildAndCreateOrg(txCtx, userID, name, description, maxMembers, memberRole)
 		return buildErr
 	})
 
 	return createdOrg, txErr
 }
 
-// countActiveOrgs counts active organizations for an operator.
-func (s *OrganizationService) countActiveOrgs(ctx context.Context, operatorID string) (int, error) {
-	orgs, err := s.orgRepo.ListByOperator(ctx, operatorID)
+// countActiveOrgs counts active organizations for a user.
+func (s *OrganizationService) countActiveOrgs(ctx context.Context, userID string) (int, error) {
+	orgs, err := s.orgRepo.ListByUser(ctx, userID)
 	if err != nil {
 		return 0, err
 	}
@@ -198,9 +198,9 @@ func (s *OrganizationService) countActiveOrgs(ctx context.Context, operatorID st
 	return count, nil
 }
 
-// checkOrgNameUnique checks if an organization name is unique for the operator.
-func (s *OrganizationService) checkOrgNameUnique(ctx context.Context, operatorID, name string) error {
-	existing, err := s.orgRepo.FindByName(ctx, operatorID, name)
+// checkOrgNameUnique checks if an organization name is unique for the user.
+func (s *OrganizationService) checkOrgNameUnique(ctx context.Context, userID, name string) error {
+	existing, err := s.orgRepo.FindByName(ctx, userID, name)
 	if err != nil && !errors.Is(err, organization.ErrNotFound) {
 		return err
 	}
@@ -211,9 +211,9 @@ func (s *OrganizationService) checkOrgNameUnique(ctx context.Context, operatorID
 }
 
 // buildAndCreateOrg builds and creates the organization with its initial member.
-func (s *OrganizationService) buildAndCreateOrg(ctx context.Context, operatorID, name, description string, maxMembers int, memberRole organization.OrganizationRole) (*organization.Organization, error) {
+func (s *OrganizationService) buildAndCreateOrg(ctx context.Context, userID, name, description string, maxMembers int, memberRole organization.OrganizationRole) (*organization.Organization, error) {
 	orgID := uuid.New().String()
-	org := organization.NewOrganization(orgID, name, operatorID)
+	org := organization.NewOrganization(orgID, name, userID)
 	org.MaxMembers = maxMembers
 	org.Description = description
 
@@ -221,7 +221,7 @@ func (s *OrganizationService) buildAndCreateOrg(ctx context.Context, operatorID,
 		return nil, err
 	}
 
-	member := organization.NewMember(uuid.New().String(), org.ID, operatorID, memberRole)
+	member := organization.NewMember(uuid.New().String(), org.ID, userID, memberRole)
 	if err := s.memberRepo.Create(ctx, member); err != nil {
 		return nil, err
 	}
@@ -229,18 +229,18 @@ func (s *OrganizationService) buildAndCreateOrg(ctx context.Context, operatorID,
 	return org, nil
 }
 
-// updateOperatorLastOrg updates the operator's LastOrganizationID.
-func (s *OrganizationService) updateOperatorLastOrg(ctx context.Context, operatorID, orgID string) {
-	if s.operatorRepo == nil {
+// updateUserLastOrg updates the user's LastOrganizationID.
+func (s *OrganizationService) updateUserLastOrg(ctx context.Context, userID, orgID string) {
+	if s.userRepo == nil {
 		return
 	}
-	op, opErr := s.operatorRepo.FindByID(ctx, operatorID)
+	op, opErr := s.userRepo.FindByID(ctx, userID)
 	if opErr != nil || op.LastOrganizationID == orgID {
 		return
 	}
 	op.LastOrganizationID = orgID
-	if err := s.operatorRepo.Update(ctx, op); err != nil {
-		s.logger.Warn("failed to update operator LastOrganizationID", "operatorID", operatorID, "error", err)
+	if err := s.userRepo.Update(ctx, op); err != nil {
+		s.logger.Warn("failed to update operator LastOrganizationID", "operatorID", userID, "error", err)
 	}
 }
 
@@ -336,10 +336,10 @@ func (s *OrganizationService) DeleteOrganization(ctx context.Context, orgID stri
 	return s.txManager.WithTx(ctx, func(txCtx context.Context) error {
 		// Revoke sessions for all members first.
 		for _, member := range members {
-			if err := s.sessionRepo.RevokeAllOperatorSessions(txCtx, member.OperatorID); err != nil {
+			if err := s.sessionRepo.RevokeAllUserSessions(txCtx, member.UserID); err != nil {
 				s.logger.Error("failed to revoke sessions for member",
 					"org_id", orgID,
-					"operator_id", member.OperatorID,
+					"user_id", member.UserID,
 					"error", err)
 				// Continue anyway - best effort cleanup.
 			}
@@ -415,9 +415,9 @@ func (s *OrganizationService) DeleteOrganization(ctx context.Context, orgID stri
 	})
 }
 
-// ListOrganizations lists all organizations for an operator.
-func (s *OrganizationService) ListOrganizations(ctx context.Context, operatorID string) ([]*organization.Organization, error) {
-	orgs, err := s.orgRepo.ListByOperator(ctx, operatorID)
+// ListOrganizations lists all organizations for a user.
+func (s *OrganizationService) ListOrganizations(ctx context.Context, userID string) ([]*organization.Organization, error) {
+	orgs, err := s.orgRepo.ListByUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -434,7 +434,7 @@ func (s *OrganizationService) ListOrganizations(ctx context.Context, operatorID 
 }
 
 // ListOrganizationsPaginated lists organizations with pagination.
-func (s *OrganizationService) ListOrganizationsPaginated(ctx context.Context, operatorID string, page, limit int) (*OrganizationListResponse, error) {
+func (s *OrganizationService) ListOrganizationsPaginated(ctx context.Context, userID string, page, limit int) (*OrganizationListResponse, error) {
 	// Apply defaults and limits.
 	if page <= 0 {
 		page = 1
@@ -449,7 +449,7 @@ func (s *OrganizationService) ListOrganizationsPaginated(ctx context.Context, op
 	offset := (page - 1) * limit
 
 	// Use repository paginated method - does LIMIT/OFFSET at DB level.
-	orgs, total, err := s.orgRepo.ListByOperatorPaginated(ctx, operatorID, limit, offset)
+	orgs, total, err := s.orgRepo.ListByUserPaginated(ctx, userID, limit, offset)
 	if err != nil {
 		return nil, err
 	}

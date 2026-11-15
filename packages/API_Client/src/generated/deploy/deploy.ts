@@ -10,6 +10,7 @@ import type {
   CredentialListResponse,
   CurrentResponse,
   DeployResponse,
+  GetDeployBuildSchemaVersion200,
   GetDeploySchemaVersion200,
   GetDeployWhoamiParams,
   IdentityResponse,
@@ -43,6 +44,18 @@ const postDeploy = (
       options);
     }
   /**
+ * The versioned JSON Schema for vyzorix.build.toml. Generated from the vyzorix-spec module.
+ * @summary The build-recipe JSON Schema
+ */
+const getDeployBuildSchemaVersion = (
+    version: string,
+ options?: SecondParameter<typeof customAxios<GetDeployBuildSchemaVersion200>>,) => {
+      return customAxios<GetDeployBuildSchemaVersion200>(
+      {url: `/deploy/build-schema/${version}`, method: 'GET'
+    },
+      options);
+    }
+  /**
  * The versioned JSON Schema for vyzorix.toml. Generated from the vyzorix-spec module.
  * @summary The manifest JSON Schema
  */
@@ -55,7 +68,7 @@ const getDeploySchemaVersion = (
       options);
     }
   /**
- * @summary Current operator identity for the deploy surface
+ * @summary Current user identity for the deploy surface
  */
 const getDeployWhoami = (
     params?: GetDeployWhoamiParams,
@@ -187,8 +200,9 @@ const deleteDeployImeiSecretsAppKey = (
     },
       options);
     }
-  return {postDeploy,getDeploySchemaVersion,getDeployWhoami,getDeployImei,getDeployImeiCredentials,postDeployImeiCredentials,deleteDeployImeiCredentialsId,getDeployImeiDocument,getDeployImeiSecretsApp,postDeployImeiSecretsApp,getDeployImeiSecretsAppKey,deleteDeployImeiSecretsAppKey}};
+  return {postDeploy,getDeployBuildSchemaVersion,getDeploySchemaVersion,getDeployWhoami,getDeployImei,getDeployImeiCredentials,postDeployImeiCredentials,deleteDeployImeiCredentialsId,getDeployImeiDocument,getDeployImeiSecretsApp,postDeployImeiSecretsApp,getDeployImeiSecretsAppKey,deleteDeployImeiSecretsAppKey}};
 export type PostDeployResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDeploy>['postDeploy']>>>
+export type GetDeployBuildSchemaVersionResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDeploy>['getDeployBuildSchemaVersion']>>>
 export type GetDeploySchemaVersionResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDeploy>['getDeploySchemaVersion']>>>
 export type GetDeployWhoamiResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDeploy>['getDeployWhoami']>>>
 export type GetDeployImeiResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDeploy>['getDeployImei']>>>

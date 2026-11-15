@@ -15,8 +15,8 @@ package vyzorix
         allowed_paths?: [...string]
 }
 
-// UpdateOperatorRequest.
-#UpdateOperatorRequest: {
+// UpdateUserRequest.
+#UpdateUserRequest: {
         email?: string
         name?: string
         role?: string

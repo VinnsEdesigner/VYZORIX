@@ -252,7 +252,7 @@ func TestPhase3Invite(t *testing.T) {
 		found := false
 		var invMember map[string]any
 		for _, m := range members {
-			email := getStr(m, "operator_email", "email", "operatorEmail")
+			email := getStr(m, "user_email", "email", "operatorEmail")
 			if email == inviteeEmail {
 				found = true
 				invMember = m

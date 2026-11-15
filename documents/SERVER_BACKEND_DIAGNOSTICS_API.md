@@ -778,7 +778,7 @@ type Query {
 
 ### 10.3 Security
 
-1. **Authentication** - All endpoints require authenticated operator
+1. **Authentication** - All endpoints require authenticated user
 2. **Device Authorization** - DOA check on all device operations
 3. **Data Filtering** - Only return events user has access to
 

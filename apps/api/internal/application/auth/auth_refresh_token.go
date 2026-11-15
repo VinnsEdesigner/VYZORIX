@@ -25,13 +25,13 @@ type AccessTokenResult struct {
 	ExpiresAt   int64
 }
 
-// GenerateAccessToken generates a JWT access token for an operator.
-func (s *AuthService) GenerateAccessToken(ctx context.Context, operatorID, email, name, role string) (*AccessTokenResult, error) {
+// GenerateAccessToken generates a JWT access token for a user.
+func (s *AuthService) GenerateAccessToken(ctx context.Context, userID, email, name, role string) (*AccessTokenResult, error) {
 	if s.jwtManager == nil {
 		return nil, errors.New("JWT manager not configured")
 	}
 
-	accessToken, expiresAt, err := s.jwtManager.Generate(operatorID, email, name, role)
+	accessToken, expiresAt, err := s.jwtManager.Generate(userID, email, name, role)
 	if err != nil {
 		return nil, err
 	}
@@ -63,11 +63,11 @@ func (s *AuthService) RotateRefreshToken(ctx context.Context, oldRefreshToken st
 		return nil, application.ErrUnauthorized
 	}
 
-	// 10: Check if token was used from a different operator (cross-account theft!).
+	// 10: Check if token was used from a different user (cross-account theft!).
 	if existing.IsRevoked {
 		// Token was already used after rotation - potential theft!.
-		// Revoke ALL refresh tokens for the original operator (force re-login).
-		_ = s.refreshTokenRepo.RevokeAllForOperator(ctx, existing.OperatorID)
+		// Revoke ALL refresh tokens for the original user (force re-login).
+		_ = s.refreshTokenRepo.RevokeAllForUser(ctx, existing.UserID)
 		return nil, application.ErrUnauthorized
 	}
 
@@ -76,25 +76,25 @@ func (s *AuthService) RotateRefreshToken(ctx context.Context, oldRefreshToken st
 		return nil, application.ErrTokenExpired
 	}
 
-	// Fetch operator details for the JWT claims.
-	op, err := s.operatorRepo.FindByID(ctx, existing.OperatorID)
+	// Fetch user details for the JWT claims.
+	op, err := s.userRepo.FindByID(ctx, existing.UserID)
 	if err != nil {
 		return nil, application.ErrUnauthorized
 	}
 
 	// Determine the role from organization membership.
-	// Role is org-scoped, so we use the operator's LastOrganizationID to determine context.
+	// Role is org-scoped, so we use the user's LastOrganizationID to determine context.
 	role := "operator"
 	if s.memberRepo != nil {
 		if op.LastOrganizationID != "" {
-			// Try the operator's last accessed org first.
-			member, memberErr := s.memberRepo.FindByOperatorAndOrg(ctx, op.ID, op.LastOrganizationID)
+			// Try the user's last accessed org first.
+			member, memberErr := s.memberRepo.FindByUserAndOrg(ctx, op.ID, op.LastOrganizationID)
 			if memberErr == nil && member.IsActive() {
 				role = string(member.Role)
 			}
 		} else {
 			// No LastOrganizationID — load all memberships to find the highest role.
-			memberships, memberErr := s.memberRepo.ListByOperator(ctx, op.ID)
+			memberships, memberErr := s.memberRepo.ListByUser(ctx, op.ID)
 			if memberErr == nil {
 				for _, m := range memberships {
 					if m.IsActive() && m.Role.Level() > organization.LevelOperator {
@@ -108,7 +108,7 @@ func (s *AuthService) RotateRefreshToken(ctx context.Context, oldRefreshToken st
 		}
 	}
 
-	// Generate new JWT access token with full operator details.
+	// Generate new JWT access token with full user details.
 	accessToken, expiresAt, err := s.jwtManager.Generate(
 		op.ID,
 		op.Email,
@@ -123,7 +123,7 @@ func (s *AuthService) RotateRefreshToken(ctx context.Context, oldRefreshToken st
 	_ = s.refreshTokenRepo.Revoke(ctx, existing.ID)
 
 	// Issue new refresh token.
-	newRefreshToken, err := s.IssueRefreshToken(ctx, existing.OperatorID, existing.SessionID)
+	newRefreshToken, err := s.IssueRefreshToken(ctx, existing.UserID, existing.SessionID)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (s *AuthService) RotateRefreshToken(ctx context.Context, oldRefreshToken st
 }
 
 // IssueRefreshToken issues a new refresh token.
-func (s *AuthService) IssueRefreshToken(ctx context.Context, operatorID, sessionID string) (string, error) {
+func (s *AuthService) IssueRefreshToken(ctx context.Context, userID, sessionID string) (string, error) {
 	if s.refreshTokenRepo == nil {
 		return "", errors.New("refresh token repository not configured")
 	}
@@ -158,7 +158,7 @@ func (s *AuthService) IssueRefreshToken(ctx context.Context, operatorID, session
 
 	rt := &refresh_token.RefreshToken{
 		ID:         id,
-		OperatorID: operatorID,
+		UserID: userID,
 		SessionID:  sessionID,
 		TokenHash:  tokenHash,
 		ExpiresAt:  time.Now().Add(expiry),
@@ -172,7 +172,7 @@ func (s *AuthService) IssueRefreshToken(ctx context.Context, operatorID, session
 	return token, nil
 }
 
-// RevokeAllRefreshTokens revokes all refresh tokens for an operator.
-func (s *AuthService) RevokeAllRefreshTokens(ctx context.Context, operatorID string) error {
-	return s.refreshTokenRepo.RevokeAllForOperator(ctx, operatorID)
+// RevokeAllRefreshTokens revokes all refresh tokens for a user.
+func (s *AuthService) RevokeAllRefreshTokens(ctx context.Context, userID string) error {
+	return s.refreshTokenRepo.RevokeAllForUser(ctx, userID)
 }

@@ -18,10 +18,10 @@ type MFAEnrollResult struct {
 	BackupCodes []string
 }
 
-// VerifyMFACode verifies a TOTP code for an operator.
+// VerifyMFACode verifies a TOTP code for a user.
 // After successful verification, it creates a session and marks it as MFA-verified.
-func (s *AuthService) VerifyMFACode(ctx context.Context, operatorID, code string) (*session.Session, error) {
-	op, err := s.operatorRepo.FindByID(ctx, operatorID)
+func (s *AuthService) VerifyMFACode(ctx context.Context, userID, code string) (*session.Session, error) {
+	op, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -30,14 +30,14 @@ func (s *AuthService) VerifyMFACode(ctx context.Context, operatorID, code string
 		return nil, application.ErrForbidden
 	}
 
-	// Verify the stored MAC binding matches this operatorID.
+	// Verify the stored MAC binding matches this userID.
 	// This prevents attackers from using a stolen MFASecret with a different account.
 	if op.MFASecret != "" {
 		binding := infraauth.MFASecretBinding{
 			Secret: op.MFASecret,
 			MAC:    op.MFASecretMAC,
 		}
-		if !infraauth.VerifyMFASecretBinding(operatorID, binding) {
+		if !infraauth.VerifyMFASecretBinding(userID, binding) {
 			return nil, application.ErrForbidden
 		}
 	}
@@ -45,7 +45,7 @@ func (s *AuthService) VerifyMFACode(ctx context.Context, operatorID, code string
 	// Verify TOTP code.
 	cfg := infraauth.DefaultTOTPConfig()
 	cfg.AccountName = op.Email
-	cfg.Issuer = fmt.Sprintf("Vyzorix-%s", operatorID[:8])
+	cfg.Issuer = fmt.Sprintf("Vyzorix-%s", userID[:8])
 
 	totp := infraauth.NewTOTP(op.MFASecret, cfg)
 	if !totp.Verify(code) {
@@ -53,7 +53,7 @@ func (s *AuthService) VerifyMFACode(ctx context.Context, operatorID, code string
 	}
 
 	// Create session and mark it as MFA-verified.
-	sess, err := s.CreateSession(ctx, operatorID)
+	sess, err := s.CreateSession(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,18 +71,18 @@ func (s *AuthService) VerifyMFACode(ctx context.Context, operatorID, code string
 }
 
 // EnrollMFA generates a new MFA secret for enrollment.
-func (s *AuthService) EnrollMFA(ctx context.Context, operatorID, email string) (*MFAEnrollResult, error) {
+func (s *AuthService) EnrollMFA(ctx context.Context, userID, email string) (*MFAEnrollResult, error) {
 	secret, err := infraauth.GenerateSecret()
 	if err != nil {
 		return nil, err
 	}
 
-	binding := infraauth.CreateMFASecretBinding(operatorID, secret)
+	binding := infraauth.CreateMFASecretBinding(userID, secret)
 	_ = binding // Store via UpdateMFA call.
 
 	cfg := infraauth.DefaultTOTPConfig()
 	cfg.AccountName = email
-	cfg.Issuer = fmt.Sprintf("Vyzorix-%s", operatorID[:8])
+	cfg.Issuer = fmt.Sprintf("Vyzorix-%s", userID[:8])
 	totp := infraauth.NewTOTP(secret, cfg)
 
 	backupCodes, err := infraauth.GenerateBackupCodes(8)
@@ -97,48 +97,48 @@ func (s *AuthService) EnrollMFA(ctx context.Context, operatorID, email string) (
 	}, nil
 }
 
-// EnableMFA enables MFA for an operator after verifying a code.
+// EnableMFA enables MFA for a user after verifying a code.
 // It invalidates all existing sessions to ensure MFA is enforced on next login.
-func (s *AuthService) EnableMFA(ctx context.Context, operatorID, secret string, backupCodes []string) error {
-	binding := infraauth.CreateMFASecretBinding(operatorID, secret)
+func (s *AuthService) EnableMFA(ctx context.Context, userID, secret string, backupCodes []string) error {
+	binding := infraauth.CreateMFASecretBinding(userID, secret)
 	now := time.Now()
-	if err := s.operatorRepo.UpdateMFA(ctx, operatorID, secret, binding.MAC, true, &now); err != nil {
+	if err := s.userRepo.UpdateMFA(ctx, userID, secret, binding.MAC, true, &now); err != nil {
 		return err
 	}
 
 	// Invalidate all existing sessions - user must re-authenticate with MFA.
-	if err := s.LogoutAll(ctx, operatorID); err != nil {
-		slog.Warn("failed to revoke sessions during MFA enable", "operator_id", operatorID, "error", err)
+	if err := s.LogoutAll(ctx, userID); err != nil {
+		slog.Warn("failed to revoke sessions during MFA enable", "user_id", userID, "error", err)
 	}
 
 	return nil
 }
 
-// DisableMFA disables MFA for an operator.
+// DisableMFA disables MFA for a user.
 // It revokes all sessions and refresh tokens to ensure security after MFA is disabled.
-func (s *AuthService) DisableMFA(ctx context.Context, operatorID string) error {
-	if err := s.operatorRepo.UpdateMFA(ctx, operatorID, "", "", false, nil); err != nil {
+func (s *AuthService) DisableMFA(ctx context.Context, userID string) error {
+	if err := s.userRepo.UpdateMFA(ctx, userID, "", "", false, nil); err != nil {
 		return err
 	}
 
-	// Revoke all sessions for this operator.
-	if err := s.LogoutAll(ctx, operatorID); err != nil {
-		slog.Warn("failed to revoke sessions during MFA disable", "operator_id", operatorID, "error", err)
+	// Revoke all sessions for this user.
+	if err := s.LogoutAll(ctx, userID); err != nil {
+		slog.Warn("failed to revoke sessions during MFA disable", "user_id", userID, "error", err)
 	}
 
-	// Revoke all refresh tokens for this operator.
+	// Revoke all refresh tokens for this user.
 	if s.refreshTokenRepo != nil {
-		if err := s.refreshTokenRepo.RevokeAllForOperator(ctx, operatorID); err != nil {
-			slog.Warn("failed to revoke refresh tokens during MFA disable", "operator_id", operatorID, "error", err)
+		if err := s.refreshTokenRepo.RevokeAllForUser(ctx, userID); err != nil {
+			slog.Warn("failed to revoke refresh tokens during MFA disable", "user_id", userID, "error", err)
 		}
 	}
 
 	return nil
 }
 
-// GetMFAStatus returns MFA status for an operator.
-func (s *AuthService) GetMFAStatus(ctx context.Context, operatorID string) (bool, error) {
-	op, err := s.operatorRepo.FindByID(ctx, operatorID)
+// GetMFAStatus returns MFA status for a user.
+func (s *AuthService) GetMFAStatus(ctx context.Context, userID string) (bool, error) {
+	op, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return false, err
 	}
@@ -146,9 +146,9 @@ func (s *AuthService) GetMFAStatus(ctx context.Context, operatorID string) (bool
 	return op.MFAEnabled, nil
 }
 
-// RegenerateBackupCodes generates and saves new backup codes for an operator.
-func (s *AuthService) RegenerateBackupCodes(ctx context.Context, operatorID string) ([]string, error) {
-	op, err := s.operatorRepo.FindByID(ctx, operatorID)
+// RegenerateBackupCodes generates and saves new backup codes for a user.
+func (s *AuthService) RegenerateBackupCodes(ctx context.Context, userID string) ([]string, error) {
+	op, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (s *AuthService) RegenerateBackupCodes(ctx context.Context, operatorID stri
 		return nil, err
 	}
 
-	err = s.operatorRepo.UpdateOperatorMFA(ctx, operatorID, op.MFASecret, op.MFASecretMAC, codes)
+	err = s.userRepo.UpdateUserMFA(ctx, userID, op.MFASecret, op.MFASecretMAC, codes)
 	if err != nil {
 		return nil, err
 	}
@@ -171,8 +171,8 @@ func (s *AuthService) RegenerateBackupCodes(ctx context.Context, operatorID stri
 }
 
 // VerifyBackupCode verifies a backup code and removes it if valid.
-func (s *AuthService) VerifyBackupCode(ctx context.Context, operatorID, code string) (bool, error) {
-	op, err := s.operatorRepo.FindByID(ctx, operatorID)
+func (s *AuthService) VerifyBackupCode(ctx context.Context, userID, code string) (bool, error) {
+	op, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return false, err
 	}
@@ -187,7 +187,7 @@ func (s *AuthService) VerifyBackupCode(ctx context.Context, operatorID, code str
 	}
 
 	remaining := infraauth.RemoveBackupCode(op.BackupCodes, idx)
-	err = s.operatorRepo.UpdateOperatorMFA(ctx, operatorID, op.MFASecret, op.MFASecretMAC, remaining)
+	err = s.userRepo.UpdateUserMFA(ctx, userID, op.MFASecret, op.MFASecretMAC, remaining)
 	if err != nil {
 		return false, err
 	}

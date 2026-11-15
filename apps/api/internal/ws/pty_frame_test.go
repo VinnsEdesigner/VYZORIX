@@ -133,7 +133,7 @@ func TestDecodeSessionDataRejectsMalformed(t *testing.T) {
 
 func TestSessionOpenCarriesTheIdentity(t *testing.T) {
 in := SessionIdentity{
-Operator:  "op-1",
+User:  "op-1",
 Name:      "Kamau",
 Email:     "kamau@example.com",
 Org:       "org-1",
@@ -157,7 +157,7 @@ t.Fatalf("header = %q %d %d", id, rows, cols)
 if got == nil {
 t.Fatal("identity missing")
 }
-if got.RoleLabel != "Operator" || got.Operator != "op-1" || len(got.Allowlist) != 2 {
+if got.RoleLabel != "Operator" || got.User != "op-1" || len(got.Allowlist) != 2 {
 t.Fatalf("identity = %+v", got)
 }
 }

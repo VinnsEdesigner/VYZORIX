@@ -9,7 +9,7 @@ import (
 type Lifecycle string
 
 const (
-	// LifecyclePending represents a device waiting for operator approval.
+	// LifecyclePending represents a device waiting for user approval.
 	LifecyclePending Lifecycle = "pending"
 	// LifecycleRegistered represents an approved, active device.
 	LifecycleRegistered Lifecycle = "registered"

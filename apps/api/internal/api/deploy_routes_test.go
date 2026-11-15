@@ -23,7 +23,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/deploy"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/deployconfig"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
 	cryptohmac "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/crypto"
@@ -77,7 +77,7 @@ type deployFixture struct {
 	configs  *storage.DeployConfigRepository
 	creds    *storage.DeployCredentialRepository
 	db       *storage.SQLite
-	operator *operator.Operator
+	user *user.User
 	orgID    string
 }
 
@@ -102,7 +102,7 @@ func newDeployFixture(t *testing.T) *deployFixture {
 	secretKeys := storage.NewDeviceSecretKeyRepository(raw)
 	creds := storage.NewDeployCredentialRepository(raw)
 	grants := storage.NewGrantRepository(raw)
-	operators := storage.NewOperatorRepository(raw)
+	users := storage.NewUserRepository(raw)
 	organizations := storage.NewOrganizationStorage(raw)
 
 	signer := testServerSigner(t)
@@ -117,7 +117,7 @@ func newDeployFixture(t *testing.T) *deployFixture {
 		grantRepo:         grants,
 		deployCredentials: credSvc,
 	}
-	s.deployHandler = deployhandlers.NewHandler(svc, secretSvc, credSvc, devices, nil, grants, operators, organizations, s.log)
+	s.deployHandler = deployhandlers.NewHandler(svc, secretSvc, credSvc, devices, nil, grants, users, organizations, s.log)
 
 	// Seed a registered device in each org. RegisteredAt > 0 is what the storage
 	// layer reads as LifecycleRegistered, which the predicate requires.
@@ -137,14 +137,14 @@ func newDeployFixture(t *testing.T) *deployFixture {
 
 // engineFor builds a router whose tenant group is the real deploy registration,
 // with the authenticated principal injected ahead of it.
-func (f *deployFixture) engineFor(op *operator.Operator, orgID string) *gin.Engine {
+func (f *deployFixture) engineFor(op *user.User, orgID string) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 
 	r := gin.New()
 	tenant := r.Group("/v1")
 	tenant.Use(func(c *gin.Context) {
 		if op != nil {
-			c.Set(middleware.ContextKeyOperator, op)
+			c.Set(middleware.ContextKeyUser, op)
 		}
 
 		if orgID != "" {
@@ -159,9 +159,9 @@ func (f *deployFixture) engineFor(op *operator.Operator, orgID string) *gin.Engi
 	return r
 }
 
-// memberOperator is an active operator in the fixture org with the given role.
-func memberOperator(role organization.OrganizationRole) *operator.Operator {
-	op := &operator.Operator{ID: deployOp}
+// memberUser is an active user in the fixture org with the given role.
+func memberUser(role organization.OrganizationRole) *user.User {
+	op := &user.User{ID: deployOp}
 	op.Memberships = []*organization.OrganizationMember{
 		organization.NewMember("mem_01H", deployOrg, deployOp, role),
 	}
@@ -169,7 +169,7 @@ func memberOperator(role organization.OrganizationRole) *operator.Operator {
 	return op
 }
 
-// grantDeploy writes the device.deploy grant an operator needs. A super-admin
+// grantDeploy writes the device.deploy grant a user needs. A super-admin
 // needs none; every other role does, and only on the device it names.
 func (f *deployFixture) grantDeploy(t *testing.T, scope string) {
 	t.Helper()
@@ -217,7 +217,7 @@ func TestDeployRouteTakesTheDeviceFromTheManifest(t *testing.T) {
 	f := newDeployFixture(t)
 	f.grantDeploy(t, "devices:"+deployDevice)
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
 	w := do(t, r, http.MethodPost, "/v1/deploy", []byte(deployManifest), nil)
 	if w.Code != http.StatusAccepted {
@@ -271,7 +271,7 @@ func TestDeployRefusesCrossOrgDeviceAsNotFound(t *testing.T) {
 	// and not from the grant.
 	f.grantDeploy(t, "devices:"+deployDevice)
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
 	manifest := `
 [device]
@@ -294,7 +294,7 @@ cmd  = "/home/apps/vfd/run.sh"
 	}
 }
 
-// TestDeployRefusesWithoutTheGrant pins that an operator with no device.deploy
+// TestDeployRefusesWithoutTheGrant pins that a user with no device.deploy
 // grant is refused, and that the refusal is a 403 and not a 404.
 func TestDeployRefusesWithoutTheGrant(t *testing.T) {
 	t.Parallel()
@@ -302,7 +302,7 @@ func TestDeployRefusesWithoutTheGrant(t *testing.T) {
 	f := newDeployFixture(t)
 	// No grant is written.
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
 	w := do(t, r, http.MethodPost, "/v1/deploy", []byte(deployManifest), nil)
 	if w.Code != http.StatusForbidden {
@@ -325,7 +325,7 @@ func TestDeployRefusesAnUnregisteredDevice(t *testing.T) {
 		t.Fatalf("seed pending device: %v", err)
 	}
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
 	manifest := `
 [device]
@@ -356,7 +356,7 @@ func TestDeployDryRunStoresNothing(t *testing.T) {
 	f := newDeployFixture(t)
 	f.grantDeploy(t, "devices:"+deployDevice)
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
 	w := do(t, r, http.MethodPost, "/v1/deploy?dry_run=true", []byte(deployManifest), nil)
 	if w.Code != http.StatusAccepted {
@@ -390,7 +390,7 @@ func TestDeployRefusesAnInvalidManifest(t *testing.T) {
 	f := newDeployFixture(t)
 	f.grantDeploy(t, "devices:"+deployDevice)
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
 	// `bogus` is not a key the manifest defines, so strict decoding refuses it.
 	manifest := `
@@ -422,7 +422,7 @@ func TestDeployRequiresAnOrganization(t *testing.T) {
 
 	f := newDeployFixture(t)
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), "")
+	r := f.engineFor(memberUser(organization.RoleOperator), "")
 
 	w := do(t, r, http.MethodPost, "/v1/deploy", []byte(deployManifest), nil)
 	if w.Code != http.StatusBadRequest {
@@ -452,7 +452,7 @@ func TestCurrentRequiresTheGrant(t *testing.T) {
 
 	f := newDeployFixture(t)
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
 	w := do(t, r, http.MethodGet, "/v1/deploy/"+deployDevice, nil, nil)
 	if w.Code != http.StatusForbidden {
@@ -468,7 +468,7 @@ func TestCurrentReturnsNotFoundBeforeTheFirstDeploy(t *testing.T) {
 	f := newDeployFixture(t)
 	f.grantDeploy(t, "devices:"+deployDevice)
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
 	w := do(t, r, http.MethodGet, "/v1/deploy/"+deployDevice, nil, nil)
 	if w.Code != http.StatusNotFound {
@@ -484,7 +484,7 @@ func TestSuperAdminDeploysWithoutAGrant(t *testing.T) {
 	f := newDeployFixture(t)
 	// No grant is written.
 
-	r := f.engineFor(memberOperator(organization.RoleSuperAdmin), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleSuperAdmin), deployOrg)
 
 	w := do(t, r, http.MethodPost, "/v1/deploy", []byte(deployManifest), nil)
 	if w.Code != http.StatusAccepted {
@@ -501,9 +501,9 @@ func TestMintedCredentialDeploysAndIsRefusedAfterRevocation(t *testing.T) {
 	f := newDeployFixture(t)
 	f.grantDeploy(t, "devices:"+deployDevice)
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
-	// Mint with the operator's session.
+	// Mint with the user's session.
 	w := do(t, r, http.MethodPost, "/v1/deploy/"+deployDevice+"/credentials",
 		[]byte(`{"name":"ci"}`), map[string]string{"Content-Type": "application/json"})
 	if w.Code != http.StatusCreated {
@@ -523,7 +523,7 @@ func TestMintedCredentialDeploysAndIsRefusedAfterRevocation(t *testing.T) {
 		t.Fatal("mint must return the token exactly once")
 	}
 
-	// Deploy with the credential alone: no operator in the context.
+	// Deploy with the credential alone: no user in the context.
 	credEngine := f.engineFor(nil, "")
 	headers := map[string]string{middleware.HeaderDeployCredential: minted.Token}
 
@@ -533,8 +533,8 @@ func TestMintedCredentialDeploysAndIsRefusedAfterRevocation(t *testing.T) {
 	}
 
 	// The config carries the member who authorised it. A credential deploy has
-	// no operator in the context, so the member must come from the credential's
-	// minting operator — not from GetOperatorFromContext, which is nil here.
+	// no user in the context, so the member must come from the credential's
+	// minting user — not from GetUserFromContext, which is nil here.
 	record, err := f.configs.Current(t.Context(), deployDevice)
 	if err != nil {
 		t.Fatalf("read config: %v", err)
@@ -544,7 +544,7 @@ func TestMintedCredentialDeploysAndIsRefusedAfterRevocation(t *testing.T) {
 		t.Fatalf("credential deploy must record the minting operator as member; document=\n%s", record.Document)
 	}
 
-	// Revoke with the operator's session, then the credential must be refused.
+	// Revoke with the user's session, then the credential must be refused.
 	w = do(t, r, http.MethodDelete, "/v1/deploy/"+deployDevice+"/credentials/"+minted.ID, nil, nil)
 	if w.Code != http.StatusNoContent {
 		t.Fatalf("revoke = %d, want 204; body=%s", w.Code, w.Body.String())
@@ -564,7 +564,7 @@ func TestCredentialCannotReachAnotherDevice(t *testing.T) {
 	f := newDeployFixture(t)
 	f.grantDeploy(t, "devices:"+deployDevice)
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
 	w := do(t, r, http.MethodPost, "/v1/deploy/"+deployDevice+"/credentials",
 		[]byte(`{"name":"ci"}`), map[string]string{"Content-Type": "application/json"})
@@ -600,7 +600,7 @@ func TestSecretSetListUnsetNeverReturnsAValue(t *testing.T) {
 	// A secret is wrapped to the device's key, so the device needs one.
 	seedSecretKey(t, f, deployDevice)
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
 	const plaintext = "postgres://user:hunter2@db/app"
 
@@ -668,7 +668,7 @@ func TestSecretSetRequiresTheGrant(t *testing.T) {
 	f := newDeployFixture(t)
 	seedSecretKey(t, f, deployDevice)
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
 	w := do(t, r, http.MethodPost, "/v1/deploy/"+deployDevice+"/secrets/vfd",
 		[]byte(`{"key":"K","value":"v"}`), map[string]string{"Content-Type": "application/json"})
@@ -805,7 +805,7 @@ func TestDeployPushesToAConnectedDevice(t *testing.T) {
 	pusher := &recordingPusher{}
 	f.server.deployHandler.SetConfigPusher(pusher)
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
 	w := do(t, r, http.MethodPost, "/v1/deploy", []byte(deployManifest), nil)
 	if w.Code != http.StatusAccepted {
@@ -829,7 +829,7 @@ func TestDeployDryRunDoesNotPush(t *testing.T) {
 	pusher := &recordingPusher{}
 	f.server.deployHandler.SetConfigPusher(pusher)
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
 	w := do(t, r, http.MethodPost, "/v1/deploy?dry_run=true", []byte(deployManifest), nil)
 	if w.Code != http.StatusAccepted {

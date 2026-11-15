@@ -60,12 +60,12 @@ func (r *mockAPIKeyRepository) GetByKeyHash(ctx context.Context, keyHash string)
 	return nil, sql.ErrNoRows
 }
 
-func (r *mockAPIKeyRepository) ListByOperator(ctx context.Context, operatorID string, limit, offset int) ([]*infraStorage.APIKey, int, error) {
+func (r *mockAPIKeyRepository) ListByUser(ctx context.Context, userID string, limit, offset int) ([]*infraStorage.APIKey, int, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	var result []*infraStorage.APIKey
 	for _, k := range r.keys {
-		if k.OperatorID == operatorID {
+		if k.UserID == userID {
 			result = append(result, k)
 		}
 	}
@@ -100,13 +100,13 @@ func (r *mockAPIKeyRepository) ListAll(ctx context.Context, limit, offset int) (
 	return result[offset:end], total, nil
 }
 
-func (r *mockAPIKeyRepository) ListAllWithOperator(ctx context.Context, limit, offset int, operatorID, search string) ([]infraStorage.APIKeyWithOperator, int, error) {
+func (r *mockAPIKeyRepository) ListAllWithUser(ctx context.Context, limit, offset int, userID, search string) ([]infraStorage.APIKeyWithUser, int, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	var result []infraStorage.APIKeyWithOperator
+	var result []infraStorage.APIKeyWithUser
 	for _, k := range r.keys {
 		if k.IsActive {
-			if operatorID != "" && k.OperatorID != operatorID {
+			if userID != "" && k.UserID != userID {
 				continue
 			}
 			if search != "" {
@@ -114,12 +114,12 @@ func (r *mockAPIKeyRepository) ListAllWithOperator(ctx context.Context, limit, o
 					continue
 				}
 			}
-			result = append(result, infraStorage.APIKeyWithOperator{APIKey: *k})
+			result = append(result, infraStorage.APIKeyWithUser{APIKey: *k})
 		}
 	}
 	total := len(result)
 	if offset >= len(result) {
-		return []infraStorage.APIKeyWithOperator{}, total, nil
+		return []infraStorage.APIKeyWithUser{}, total, nil
 	}
 	end := offset + limit
 	if end > len(result) {
@@ -157,13 +157,13 @@ func (r *mockAPIKeyRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *mockAPIKeyRepository) CountByOperatorThisMonth(ctx context.Context, operatorID string) (int, error) {
+func (r *mockAPIKeyRepository) CountByUserThisMonth(ctx context.Context, userID string) (int, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	monthStart := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.UTC).UnixMilli()
 	count := 0
 	for _, k := range r.keys {
-		if k.OperatorID == operatorID && k.CreatedAt >= monthStart {
+		if k.UserID == userID && k.CreatedAt >= monthStart {
 			count++
 		}
 	}
@@ -210,22 +210,22 @@ func (r *mockAPIKeyRepository) SumRequestsByScope(ctx context.Context) (map[stri
 	return result, nil
 }
 
-func (r *mockAPIKeyRepository) TopOperatorsByRequests(ctx context.Context, limit int) ([]infraStorage.OperatorRequestTotal, int, error) {
+func (r *mockAPIKeyRepository) TopUsersByRequests(ctx context.Context, limit int) ([]infraStorage.UserRequestTotal, int, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	byOp := make(map[string]int64)
 	for _, k := range r.keys {
-		byOp[k.OperatorID] += k.RequestCount
+		byOp[k.UserID] += k.RequestCount
 	}
-	totalOperators := len(byOp)
-	var results []infraStorage.OperatorRequestTotal
+	totalUsers := len(byOp)
+	var results []infraStorage.UserRequestTotal
 	for opID, total := range byOp {
-		results = append(results, infraStorage.OperatorRequestTotal{OperatorID: opID, TotalRequests: total})
+		results = append(results, infraStorage.UserRequestTotal{UserID: opID, TotalRequests: total})
 		if len(results) >= limit {
 			break
 		}
 	}
-	return results, totalOperators, nil
+	return results, totalUsers, nil
 }
 
 func (r *mockAPIKeyRepository) IncrementRequestCount(ctx context.Context, id string) error {
@@ -240,22 +240,22 @@ func (r *mockAPIKeyRepository) IncrementRequestCount(ctx context.Context, id str
 	return nil
 }
 
-func (r *mockAPIKeyRepository) ExistsByOperatorAndName(ctx context.Context, operatorID, name string) (bool, error) {
+func (r *mockAPIKeyRepository) ExistsByUserAndName(ctx context.Context, userID, name string) (bool, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	for _, k := range r.keys {
-		if k.OperatorID == operatorID && k.Name == name && k.IsActive {
+		if k.UserID == userID && k.Name == name && k.IsActive {
 			return true, nil
 		}
 	}
 	return false, nil
 }
 
-func (r *mockAPIKeyRepository) ExistsByOperatorAndNameExcluding(ctx context.Context, operatorID, name, excludeKeyID string) (bool, error) {
+func (r *mockAPIKeyRepository) ExistsByUserAndNameExcluding(ctx context.Context, userID, name, excludeKeyID string) (bool, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	for _, k := range r.keys {
-		if k.OperatorID == operatorID && k.Name == name && k.ID != excludeKeyID && k.IsActive {
+		if k.UserID == userID && k.Name == name && k.ID != excludeKeyID && k.IsActive {
 			return true, nil
 		}
 	}
@@ -413,8 +413,8 @@ func TestAPIKeyService_ValidateKey(t *testing.T) {
 		t.Errorf("Validated ID = %s, want %s", validated.ID, result.ID)
 	}
 
-	if validated.OperatorID != "operator-1" {
-		t.Errorf("OperatorID = %s, want operator-1", validated.OperatorID)
+	if validated.UserID != "operator-1" {
+		t.Errorf("OperatorID = %s, want operator-1", validated.UserID)
 	}
 }
 
@@ -509,7 +509,7 @@ func TestAPIKeyService_RevokeKey(t *testing.T) {
 	}
 }
 
-func TestAPIKeyService_RevokeKey_WrongOperator(t *testing.T) {
+func TestAPIKeyService_RevokeKey_WrongUser(t *testing.T) {
 	svc, _ := setupTestService(t)
 	ctx := context.Background()
 
@@ -711,8 +711,8 @@ func TestAPIKeyService_TenantIsolation_ValidateKey(t *testing.T) {
 		t.Fatalf("ValidateKey failed: %v", err)
 	}
 
-	if validated.OperatorID != "operator-1" {
-		t.Errorf("OperatorID = %s, want operator-1", validated.OperatorID)
+	if validated.UserID != "operator-1" {
+		t.Errorf("OperatorID = %s, want operator-1", validated.UserID)
 	}
 }
 
@@ -1086,8 +1086,8 @@ func TestAPIKeyService_ListAllKeys(t *testing.T) {
 		t.Errorf("operator-1 keys = %d, want 3", len(result.Keys))
 	}
 	for _, k := range result.Keys {
-		if k.OperatorID != "operator-1" {
-			t.Errorf("expected operator-1, got %s", k.OperatorID)
+		if k.UserID != "operator-1" {
+			t.Errorf("expected operator-1, got %s", k.UserID)
 		}
 	}
 
@@ -1157,11 +1157,11 @@ func TestAPIKeyService_GetGlobalStats(t *testing.T) {
 	if stats.RequestsByScope["write"] != 5 {
 		t.Errorf("RequestsByScope write = %d, want 5", stats.RequestsByScope["write"])
 	}
-	if len(stats.TopOperators) == 0 {
+	if len(stats.TopUsers) == 0 {
 		t.Error("TopOperators should not be empty")
 	}
-	if stats.TotalOperators != 2 {
-		t.Errorf("TotalOperators = %d, want 2", stats.TotalOperators)
+	if stats.TotalUsers != 2 {
+		t.Errorf("TotalOperators = %d, want 2", stats.TotalUsers)
 	}
 }
 

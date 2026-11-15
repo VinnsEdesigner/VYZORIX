@@ -32,7 +32,7 @@ const INBOX_ENTRY_RAW = {
   approvedAt: null,
   rejectedAt: null,
   notes: null,
-  operatorId: null,
+  userId: null,
   createdAt: now(),
 };
 

@@ -23,7 +23,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CreateAccountRouteImport } from './routes/create-account'
 import { Route as AlertsRouteImport } from './routes/alerts'
 import { Route as SettingsThresholdsRouteImport } from './routes/settings.thresholds'
-import { Route as SettingsOperatorRouteImport } from './routes/settings.operator'
+import { Route as SettingsUserRouteImport } from './routes/settings.user'
 import { Route as SettingsNotificationsRouteImport } from './routes/settings.notifications'
 import { Route as SettingsConnectionRouteImport } from './routes/settings.connection'
 import { Route as SettingsAppearanceRouteImport } from './routes/settings.appearance'
@@ -100,7 +100,7 @@ const SettingsThresholdsRoute = SettingsThresholdsRouteImport.update({
   path: '/thresholds',
   getParentRoute: () => SettingsRoute,
 } as any)
-const SettingsOperatorRoute = SettingsOperatorRouteImport.update({
+const SettingsUserRoute = SettingsUserRouteImport.update({
   id: '/operator',
   path: '/operator',
   getParentRoute: () => SettingsRoute,
@@ -150,7 +150,7 @@ export interface FileRoutesByFullPath {
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/connection': typeof SettingsConnectionRoute
   '/settings/notifications': typeof SettingsNotificationsRoute
-  '/settings/operator': typeof SettingsOperatorRoute
+  '/settings/user': typeof SettingsUserRoute
   '/settings/thresholds': typeof SettingsThresholdsRoute
 }
 export interface FileRoutesByTo {
@@ -172,7 +172,7 @@ export interface FileRoutesByTo {
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/connection': typeof SettingsConnectionRoute
   '/settings/notifications': typeof SettingsNotificationsRoute
-  '/settings/operator': typeof SettingsOperatorRoute
+  '/settings/user': typeof SettingsUserRoute
   '/settings/thresholds': typeof SettingsThresholdsRoute
 }
 export interface FileRoutesById {
@@ -195,7 +195,7 @@ export interface FileRoutesById {
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/connection': typeof SettingsConnectionRoute
   '/settings/notifications': typeof SettingsNotificationsRoute
-  '/settings/operator': typeof SettingsOperatorRoute
+  '/settings/user': typeof SettingsUserRoute
   '/settings/thresholds': typeof SettingsThresholdsRoute
 }
 export interface FileRouteTypes {
@@ -219,7 +219,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/connection'
     | '/settings/notifications'
-    | '/settings/operator'
+    | '/settings/user'
     | '/settings/thresholds'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -241,7 +241,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/connection'
     | '/settings/notifications'
-    | '/settings/operator'
+    | '/settings/user'
     | '/settings/thresholds'
   id:
     | '__root__'
@@ -263,7 +263,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/connection'
     | '/settings/notifications'
-    | '/settings/operator'
+    | '/settings/user'
     | '/settings/thresholds'
   fileRoutesById: FileRoutesById
 }
@@ -384,11 +384,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsThresholdsRouteImport
       parentRoute: typeof SettingsRoute
     }
-    '/settings/operator': {
-      id: '/settings/operator'
+    '/settings/user': {
+      id: '/settings/user'
       path: '/operator'
-      fullPath: '/settings/operator'
-      preLoaderRoute: typeof SettingsOperatorRouteImport
+      fullPath: '/settings/user'
+      preLoaderRoute: typeof SettingsUserRouteImport
       parentRoute: typeof SettingsRoute
     }
     '/settings/notifications': {
@@ -434,7 +434,7 @@ interface SettingsRouteChildren {
   SettingsAppearanceRoute: typeof SettingsAppearanceRoute
   SettingsConnectionRoute: typeof SettingsConnectionRoute
   SettingsNotificationsRoute: typeof SettingsNotificationsRoute
-  SettingsOperatorRoute: typeof SettingsOperatorRoute
+  SettingsUserRoute: typeof SettingsUserRoute
   SettingsThresholdsRoute: typeof SettingsThresholdsRoute
 }
 
@@ -443,7 +443,7 @@ const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsAppearanceRoute: SettingsAppearanceRoute,
   SettingsConnectionRoute: SettingsConnectionRoute,
   SettingsNotificationsRoute: SettingsNotificationsRoute,
-  SettingsOperatorRoute: SettingsOperatorRoute,
+  SettingsUserRoute: SettingsUserRoute,
   SettingsThresholdsRoute: SettingsThresholdsRoute,
 }
 

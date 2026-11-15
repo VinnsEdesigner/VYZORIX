@@ -54,8 +54,8 @@ func NewMetricsHandler(metricsSvc *metrics.Service, devRepo device.Repository, l
 func (h *MetricsHandler) GetMetrics(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// Extract operator for auth check.
-	op := middleware.GetOperatorFromContext(c)
+	// Extract user for auth check.
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "Operator context required"))
 		return
@@ -148,8 +148,8 @@ func (h *MetricsHandler) GetMetrics(c *gin.Context) {
 func (h *MetricsHandler) ExportMetrics(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// Extract operator for auth check.
-	op := middleware.GetOperatorFromContext(c)
+	// Extract user for auth check.
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "Operator context required"))
 		return

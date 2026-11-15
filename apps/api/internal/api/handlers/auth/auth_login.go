@@ -225,8 +225,8 @@ func NewLoginHandler(authService *auth.AuthService, presenter *response.Presente
 }
 
 // Handle handles POST /v1/auth/login.
-// @Summary      Operator login
-// @Description  Authenticates an operator with email/password and starts a session
+// @Summary      User login
+// @Description  Authenticates a user with email/password and starts a session
 // @Tags         auth
 // @Accept       json
 // @Produce      json
@@ -297,7 +297,7 @@ func (h *LoginHandler) Handle(c *gin.Context) {
 			h.lockout.Clear(req.Email)
 			h.presenter.OK(c, openapi.LoginResult{
 				RequiresMFA: true,
-				OperatorID:  result.OperatorID,
+				UserID:  result.UserID,
 			})
 		case errors.Is(err, application.ErrAccountLocked):
 			h.presenter.OK(c, openapi.ErrorResponse{
@@ -318,11 +318,11 @@ func (h *LoginHandler) Handle(c *gin.Context) {
 	h.lockout.Clear(req.Email)
 
 	// Send login notification for NEW device/IP (not for remembered devices).
-	if h.authService.ShouldNotifyLogin(ctx, result.OperatorID, ipAddress, userAgent, deviceFingerprint) {
+	if h.authService.ShouldNotifyLogin(ctx, result.UserID, ipAddress, userAgent, deviceFingerprint) {
 		go func() {
 			if h.emailService != nil && result != nil {
 				loginData := emailService.LoginNotificationData{
-					OperatorName: result.Name,
+					UserName: result.Name,
 					IPAddress:    ipAddress,
 					UserAgent:    userAgent,
 					Location:     "Unknown",
@@ -332,7 +332,7 @@ func (h *LoginHandler) Handle(c *gin.Context) {
 
 				if err := h.emailService.SendNewLoginNotificationEmail(context.Background(), result.Email, loginData); err != nil {
 					slog.Warn("failed to send login notification email",
-						"operatorId", result.OperatorID,
+						"userId", result.UserID,
 						"email", redaction.DefaultRedactor.Redact(result.Email),
 						"error", err)
 				}
@@ -340,7 +340,7 @@ func (h *LoginHandler) Handle(c *gin.Context) {
 		}()
 	}
 
-	// Create session cookie with session ID (not operator ID).
+	// Create session cookie with session ID (not user ID).
 	if session != nil && h.authService.GetSessionManager() != nil {
 		cookie, err := h.authService.GetSessionManager().CreateCookie(session.ID)
 		if err != nil {
@@ -351,7 +351,7 @@ func (h *LoginHandler) Handle(c *gin.Context) {
 	}
 
 	// Audit successful login (recorded to audit_logs with trace_id correlation).
-	h.presenter.LoginSuccess(c, result.OperatorID)
+	h.presenter.LoginSuccess(c, result.UserID)
 
 	h.presenter.OK(c, result)
 }
@@ -359,8 +359,8 @@ func (h *LoginHandler) Handle(c *gin.Context) {
 // This endpoint is for non-browser clients that need JWT access tokens and refresh tokens.
 // It does NOT set session cookies - only returns tokens in the response body.
 // HandleWithTokens handles POST /v1/auth/login/tokens.
-// @Summary      Operator login (token response)
-// @Description  Authenticates an operator and returns access/refresh tokens instead of a cookie
+// @Summary      User login (token response)
+// @Description  Authenticates a user and returns access/refresh tokens instead of a cookie
 // @Tags         auth
 // @Accept       json
 // @Produce      json
@@ -407,10 +407,10 @@ func (h *LoginHandler) HandleWithTokens(c *gin.Context) {
 		switch {
 		case errors.Is(err, application.ErrMFARequired):
 			// MFA is required - return partial response with mfa_required flag.
-			// MFA is about operator's own account security, not organization role.
+			// MFA is about user's own account security, not organization role.
 			h.presenter.OK(c, openapi.LoginWithTokensResult{
 				RequiresMFA: true,
-				OperatorID:  result.OperatorID,
+				UserID:  result.UserID,
 				Email:       result.Email,
 				Name:        result.Name,
 				MFAEnabled:  true,

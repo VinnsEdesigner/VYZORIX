@@ -47,7 +47,7 @@ A subscribe attempt is checked before the stream opens. Two authorizers exist:
   stricter gate, and it's the one used for scope-level channels.
 
 If the check fails, the subscribe is refused and no stream is opened. The
-permission gate means an operator with telemetry access can't subscribe to the
+permission gate means a user with telemetry access can't subscribe to the
 commands channel just because they're in the same org.
 
 ---

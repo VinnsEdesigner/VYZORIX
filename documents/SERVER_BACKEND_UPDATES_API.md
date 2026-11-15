@@ -301,7 +301,7 @@ Get update push history.
       "version": "2.2.1",
       "installType": "immediate",
       "status": "completed",
-      "initiatedBy": "operator@example.com",
+      "initiatedBy": "user@example.com",
       "initiatedAt": 1718900000000,
       "completedAt": 1718900600000,
       "deviceCount": 2,
@@ -316,7 +316,7 @@ Get update push history.
       "installType": "scheduled",
       "scheduledAt": 1718901000000,
       "status": "cancelled",
-      "initiatedBy": "operator@example.com",
+      "initiatedBy": "user@example.com",
       "initiatedAt": 1718899000000,
       "cancelledAt": 1718899500000,
       "deviceCount": 5,
@@ -349,7 +349,7 @@ Get detailed status of a specific update push.
   "version": "2.2.1",
   "installType": "immediate",
   "status": "completed",
-  "initiatedBy": "operator@example.com",
+  "initiatedBy": "user@example.com",
   "initiatedAt": 1718900000000,
   "completedAt": 1718900600000,
   "devices": [
@@ -383,7 +383,7 @@ Cancel a pending update push.
   "id": "push_xyz789",
   "status": "cancelled",
   "cancelledAt": 1718900500000,
-  "cancelledBy": "operator@example.com"
+  "cancelledBy": "user@example.com"
 }
 ```
 
@@ -706,7 +706,7 @@ func (h *PushHandler) PushUpdate(c *gin.Context) {
         return
     }
 
-    // Get operator from context
+    // Get user from context
     operatorID := "operator_123" // TODO: Get from auth context
 
     push, err := h.service.PushUpdate(c.Request.Context(), &updates.PushRequest{
@@ -1256,7 +1256,7 @@ type SyncResult {
 
 ### 10.2 Security Requirements
 
-1. **Authentication** - All endpoints require authenticated operator
+1. **Authentication** - All endpoints require authenticated user
 2. **Authorization** - Only admins can push updates
 3. **Audit Logging** - Log all push and sync operations
 4. **Version Validation** - Verify APK hash before serving

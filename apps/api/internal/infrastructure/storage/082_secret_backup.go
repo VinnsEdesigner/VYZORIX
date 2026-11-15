@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// migrateCreateSecretBackup creates the operator secret-backup store.
+// migrateCreateSecretBackup creates the user secret-backup store.
 //
 // This holds the deployment's own secrets — the server signing key, the APK
 // keystore, the admin password, the generated HMAC/JWT secrets — so they survive

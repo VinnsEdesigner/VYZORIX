@@ -10,7 +10,7 @@ Defined in `internal/audit/audit_repository.go`:
 |------|------|---------|
 | `ID` | string | UUID, generated on write if empty |
 | `CreatedAt` | time.Time | When the event happened |
-| `OperatorID` | string | Who triggered it (operator ID) |
+| `OperatorID` | string | Who triggered it (user ID) |
 | `Action` | Action | What happened (login_success, command_executed, etc.) |
 | `ResourceType` | string | What kind of thing was affected (device, api_key, session) |
 | `ResourceID` | string | The specific resource ID |
@@ -67,7 +67,7 @@ The `Presenter.LoginSuccess` method in `internal/api/adapters/response/resp_pres
 
 The `audit_logs` table has been extended across three migrations:
 
-- Migration #18 — original table (id, operator_id, action, ip_address, user_agent, created_at)
+- Migration #18 — original table (id, user_id, action, ip_address, user_agent, created_at)
 - Migration #53 — resource_type, resource_id, metadata, result columns
 - Migration #57 — trace_id, risk_tier columns
 - Migration #59 — actor_type, actor_email, old_value, new_value columns
@@ -76,7 +76,7 @@ All column additions use idempotent `ALTER TABLE ADD COLUMN` (checking for "dupl
 
 ## PII in audit entries
 
-The `ActorEmail` field stores the operator's email for human-readable audit queries. This is intentional — audit logs need to be readable by humans for compliance. The `OperatorID` is an opaque ID; the email makes it scannable.
+The `ActorEmail` field stores the user's email for human-readable audit queries. This is intentional — audit logs need to be readable by humans for compliance. The `OperatorID` is an opaque ID; the email makes it scannable.
 
 Emails are NOT stored in the `Metadata` map — only in the dedicated `ActorEmail` column. The redaction system masks emails in log output (`slog` calls) but audit entries are persisted to the database unredacted, because they're security records that need full fidelity.
 

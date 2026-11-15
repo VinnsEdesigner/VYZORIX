@@ -23,8 +23,8 @@ import (
 type EventBroadcaster interface {
 	// BroadcastDeviceEvent sends an event to all subscribers of a device.
 	BroadcastDeviceEvent(deviceID string, evt *event.Event) error
-	// BroadcastOperatorEvent sends an event to all operators who own the device.
-	BroadcastOperatorEvent(deviceID string, operatorID string, evt *event.Event) error
+	// BroadcastUserEvent sends an event to all users who own the device.
+	BroadcastUserEvent(deviceID string, userID string, evt *event.Event) error
 }
 
 // DiagnosticsRecorder records device events to the diagnostics timeline.
@@ -162,21 +162,21 @@ func (p *Processor) resolveThresholds(ctx context.Context, deviceID, orgID strin
 
 // ProcessDeviceConnected handles device connection events.
 func (p *Processor) ProcessDeviceConnected(ctx context.Context, deviceID string, metadata map[string]any) error {
-	// Get device info for operator ID.
+	// Get device info for user ID.
 	device, err := p.deviceRepo.FindByID(ctx, deviceID)
 	if err != nil {
 		p.log.Warn("failed to get device for connected event", "deviceId", deviceID, "err", err)
 	}
 
-	operatorID := ""
+	userID := ""
 	if device != nil {
-		operatorID = device.OperatorID
+		userID = device.UserID
 	}
 
 	evt := &event.Event{
 		ID:         generateEventID(),
 		DeviceID:   deviceID,
-		OperatorID: operatorID,
+		UserID: userID,
 		Type:       event.EventTypeDeviceConnected,
 		Severity:   event.SeverityInfo,
 		Timestamp:  time.Now(),
@@ -207,20 +207,20 @@ func (p *Processor) ProcessDeviceConnected(ctx context.Context, deviceID string,
 		if err := p.broadcaster.BroadcastDeviceEvent(deviceID, evt); err != nil {
 			p.log.Warn("failed to broadcast device connected event", "deviceId", deviceID, "err", err)
 		}
-		if operatorID != "" {
-			if err := p.broadcaster.BroadcastOperatorEvent(deviceID, operatorID, evt); err != nil {
+		if userID != "" {
+			if err := p.broadcaster.BroadcastUserEvent(deviceID, userID, evt); err != nil {
 				p.log.Warn("failed to broadcast operator event", "deviceId", deviceID, "err", err)
 			}
 		}
 	}
 
 	// Send notification for device online event.
-	if p.notificationSvc != nil && operatorID != "" {
+	if p.notificationSvc != nil && userID != "" {
 		notifData := notification.EventData{
 			EventType:  notification.EventTypeDeviceOnline,
 			DeviceID:   deviceID,
 			DeviceName: getDeviceName(device),
-			OperatorID: operatorID,
+			UserID: userID,
 			Timestamp:  evt.Timestamp,
 		}
 		if err := p.notificationSvc.SendNotification(ctx, notifData); err != nil {
@@ -238,15 +238,15 @@ func (p *Processor) ProcessDeviceDisconnected(ctx context.Context, deviceID stri
 		p.log.Warn("failed to get device for disconnected event", "deviceId", deviceID, "err", err)
 	}
 
-	operatorID := ""
+	userID := ""
 	if device != nil {
-		operatorID = device.OperatorID
+		userID = device.UserID
 	}
 
 	evt := &event.Event{
 		ID:         generateEventID(),
 		DeviceID:   deviceID,
-		OperatorID: operatorID,
+		UserID: userID,
 		Type:       event.EventTypeDeviceDisconnected,
 		Severity:   event.SeverityWarning,
 		Timestamp:  time.Now(),
@@ -285,20 +285,20 @@ func (p *Processor) ProcessDeviceDisconnected(ctx context.Context, deviceID stri
 		if err := p.broadcaster.BroadcastDeviceEvent(deviceID, evt); err != nil {
 			p.log.Warn("failed to broadcast device disconnected event", "deviceId", deviceID, "err", err)
 		}
-		if operatorID != "" {
-			if err := p.broadcaster.BroadcastOperatorEvent(deviceID, operatorID, evt); err != nil {
+		if userID != "" {
+			if err := p.broadcaster.BroadcastUserEvent(deviceID, userID, evt); err != nil {
 				p.log.Warn("failed to broadcast operator event", "deviceId", deviceID, "err", err)
 			}
 		}
 	}
 
 	// Send notification for device offline event.
-	if p.notificationSvc != nil && operatorID != "" {
+	if p.notificationSvc != nil && userID != "" {
 		notifData := notification.EventData{
 			EventType:  notification.EventTypeDeviceOffline,
 			DeviceID:   deviceID,
 			DeviceName: getDeviceName(device),
-			OperatorID: operatorID,
+			UserID: userID,
 			Timestamp:  evt.Timestamp,
 		}
 		if err := p.notificationSvc.SendNotification(ctx, notifData); err != nil {
@@ -317,10 +317,10 @@ func (p *Processor) ProcessTelemetry(ctx context.Context, deviceID string, telem
 		p.log.Warn("failed to get device for telemetry", "deviceId", deviceID, "err", err)
 	}
 
-	operatorID := ""
+	userID := ""
 	orgID := ""
 	if device != nil {
-		operatorID = device.OperatorID
+		userID = device.UserID
 		orgID = device.OrganizationID
 	}
 
@@ -342,7 +342,7 @@ func (p *Processor) ProcessTelemetry(ctx context.Context, deviceID string, telem
 	thresholds := p.resolveThresholds(ctx, deviceID, orgID)
 
 	// Check for threshold breaches using resolved thresholds.
-	events := p.checkThresholdsWithConfig(deviceID, operatorID, telemetryData, thresholds)
+	events := p.checkThresholdsWithConfig(deviceID, userID, telemetryData, thresholds)
 
 	// Store and broadcast events.
 	for _, evt := range events {
@@ -359,15 +359,15 @@ func (p *Processor) ProcessTelemetry(ctx context.Context, deviceID string, telem
 			if err := p.broadcaster.BroadcastDeviceEvent(deviceID, evt); err != nil {
 				p.log.Warn("failed to broadcast threshold event", "deviceId", deviceID, "err", err)
 			}
-			if operatorID != "" {
-				if err := p.broadcaster.BroadcastOperatorEvent(deviceID, operatorID, evt); err != nil {
+			if userID != "" {
+				if err := p.broadcaster.BroadcastUserEvent(deviceID, userID, evt); err != nil {
 					p.log.Warn("failed to broadcast operator threshold event", "deviceId", deviceID, "err", err)
 				}
 			}
 		}
 
 		// Send notification for threshold breach (all types: breach, risk, thermal, buffer).
-		if p.notificationSvc != nil && operatorID != "" && isThresholdBreachEvent(evt.Type) {
+		if p.notificationSvc != nil && userID != "" && isThresholdBreachEvent(evt.Type) {
 			// Extract alert details from event data.
 			alertType := ""
 			currentValue := ""
@@ -392,7 +392,7 @@ func (p *Processor) ProcessTelemetry(ctx context.Context, deviceID string, telem
 				EventType:    notification.EventTypeThresholdBreach,
 				DeviceID:     deviceID,
 				DeviceName:   getDeviceName(device),
-				OperatorID:   operatorID,
+				UserID:   userID,
 				AlertType:    alertType,
 				CurrentValue: currentValue,
 				Threshold:    thresholdValue,
@@ -414,15 +414,15 @@ func (p *Processor) ProcessCommandEvent(ctx context.Context, deviceID string, co
 		p.log.Warn("failed to get device for command event", "deviceId", deviceID, "err", err)
 	}
 
-	operatorID := ""
+	userID := ""
 	if device != nil {
-		operatorID = device.OperatorID
+		userID = device.UserID
 	}
 
 	evt := &event.Event{
 		ID:         generateEventID(),
 		DeviceID:   deviceID,
-		OperatorID: operatorID,
+		UserID: userID,
 		Type:       commandType,
 		Severity:   event.GetSeverity(commandType),
 		Timestamp:  time.Now(),
@@ -441,15 +441,15 @@ func (p *Processor) ProcessCommandEvent(ctx context.Context, deviceID string, co
 		if err := p.broadcaster.BroadcastDeviceEvent(deviceID, evt); err != nil {
 			p.log.Warn("failed to broadcast command event", "deviceId", deviceID, "err", err)
 		}
-		if operatorID != "" {
-			if err := p.broadcaster.BroadcastOperatorEvent(deviceID, operatorID, evt); err != nil {
+		if userID != "" {
+			if err := p.broadcaster.BroadcastUserEvent(deviceID, userID, evt); err != nil {
 				p.log.Warn("failed to broadcast operator command event", "deviceId", deviceID, "err", err)
 			}
 		}
 	}
 
 	// Send notification for command failures.
-	if p.notificationSvc != nil && operatorID != "" && commandType == event.EventTypeCommandFailed {
+	if p.notificationSvc != nil && userID != "" && commandType == event.EventTypeCommandFailed {
 		commandName := ""
 		failureReason := ""
 		if v, ok := metadata["commandName"].(string); ok {
@@ -465,7 +465,7 @@ func (p *Processor) ProcessCommandEvent(ctx context.Context, deviceID string, co
 			EventType:     notification.EventTypeCommandFailed,
 			DeviceID:      deviceID,
 			DeviceName:    getDeviceName(device),
-			OperatorID:    operatorID,
+			UserID:    userID,
 			CommandName:   commandName,
 			FailureReason: failureReason,
 			Timestamp:     evt.Timestamp,
@@ -485,9 +485,9 @@ func (p *Processor) ProcessError(ctx context.Context, deviceID string, errMsg st
 		p.log.Warn("failed to get device for error event", "deviceId", deviceID, "err", err)
 	}
 
-	operatorID := ""
+	userID := ""
 	if device != nil {
-		operatorID = device.OperatorID
+		userID = device.UserID
 	}
 
 	if metadata == nil {
@@ -498,7 +498,7 @@ func (p *Processor) ProcessError(ctx context.Context, deviceID string, errMsg st
 	evt := &event.Event{
 		ID:         generateEventID(),
 		DeviceID:   deviceID,
-		OperatorID: operatorID,
+		UserID: userID,
 		Type:       event.EventTypeError,
 		Severity:   event.SeverityCritical,
 		Timestamp:  time.Now(),
@@ -517,20 +517,20 @@ func (p *Processor) ProcessError(ctx context.Context, deviceID string, errMsg st
 		if err := p.broadcaster.BroadcastDeviceEvent(deviceID, evt); err != nil {
 			p.log.Warn("failed to broadcast error event", "deviceId", deviceID, "err", err)
 		}
-		if operatorID != "" {
-			if err := p.broadcaster.BroadcastOperatorEvent(deviceID, operatorID, evt); err != nil {
+		if userID != "" {
+			if err := p.broadcaster.BroadcastUserEvent(deviceID, userID, evt); err != nil {
 				p.log.Warn("failed to broadcast operator error event", "deviceId", deviceID, "err", err)
 			}
 		}
 	}
 
 	// Send notification for error events.
-	if p.notificationSvc != nil && operatorID != "" {
+	if p.notificationSvc != nil && userID != "" {
 		notifData := notification.EventData{
 			EventType:    notification.EventTypeError,
 			DeviceID:     deviceID,
 			DeviceName:   getDeviceName(device),
-			OperatorID:   operatorID,
+			UserID:   userID,
 			ErrorMessage: errMsg,
 			Timestamp:    evt.Timestamp,
 		}
@@ -543,8 +543,8 @@ func (p *Processor) ProcessError(ctx context.Context, deviceID string, errMsg st
 }
 
 // checkThresholdsWithConfig checks telemetry against provided thresholds and returns breach events.
-// This ensures operator-specific thresholds are used for accurate alerting.
-func (p *Processor) checkThresholdsWithConfig(deviceID, operatorID string, data map[string]any, thresholds *ThresholdConfig) []*event.Event {
+// This ensures user-specific thresholds are used for accurate alerting.
+func (p *Processor) checkThresholdsWithConfig(deviceID, userID string, data map[string]any, thresholds *ThresholdConfig) []*event.Event {
 	var events []*event.Event
 
 	// Calculate server-side risk score from corroborating telemetry fields.
@@ -566,7 +566,7 @@ func (p *Processor) checkThresholdsWithConfig(deviceID, operatorID string, data 
 			events = append(events, &event.Event{
 				ID:         generateEventID(),
 				DeviceID:   deviceID,
-				OperatorID: operatorID,
+				UserID: userID,
 				Type:       event.EventTypeError,
 				Severity:   event.SeverityWarning,
 				Timestamp:  time.Now(),
@@ -582,7 +582,7 @@ func (p *Processor) checkThresholdsWithConfig(deviceID, operatorID string, data 
 				events = append(events, &event.Event{
 					ID:         generateEventID(),
 					DeviceID:   deviceID,
-					OperatorID: operatorID,
+					UserID: userID,
 					Type:       event.EventTypeRiskScoreAlert,
 					Severity:   event.SeverityCritical,
 					Timestamp:  time.Now(),
@@ -596,7 +596,7 @@ func (p *Processor) checkThresholdsWithConfig(deviceID, operatorID string, data 
 				events = append(events, &event.Event{
 					ID:         generateEventID(),
 					DeviceID:   deviceID,
-					OperatorID: operatorID,
+					UserID: userID,
 					Type:       event.EventTypeThresholdBreach,
 					Severity:   event.SeverityWarning,
 					Timestamp:  time.Now(),
@@ -615,7 +615,7 @@ func (p *Processor) checkThresholdsWithConfig(deviceID, operatorID string, data 
 				events = append(events, &event.Event{
 					ID:         generateEventID(),
 					DeviceID:   deviceID,
-					OperatorID: operatorID,
+					UserID: userID,
 					Type:       event.EventTypeThermalAlert,
 					Severity:   event.SeverityCritical,
 					Timestamp:  time.Now(),
@@ -629,7 +629,7 @@ func (p *Processor) checkThresholdsWithConfig(deviceID, operatorID string, data 
 				events = append(events, &event.Event{
 					ID:         generateEventID(),
 					DeviceID:   deviceID,
-					OperatorID: operatorID,
+					UserID: userID,
 					Type:       event.EventTypeThresholdBreach,
 					Severity:   event.SeverityWarning,
 					Timestamp:  time.Now(),
@@ -648,7 +648,7 @@ func (p *Processor) checkThresholdsWithConfig(deviceID, operatorID string, data 
 				events = append(events, &event.Event{
 					ID:         generateEventID(),
 					DeviceID:   deviceID,
-					OperatorID: operatorID,
+					UserID: userID,
 					Type:       event.EventTypeBufferLevelAlert,
 					Severity:   event.SeverityCritical,
 					Timestamp:  time.Now(),
@@ -662,7 +662,7 @@ func (p *Processor) checkThresholdsWithConfig(deviceID, operatorID string, data 
 				events = append(events, &event.Event{
 					ID:         generateEventID(),
 					DeviceID:   deviceID,
-					OperatorID: operatorID,
+					UserID: userID,
 					Type:       event.EventTypeThresholdBreach,
 					Severity:   event.SeverityWarning,
 					Timestamp:  time.Now(),

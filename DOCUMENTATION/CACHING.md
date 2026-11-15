@@ -51,7 +51,7 @@ data, the relevant section is dropped:
   reason.
 
 This keeps the cached dashboard honest: it may be a few seconds stale, but it
-never contradicts an alert the operator can see.
+never contradicts an alert the user can see.
 
 ---
 

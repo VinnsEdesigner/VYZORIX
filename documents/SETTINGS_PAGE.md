@@ -25,26 +25,26 @@
 
 ## 1. Overview
 
-The Settings page allows operators to configure their client preferences, alert
+The Settings page allows users to configure their client preferences, alert
 thresholds, and notification channels. Settings are organized in a **three-tier
-hierarchy**: operator-level (per user), organization-level (per tenant), and
-device-level (per device). The Settings page primarily manages operator-level
+hierarchy**: user-level (per user), organization-level (per tenant), and
+device-level (per device). The Settings page primarily manages user-level
 settings via the `/v1/auth/me/*` endpoints.
 
 ---
 
 ## 2. Three-Tier Settings Model
 
-The server resolves settings using a cascading fallback: **device → organization → operator defaults**.
+The server resolves settings using a cascading fallback: **device → organization → user defaults**.
 
 | Tier | Scope | Route Prefix | Handler File |
 |------|-------|-------------|--------------|
-| **Operator** | Per authenticated user | `/v1/auth/me/` | `apps/api/internal/api/handlers/auth/auth_settings.go` |
+| **User** | Per authenticated user | `/v1/auth/me/` | `apps/api/internal/api/handlers/auth/auth_settings.go` |
 | **Organization** | Per tenant (org) | `/v1/organizations/:id/` | `apps/api/internal/api/handlers/organization/organization_settings_handler.go` |
 | **Device** | Per device (IMEI) | `/v1/devices/:imei/` | `apps/api/internal/api/handlers/device/device_settings_handler.go` |
 
 Each tier exposes the same sub-resources: `settings`, `thresholds`,
-`notifications` (operator only), and `webhook` (operator only).
+`notifications` (user only), and `webhook` (user only).
 
 ---
 
@@ -128,7 +128,7 @@ type Thresholds struct {
 
 ## 4. Server Endpoints
 
-### 4.1 Operator-Level Settings (auth/me)
+### 4.1 User-Level Settings (auth/me)
 
 **Route registration:** `apps/api/internal/api/handlers/auth/auth_routes.go:152-159`
 **Handler:** `apps/api/internal/api/handlers/auth/auth_settings.go`
@@ -174,7 +174,7 @@ type Thresholds struct {
 
 ## 5. API Client Endpoints
 
-### 5.1 Operator Settings (settings)
+### 5.1 User Settings (settings)
 
 **File:** `packages/API_Client/src/vyzorServer/rest/settings/settings-endpoints.ts`
 
@@ -277,7 +277,7 @@ interface NotificationSettings {
 
 ### 6.4 Go Server Response Shape (OperatorSettings)
 
-**File:** `apps/api/internal/domain/operator/operator_entity.go`
+**File:** `apps/api/internal/domain/user/user_entity.go`
 
 ```go
 type OperatorSettings struct {
@@ -303,7 +303,7 @@ Both `GET /v1/auth/me/settings` and `PATCH /v1/auth/me/settings` return this sha
 | `index.tsx` | EXISTS — landing page |
 
 > **No settings routes exist yet.** The following routes need to be created:
-> `/settings`, `/settings/connection`, `/settings/operator`,
+> `/settings`, `/settings/connection`, `/settings/user`,
 > `/settings/thresholds`, `/settings/notifications`, `/settings/advanced`.
 
 ### 7.2 Hooks
@@ -312,7 +312,7 @@ Both `GET /v1/auth/me/settings` and `PATCH /v1/auth/me/settings` return this sha
 
 | Hook | Purpose | API Client Method |
 |------|---------|-------------------|
-| `useSettings` | Fetch operator settings | `settings.getSettings()` |
+| `useSettings` | Fetch user settings | `settings.getSettings()` |
 | `useThresholds` | Fetch thresholds | `settings.getThresholds()` |
 | `useNotifications` | Fetch notifications | `settings.getNotifications()` |
 | `useUpdateSettings` | Update client settings | `settings.updateSettings()` |
@@ -356,7 +356,7 @@ No settings UI components exist yet. Placeholder directories:
 |-------|------|---------|
 | `/settings` | `settings.tsx` | Layout with tab navigation |
 | `/settings/connection` | `settings.connection.tsx` | Server URL, device ID, timeout |
-| `/settings/operator` | `settings.operator.tsx` | Account info, display name |
+| `/settings/user` | `settings.user.tsx` | Account info, display name |
 | `/settings/thresholds` | `settings.thresholds.tsx` | Risk, thermal, buffer thresholds |
 | `/settings/notifications` | `settings.notifications.tsx` | Email, push, webhook preferences |
 | `/settings/advanced` | `settings.advanced.tsx` | Danger zone (reset settings) |
@@ -366,7 +366,7 @@ No settings UI components exist yet. Placeholder directories:
 ```
 Settings
 ├── Connection    (/settings/connection)    — Server URL, device ID, timeout
-├── Operator      (/settings/operator)      — Display name, role display
+├── User      (/settings/user)      — Display name, role display
 ├── Thresholds    (/settings/thresholds)    — Risk, thermal, buffer sliders
 ├── Notifications (/settings/notifications) — Email/push/webhook toggles
 └── Advanced      (/settings/advanced)      — Reset settings to defaults
@@ -419,7 +419,7 @@ Uses `useUpdateSettings({ reset: true })`.
 
 | Action | Type | Description |
 |--------|------|-------------|
-| Reset to Defaults | button (danger) | Resets all operator settings to server defaults |
+| Reset to Defaults | button (danger) | Resets all user settings to server defaults |
 
 ---
 
@@ -434,7 +434,7 @@ Uses `useUpdateSettings({ reset: true })`.
 1. Create `src/ui/components/settings/connection-settings.tsx`
 2. Create `src/ui/components/settings/threshold-settings.tsx`
 3. Create `src/ui/components/settings/notification-settings.tsx`
-4. Create `src/ui/components/settings/operator-settings.tsx`
+4. Create `src/ui/components/settings/user-settings.tsx`
 5. Create `src/ui/components/settings/advanced-settings.tsx`
 6. Create shared components: `slider-input.tsx`, `threshold-input.tsx`, `notification-row.tsx`, `danger-zone.tsx`
 
@@ -456,7 +456,7 @@ The hooks already exist (`use-settings.ts`). Wire them to the new components:
 
 ### 10.1 Threshold Defaults
 
-| Field | Operator (Go) | Organization (Go) | API Client (TS) |
+| Field | User (Go) | Organization (Go) | API Client (TS) |
 |-------|---------------|-------------------|------------------|
 | riskWarn | 70 | 70 | 70 |
 | riskCrit | 90 | 90 | 85 |
@@ -466,7 +466,7 @@ The hooks already exist (`use-settings.ts`). Wire them to the new components:
 | bufferCrit | 95 | 10 | 15 |
 
 > ⚠️ Default values are **inconsistent** across sources. The API client
-> `DEFAULT_THRESHOLDS` does not match the Go server operator defaults. See
+> `DEFAULT_THRESHOLDS` does not match the Go server user defaults. See
 > [§11 Known Issues](#11-known-issues--schema-mismatches).
 
 ### 10.2 ClientSettings Defaults
@@ -563,8 +563,8 @@ the shared `Thresholds` type.
 ### 11.3 Default Values (aligned)
 
 All defaults in `packages/API_Client/src/domain/settings/settings-entity.ts`
-now match the Go server's `operator.DefaultThresholds()` and
-`operator.DefaultClientSettings()`:
+now match the Go server's `user.DefaultThresholds()` and
+`user.DefaultClientSettings()`:
 
 ```typescript
 export const DEFAULT_THRESHOLDS: Thresholds = {
@@ -588,14 +588,14 @@ export const DEFAULT_CLIENT_SETTINGS: ClientSettings = {
 
 ## 12. Frontend Settings Hooks
 
-### 12.1 Operator Settings Hooks (exist)
+### 12.1 User Settings Hooks (exist)
 
 **File:** `apps/VyzoriX_web/src/hooks/settings/use-settings.ts`
 
 | Hook | API Method | Purpose |
 |------|------------|---------|
-| `useSettings` | `settings.getSettings()` | Fetch operator client + thresholds |
-| `useThresholds` | `settings.getThresholds()` | Fetch operator thresholds |
+| `useSettings` | `settings.getSettings()` | Fetch user client + thresholds |
+| `useThresholds` | `settings.getThresholds()` | Fetch user thresholds |
 | `useNotifications` | `settings.getNotifications()` | Fetch notification settings |
 | `useUpdateSettings` | `settings.updateSettings()` | Update client settings |
 | `useUpdateThresholds` | `settings.updateThresholds()` | Partial threshold update |
@@ -653,9 +653,9 @@ stores only for realtime/client state (websocket, command queue, etc.).
 **File:** `apps/VyzoriX_web/src/test/msw/vyzor-msw-handlers-settings.ts`
 
 Covers all three tiers:
-- `GET/PATCH /v1/auth/me/settings` — operator settings
-- `GET/PATCH /v1/auth/me/thresholds` — operator thresholds
-- `GET/PATCH /v1/auth/me/notifications` — operator notifications
+- `GET/PATCH /v1/auth/me/settings` — user settings
+- `GET/PATCH /v1/auth/me/thresholds` — user thresholds
+- `GET/PATCH /v1/auth/me/notifications` — user notifications
 - `POST /v1/auth/me/notifications/webhook/{test,rotate}` — webhook ops
 - `GET/PATCH /v1/organizations/:id/settings` — org settings
 - `GET/PATCH /v1/organizations/:id/settings/thresholds` — org thresholds

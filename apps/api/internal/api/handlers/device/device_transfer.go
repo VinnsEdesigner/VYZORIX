@@ -55,7 +55,7 @@ type TransferRequest struct {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id}/devices/{imei}/transfer [post]
 func (h *TransferHandler) Transfer(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -90,7 +90,7 @@ func (h *TransferHandler) Transfer(c *gin.Context) {
 	}
 
 	// Authorization: only a super_admin of the source org may move its devices,
-	// and only into an org the operator is an active member of. The route group
+	// and only into an org the user is an active member of. The route group
 	// only enforces cookie auth, so the check must happen here.
 	if !op.IsSuperAdminIn(sourceOrgID) {
 		h.presenter.Forbidden(c, "super_admin role required in the source organization")

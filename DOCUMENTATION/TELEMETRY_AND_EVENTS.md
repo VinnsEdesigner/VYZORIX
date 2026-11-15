@@ -16,7 +16,7 @@ the device reports, and the discrete events it records.
 
 Telemetry is the device telling the server how it is. The device samples a few readings
 on a cadence and sends them; the server stores them and drives its threshold alerts from
-them. A device that never reports is **invisible** to the operator — the dashboard shows
+them. A device that never reports is **invisible** to the user — the dashboard shows
 a device that is online with no telemetry at all, which reads as broken rather than as
 "not reporting" — so the cadence and the frame are both deliberately simple and always
 sent.

@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/admin/api-keys": {
             "get": {
-                "description": "Lists all API keys across all operators (super admin only)",
+                "description": "Lists all API keys across all users (super admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -50,8 +50,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "filter by operator ID",
-                        "name": "operator_id",
+                        "description": "filter by user ID",
+                        "name": "user_id",
                         "in": "query"
                     },
                     {
@@ -63,70 +63,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "API keys with operator identity",
-                        "schema": {
-                            "$ref": "#/definitions/openapi.AdminAPIKeyListResult"
-                        }
-                    },
-                    "401": {
-                        "description": "not authenticated",
-                        "schema": {
-                            "$ref": "#/definitions/openapi.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "super_admin required",
-                        "schema": {
-                            "$ref": "#/definitions/openapi.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/api-keys/operator/{operatorId}": {
-            "get": {
-                "description": "Lists all API keys for a specific operator (super admin only)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "admin"
-                ],
-                "summary": "List operator API keys",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Organization ID",
-                        "name": "X-Organization-ID",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "operator ID",
-                        "name": "operatorId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "page number (default 1)",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "page size (default 20)",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "operator API keys",
+                        "description": "API keys with user identity",
                         "schema": {
                             "$ref": "#/definitions/openapi.AdminAPIKeyListResult"
                         }
@@ -190,9 +127,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/api-keys/stats/operator/{operatorId}": {
+        "/admin/api-keys/stats/user/{userId}": {
             "get": {
-                "description": "Returns API key statistics for a specific operator (super admin only)",
+                "description": "Returns API key statistics for a specific user (super admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -202,7 +139,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Get operator API key stats",
+                "summary": "Get user API key stats",
                 "parameters": [
                     {
                         "type": "string",
@@ -213,17 +150,80 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "operator ID",
-                        "name": "operatorId",
+                        "description": "user ID",
+                        "name": "userId",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "operator stats",
+                        "description": "user stats",
                         "schema": {
-                            "$ref": "#/definitions/openapi.OperatorAPIKeyStatsResult"
+                            "$ref": "#/definitions/openapi.UserAPIKeyStatsResult"
+                        }
+                    },
+                    "401": {
+                        "description": "not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "super_admin required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/api-keys/user/{userId}": {
+            "get": {
+                "description": "Lists all API keys for a specific user (super admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List user API keys",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "user ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page number (default 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "user API keys",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.AdminAPIKeyListResult"
                         }
                     },
                     "401": {
@@ -243,7 +243,7 @@ const docTemplate = `{
         },
         "/admin/api-keys/{keyId}": {
             "delete": {
-                "description": "Force revokes an API key for any operator (super admin only)",
+                "description": "Force revokes an API key for any user (super admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1344,72 +1344,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/admin/lockout/unlock/{operator_id}": {
-            "post": {
-                "description": "Clears an operator's account lockout. Requires org-scoped super_admin",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Unlock account",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Organization ID",
-                        "name": "X-Organization-ID",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "operator ID to unlock",
-                        "name": "operator_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "account unlocked",
-                        "schema": {
-                            "$ref": "#/definitions/openapi.SuccessResult"
-                        }
-                    },
-                    "400": {
-                        "description": "operator_id required",
-                        "schema": {
-                            "$ref": "#/definitions/openapi.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "not authenticated",
-                        "schema": {
-                            "$ref": "#/definitions/openapi.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "super_admin required",
-                        "schema": {
-                            "$ref": "#/definitions/openapi.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "operator not found",
-                        "schema": {
-                            "$ref": "#/definitions/openapi.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/admin/operators": {
+        "/auth/admin/users": {
             "get": {
-                "description": "Lists all operators in the system (super_admin only)",
+                "description": "Lists all users in the system (super_admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1419,7 +1356,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "List operators",
+                "summary": "List users",
                 "parameters": [
                     {
                         "type": "string",
@@ -1431,9 +1368,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "operators",
+                        "description": "users",
                         "schema": {
-                            "$ref": "#/definitions/openapi.AdminOperatorListResult"
+                            "$ref": "#/definitions/openapi.AdminUserListResult"
                         }
                     },
                     "401": {
@@ -1457,7 +1394,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Creates a new operator (super_admin only)",
+                "description": "Creates a new user (super_admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1467,7 +1404,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Create operator",
+                "summary": "Create user",
                 "parameters": [
                     {
                         "type": "string",
@@ -1477,20 +1414,20 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "operator credentials",
+                        "description": "user credentials",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/openapi.CreateOperatorRequest"
+                            "$ref": "#/definitions/openapi.CreateUserRequest"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "created operator",
+                        "description": "created user",
                         "schema": {
-                            "$ref": "#/definitions/openapi.AdminOperator"
+                            "$ref": "#/definitions/openapi.AdminUser"
                         }
                     },
                     "400": {
@@ -1526,9 +1463,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/admin/operators/{id}": {
+        "/auth/admin/users/{id}": {
             "get": {
-                "description": "Returns a single operator by ID (super_admin only)",
+                "description": "Returns a single user by ID (super_admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1538,7 +1475,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Get operator",
+                "summary": "Get user",
                 "parameters": [
                     {
                         "type": "string",
@@ -1549,7 +1486,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "operator ID",
+                        "description": "user ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1557,9 +1494,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "operator",
+                        "description": "created user",
                         "schema": {
-                            "$ref": "#/definitions/openapi.AdminOperator"
+                            "$ref": "#/definitions/openapi.AdminUser"
                         }
                     },
                     "401": {
@@ -1589,7 +1526,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Deletes an operator. Cannot delete yourself or the last super_admin",
+                "description": "Deletes a user. Cannot delete yourself or the last super_admin",
                 "consumes": [
                     "application/json"
                 ],
@@ -1599,7 +1536,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Delete operator",
+                "summary": "Delete user",
                 "parameters": [
                     {
                         "type": "string",
@@ -1610,7 +1547,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "operator ID",
+                        "description": "user ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -1618,13 +1555,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "operator deleted",
+                        "description": "user deleted",
                         "schema": {
                             "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
-                        "description": "operator id required / cannot delete self",
+                        "description": "user id required / cannot delete self",
                         "schema": {
                             "$ref": "#/definitions/openapi.ErrorResponse"
                         }
@@ -1662,7 +1599,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Updates mutable operator fields (super_admin only)",
+                "description": "Updates mutable user fields (super_admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1672,7 +1609,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Update operator",
+                "summary": "Update user",
                 "parameters": [
                     {
                         "type": "string",
@@ -1683,26 +1620,26 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "operator ID",
+                        "description": "user ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "operator update",
+                        "description": "user update",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/openapi.UpdateOperatorRequest"
+                            "$ref": "#/definitions/openapi.UpdateUserRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "updated operator",
+                        "description": "updated user",
                         "schema": {
-                            "$ref": "#/definitions/openapi.AdminOperator"
+                            "$ref": "#/definitions/openapi.AdminUser"
                         }
                     },
                     "400": {
@@ -1746,7 +1683,7 @@ const docTemplate = `{
         },
         "/auth/api-keys": {
             "get": {
-                "description": "Returns paginated API keys for the operator with monthly quota usage",
+                "description": "Returns paginated API keys for the user with monthly quota usage",
                 "consumes": [
                     "application/json"
                 ],
@@ -2141,7 +2078,7 @@ const docTemplate = `{
         },
         "/auth/client-credentials": {
             "get": {
-                "description": "Returns all client credentials for the authenticated operator",
+                "description": "Returns all client credentials for the authenticated user",
                 "consumes": [
                     "application/json"
                 ],
@@ -2501,7 +2438,7 @@ const docTemplate = `{
         },
         "/auth/lockout/status": {
             "get": {
-                "description": "Returns the current account lockout status for the authenticated operator",
+                "description": "Returns the current account lockout status for the authenticated user",
                 "consumes": [
                     "application/json"
                 ],
@@ -2530,7 +2467,7 @@ const docTemplate = `{
         },
         "/auth/login": {
             "post": {
-                "description": "Authenticates an operator with email/password and starts a session",
+                "description": "Authenticates a user with email/password and starts a session",
                 "consumes": [
                     "application/json"
                 ],
@@ -2540,7 +2477,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Operator login",
+                "summary": "User login",
                 "parameters": [
                     {
                         "description": "login credentials",
@@ -2582,7 +2519,7 @@ const docTemplate = `{
         },
         "/auth/login/tokens": {
             "post": {
-                "description": "Authenticates an operator and returns access/refresh tokens instead of a cookie",
+                "description": "Authenticates a user and returns access/refresh tokens instead of a cookie",
                 "consumes": [
                     "application/json"
                 ],
@@ -2592,7 +2529,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Operator login (token response)",
+                "summary": "User login (token response)",
                 "parameters": [
                     {
                         "description": "login credentials",
@@ -2673,7 +2610,7 @@ const docTemplate = `{
         },
         "/auth/me": {
             "get": {
-                "description": "Returns the authenticated operator's profile and organization context",
+                "description": "Returns the authenticated user's profile and organization context",
                 "consumes": [
                     "application/json"
                 ],
@@ -2683,10 +2620,10 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Get current operator",
+                "summary": "Get current user",
                 "responses": {
                     "200": {
-                        "description": "current operator",
+                        "description": "current user",
                         "schema": {
                             "$ref": "#/definitions/openapi.MeResult"
                         }
@@ -2706,7 +2643,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Updates the current operator's display name",
+                "description": "Updates the current user's display name",
                 "consumes": [
                     "application/json"
                 ],
@@ -2716,7 +2653,7 @@ const docTemplate = `{
                 "tags": [
                     "settings"
                 ],
-                "summary": "Update operator name",
+                "summary": "Update user name",
                 "parameters": [
                     {
                         "description": "new name",
@@ -2730,9 +2667,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "updated operator",
+                        "description": "updated user",
                         "schema": {
-                            "$ref": "#/definitions/openapi.OperatorSettingsResultLegacy"
+                            "$ref": "#/definitions/openapi.UserSettingsResultLegacy"
                         }
                     },
                     "400": {
@@ -2932,7 +2869,7 @@ const docTemplate = `{
         },
         "/auth/mfa/status": {
             "get": {
-                "description": "Returns whether MFA is enabled for the current operator",
+                "description": "Returns whether MFA is enabled for the current user",
                 "consumes": [
                     "application/json"
                 ],
@@ -2980,7 +2917,7 @@ const docTemplate = `{
                 "summary": "Verify MFA (login)",
                 "parameters": [
                     {
-                        "description": "operator_id + MFA code",
+                        "description": "user_id + MFA code",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -2997,13 +2934,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "operator_id and code required",
+                        "description": "user_id and code required",
                         "schema": {
                             "$ref": "#/definitions/openapi.ErrorResponse"
                         }
                     },
                     "401": {
-                        "description": "invalid MFA code / operator invalid",
+                        "description": "invalid MFA code / user invalid",
                         "schema": {
                             "$ref": "#/definitions/openapi.ErrorResponse"
                         }
@@ -3019,7 +2956,7 @@ const docTemplate = `{
         },
         "/auth/mfa/verify-backup": {
             "post": {
-                "description": "Verifies a backup code for an operator with MFA enabled",
+                "description": "Verifies a backup code for a user with MFA enabled",
                 "consumes": [
                     "application/json"
                 ],
@@ -3211,7 +3148,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "operator's organizations",
+                        "description": "user's organizations",
                         "schema": {
                             "$ref": "#/definitions/openapi.OrganizationListResult"
                         }
@@ -3233,7 +3170,7 @@ const docTemplate = `{
         },
         "/auth/organizations/select": {
             "post": {
-                "description": "Switches the operator's active organization context",
+                "description": "Switches the user's active organization context",
                 "consumes": [
                     "application/json"
                 ],
@@ -3388,7 +3325,7 @@ const docTemplate = `{
         },
         "/auth/register": {
             "post": {
-                "description": "Registers a new operator account and sends a verification email",
+                "description": "Registers a new user account and sends a verification email",
                 "consumes": [
                     "application/json"
                 ],
@@ -3398,7 +3335,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Register operator",
+                "summary": "Register user",
                 "parameters": [
                     {
                         "description": "registration credentials",
@@ -3412,7 +3349,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "created operator",
+                        "description": "created user",
                         "schema": {
                             "$ref": "#/definitions/openapi.RegisterResult"
                         }
@@ -3506,7 +3443,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "operator email",
+                        "description": "user email",
                         "name": "email",
                         "in": "query",
                         "required": true
@@ -3534,7 +3471,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Resends the verification email to an operator",
+                "description": "Resends the verification email to a user",
                 "consumes": [
                     "application/json"
                 ],
@@ -3632,7 +3569,7 @@ const docTemplate = `{
         },
         "/auth/sessions": {
             "get": {
-                "description": "Returns all active sessions for the authenticated operator",
+                "description": "Returns all active sessions for the authenticated user",
                 "consumes": [
                     "application/json"
                 ],
@@ -3700,7 +3637,7 @@ const docTemplate = `{
         },
         "/auth/sessions/concurrent": {
             "get": {
-                "description": "Returns whether the operator has concurrent active logins",
+                "description": "Returns whether the user has concurrent active logins",
                 "consumes": [
                     "application/json"
                 ],
@@ -3880,7 +3817,7 @@ const docTemplate = `{
         },
         "/auth/verify-email": {
             "get": {
-                "description": "Verifies an operator's email via a token query parameter (alternative to POST)",
+                "description": "Verifies a user's email via a token query parameter (alternative to POST)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3922,7 +3859,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Verifies an operator's email using a verification token",
+                "description": "Verifies a user's email using a verification token",
                 "consumes": [
                     "application/json"
                 ],
@@ -4076,7 +4013,7 @@ const docTemplate = `{
         },
         "/channels/subscribe": {
             "post": {
-                "description": "Registers a logical subscription to a channel scope for the operator",
+                "description": "Registers a logical subscription to a channel scope for the user",
                 "consumes": [
                     "application/json"
                 ],
@@ -4710,7 +4647,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "operator context required",
+                        "description": "user context required",
                         "schema": {
                             "$ref": "#/definitions/openapi.ErrorResponse"
                         }
@@ -5101,9 +5038,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/dashboard/devices/operator": {
+        "/dashboard/devices/user": {
             "get": {
-                "description": "Returns devices assigned to a specific operator",
+                "description": "Returns devices assigned to a specific user",
                 "consumes": [
                     "application/json"
                 ],
@@ -5113,7 +5050,7 @@ const docTemplate = `{
                 "tags": [
                     "devices"
                 ],
-                "summary": "List devices by operator",
+                "summary": "List devices by user",
                 "parameters": [
                     {
                         "type": "string",
@@ -5124,8 +5061,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "operator ID",
-                        "name": "operatorId",
+                        "description": "user ID",
+                        "name": "userId",
                         "in": "query"
                     }
                 ],
@@ -5187,7 +5124,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "operator context required",
+                        "description": "user context required",
                         "schema": {
                             "$ref": "#/definitions/openapi.ErrorResponse"
                         }
@@ -5351,7 +5288,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "operator context required",
+                        "description": "user context required",
                         "schema": {
                             "$ref": "#/definitions/openapi.ErrorResponse"
                         }
@@ -5507,7 +5444,7 @@ const docTemplate = `{
                 "tags": [
                     "deploy"
                 ],
-                "summary": "Current operator identity for the deploy surface",
+                "summary": "Current user identity for the deploy surface",
                 "parameters": [
                     {
                         "type": "string",
@@ -6069,7 +6006,7 @@ const docTemplate = `{
         },
         "/device/inbox": {
             "get": {
-                "description": "Returns paginated inbox entries for the authenticated operator within the organization",
+                "description": "Returns paginated inbox entries for the authenticated user within the organization",
                 "consumes": [
                     "application/json"
                 ],
@@ -6129,7 +6066,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Submits a device registration request to the operator inbox. Requires device attestation when configured",
+                "description": "Submits a device registration request to the user inbox. Requires device attestation when configured",
                 "consumes": [
                     "application/json"
                 ],
@@ -6254,7 +6191,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Updates an inbox entry (e.g., add operator notes) within the organization",
+                "description": "Updates an inbox entry (e.g., add user notes) within the organization",
                 "consumes": [
                     "application/json"
                 ],
@@ -7924,9 +7861,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/instance/lockout/unlock/{user_id}": {
+            "post": {
+                "description": "Clears a user's account lockout. Instance-scoped: requires admin.lockout on the deployment, not an organization role. Locking a user out of the deployment is not contained by any single organization.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "instance"
+                ],
+                "summary": "Unlock account",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user ID to unlock",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "account unlocked",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.SuccessResult"
+                        }
+                    },
+                    "400": {
+                        "description": "user_id required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "instance admin required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "user not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/invitations": {
             "get": {
-                "description": "Returns invitations sent by the authenticated operator",
+                "description": "Returns invitations sent by the authenticated user",
                 "consumes": [
                     "application/json"
                 ],
@@ -7959,7 +7952,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Invites an operator to an organization by email",
+                "description": "Invites a user to an organization by email",
                 "consumes": [
                     "application/json"
                 ],
@@ -8161,7 +8154,7 @@ const docTemplate = `{
         },
         "/invite/{token}/accept": {
             "post": {
-                "description": "Accepts an invitation and adds the operator to the organization",
+                "description": "Accepts an invitation and adds the user to the organization",
                 "consumes": [
                     "application/json"
                 ],
@@ -8271,9 +8264,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/me/capabilities": {
+            "get": {
+                "description": "Returns the caller's effective permissions across the personal, organization and instance grant stores, as \"action:scope\" strings.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "Get effective capabilities",
+                "responses": {
+                    "200": {
+                        "description": "effective capabilities",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.CapabilitiesResult"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/me/invitations": {
             "get": {
-                "description": "Returns pending invitations addressed to the authenticated operator's email",
+                "description": "Returns pending invitations addressed to the authenticated user's email",
                 "consumes": [
                     "application/json"
                 ],
@@ -8283,7 +8305,7 @@ const docTemplate = `{
                 "tags": [
                     "invitations"
                 ],
-                "summary": "List pending invitations for current operator",
+                "summary": "List pending invitations for current user",
                 "responses": {
                     "200": {
                         "description": "pending invitations",
@@ -8308,7 +8330,7 @@ const docTemplate = `{
         },
         "/me/notifications": {
             "get": {
-                "description": "Returns the current operator's notification settings",
+                "description": "Returns the current user's notification settings",
                 "consumes": [
                     "application/json"
                 ],
@@ -8341,7 +8363,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Updates the current operator's notification settings",
+                "description": "Updates the current user's notification settings",
                 "consumes": [
                     "application/json"
                 ],
@@ -8474,7 +8496,7 @@ const docTemplate = `{
         },
         "/me/preferences": {
             "get": {
-                "description": "Returns the current operator's UI preferences",
+                "description": "Returns the current user's UI preferences",
                 "consumes": [
                     "application/json"
                 ],
@@ -8484,7 +8506,7 @@ const docTemplate = `{
                 "tags": [
                     "settings"
                 ],
-                "summary": "Get operator preferences",
+                "summary": "Get user preferences",
                 "responses": {
                     "200": {
                         "description": "preferences",
@@ -8507,7 +8529,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Updates the current operator's UI preferences",
+                "description": "Updates the current user's UI preferences",
                 "consumes": [
                     "application/json"
                 ],
@@ -8517,7 +8539,7 @@ const docTemplate = `{
                 "tags": [
                     "settings"
                 ],
-                "summary": "Update operator preferences",
+                "summary": "Update user preferences",
                 "parameters": [
                     {
                         "description": "preference updates",
@@ -8559,7 +8581,7 @@ const docTemplate = `{
         },
         "/me/settings": {
             "get": {
-                "description": "Returns the current operator's settings",
+                "description": "Returns the current user's settings",
                 "consumes": [
                     "application/json"
                 ],
@@ -8569,12 +8591,12 @@ const docTemplate = `{
                 "tags": [
                     "settings"
                 ],
-                "summary": "Get operator settings",
+                "summary": "Get user settings",
                 "responses": {
                     "200": {
-                        "description": "operator settings",
+                        "description": "user settings",
                         "schema": {
-                            "$ref": "#/definitions/openapi.OperatorSettingsResult"
+                            "$ref": "#/definitions/openapi.UserSettingsResult"
                         }
                     },
                     "401": {
@@ -8592,7 +8614,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Updates the current operator's settings",
+                "description": "Updates the current user's settings",
                 "consumes": [
                     "application/json"
                 ],
@@ -8602,7 +8624,7 @@ const docTemplate = `{
                 "tags": [
                     "settings"
                 ],
-                "summary": "Update operator settings",
+                "summary": "Update user settings",
                 "parameters": [
                     {
                         "description": "settings updates",
@@ -8644,7 +8666,7 @@ const docTemplate = `{
         },
         "/me/thresholds": {
             "get": {
-                "description": "Returns the current operator's alert thresholds",
+                "description": "Returns the current user's alert thresholds",
                 "consumes": [
                     "application/json"
                 ],
@@ -8654,7 +8676,7 @@ const docTemplate = `{
                 "tags": [
                     "settings"
                 ],
-                "summary": "Get operator thresholds",
+                "summary": "Get user thresholds",
                 "responses": {
                     "200": {
                         "description": "thresholds",
@@ -8677,7 +8699,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "Updates the current operator's alert thresholds",
+                "description": "Updates the current user's alert thresholds",
                 "consumes": [
                     "application/json"
                 ],
@@ -8687,7 +8709,7 @@ const docTemplate = `{
                 "tags": [
                     "settings"
                 ],
-                "summary": "Update operator thresholds",
+                "summary": "Update user thresholds",
                 "parameters": [
                     {
                         "description": "threshold updates",
@@ -9027,7 +9049,7 @@ const docTemplate = `{
         },
         "/organizations": {
             "get": {
-                "description": "Returns all organizations the operator is a member of",
+                "description": "Returns all organizations the user is a member of",
                 "consumes": [
                     "application/json"
                 ],
@@ -11901,9 +11923,6 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
-                "operatorName": {
-                    "type": "string"
-                },
                 "orgId": {
                     "type": "string"
                 },
@@ -11911,6 +11930,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "role": {
+                    "type": "string"
+                },
+                "userName": {
                     "type": "string"
                 }
             }
@@ -12103,7 +12125,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "pollIntervalSeconds": {
-                    "description": "PollIntervalSeconds is how often the device should ask for its config while\nit waits to be claimed. The config normally arrives over the held WebSocket\nthe moment an operator claims the code, so this is the fallback for a device\nwhose socket is not up — it bounds how long a claimed device can sit\nunconfigured. The server owns the value so the cadence can be tuned without\nshipping a new APK.",
+                    "description": "PollIntervalSeconds is how often the device should ask for its config while\nit waits to be claimed. The config normally arrives over the held WebSocket\nthe moment a user claims the code, so this is the fallback for a device\nwhose socket is not up — it bounds how long a claimed device can sit\nunconfigured. The server owns the value so the cadence can be tuned without\nshipping a new APK.",
                     "type": "integer"
                 }
             }
@@ -12132,9 +12154,6 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "operator_id": {
-                    "type": "string"
-                },
                 "request_count": {
                     "type": "integer"
                 },
@@ -12146,6 +12165,9 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
                 }
             }
         },
@@ -12196,9 +12218,6 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "operator_id": {
-                    "type": "string"
-                },
                 "request_count": {
                     "type": "integer"
                 },
@@ -12210,6 +12229,9 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
                 }
             }
         },
@@ -12237,12 +12259,6 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "operator_id": {
-                    "type": "string"
-                },
-                "operator_name": {
-                    "type": "string"
-                },
                 "request_count": {
                     "type": "integer"
                 },
@@ -12254,6 +12270,12 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
                 }
             }
         },
@@ -12307,9 +12329,6 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "operator_id": {
-                    "type": "string"
-                },
                 "platform": {
                     "type": "string"
                 },
@@ -12321,6 +12340,9 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
                 }
             }
         },
@@ -12346,7 +12368,7 @@ const docTemplate = `{
                 }
             }
         },
-        "openapi.AdminOperator": {
+        "openapi.AdminUser": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -12375,17 +12397,17 @@ const docTemplate = `{
                 }
             }
         },
-        "openapi.AdminOperatorListResult": {
+        "openapi.AdminUserListResult": {
             "type": "object",
             "properties": {
-                "operators": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/openapi.AdminOperator"
-                    }
-                },
                 "total": {
                     "type": "integer"
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/openapi.AdminUser"
+                    }
                 }
             }
         },
@@ -12636,6 +12658,32 @@ const docTemplate = `{
                 }
             }
         },
+        "openapi.CapabilitiesResult": {
+            "type": "object",
+            "properties": {
+                "instance": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "instance_role": {
+                    "type": "string"
+                },
+                "org": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "personal": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "openapi.ChannelStatusResult": {
             "type": "object",
             "properties": {
@@ -12707,9 +12755,6 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "operator_id": {
-                    "type": "string"
-                },
                 "platform": {
                     "type": "string"
                 },
@@ -12724,6 +12769,9 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
                 }
             }
         },
@@ -13264,23 +13312,6 @@ const docTemplate = `{
                 }
             }
         },
-        "openapi.CreateOperatorRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
-                }
-            }
-        },
         "openapi.CreateOrganizationRequest": {
             "type": "object",
             "properties": {
@@ -13322,6 +13353,23 @@ const docTemplate = `{
                     }
                 },
                 "service_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "openapi.CreateUserRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "role": {
                     "type": "string"
                 }
             }
@@ -13438,7 +13486,7 @@ const docTemplate = `{
                 "disconnected": {
                     "type": "boolean"
                 },
-                "operatorId": {
+                "userId": {
                     "type": "string"
                 }
             }
@@ -13627,7 +13675,7 @@ const docTemplate = `{
                     }
                 },
                 "thresholds": {
-                    "$ref": "#/definitions/openapi.OperatorThresholds"
+                    "$ref": "#/definitions/openapi.UserThresholds"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -13968,19 +14016,19 @@ const docTemplate = `{
                 "revoked_keys": {
                     "type": "integer"
                 },
-                "top_operators": {
+                "top_users": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/openapi.TopOperatorStat"
+                        "$ref": "#/definitions/openapi.TopUserStat"
                     }
                 },
                 "total_keys": {
                     "type": "integer"
                 },
-                "total_operators": {
+                "total_requests": {
                     "type": "integer"
                 },
-                "total_requests": {
+                "total_users": {
                     "type": "integer"
                 }
             }
@@ -14073,9 +14121,6 @@ const docTemplate = `{
                 "notes": {
                     "type": "string"
                 },
-                "operatorId": {
-                    "type": "string"
-                },
                 "osVersion": {
                     "type": "string"
                 },
@@ -14083,6 +14128,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "userId": {
                     "type": "string"
                 }
             }
@@ -14313,9 +14361,6 @@ const docTemplate = `{
                 "needs_organization": {
                     "type": "boolean"
                 },
-                "operator_id": {
-                    "type": "string"
-                },
                 "organizations": {
                     "type": "array",
                     "items": {
@@ -14332,6 +14377,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/openapi.OrganizationInfo"
                 },
                 "signing_key": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }
@@ -14375,9 +14423,6 @@ const docTemplate = `{
                 "needs_organization": {
                     "type": "boolean"
                 },
-                "operator_id": {
-                    "type": "string"
-                },
                 "organizations": {
                     "type": "array",
                     "items": {
@@ -14400,6 +14445,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "signing_key": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }
@@ -14472,26 +14520,6 @@ const docTemplate = `{
                 }
             }
         },
-        "openapi.MFAOperator": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "mfa_enabled": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
-                }
-            }
-        },
         "openapi.MFARegenerateResult": {
             "type": "object",
             "properties": {
@@ -14511,13 +14539,33 @@ const docTemplate = `{
                 }
             }
         },
+        "openapi.MFAUser": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "mfa_enabled": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
         "openapi.MFAVerifyRequest": {
             "type": "object",
             "properties": {
                 "code": {
                     "type": "string"
                 },
-                "operator_id": {
+                "user_id": {
                     "type": "string"
                 }
             }
@@ -14531,9 +14579,6 @@ const docTemplate = `{
                 "expires_at": {
                     "type": "integer"
                 },
-                "operator": {
-                    "$ref": "#/definitions/openapi.MFAOperator"
-                },
                 "refresh_token": {
                     "type": "string"
                 },
@@ -14545,6 +14590,9 @@ const docTemplate = `{
                 },
                 "success": {
                     "type": "boolean"
+                },
+                "user": {
+                    "$ref": "#/definitions/openapi.MFAUser"
                 }
             }
         },
@@ -14679,92 +14727,6 @@ const docTemplate = `{
                 }
             }
         },
-        "openapi.OperatorAPIKeyStatsResult": {
-            "type": "object",
-            "properties": {
-                "active_keys": {
-                    "type": "integer"
-                },
-                "keys_created_this_month": {
-                    "type": "integer"
-                },
-                "monthly_limit": {
-                    "type": "integer"
-                },
-                "operator_id": {
-                    "type": "string"
-                },
-                "revoked_keys": {
-                    "type": "integer"
-                },
-                "total_keys": {
-                    "type": "integer"
-                }
-            }
-        },
-        "openapi.OperatorSettingsResult": {
-            "type": "object",
-            "properties": {
-                "client": {
-                    "$ref": "#/definitions/openapi.ClientSettings"
-                },
-                "notifications": {
-                    "$ref": "#/definitions/openapi.NotificationSettings"
-                },
-                "thresholds": {
-                    "$ref": "#/definitions/openapi.OperatorThresholds"
-                }
-            }
-        },
-        "openapi.OperatorSettingsResultLegacy": {
-            "type": "object",
-            "properties": {
-                "client": {
-                    "$ref": "#/definitions/openapi.ClientSettings"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "email_verified": {
-                    "type": "boolean"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "mfa_enabled": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
-                }
-            }
-        },
-        "openapi.OperatorThresholds": {
-            "type": "object",
-            "properties": {
-                "bufferCrit": {
-                    "type": "integer"
-                },
-                "bufferWarn": {
-                    "type": "integer"
-                },
-                "riskCrit": {
-                    "type": "integer"
-                },
-                "riskWarn": {
-                    "type": "integer"
-                },
-                "thermalCrit": {
-                    "type": "integer"
-                },
-                "thermalWarn": {
-                    "type": "integer"
-                }
-            }
-        },
         "openapi.Organization": {
             "type": "object",
             "properties": {
@@ -14834,15 +14796,6 @@ const docTemplate = `{
                 "joined_at": {
                     "type": "integer"
                 },
-                "operator_email": {
-                    "type": "string"
-                },
-                "operator_id": {
-                    "type": "string"
-                },
-                "operator_name": {
-                    "type": "string"
-                },
                 "organization_id": {
                     "type": "string"
                 },
@@ -14853,6 +14806,15 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "user_email": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "user_name": {
                     "type": "string"
                 }
             }
@@ -14881,7 +14843,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "defaultThresholds": {
-                    "$ref": "#/definitions/openapi.OperatorThresholds"
+                    "$ref": "#/definitions/openapi.UserThresholds"
                 },
                 "id": {
                     "type": "string"
@@ -15011,7 +14973,7 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "operator_id": {
+                "user_id": {
                     "type": "string"
                 }
             }
@@ -15293,13 +15255,13 @@ const docTemplate = `{
                 "hostname": {
                     "type": "string"
                 },
-                "operator_count": {
-                    "type": "integer"
-                },
                 "org_count": {
                     "type": "integer"
                 },
                 "schema_version": {
+                    "type": "integer"
+                },
+                "user_count": {
                     "type": "integer"
                 }
             }
@@ -15482,7 +15444,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "thresholds": {
-                    "$ref": "#/definitions/openapi.OperatorThresholds"
+                    "$ref": "#/definitions/openapi.UserThresholds"
                 }
             }
         },
@@ -15518,20 +15480,20 @@ const docTemplate = `{
                 }
             }
         },
-        "openapi.TopOperatorStat": {
+        "openapi.TopUserStat": {
             "type": "object",
             "properties": {
                 "active_key_count": {
                     "type": "integer"
                 },
-                "operator_id": {
-                    "type": "string"
-                },
-                "operator_name": {
-                    "type": "string"
-                },
                 "total_requests": {
                     "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
                 }
             }
         },
@@ -15667,7 +15629,7 @@ const docTemplate = `{
                     }
                 },
                 "thresholds": {
-                    "$ref": "#/definitions/openapi.OperatorThresholds"
+                    "$ref": "#/definitions/openapi.UserThresholds"
                 }
             }
         },
@@ -15766,26 +15728,6 @@ const docTemplate = `{
                 }
             }
         },
-        "openapi.UpdateOperatorRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "email_verified": {
-                    "type": "boolean"
-                },
-                "mfa_enabled": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
-                }
-            }
-        },
         "openapi.UpdateOrganizationRequest": {
             "type": "object",
             "properties": {
@@ -15810,7 +15752,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "defaultThresholds": {
-                    "$ref": "#/definitions/openapi.OperatorThresholds"
+                    "$ref": "#/definitions/openapi.UserThresholds"
                 },
                 "timezone": {
                     "type": "string"
@@ -16116,6 +16058,26 @@ const docTemplate = `{
                 }
             }
         },
+        "openapi.UpdateUserRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "email_verified": {
+                    "type": "boolean"
+                },
+                "mfa_enabled": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
         "openapi.UpdateVersionListResult": {
             "type": "object",
             "properties": {
@@ -16226,13 +16188,13 @@ const docTemplate = `{
                 "devices": {
                     "type": "integer"
                 },
-                "operators": {
-                    "type": "integer"
-                },
                 "organizations": {
                     "type": "integer"
                 },
                 "service_accounts": {
+                    "type": "integer"
+                },
+                "users": {
                     "type": "integer"
                 }
             }
@@ -16251,6 +16213,92 @@ const docTemplate = `{
                     "additionalProperties": {
                         "type": "boolean"
                     }
+                }
+            }
+        },
+        "openapi.UserAPIKeyStatsResult": {
+            "type": "object",
+            "properties": {
+                "active_keys": {
+                    "type": "integer"
+                },
+                "keys_created_this_month": {
+                    "type": "integer"
+                },
+                "monthly_limit": {
+                    "type": "integer"
+                },
+                "revoked_keys": {
+                    "type": "integer"
+                },
+                "total_keys": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "openapi.UserSettingsResult": {
+            "type": "object",
+            "properties": {
+                "client": {
+                    "$ref": "#/definitions/openapi.ClientSettings"
+                },
+                "notifications": {
+                    "$ref": "#/definitions/openapi.NotificationSettings"
+                },
+                "thresholds": {
+                    "$ref": "#/definitions/openapi.UserThresholds"
+                }
+            }
+        },
+        "openapi.UserSettingsResultLegacy": {
+            "type": "object",
+            "properties": {
+                "client": {
+                    "$ref": "#/definitions/openapi.ClientSettings"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "email_verified": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "mfa_enabled": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "openapi.UserThresholds": {
+            "type": "object",
+            "properties": {
+                "bufferCrit": {
+                    "type": "integer"
+                },
+                "bufferWarn": {
+                    "type": "integer"
+                },
+                "riskCrit": {
+                    "type": "integer"
+                },
+                "riskWarn": {
+                    "type": "integer"
+                },
+                "thermalCrit": {
+                    "type": "integer"
+                },
+                "thermalWarn": {
+                    "type": "integer"
                 }
             }
         },

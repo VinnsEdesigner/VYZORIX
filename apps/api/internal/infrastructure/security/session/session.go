@@ -31,19 +31,19 @@ var (
 // Repository defines the interface for session persistence.
 type Repository interface {
 	FindByID(ctx context.Context, id string) (*Session, error)
-	FindByOperatorID(ctx context.Context, operatorID string) ([]*Session, error)
+	FindByUserID(ctx context.Context, userID string) ([]*Session, error)
 	Create(ctx context.Context, s *Session) error
 	Delete(ctx context.Context, id string) error
-	DeleteByOperatorID(ctx context.Context, operatorID string) error
+	DeleteByUserID(ctx context.Context, userID string) error
 	DeleteExpired(ctx context.Context) (int, error)
 	Extend(ctx context.Context, id string, newExpiry time.Time) error
-	RevokeAllOperatorSessions(ctx context.Context, operatorID string) error
+	RevokeAllUserSessions(ctx context.Context, userID string) error
 }
 
 // Session represents an authentication session.
 type Session struct {
 	ID                     string
-	OperatorID             string
+	UserID             string
 	SelectedOrganizationID string
 	ExpiresAt              time.Time
 	CreatedAt              time.Time
@@ -207,20 +207,20 @@ func (sm *Manager) ExtractFromCookie(cookieValue string) (string, error) {
 	return sm.DecryptSessionID(cookieValue)
 }
 
-// HashOperatorID creates a SHA-512 hash of an operator ID for database lookups.
+// HashUserID creates a SHA-512 hash of a user ID for database lookups.
 // Uses SHA-512 for stronger security.
-func HashOperatorID(operatorID string) string {
-	h := sha512.Sum512([]byte(operatorID))
+func HashUserID(userID string) string {
+	h := sha512.Sum512([]byte(userID))
 	return hex.EncodeToString(h[:])
 }
 
-// ListActiveSessions returns all active (non-expired) sessions for an operator.
-func (sm *Manager) ListActiveSessions(ctx context.Context, operatorID string) ([]*Session, error) {
+// ListActiveSessions returns all active (non-expired) sessions for a user.
+func (sm *Manager) ListActiveSessions(ctx context.Context, userID string) ([]*Session, error) {
 	if sm.sessionRepo == nil {
 		return nil, errors.New("session repository not configured")
 	}
 
-	sessions, err := sm.sessionRepo.FindByOperatorID(ctx, operatorID)
+	sessions, err := sm.sessionRepo.FindByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}

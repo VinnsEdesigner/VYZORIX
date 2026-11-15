@@ -49,7 +49,7 @@ const (
 type Event struct {
 	ID         string         `json:"id"`
 	DeviceID   string         `json:"deviceId"`
-	OperatorID string         `json:"operatorId,omitempty"`
+	UserID string         `json:"userId,omitempty"`
 	Type       EventType      `json:"type"`
 	Severity   Severity       `json:"severity"`
 	Timestamp  time.Time      `json:"timestamp"`

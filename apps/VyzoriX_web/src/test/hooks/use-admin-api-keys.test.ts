@@ -17,9 +17,9 @@ import { setupIntegrationTest } from '../helpers/integration-test-setup';
 import { resetAdminApiKeyFixtures } from '@/test/msw/vyzor-msw-handlers-admin-apikeys';
 import {
   useAdminApiKeys,
-  useAdminOperatorKeys,
+  useAdminUserKeys,
   useGlobalStats,
-  useAdminOperatorKeyStats,
+  useAdminUserKeyStats,
   useForceRevokeKey,
 } from '@/hooks/apikey';
 
@@ -35,7 +35,7 @@ function body(res: { data?: unknown }) {
 }
 
 describe('useAdminApiKeys', () => {
-  it('lists all keys across operators (flattened) on page 1', async () => {
+  it('lists all keys across users (flattened) on page 1', async () => {
     const { result } = renderHookWithQueryClient(() => useAdminApiKeys());
     await waitFor(() => expect((body(result.current)?.keys as unknown[])?.length).toBeGreaterThan(0));
     // 8 seeded keys, list-all returns ALL of them (incl. revoked).
@@ -43,53 +43,53 @@ describe('useAdminApiKeys', () => {
     expect((body(result.current)?.pagination as { total?: number })?.total).toBe(8);
   });
 
-  it('maps keys through the real mapper (camelCase + Date + operator identity)', async () => {
+  it('maps keys through the real mapper (camelCase + Date + user identity)', async () => {
     const { result } = renderHookWithQueryClient(() => useAdminApiKeys());
     await waitFor(() => expect((body(result.current)?.keys as unknown[])?.length).toBeGreaterThan(0));
     const first = (body(result.current)?.keys as Record<string, unknown>[])[0];
     expect(first).toBeDefined();
     expect(first?.id).toBe('admin-key-1');
-    expect(first?.operator_id).toBe('op-1');
-    expect(first?.operator_name).toBe('Acme Corp');
+    expect(first?.user_id).toBe('op-1');
+    expect(first?.user_name).toBe('Acme Corp');
     expect(first?.scope).toBe('admin');
     expect(first?.is_active).toBe(true);
   });
 
-  it('filters by operatorId', async () => {
+  it('filters by userId', async () => {
     const { result } = renderHookWithQueryClient(() =>
-      useAdminApiKeys({ operatorId: 'op-2' }),
+      useAdminApiKeys({ userId: 'op-2' }),
     );
     await waitFor(() => expect((body(result.current)?.keys as unknown[])?.length).toBeGreaterThan(0));
-    const keys = (body(result.current)?.keys ?? []) as { operator_id?: string }[];
+    const keys = (body(result.current)?.keys ?? []) as { user_id?: string }[];
     expect(keys).toHaveLength(3);
-    expect(keys.every((k) => k.operator_id === 'op-2')).toBe(true);
+    expect(keys.every((k) => k.user_id === 'op-2')).toBe(true);
   });
 
-  it('filters by search (matches key name and operator name)', async () => {
+  it('filters by search (matches key name and user name)', async () => {
     const { result } = renderHookWithQueryClient(() =>
       useAdminApiKeys({ search: 'Acme' }),
     );
     await waitFor(() => expect((body(result.current)?.keys as unknown[])?.length).toBeGreaterThan(0));
-    const keys = (body(result.current)?.keys ?? []) as { operator_name?: string }[];
+    const keys = (body(result.current)?.keys ?? []) as { user_name?: string }[];
     expect(keys).toHaveLength(3);
-    expect(keys.every((k) => k.operator_name === 'Acme Corp')).toBe(true);
+    expect(keys.every((k) => k.user_name === 'Acme Corp')).toBe(true);
   });
 
 
 });
 
-describe('useAdminOperatorKeys', () => {
-  it('is disabled when no operatorId is provided', () => {
-    const { result } = renderHookWithQueryClient(() => useAdminOperatorKeys(undefined));
+describe('useAdminUserKeys', () => {
+  it('is disabled when no userId is provided', () => {
+    const { result } = renderHookWithQueryClient(() => useAdminUserKeys(undefined));
     expect(result.current.fetchStatus).toBe('idle');
   });
 
-  it('lists all keys for a specific operator', async () => {
-    const { result } = renderHookWithQueryClient(() => useAdminOperatorKeys('op-1'));
+  it('lists all keys for a specific user', async () => {
+    const { result } = renderHookWithQueryClient(() => useAdminUserKeys('op-1'));
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     // op-1 owns admin-key-1, admin-key-2, admin-key-7.
     expect(result.current.data?.keys ?? []).toHaveLength(3);
-    expect((result.current.data?.keys ?? []).every((k) => k.operator_id === 'op-1')).toBe(true);
+    expect((result.current.data?.keys ?? []).every((k) => k.user_id === 'op-1')).toBe(true);
   });
 });
 
@@ -100,8 +100,8 @@ describe('useGlobalStats', () => {
     expect(result.current.data?.total_keys).toBe(8);
     expect(result.current.data?.active_keys).toBe(6);
     expect(result.current.data?.revoked_keys).toBe(2);
-    expect(result.current.data?.total_operators).toBe(3);
-    expect(result.current.data?.top_operators?.length).toBeGreaterThan(0);
+    expect(result.current.data?.total_users).toBe(3);
+    expect(result.current.data?.top_users?.length).toBeGreaterThan(0);
   });
 
   it('aggregates requests by scope', async () => {
@@ -112,16 +112,16 @@ describe('useGlobalStats', () => {
   });
 });
 
-describe('useAdminOperatorKeyStats', () => {
-  it('is disabled when no operatorId is provided', () => {
-    const { result } = renderHookWithQueryClient(() => useAdminOperatorKeyStats(undefined));
+describe('useAdminUserKeyStats', () => {
+  it('is disabled when no userId is provided', () => {
+    const { result } = renderHookWithQueryClient(() => useAdminUserKeyStats(undefined));
     expect(result.current.fetchStatus).toBe('idle');
   });
 
-  it('fetches per-operator statistics', async () => {
-    const { result } = renderHookWithQueryClient(() => useAdminOperatorKeyStats('op-1'));
+  it('fetches per-user statistics', async () => {
+    const { result } = renderHookWithQueryClient(() => useAdminUserKeyStats('op-1'));
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data?.operator_id).toBe('op-1');
+    expect(result.current.data?.user_id).toBe('op-1');
     expect(result.current.data?.total_keys).toBe(3);
     expect(result.current.data?.active_keys).toBe(3);
     expect(result.current.data?.monthly_limit).toBe(20);

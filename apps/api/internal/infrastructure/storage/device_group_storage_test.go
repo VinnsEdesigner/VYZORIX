@@ -21,8 +21,8 @@ func newTestDeviceGroupDB(t *testing.T) *sql.DB {
 		`CREATE TABLE device_groups (
 			id TEXT PRIMARY KEY, org_id TEXT NOT NULL, name TEXT NOT NULL, created_at INTEGER NOT NULL)`,
 		`CREATE TABLE device_group_members (
-			group_id TEXT NOT NULL, operator_id TEXT NOT NULL, created_at INTEGER NOT NULL,
-			PRIMARY KEY (group_id, operator_id))`,
+			group_id TEXT NOT NULL, user_id TEXT NOT NULL, created_at INTEGER NOT NULL,
+			PRIMARY KEY (group_id, user_id))`,
 		`CREATE TABLE device_group_devices (
 			group_id TEXT NOT NULL, device_id TEXT NOT NULL, created_at INTEGER NOT NULL,
 			PRIMARY KEY (group_id, device_id))`,

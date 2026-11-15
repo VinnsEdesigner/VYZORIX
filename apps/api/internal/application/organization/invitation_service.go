@@ -149,7 +149,7 @@ func (s *InvitationService) CreateInvitation(ctx context.Context, orgID, inviter
 		return nil, err
 	}
 
-	s.sendInvitationEmailAsync(inv, email, member.OperatorName, org.Name)
+	s.sendInvitationEmailAsync(inv, email, member.UserName, org.Name)
 	s.logInvitationCreated(orgID, email, role, inviterID)
 	s.metrics.InvitationSent()
 
@@ -167,7 +167,7 @@ func (s *InvitationService) validateAndPrepareInvitation(ctx context.Context, or
 		return nil, nil, nil, errors.New("invalid invitation role")
 	}
 
-	member, memberErr := s.memberRepo.FindByOperatorAndOrg(ctx, inviterID, orgID)
+	member, memberErr := s.memberRepo.FindByUserAndOrg(ctx, inviterID, orgID)
 	if memberErr != nil {
 		if errors.Is(memberErr, organization.ErrMemberNotFound) {
 			return nil, nil, nil, organization.ErrForbidden
@@ -179,7 +179,7 @@ func (s *InvitationService) validateAndPrepareInvitation(ctx context.Context, or
 		return nil, nil, nil, organization.ErrForbidden
 	}
 
-	if member.OperatorEmail == email {
+	if member.UserEmail == email {
 		return nil, nil, nil, ErrCannotInviteSelf
 	}
 
@@ -294,7 +294,7 @@ func (s *InvitationService) CancelInvitation(ctx context.Context, invitationID s
 // AcceptInvitation accepts an invitation (for authenticated users).
 //
 //nolint:gocyclo // tx callback with validation, capacity check, member creation, session update
-func (s *InvitationService) AcceptInvitation(ctx context.Context, token, operatorID, operatorEmail, notes string) (*organization.OrganizationMember, error) {
+func (s *InvitationService) AcceptInvitation(ctx context.Context, token, userID, userEmail, notes string) (*organization.OrganizationMember, error) {
 	var resultMember *organization.OrganizationMember
 	err := s.txManager.WithTx(ctx, func(txCtx context.Context) error {
 		inv, err := s.invitationRepo.FindByToken(txCtx, token)
@@ -314,12 +314,12 @@ func (s *InvitationService) AcceptInvitation(ctx context.Context, token, operato
 		}
 
 		// Verify email matches.
-		if inv.Email != operatorEmail {
+		if inv.Email != userEmail {
 			return organization.ErrEmailMismatch
 		}
 
-		// Check if operator is already a member of this org.
-		existingMember, err := s.memberRepo.FindByOperatorAndOrg(txCtx, operatorID, inv.OrganizationID)
+		// Check if user is already a member of this org.
+		existingMember, err := s.memberRepo.FindByUserAndOrg(txCtx, userID, inv.OrganizationID)
 		if err == nil && existingMember != nil && existingMember.IsActive() {
 			return ErrAlreadyOrgMember
 		}
@@ -334,7 +334,7 @@ func (s *InvitationService) AcceptInvitation(ctx context.Context, token, operato
 		}
 
 		// Use lifecycle Accept() method to properly transition invitation state.
-		if err := inv.Accept(operatorID, notes); err != nil {
+		if err := inv.Accept(userID, notes); err != nil {
 			return err
 		}
 
@@ -346,7 +346,7 @@ func (s *InvitationService) AcceptInvitation(ctx context.Context, token, operato
 		member := organization.NewMember(
 			uuid.New().String(),
 			inv.OrganizationID,
-			operatorID,
+			userID,
 			inv.Role, // Role is already OrganizationRole.
 		)
 		if inv.InvitedBy != "" {
@@ -360,26 +360,26 @@ func (s *InvitationService) AcceptInvitation(ctx context.Context, token, operato
 			return err
 		}
 
-		// Accepting an invite activates the org on all of the operator's sessions.
+		// Accepting an invite activates the org on all of the user's sessions.
 		if s.sessionRepo != nil {
-			if err := s.sessionRepo.UpdateOperatorSessionsOrgID(txCtx, operatorID, inv.OrganizationID); err != nil {
-				s.logger.Warn("failed to set session org on invite acceptance", "operator_id", operatorID, "error", err)
+			if err := s.sessionRepo.UpdateUserSessionsOrgID(txCtx, userID, inv.OrganizationID); err != nil {
+				s.logger.Warn("failed to set session org on invite acceptance", "user_id", userID, "error", err)
 			}
 		}
 
 		s.logger.Info("invitation accepted",
 			"invitation_id", inv.ID,
-			"operator_id", operatorID,
+			"user_id", userID,
 			"org_id", inv.OrganizationID,
 		)
 
 		// Store member reference for return value.
 		resultMember = member
 
-		s.sendAcceptedNotification(inv, operatorEmail, notes)
+		s.sendAcceptedNotification(inv, userEmail, notes)
 		_ = inv
 		if false {
-			opEmail := operatorEmail
+			opEmail := userEmail
 			invNotes := notes
 			invOrgID := inv.OrganizationID
 			invRole := inv.Role
@@ -420,7 +420,7 @@ func (s *InvitationService) AcceptInvitation(ctx context.Context, token, operato
 }
 
 // sendAcceptedNotification sends the invitation-accepted email to the inviter (async).
-func (s *InvitationService) sendAcceptedNotification(inv *organization.Invitation, operatorEmail, notes string) {
+func (s *InvitationService) sendAcceptedNotification(inv *organization.Invitation, userEmail, notes string) {
 	if s.emailService == nil {
 		return
 	}
@@ -435,7 +435,7 @@ func (s *InvitationService) sendAcceptedNotification(inv *organization.Invitatio
 			orgName = org.Name
 		}
 		inviteData := emailSvc.InvitationData{
-			InviteeName:      operatorEmail,
+			InviteeName:      userEmail,
 			OrganizationName: orgName,
 			Role:             string(inv.Role),
 			InviteeNotes:     notes,
@@ -451,7 +451,7 @@ func (s *InvitationService) sendAcceptedNotification(inv *organization.Invitatio
 }
 
 // RejectInvitation rejects an invitation.
-func (s *InvitationService) RejectInvitation(ctx context.Context, token, operatorID, operatorEmail, notes string) error {
+func (s *InvitationService) RejectInvitation(ctx context.Context, token, userID, userEmail, notes string) error {
 	return s.txManager.WithTx(ctx, func(txCtx context.Context) error {
 		inv, err := s.invitationRepo.FindByToken(txCtx, token)
 		if err != nil {
@@ -467,12 +467,12 @@ func (s *InvitationService) RejectInvitation(ctx context.Context, token, operato
 		}
 
 		// Verify email matches.
-		if inv.Email != operatorEmail {
+		if inv.Email != userEmail {
 			return organization.ErrEmailMismatch
 		}
 
 		// Use lifecycle Reject() method to properly transition invitation state.
-		if err := inv.Reject(operatorID, notes); err != nil {
+		if err := inv.Reject(userID, notes); err != nil {
 			return err
 		}
 
@@ -482,14 +482,14 @@ func (s *InvitationService) RejectInvitation(ctx context.Context, token, operato
 
 		s.logger.Info("invitation rejected",
 			"invitation_id", inv.ID,
-			"operator_id", operatorID,
+			"user_id", userID,
 		)
 		s.metrics.InvitationRejected()
 
 		// Send notification email to inviter (async).
 		if s.emailService != nil {
 			inv := inv // capture loop var.
-			opEmail := operatorEmail
+			opEmail := userEmail
 			invNotes := notes
 			invOrgID := inv.OrganizationID
 			invRole := inv.Role
@@ -586,7 +586,7 @@ func (s *InvitationService) ListInvitationsByOrganizationPaginated(ctx context.C
 	}, nil
 }
 
-// ListInvitationsByInviter lists all invitations sent by an operator.
+// ListInvitationsByInviter lists all invitations sent by a user.
 func (s *InvitationService) ListInvitationsByInviter(ctx context.Context, inviterID string) ([]*organization.Invitation, error) {
 	return s.invitationRepo.ListByInviter(ctx, inviterID)
 }
@@ -608,12 +608,12 @@ func (s *InvitationService) ExpireInvitation(ctx context.Context, invitationID, 
 	}
 
 	// Verify actor is inviter or org admin.
-	member, err := s.memberRepo.FindByOperatorAndOrg(ctx, actorID, inv.OrganizationID)
+	member, err := s.memberRepo.FindByUserAndOrg(ctx, actorID, inv.OrganizationID)
 	if err != nil {
 		return organization.ErrForbidden
 	}
 
-	if !member.Role.CanManageMembers() && member.OperatorID != inv.InvitedBy {
+	if !member.Role.CanManageMembers() && member.UserID != inv.InvitedBy {
 		return organization.ErrForbidden
 	}
 

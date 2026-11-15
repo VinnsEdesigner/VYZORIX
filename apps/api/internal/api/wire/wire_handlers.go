@@ -25,7 +25,7 @@ import (
 	updatesapplication "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/updates"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
 	domaincommand "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/appcheck"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/config"
 	cryptohmac "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/crypto"
@@ -42,7 +42,7 @@ import (
 type HandlerDependencies struct {
 	OAuthStateRepo        authhandlers.OAuthStateProvider
 	FCMNotifier           fcm.Notifier
-	OperatorRepo          operator.Repository
+	UserRepo          user.Repository
 	IPIntelligence        *middleware.IPIntelligence
 	CommandService        *command.Service
 	Hub                   *hub.Hub
@@ -69,8 +69,8 @@ type HandlerDependencies struct {
 	MemberService         *orgapplication.MemberService
 	InvitationService     *orgapplication.InvitationService
 	OrgSettingsService    *orgapplication.OrganizationSettingsService
-	// PTYOperators resolves the operator endpoint for a live PTY session.
-	PTYOperators websockethandlers.PTYOperatorLookup
+	// PTYUsers resolves the user endpoint for a live PTY session.
+	PTYUsers websockethandlers.PTYUserLookup
 	// ServerSigner signs commands and config with the server's own key. Nil when
 	// no key is configured, in which case the legacy HMAC path is used.
 	ServerSigner *cryptohmac.ServerSigner
@@ -96,7 +96,7 @@ type HandlerSet struct {
 	Confirmation          *confirmationhandlers.Handler
 	Stream                *websockethandlers.StreamHandler
 	PTYRelay              *hub.PTYRelay
-	OperatorTerminal      *websockethandlers.OperatorTerminalHandler
+	UserTerminal      *websockethandlers.UserTerminalHandler
 	RecordingHandler      *websockethandlers.RecordingHandler
 	TelemetryHistory      *handlers.TelemetryHistoryHandler
 	ConnectionStatus      *handlers.ConnectionStatusHandler
@@ -132,7 +132,7 @@ func WireHandlers(deps HandlerDependencies) *HandlerSet {
 		EmailService:    deps.EmailService,
 		EmailVerifyRepo: deps.EmailVerificationRepo,
 		Lockout:         deps.Lockout,
-		OperatorRepo:    deps.OperatorRepo,
+		UserRepo:    deps.UserRepo,
 		AuditLogger:     deps.AuditLogger,
 		IPIntelligence:  deps.IPIntelligence,
 		Presenter:       deps.Presenter,
@@ -262,8 +262,8 @@ func WireHandlers(deps HandlerDependencies) *HandlerSet {
 	// Device settings handler.
 	if deps.DeviceSettingsService != nil && deps.MemberService != nil {
 		// Create membership checker function.
-		membershipChecker := func(ctx context.Context, operatorID, orgID string) error {
-			return deps.MemberService.CheckMembership(ctx, operatorID, orgID)
+		membershipChecker := func(ctx context.Context, userID, orgID string) error {
+			return deps.MemberService.CheckMembership(ctx, userID, orgID)
 		}
 		hs.DeviceSettings = devicehandlers.NewDeviceSettingsHandler(deps.DeviceSettingsService, membershipChecker, deps.Presenter)
 		hs.DeviceSettingsService = deps.DeviceSettingsService
@@ -283,9 +283,9 @@ func WireHandlers(deps HandlerDependencies) *HandlerSet {
 // wireDeviceFrameRouting builds the PTY relay and the device frame handler, and
 // connects them to the hub. It is separate from WireHandlers to keep that
 // function's branching manageable, and because this is one cohesive unit: the
-// relay, its operator endpoint and its device sink must agree on the registry.
+// relay, its user endpoint and its device sink must agree on the registry.
 func wireDeviceFrameRouting(hs *HandlerSet, deps HandlerDependencies) {
-	// PTY relay: terminal sessions between operators and devices. It owns the
+	// PTY relay: terminal sessions between users and devices. It owns the
 	// session registry (credit window, per-device cap) and sends device-bound
 	// traffic over the ephemeral path so keystrokes never hit the database.
 	var ptyRelay *hub.PTYRelay
@@ -298,7 +298,7 @@ func wireDeviceFrameRouting(hs *HandlerSet, deps HandlerDependencies) {
 	}
 	hs.PTYRelay = ptyRelay
 
-	// Operator terminal endpoint. Authorization for opening a shell is enforced by
+	// User terminal endpoint. Authorization for opening a shell is enforced by
 	// the route's scope middleware plus the org check inside the handler, so no
 	// separate authorizer is wired here.
 	if ptyRelay != nil {
@@ -313,7 +313,7 @@ func wireDeviceFrameRouting(hs *HandlerSet, deps HandlerDependencies) {
 			deps.Log,
 		)
 
-		hs.OperatorTerminal = websockethandlers.NewOperatorTerminalHandler(
+		hs.UserTerminal = websockethandlers.NewUserTerminalHandler(
 			ptyRelay,
 			NewPTYDeviceResolver(deps.DeviceRepo),
 			ptyAuth,
@@ -323,12 +323,12 @@ func wireDeviceFrameRouting(hs *HandlerSet, deps HandlerDependencies) {
 			deps.Config.AllowedOrigins,
 			deps.Log,
 		)
-		// The device side resolves a session's operator through this lookup, which is
-		// the operator handler itself. It was declared on the dependencies but never
+		// The device side resolves a session's user through this lookup, which is
+		// the user handler itself. It was declared on the dependencies but never
 		// populated, so it was nil and the device-side handler panicked on the first
 		// byte of terminal output — a shell would open and then silently deliver
 		// nothing.
-		deps.PTYOperators = hs.OperatorTerminal
+		deps.PTYUsers = hs.UserTerminal
 	}
 
 	if deps.Hub == nil {
@@ -340,15 +340,15 @@ func wireDeviceFrameRouting(hs *HandlerSet, deps HandlerDependencies) {
 	// hub only understands telemetry; everything else lands here.
 	var ptySink websockethandlers.PTYDeviceSink
 	if ptyRelay != nil {
-		ptySink = websockethandlers.NewPTYDeviceHandler(ptyRelay, deps.PTYOperators, deps.Log)
+		ptySink = websockethandlers.NewPTYDeviceHandler(ptyRelay, deps.PTYUsers, deps.Log)
 
 		// A session now outlives the device socket: the device keeps each shell
 		// running across a drop and buffers its output, so the disconnect hook no
 		// longer reaps anything. The connect hook re-sends an OPEN for every live
-		// session so the reconnected device re-binds those shells, and the operator
+		// session so the reconnected device re-binds those shells, and the user
 		// is not left on a dead terminal. Idle sessions are still reaped by the
 		// registry TTL (the expiry worker), which is now the only thing that ends a
-		// session whose operator has gone.
+		// session whose user has gone.
 		deps.Hub.SetDeviceConnectHook(func(deviceID string) {
 			if n := ptyRelay.ReattachDeviceSessions(deviceID); n > 0 {
 				deps.Log.Info("re-attached terminal sessions on device connect",

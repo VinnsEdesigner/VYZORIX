@@ -7,7 +7,8 @@
  */
 import {
   useMutation,
-  useQuery
+  useQuery,
+  useQueryClient
 } from '@tanstack/react-query';
 import type {
   DataTag,
@@ -15,6 +16,7 @@ import type {
   DefinedUseQueryResult,
   InvalidateOptions,
   MutationFunction,
+  MutationFunctionContext,
   QueryClient,
   QueryFunction,
   QueryKey,
@@ -43,6 +45,7 @@ import type {
 
 import { customAxios } from '../../../../../packages/API_Client/src/generated/rest-bridge';
 import organizationScopedQueryKey from '.././query-key-mutator';
+import { getGetDashboardDevicesQueryKey, getGetDashboardDevicesUserQueryKey, getGetDashboardEventsRecentQueryKey, getGetDeviceCountQueryKey, getGetDevicesQueryKey } from '../devices/device-management';
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -742,7 +745,7 @@ return customAxios<CommandConfirmResult>(getPostDevicesImeiCommandConfirmUrl(ime
 
 
 export const getPostDevicesImeiCommandConfirmMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDevicesImeiCommandConfirm>>, TError,{imei: string;data: CommandConfirmRequest}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDevicesImeiCommandConfirm>>, TError,{imei: string;data: CommandConfirmRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postDevicesImeiCommandConfirm>>, TError,{imei: string;data: CommandConfirmRequest}, TContext> => {
 
 const mutationKey = ['postDevicesImeiCommandConfirm'];
@@ -761,12 +764,21 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
           return  postDevicesImeiCommandConfirm(imei,data,requestOptions)
         }
 
+  const onSuccess = (data: Awaited<ReturnType<typeof postDevicesImeiCommandConfirm>>, variables: {imei: string;data: CommandConfirmRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesUserQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardEventsRecentQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDeviceCountQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
 
 
 
 
-
-  return  { mutationFn, ...mutationOptions }}
+  return  { ...mutationOptions, mutationFn, onSuccess }}
 
     export type PostDevicesImeiCommandConfirmMutationResult = NonNullable<Awaited<ReturnType<typeof postDevicesImeiCommandConfirm>>>
     export type PostDevicesImeiCommandConfirmMutationBody = CommandConfirmRequest
@@ -776,12 +788,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Request command confirmation
  */
 export const usePostDevicesImeiCommandConfirm = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDevicesImeiCommandConfirm>>, TError,{imei: string;data: CommandConfirmRequest}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDevicesImeiCommandConfirm>>, TError,{imei: string;data: CommandConfirmRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postDevicesImeiCommandConfirm>>,
         TError,
         {imei: string;data: CommandConfirmRequest},
         TContext
       > => {
-      return useMutation(getPostDevicesImeiCommandConfirmMutationOptions(options), queryClient);
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPostDevicesImeiCommandConfirmMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }

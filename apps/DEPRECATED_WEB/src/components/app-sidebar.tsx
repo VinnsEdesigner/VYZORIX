@@ -38,14 +38,14 @@ const navItems = [
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 
-const OPERATOR_UPDATE_EVENT = "vyz.operator.updated";
+const OPERATOR_UPDATE_EVENT = "vyz.user.updated";
 
 export const AppSidebar = (): ReactElement => {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const { operator, signOut, refreshOperator } = useAuth();
 
-  // Listen for name updates from the operator settings page
+  // Listen for name updates from the user settings page
   useEffect(() => {
     const sync = (): void => {
       refreshOperator();
@@ -95,8 +95,8 @@ export const AppSidebar = (): ReactElement => {
       <SidebarFooter>
         <div className="space-y-1 px-2 py-1.5 group-data-[collapsible=icon]:hidden">
           {operator?.email && (
-            <p className="truncate text-xs text-muted-foreground" title={operator.email}>
-              {operator.email}
+            <p className="truncate text-xs text-muted-foreground" title={user.email}>
+              {user.email}
             </p>
           )}
           <Button

@@ -8,14 +8,14 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
 )
 
 // These tests cover the scope gate that protects the interactive terminal. The
 // terminal route is guarded by requireScope(ActionShell, devices:*), so the
-// assertions here are what stand between an operator and a shell on a device.
+// assertions here are what stand between a user and a shell on a device.
 
 func init() { gin.SetMode(gin.TestMode) }
 
@@ -51,23 +51,23 @@ func TestTerminalScopeGateByRole(t *testing.T) {
 }
 
 // TestTerminalGateRejectsUnauthenticated proves the gate fails closed when no
-// operator is present.
+// user is present.
 func TestTerminalGateRejectsUnauthenticated(t *testing.T) {
-	// An operator-less context must not reach the handler.
+	// A user-less context must not reach the handler.
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/v1/dashboard/device/dev-1/terminal", nil)
 
-	if op := middleware.GetOperatorFromContext(c); op != nil {
+	if op := middleware.GetUserFromContext(c); op != nil {
 		t.Fatal("expected no operator in a bare context")
 	}
 }
 
 // TestTerminalGateRequiresOrgMembership documents that requireScope also checks
-// org membership: an operator without an active membership is refused before the
+// org membership: a user without an active membership is refused before the
 // scope check, so a shell cannot be opened cross-org.
-func TestOperatorMembershipGate(t *testing.T) {
-	op := &operator.Operator{ID: "op-1"}
+func TestUserMembershipGate(t *testing.T) {
+	op := &user.User{ID: "op-1"}
 
 	// No membership for the org -> the gate's membership check fails.
 	if m := op.GetMembership("org-1"); m != nil {

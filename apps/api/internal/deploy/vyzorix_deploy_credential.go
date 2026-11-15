@@ -13,8 +13,8 @@ import (
 )
 
 // The deploy credential: a long-lived token scoped to one device, so CI
-// can deploy without an operator session. It is minted, listed and revoked by an
-// operator with `device.deploy`, and it authenticates exactly one device.
+// can deploy without a user session. It is minted, listed and revoked by an
+// user with `device.deploy`, and it authenticates exactly one device.
 //
 // The plaintext is returned once, at mint time, and never again. Only its SHA-256
 // is stored, so a copy of the database yields no usable credential. A fast hash is

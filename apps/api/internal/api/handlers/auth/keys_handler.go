@@ -18,7 +18,7 @@ func keyWithSecret(k *apikeydomain.APIKeyWithFullKey) openapi.APIKeyWithSecret {
 	out := openapi.APIKeyWithSecret{
 		APIKey:       k.FullKey,
 		ID:           k.ID,
-		OperatorID:   k.OperatorID,
+		UserID:   k.UserID,
 		Name:         k.Name,
 		KeyPrefix:    k.KeyPrefix,
 		Scope:        string(k.Scope),
@@ -121,13 +121,13 @@ func (h *Handler) RegisterRoutes(r *gin.RouterGroup) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/api-keys [post]
 func (h *Handler) CreateKey(c *gin.Context) {
-	operatorIDVal, exists := c.Get("operator_id")
+	userIDVal, exists := c.Get("user_id")
 	if !exists {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "operator not found"))
 
 		return
 	}
-	operatorID, ok := operatorIDVal.(string)
+	userID, ok := userIDVal.(string)
 	if !ok {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "invalid operator id"))
 
@@ -141,7 +141,7 @@ func (h *Handler) CreateKey(c *gin.Context) {
 		return
 	}
 
-	result, err := h.service.GenerateKey(c.Request.Context(), operatorID, middleware.GetOrganizationID(c), &req)
+	result, err := h.service.GenerateKey(c.Request.Context(), userID, middleware.GetOrganizationID(c), &req)
 	if err != nil {
 		status := apikeydomain.HTTPStatusCode(err)
 		c.JSON(status, openapi.ErrorResponse{
@@ -154,7 +154,7 @@ func (h *Handler) CreateKey(c *gin.Context) {
 	// Audit log successful key creation.
 	h.auditLogger.APIKeyCreated(
 		c.Request.Context(),
-		operatorID,
+		userID,
 		result.ID,
 		result.Name,
 		result.KeyPrefix,
@@ -167,9 +167,9 @@ func (h *Handler) CreateKey(c *gin.Context) {
 	c.JSON(http.StatusCreated, keyWithSecret(result))
 }
 
-// ListKeys lists all API keys for the authenticated operator.
+// ListKeys lists all API keys for the authenticated user.
 // @Summary      List API keys
-// @Description  Returns paginated API keys for the operator with monthly quota usage
+// @Description  Returns paginated API keys for the user with monthly quota usage
 // @Tags         api-keys
 // @Accept       json
 // @Produce      json
@@ -181,13 +181,13 @@ func (h *Handler) CreateKey(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/api-keys [get]
 func (h *Handler) ListKeys(c *gin.Context) {
-	operatorIDVal, exists := c.Get("operator_id")
+	userIDVal, exists := c.Get("user_id")
 	if !exists {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "operator not found"))
 
 		return
 	}
-	operatorID, ok := operatorIDVal.(string)
+	userID, ok := userIDVal.(string)
 	if !ok {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "invalid operator id"))
 
@@ -197,7 +197,7 @@ func (h *Handler) ListKeys(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 
-	result, err := h.service.ListKeys(c.Request.Context(), operatorID, page, limit)
+	result, err := h.service.ListKeys(c.Request.Context(), userID, page, limit)
 	if err != nil {
 		status := apikeydomain.HTTPStatusCode(err)
 		c.JSON(status, openapi.ErrorResponse{
@@ -229,13 +229,13 @@ func (h *Handler) ListKeys(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/api-keys/{keyId} [get]
 func (h *Handler) GetKey(c *gin.Context) {
-	operatorIDVal, exists := c.Get("operator_id")
+	userIDVal, exists := c.Get("user_id")
 	if !exists {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "operator not found"))
 
 		return
 	}
-	operatorID, ok := operatorIDVal.(string)
+	userID, ok := userIDVal.(string)
 	if !ok {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "invalid operator id"))
 
@@ -244,7 +244,7 @@ func (h *Handler) GetKey(c *gin.Context) {
 
 	keyID := c.Param("keyId")
 
-	key, err := h.service.GetKey(c.Request.Context(), operatorID, keyID)
+	key, err := h.service.GetKey(c.Request.Context(), userID, keyID)
 	if err != nil {
 		status := apikeydomain.HTTPStatusCode(err)
 		c.JSON(status, openapi.ErrorResponse{
@@ -273,13 +273,13 @@ func (h *Handler) GetKey(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/api-keys/{keyId} [patch]
 func (h *Handler) UpdateKey(c *gin.Context) {
-	operatorIDVal, exists := c.Get("operator_id")
+	userIDVal, exists := c.Get("user_id")
 	if !exists {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "operator not found"))
 
 		return
 	}
-	operatorID, ok := operatorIDVal.(string)
+	userID, ok := userIDVal.(string)
 	if !ok {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "invalid operator id"))
 
@@ -295,7 +295,7 @@ func (h *Handler) UpdateKey(c *gin.Context) {
 		return
 	}
 
-	key, err := h.service.UpdateKey(c.Request.Context(), operatorID, keyID, &req)
+	key, err := h.service.UpdateKey(c.Request.Context(), userID, keyID, &req)
 	if err != nil {
 		status := apikeydomain.HTTPStatusCode(err)
 		c.JSON(status, openapi.ErrorResponse{
@@ -319,7 +319,7 @@ func (h *Handler) UpdateKey(c *gin.Context) {
 	}
 	h.auditLogger.APIKeyUpdated(
 		c.Request.Context(),
-		operatorID,
+		userID,
 		keyID,
 		key.Name,
 		changes,
@@ -344,13 +344,13 @@ func (h *Handler) UpdateKey(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/api-keys/{keyId} [delete]
 func (h *Handler) RevokeKey(c *gin.Context) {
-	operatorIDVal, exists := c.Get("operator_id")
+	userIDVal, exists := c.Get("user_id")
 	if !exists {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "operator not found"))
 
 		return
 	}
-	operatorID, ok := operatorIDVal.(string)
+	userID, ok := userIDVal.(string)
 	if !ok {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "invalid operator id"))
 
@@ -360,7 +360,7 @@ func (h *Handler) RevokeKey(c *gin.Context) {
 	keyID := c.Param("keyId")
 
 	// Get key info for audit before revoking.
-	key, err := h.service.GetKey(c.Request.Context(), operatorID, keyID)
+	key, err := h.service.GetKey(c.Request.Context(), userID, keyID)
 	if err != nil {
 		status := apikeydomain.HTTPStatusCode(err)
 		c.JSON(status, openapi.ErrorResponse{
@@ -370,7 +370,7 @@ func (h *Handler) RevokeKey(c *gin.Context) {
 		return
 	}
 
-	err = h.service.RevokeKey(c.Request.Context(), operatorID, keyID)
+	err = h.service.RevokeKey(c.Request.Context(), userID, keyID)
 	if err != nil {
 		status := apikeydomain.HTTPStatusCode(err)
 		c.JSON(status, openapi.ErrorResponse{
@@ -383,7 +383,7 @@ func (h *Handler) RevokeKey(c *gin.Context) {
 	// Audit log successful key revocation.
 	h.auditLogger.APIKeyRevoked(
 		c.Request.Context(),
-		operatorID,
+		userID,
 		keyID,
 		key.Name,
 		c.ClientIP(),
@@ -407,13 +407,13 @@ func (h *Handler) RevokeKey(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/api-keys/{keyId}/rotate [post]
 func (h *Handler) RotateKey(c *gin.Context) {
-	operatorIDVal, exists := c.Get("operator_id")
+	userIDVal, exists := c.Get("user_id")
 	if !exists {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "operator not found"))
 
 		return
 	}
-	operatorID, ok := operatorIDVal.(string)
+	userID, ok := userIDVal.(string)
 	if !ok {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "invalid operator id"))
 
@@ -422,7 +422,7 @@ func (h *Handler) RotateKey(c *gin.Context) {
 
 	keyID := c.Param("keyId")
 
-	result, err := h.service.RotateKey(c.Request.Context(), operatorID, keyID)
+	result, err := h.service.RotateKey(c.Request.Context(), userID, keyID)
 	if err != nil {
 		status := apikeydomain.HTTPStatusCode(err)
 		c.JSON(status, openapi.ErrorResponse{
@@ -435,7 +435,7 @@ func (h *Handler) RotateKey(c *gin.Context) {
 	// Audit log successful key rotation.
 	h.auditLogger.APIKeyRotated(
 		c.Request.Context(),
-		operatorID,
+		userID,
 		result.ID,
 		result.Name,
 		c.ClientIP(),

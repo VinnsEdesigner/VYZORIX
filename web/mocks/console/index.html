@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Vyzorix — Console (design mock)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./theme.css" />
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./mobile.css" />
+</head>
+<body>
+  <div class="chrome">
+    <!-- ============ TOP BAR (rows 1: menu, search, actions) ============ -->
+    <header class="topbar">
+      <button class="topbar__icon-btn" id="menu-toggle" title="Toggle menu" aria-label="Toggle menu">
+        <span data-ui="menu" data-ui-size="18"></span>
+      </button>
+      <div class="topbar__search" title="Command palette" id="topbar-search">
+        <span data-ui="search" data-ui-size="14"></span>
+        <input class="topbar__search-input" id="global-search" placeholder="Search devices, apps, members…" />
+        <kbd>⌘K</kbd>
+      </div>
+      <div class="topbar__spacer"></div>
+      <button class="org-chip" id="org-chip" title="Switch organisation" aria-haspopup="menu"></button>
+      <button class="role-chip" id="role-chip" title="Preview as a role" aria-haspopup="menu"></button>
+      <button class="topbar__icon-btn topbar__icon-btn--kiosk" title="Kiosk mode">
+        <span data-ui="kiosk" data-ui-size="16"></span>
+      </button>
+      <button class="topbar__icon-btn topbar__icon-btn--help" title="Help">
+        <span data-ui="help" data-ui-size="16"></span>
+      </button>
+      <div class="user" id="user">
+        <button class="avatar" id="user-btn" title="Account" aria-haspopup="menu" aria-expanded="false">OP</button>
+        <div class="user-menu" id="user-menu" role="menu" hidden>
+          <div class="user-menu__head">
+            <div class="avatar avatar--lg">OP</div>
+            <div class="user-menu__id">
+              <div class="user-menu__name">Oscar Porter</div>
+              <div class="tiny muted">op@acme.io</div>
+            </div>
+          </div>
+          <div class="user-menu__sep"></div>
+          <button class="user-menu__item" data-go="profile" role="menuitem">
+            <span data-ui="user" data-ui-size="15"></span>
+            Profile
+          </button>
+          <button class="user-menu__item" data-go="profile" data-tab="preferences" role="menuitem">
+            <span data-ui="settings" data-ui-size="15"></span>
+            Preferences
+          </button>
+          <button class="user-menu__item" data-go="settings" role="menuitem">
+            <span data-ui="sliders" data-ui-size="15"></span>
+            Organization settings
+          </button>
+          <button class="user-menu__item" data-go="api-keys" role="menuitem">
+            <span data-ui="key" data-ui-size="15"></span>
+            API keys
+          </button>
+          <button class="user-menu__item" data-go="logs" role="menuitem">
+            <span data-ui="bell" data-ui-size="15"></span>
+            Notification history
+          </button>
+          <div class="user-menu__sep"></div>
+          <button class="user-menu__item user-menu__item--danger" data-action="signout" role="menuitem">
+            <span data-ui="logout" data-ui-size="15"></span>
+            Sign out
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============ SECOND BAR (breadcrumb) ============ -->
+    <div class="appbar">
+      <nav class="crumbs">
+        <b id="crumb">Home</b>
+        <span class="crumbs__sep" id="crumb-sep" hidden>/</span>
+        <span class="crumbs__tab" id="crumb-tab" hidden></span>
+      </nav>
+      <div class="topbar__spacer"></div>
+      <button class="btn btn--ghost tiny">Share</button>
+      <button class="btn btn--ghost tiny"><span data-ui="refresh" data-ui-size="13"></span> Refresh</button>
+    </div>
+
+    <!-- ============ THIRD BAR (in-page tabs for the current view) ============ -->
+    <nav class="tabbar" id="page-tabs" aria-label="Page tabs"></nav>
+
+    <div class="body">
+      <!-- Backdrop for the auto-hiding mega menu -->
+      <div class="scrim" id="scrim"></div>
+
+      <!-- ============ MEGA MENU (Grafana floating nav: slides out from under the top bar) ============ -->
+      <aside class="meganav" id="meganav">
+        <!-- Grafana shows no brand header when the menu is floating; just a close button -->
+        <div class="meganav__head">
+          <button class="meganav__dock" id="menu-close" title="Close menu" aria-label="Close menu">
+            <span data-ui="close" data-ui-size="16"></span>
+          </button>
+        </div>
+
+        <div class="meganav__scroll">
+          <div class="nav__section">
+            <div class="nav__section-label">Devices</div>
+            <button class="nav__item is-active" data-view="home">
+              <span class="nav__icon" data-icon="dashboard"></span>
+              <span class="nav__label">Home</span>
+            </button>
+            <button class="nav__item" data-view="devices">
+              <span class="nav__icon" data-icon="devices"></span>
+              <span class="nav__label">Devices</span><span class="nav__badge">3</span>
+            </button>
+            <button class="nav__item" data-view="apps">
+              <span class="nav__icon" data-icon="terminal"></span>
+              <span class="nav__label">Apps</span>
+            </button>
+            <button class="nav__item" data-view="permissions">
+              <span class="nav__icon" data-icon="shield"></span>
+              <span class="nav__label">Permissions</span>
+            </button>
+            <button class="nav__item" data-view="telemetry">
+              <span class="nav__icon" data-icon="telemetry"></span>
+              <span class="nav__label">Telemetry</span>
+            </button>
+          </div>
+
+          <div class="nav__section">
+            <div class="nav__section-label">Operations</div>
+            <div class="nav__group">
+              <button class="nav__group-head" data-view="updates" aria-expanded="true">
+                <span class="nav__icon" data-icon="updates"></span>
+                <span class="nav__label">Updates</span>
+                <svg class="nav__caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="nav__group-body">
+                <button class="nav__item nav__item--child" data-view="updates" data-tab="overview">
+                  <span class="nav__label">Overview</span>
+                </button>
+                <button class="nav__item nav__item--child" data-view="updates" data-tab="versions">
+                  <span class="nav__label">Release versions</span>
+                </button>
+                <button class="nav__item nav__item--child" data-view="updates" data-tab="pushes">
+                  <span class="nav__label">Push history</span>
+                </button>
+              </div>
+            </div>
+            <button class="nav__item" data-view="alerts">
+              <span class="nav__icon" data-icon="alerts"></span>
+              <span class="nav__label">Alerts</span><span class="nav__badge">2</span>
+            </button>
+            <div class="nav__group">
+              <button class="nav__group-head" data-view="logs" aria-expanded="true">
+                <span class="nav__icon" data-icon="logs"></span>
+                <span class="nav__label">Logs</span>
+                <svg class="nav__caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="nav__group-body">
+                <button class="nav__item nav__item--child" data-view="logs" data-tab="entries">
+                  <span class="nav__label">Entries</span>
+                </button>
+                <button class="nav__item nav__item--child" data-view="logs" data-tab="volume">
+                  <span class="nav__label">Volume</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="nav__group">
+              <button class="nav__group-head" data-view="terminal" aria-expanded="true">
+                <span class="nav__icon" data-icon="terminal"></span>
+                <span class="nav__label">Terminal</span>
+                <svg class="nav__caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="nav__group-body">
+                <button class="nav__item nav__item--child" data-view="terminal" data-tab="session">
+                  <span class="nav__label">Session</span>
+                </button>
+                <button class="nav__item nav__item--child" data-view="terminal" data-tab="files">
+                  <span class="nav__label">Files</span>
+                </button>
+                <button class="nav__item nav__item--child" data-view="terminal" data-tab="recordings">
+                  <span class="nav__label">Recordings</span>
+                </button>
+                <button class="nav__item nav__item--child" data-view="terminal" data-tab="limits">
+                  <span class="nav__label">Access &amp; limits</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Administration (Grafana-style: collapsible groups + a section) -->
+          <div class="nav__section">
+            <div class="nav__section-label">Administration</div>
+
+            <div class="nav__group">
+              <button class="nav__group-head" aria-expanded="true">
+                <span class="nav__icon" data-icon="settings"></span>
+                <span class="nav__label">General</span>
+                <svg class="nav__caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="nav__group-body">
+                <button class="nav__item nav__item--child" data-view="admin-defaultprefs">
+                  <span class="nav__icon" data-icon="shield"></span>
+                  <span class="nav__label">Default preferences</span>
+                </button>
+                <button class="nav__item nav__item--child" data-view="admin-provisioning">
+                  <span class="nav__icon" data-icon="updates"></span>
+                  <span class="nav__label">Provisioning</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="nav__group">
+              <button class="nav__group-head" aria-expanded="true">
+                <span class="nav__icon" data-icon="settings"></span>
+                <span class="nav__label">Users and access</span>
+                <svg class="nav__caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="nav__group-body">
+                <button class="nav__item nav__item--child" data-view="admin-users">
+                  <span class="nav__icon" data-icon="profile"></span>
+                  <span class="nav__label">Users</span>
+                </button>
+                <button class="nav__item nav__item--child" data-view="admin-serviceaccounts">
+                  <span class="nav__icon" data-icon="serviceaccounts"></span>
+                  <span class="nav__label">Service accounts</span>
+                </button>
+              </div>
+            </div>
+
+            <button class="nav__item" data-view="admin-auth">
+              <span class="nav__icon" data-icon="signin"></span>
+              <span class="nav__label">Authentication</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Grafana's docked menu footer: divider + Customise navigation + dock control -->
+        <hr class="meganav__divider" />
+        <div class="meganav__footer">
+          <button class="btn btn--ghost" id="menu-customise">
+            <span data-ui="sliders" data-ui-size="14"></span>
+            Customise navigation
+          </button>
+        </div>
+      </aside>
+
+      <!-- ============ MAIN ============ -->
+      <main class="content" id="content"></main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <b>Command delivered</b>
+    <span class="muted">reboot → IMEI 35…7102 · HMAC verified</span>
+    <div class="toast__time">just now</div>
+  </div>
+
+  <script src="./icons.js"></script>
+  <script src="./charts.js"></script>
+  <script src="./app.js"></script>
+  <script src="./mobile.js"></script>
+</body>
+</html>

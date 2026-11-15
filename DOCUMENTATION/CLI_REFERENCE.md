@@ -11,7 +11,7 @@ CLI calls), and `DEPLOY_BUILD.md` (the `build` command and the tool it delegates
 
 ## 1. What it is
 
-`vyzorix` is the operator's handle on a Vyzorix server. It does three jobs:
+`vyzorix` is the user's handle on a Vyzorix server. It does three jobs:
 
 1. **Signs you in** — proves a credential works and remembers it, so the next command
    does not have to repeat it.
@@ -77,8 +77,8 @@ Two kinds of credential are accepted, and you must give exactly one:
 
 | Credential | Flag | Environment | Who it is |
 |:--|:--|:--|:--|
-| Operator API key | `--api-key` | `VYZORIX_API_KEY` | A person, or a key acting for one. Carries a role and, once signed in, an org. |
-| Deploy credential | `--deploy-credential` | `VYZORIX_DEPLOY_CREDENTIAL` | A CI token, scoped to a single device. No operator behind it. |
+| User API key | `--api-key` | `VYZORIX_API_KEY` | A person, or a key acting for one. Carries a role and, once signed in, an org. |
+| Deploy credential | `--deploy-credential` | `VYZORIX_DEPLOY_CREDENTIAL` | A CI token, scoped to a single device. No user behind it. |
 
 Giving both is refused rather than guessed at: the server would otherwise have to
 choose which identity you meant.
@@ -185,7 +185,7 @@ vyzorix secrets unset --device DEV <app> KEY
   ciphertext. The value may contain `=`; only the first one separates the key from the
   value, so a URL or a base64 blob is a valid value.
 - `list` prints the **names and generations**, never a value. The device never receives
-  a value over any operator call; it fetches its own ciphertext and decrypts it locally.
+  a value over any user call; it fetches its own ciphertext and decrypts it locally.
 - `unset` removes one key.
 
 A value is never echoed back, never logged, and never returned by any `GET`. `set`
@@ -220,7 +220,7 @@ and fails the build on `1` is behaving correctly.
 |:--|:--|:--|
 | `VYZORIX_SERVER` | all | Server base URL. |
 | `VYZORIX_ORG` | all | Organization id. |
-| `VYZORIX_API_KEY` | `login`, `deploy`, `secrets` | Operator API key. |
+| `VYZORIX_API_KEY` | `login`, `deploy`, `secrets` | User API key. |
 | `VYZORIX_DEPLOY_CREDENTIAL` | `login`, `deploy`, `secrets` | Device-scoped deploy token. |
 | `VYZORIX_CONFIG` | all | Override the config file path (useful in CI and tests). |
 | `NO_COLOR` / `FORCE_COLOR` | all | Colour control. `NO_COLOR` wins when set. |
@@ -258,4 +258,4 @@ else.
   signature over method, path, nonce, timestamp and body. The signing secret is
   `sha512(fullKey)`, hex — the same derivation the server stores, so the CLI needs no
   separate secret. A deploy credential is sent as a bearer header instead, because it
-  is already a device-scoped secret and has no operator to sign as.
+  is already a device-scoped secret and has no user to sign as.

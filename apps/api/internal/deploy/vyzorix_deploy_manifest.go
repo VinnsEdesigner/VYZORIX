@@ -1,5 +1,5 @@
 // Package deploy compiles a vyzorix.toml manifest into a signed vyzorix.v
-// config. It is the server half of: the operator
+// config. It is the server half of: the user
 // declares, this package refuses what it must, signs what remains, and the
 // device verifies it alone.
 package deploy
@@ -112,7 +112,7 @@ type AppSpec struct {
 }
 
 // DeviceSpec is the [device] block. Only id, org and an optional display name
-// are the operator's; everything else is server-injected.
+// are the user's; everything else is server-injected.
 type DeviceSpec struct {
 	ID   string `toml:"id"`
 	Org  string `toml:"org"`
@@ -126,7 +126,7 @@ type Manifest struct {
 }
 
 // ManifestError is a refusal with the reason and the field that caused it. The
-// CLI prints Message verbatim, so it must read as a sentence to an operator.
+// CLI prints Message verbatim, so it must read as a sentence to a user.
 type ManifestError struct {
 	Field   string
 	Message string

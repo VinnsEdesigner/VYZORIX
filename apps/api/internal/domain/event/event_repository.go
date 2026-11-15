@@ -26,8 +26,8 @@ type Repository interface {
 	// GetByType retrieves events of a specific type.
 	GetByType(ctx context.Context, eventType EventType, filter *EventFilter) (*EventResult, error)
 
-	// GetByOperator retrieves events for devices owned by an operator.
-	GetByOperator(ctx context.Context, operatorID string, filter *EventFilter) (*EventResult, error)
+	// GetByUser retrieves events for devices owned by a user.
+	GetByUser(ctx context.Context, userID string, filter *EventFilter) (*EventResult, error)
 
 	// GetRecent retrieves the most recent events.
 	GetRecent(ctx context.Context, limit int) ([]Event, error)

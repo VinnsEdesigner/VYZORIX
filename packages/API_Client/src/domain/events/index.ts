@@ -9,7 +9,7 @@ export type { DeviceEvent, DeviceEventListResult };
 export interface Event {
   id: string;
   deviceId: string;
-  operatorId?: string;
+  userId?: string;
   type: EventType;
   severity: Severity;
   timestamp: Date;

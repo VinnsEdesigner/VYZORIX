@@ -150,7 +150,7 @@ type CommandStatusResponse struct {
 type ClientResponse struct {
 	LastRequestAt  *int64   `json:"last_request_at,omitempty"`
 	ID             string   `json:"id"`
-	OperatorID     string   `json:"operator_id"`
+	UserID     string   `json:"user_id"`
 	Name           string   `json:"name"`
 	Platform       string   `json:"platform"`
 	AllowedOrigins []string `json:"allowed_origins"`

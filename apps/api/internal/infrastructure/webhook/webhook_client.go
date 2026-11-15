@@ -86,7 +86,7 @@ type Payload struct {
 	Data       map[string]interface{} `json:"data,omitempty"`
 	Type       EventType              `json:"type"`
 	DeviceID   string                 `json:"deviceId,omitempty"`
-	OperatorID string                 `json:"operatorId,omitempty"`
+	UserID string                 `json:"userId,omitempty"`
 }
 
 // TestResult represents the result of a webhook test.

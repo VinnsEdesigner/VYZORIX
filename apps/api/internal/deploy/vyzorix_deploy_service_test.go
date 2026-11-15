@@ -199,7 +199,7 @@ func TestDryRunStoresNothing(t *testing.T) {
 		t.Fatal("a dry run must return the document for inspection")
 	}
 
-	// The version the operator is shown must be the one in the document they were
+	// The version the user is shown must be the one in the document they were
 	// shown, or the preview describes a different deploy than the one it prints.
 	if want := "v version " + strconv.Itoa(result.Version); !strings.Contains(result.Document, want) {
 		t.Fatalf("the dry-run version %d is not the one in the document", result.Version)

@@ -13,17 +13,17 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/annotation"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device_group"
 	notification "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/notification"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/serviceaccount"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/google/uuid"
 	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
 	Organizations   []OrgConfig            `json:"organizations" yaml:"organizations"`
-	Operators       []OperatorConfig       `json:"operators" yaml:"operators"`
+	Users           []UserConfig           `json:"users" yaml:"users"`
 	DeviceGroups    []GroupConfig          `json:"device_groups" yaml:"device_groups"`
 	APIKeys         []APIKeyConfig         `json:"api_keys" yaml:"api_keys"`
 	Grants          []GrantConfig          `json:"permission_grants" yaml:"permission_grants"`
@@ -82,7 +82,7 @@ type OrgConfig struct {
 	Description string `json:"description" yaml:"description"`
 }
 
-type OperatorConfig struct {
+type UserConfig struct {
 	Email    string `json:"email" yaml:"email"`
 	Name     string `json:"name" yaml:"name"`
 	Password string `json:"password" yaml:"password"`
@@ -91,9 +91,9 @@ type OperatorConfig struct {
 }
 
 type GroupConfig struct {
-	Name           string   `json:"name" yaml:"name"`
-	OrgName        string   `json:"org_name" yaml:"org_name"`
-	OperatorEmails []string `json:"operator_emails" yaml:"operator_emails"`
+	Name       string   `json:"name" yaml:"name"`
+	OrgName    string   `json:"org_name" yaml:"org_name"`
+	UserEmails []string `json:"user_emails" yaml:"user_emails"`
 }
 
 type APIKeyConfig struct {
@@ -111,16 +111,16 @@ type GrantConfig struct {
 }
 
 type OrgRepo interface {
-	FindByName(ctx context.Context, operatorID, name string) (*organization.Organization, error)
+	FindByName(ctx context.Context, userID, name string) (*organization.Organization, error)
 }
 
-type OperatorRepo interface {
-	FindByEmail(ctx context.Context, email string) (*operator.Operator, error)
+type UserRepo interface {
+	FindByEmail(ctx context.Context, email string) (*user.User, error)
 }
 
 type GroupRepo interface {
 	Save(ctx context.Context, g *device_group.Group) error
-	AddMember(ctx context.Context, groupID, operatorID string) error
+	AddMember(ctx context.Context, groupID, userID string) error
 	ListByOrg(ctx context.Context, orgID string) ([]*device_group.Group, error)
 }
 
@@ -129,17 +129,17 @@ type GrantRepo interface {
 }
 
 type OrgCreator interface {
-	CreateOrganization(ctx context.Context, operatorID, name, description string, maxMembers int, role string) (*organization.Organization, error)
+	CreateOrganization(ctx context.Context, userID, name, description string, maxMembers int, role string) (*organization.Organization, error)
 }
 
-type OperatorCreator interface {
-	CreateOperator(ctx context.Context, email, name, password, role string) (*operator.Operator, error)
+type UserCreator interface {
+	CreateUser(ctx context.Context, email, name, password, role string) (*user.User, error)
 }
 
 type KeyCreator interface {
-	CreateKey(ctx context.Context, operatorID, orgID, name, scope string) (string, error)
-	// HasKey reports whether a key with this name already exists for the operator.
-	HasKey(ctx context.Context, operatorID, name string) (bool, error)
+	CreateKey(ctx context.Context, userID, orgID, name, scope string) (string, error)
+	// HasKey reports whether a key with this name already exists for the user.
+	HasKey(ctx context.Context, userID, name string) (bool, error)
 }
 
 type AlertRuleRepo interface {
@@ -167,7 +167,7 @@ type AnnotationRepo interface {
 type Provisioner struct {
 	log            *slog.Logger
 	orgRepo        OrgRepo
-	opRepo         OperatorRepo
+	opRepo         UserRepo
 	groupRepo      GroupRepo
 	grantRepo      GrantRepo
 	alertRepo      AlertRuleRepo
@@ -175,7 +175,7 @@ type Provisioner struct {
 	serviceRepo    ServiceAccountRepo
 	annotationRepo AnnotationRepo
 	orgCreator     OrgCreator
-	opCreator      OperatorCreator
+	opCreator      UserCreator
 	keyCreator     KeyCreator
 	// catalogSink receives the app catalog names from the file. It is a plain
 	// function so this package does not import the deploy feature.
@@ -186,7 +186,7 @@ func New(log *slog.Logger) *Provisioner {
 	return &Provisioner{log: log}
 }
 
-func (p *Provisioner) WithRepositories(orgRepo OrgRepo, opRepo OperatorRepo, groupRepo GroupRepo, grantRepo GrantRepo) *Provisioner {
+func (p *Provisioner) WithRepositories(orgRepo OrgRepo, opRepo UserRepo, groupRepo GroupRepo, grantRepo GrantRepo) *Provisioner {
 	p.orgRepo = orgRepo
 	p.opRepo = opRepo
 	p.groupRepo = groupRepo
@@ -214,7 +214,7 @@ func (p *Provisioner) WithAnnotationRepository(annotationRepo AnnotationRepo) *P
 	return p
 }
 
-func (p *Provisioner) WithCreators(orgCreator OrgCreator, opCreator OperatorCreator, keyCreator KeyCreator) *Provisioner {
+func (p *Provisioner) WithCreators(orgCreator OrgCreator, opCreator UserCreator, keyCreator KeyCreator) *Provisioner {
 	p.orgCreator = orgCreator
 	p.opCreator = opCreator
 	p.keyCreator = keyCreator
@@ -257,7 +257,7 @@ func (p *Provisioner) LoadAndApply(ctx context.Context, path string) error {
 
 	p.log.Info("provisioning file loaded",
 		"orgs", len(cfg.Organizations),
-		"operators", len(cfg.Operators),
+		"users", len(cfg.Users),
 		"groups", len(cfg.DeviceGroups),
 		"keys", len(cfg.APIKeys),
 		"grants", len(cfg.Grants),
@@ -269,13 +269,13 @@ func (p *Provisioner) LoadAndApply(ctx context.Context, path string) error {
 
 	orgMap := make(map[string]string)
 
-	// Operators must exist before organizations: creating an org inserts a
+	// Users must exist before organizations: creating an org inserts a
 	// membership row and stamps created_by, both of which are foreign keys to
-	// operators. Creating the org first fails with a FK violation and takes
+	// users. Creating the org first fails with a FK violation and takes
 	// every downstream resource (groups, keys, grants, alerts, …) with it.
 	opMap := make(map[string]string)
-	for _, opc := range cfg.Operators {
-		opID, err := p.provisionOperator(ctx, opc)
+	for _, opc := range cfg.Users {
+		opID, err := p.provisionUser(ctx, opc)
 		if err != nil {
 			p.log.Error("failed to provision operator", "email", opc.Email, "error", err)
 			continue
@@ -285,7 +285,7 @@ func (p *Provisioner) LoadAndApply(ctx context.Context, path string) error {
 	}
 
 	for _, oc := range cfg.Organizations {
-		creatorID := p.orgCreatorFor(oc.Name, cfg.Operators, opMap)
+		creatorID := p.orgCreatorFor(oc.Name, cfg.Users, opMap)
 		if creatorID == "" {
 			p.log.Error("failed to provision org: no operator available as creator", "name", oc.Name)
 			continue
@@ -381,10 +381,10 @@ func (p *Provisioner) applyCatalog(apps []CatalogAppConfig) {
 	p.log.Info("provisioned app catalog", "apps", len(names))
 }
 
-// orgCreatorFor picks the operator to own a new organization: the first operator
-// whose org_name matches, else the first operator declared. Returns "" when no
-// operator is available (the org cannot be created without one).
-func (p *Provisioner) orgCreatorFor(orgName string, ops []OperatorConfig, opMap map[string]string) string {
+// orgCreatorFor picks the user to own a new organization: the first user
+// whose org_name matches, else the first user declared. Returns "" when no
+// user is available (the org cannot be created without one).
+func (p *Provisioner) orgCreatorFor(orgName string, ops []UserConfig, opMap map[string]string) string {
 	for _, op := range ops {
 		if op.OrgName == orgName {
 			if id := opMap[op.Email]; id != "" {
@@ -417,7 +417,7 @@ func (p *Provisioner) provisionOrg(ctx context.Context, oc OrgConfig, creatorID 
 	return org.ID, nil
 }
 
-func (p *Provisioner) provisionOperator(ctx context.Context, opc OperatorConfig) (string, error) {
+func (p *Provisioner) provisionUser(ctx context.Context, opc UserConfig) (string, error) {
 	if p.opRepo != nil {
 		if existing, err := p.opRepo.FindByEmail(ctx, opc.Email); err == nil && existing != nil {
 			p.log.Info("operator already exists, skipping", "email", opc.Email, "id", existing.ID)
@@ -427,7 +427,7 @@ func (p *Provisioner) provisionOperator(ctx context.Context, opc OperatorConfig)
 	if p.opCreator == nil {
 		return "", fmt.Errorf("no operator creator configured")
 	}
-	op, err := p.opCreator.CreateOperator(ctx, opc.Email, opc.Name, opc.Password, opc.Role)
+	op, err := p.opCreator.CreateUser(ctx, opc.Email, opc.Name, opc.Password, opc.Role)
 	if err != nil {
 		return "", err
 	}
@@ -460,7 +460,7 @@ func (p *Provisioner) provisionGroup(ctx context.Context, gc GroupConfig, orgMap
 	if err := p.groupRepo.Save(ctx, g); err != nil {
 		return err
 	}
-	for _, email := range gc.OperatorEmails {
+	for _, email := range gc.UserEmails {
 		opID := opMap[email]
 		if opID == "" {
 			p.log.Warn("operator not found for group membership", "email", email, "group", gc.Name)

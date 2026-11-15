@@ -7,7 +7,7 @@ and applies. The CLI drives it.
 `DEPLOY_CREDENTIALS.md` (the CI path), `DEPLOY_BUILD.md` (producing the artifacts this
 pipeline delivers). This is the authoritative walkthrough of the deploy path.
 
-This document walks the whole path a deployment takes, from the file on the operator's
+This document walks the whole path a deployment takes, from the file on the user's
 laptop to apps running on a phone, and says at each stage **who decides** and **what
 happens when it goes wrong**. The stages are numbered because the documentation and the
 code both refer to them.
@@ -31,7 +31,7 @@ follows from that one constraint.
 ## 1. The shape of a deploy
 
 ```
- operator                     server                        device
+ user                     server                        device
  ────────                     ──────                        ──────
  vyzorix.toml
    │ vyzorix deploy
@@ -61,14 +61,14 @@ to the one the server reports, and asks for the config when they differ (§5).
 
 ---
 
-## 2. Stage 1 — the operator writes a manifest
+## 2. Stage 1 — the user writes a manifest
 
 One file, `vyzorix.toml`, declaring the target device and the apps that should run on
 it. It is the only artifact a human authors. The full field list is
 `MANIFEST_REFERENCE.md`.
 
 The important property of this stage is that the file is *declarative*. It says what
-should run, not how to make it run. Building the artifact is the operator's job, done
+should run, not how to make it run. Building the artifact is the user's job, done
 somewhere else, and the manifest references the result by URL and digest.
 
 ---
@@ -85,7 +85,7 @@ Before anything is uploaded, the CLI:
 4. prints a summary of what the file declares.
 
 The point of validating locally is speed and clarity: a schema error becomes a
-readable field path on the operator's terminal, rather than a round trip that ends in a
+readable field path on the user's terminal, rather than a round trip that ends in a
 refusal. But the local check is a convenience, **not** the authority — the server
 re-validates everything it receives, because the server is what signs.
 
@@ -98,10 +98,10 @@ and a re-serialised file is a different file.
 ## 4. Stage 3 — the server authenticates and authorises
 
 `POST /v1/deploy` runs on the tenant group, so the caller is authenticated by a session
-cookie or an operator API key. A device-scoped deploy credential is also accepted
-(§7.4 of the contract), so CI can deploy with no operator present.
+cookie or a user API key. A device-scoped deploy credential is also accepted
+(§7.4 of the contract), so CI can deploy with no user present.
 
-Authorisation is a single predicate. An operator may deploy to device `D` in org `O`
+Authorisation is a single predicate. A user may deploy to device `D` in org `O`
 when **all** of the following hold:
 
 ```
@@ -127,7 +127,7 @@ Three things about this predicate are worth stating plainly:
 `device.deploy` is a *new* action, granted explicitly or not at all. It is deliberately
 not folded into `apps.write`, because `apps.*` is about *querying what an app is doing*,
 not about changing what runs — folding deploy into it would make the permission that
-lets an operator *see* an app also let them *install* one.
+lets a user *see* an app also let them *install* one.
 
 ---
 
@@ -135,11 +135,11 @@ lets an operator *see* an app also let them *install* one.
 
 The manifest becomes a **config**: the `vyzorix.v` document the registration contract
 defines, extended with the apps the manifest declares. The `.toml` never leaves the
-operator's machine; the config is what is signed, delivered and stored.
+user's machine; the config is what is signed, delivered and stored.
 
 Compilation does three things beyond transcription:
 
-1. **Injects the fields the file may not set.** `memberId` (the authorising operator),
+1. **Injects the fields the file may not set.** `memberId` (the authorising user),
    `version`, and each app's `dir`.
 2. **Runs the refusal checks** (§6).
 3. **Assigns the next version.** The version is monotonic per device, so a device can
@@ -305,7 +305,7 @@ The refusal reasons a device can report, and what each means:
 An app present in the old config and absent from the new one is **stopped and
 deregistered**; its directory and data remain. Only `purge = true` in the manifest that
 removes it deletes the data — and that deletion is therefore recorded in a document the
-operator wrote and the server signed.
+user wrote and the server signed.
 
 There is deliberately no `vyzorix undeploy`. A destructive verb with no reviewable
 artifact is how data gets deleted by accident.

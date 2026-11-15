@@ -13,7 +13,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/auth"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/webhook"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 
@@ -24,9 +24,9 @@ func int64Ptr(v int64) *int64 { return &v }
 
 // Compile-time references for swaggo-annotated openapi DTO types.
 var (
-	_ openapi.OperatorSettingsResult
+	_ openapi.UserSettingsResult
 	_ openapi.SettingsResponseResult
-	_ openapi.OperatorSettingsResultLegacy
+	_ openapi.UserSettingsResultLegacy
 	_ openapi.UpdateNameRequest
 	_ openapi.UpdateSettingsRequest
 	_ openapi.ThresholdsResult
@@ -53,7 +53,7 @@ type SettingsAuditEvent struct {
 // SettingsHandler handles /me settings endpoints.
 type SettingsHandler struct {
 	authService     *auth.AuthService
-	operatorRepo    operator.Repository
+	userRepo    user.Repository
 	settingsService *auth.ClientSettingsService
 	presenter       *response.Presenter
 	rateLimiter     *middleware.SettingsRateLimiterMiddleware
@@ -62,7 +62,7 @@ type SettingsHandler struct {
 
 func NewSettingsHandler(
 	authService *auth.AuthService,
-	operatorRepo operator.Repository,
+	userRepo user.Repository,
 	presenter *response.Presenter,
 	rateLimiter *middleware.SettingsRateLimiterMiddleware,
 ) *SettingsHandler {
@@ -71,8 +71,8 @@ func NewSettingsHandler(
 	}
 	return &SettingsHandler{
 		authService:     authService,
-		operatorRepo:    operatorRepo,
-		settingsService: auth.NewClientSettingsService(operatorRepo),
+		userRepo:    userRepo,
+		settingsService: auth.NewClientSettingsService(userRepo),
 		presenter:       presenter,
 		rateLimiter:     rateLimiter,
 	}
@@ -91,7 +91,7 @@ func (h *SettingsHandler) RateLimitMiddleware() gin.HandlersChain {
 }
 
 // logSettingsAudit logs an audit event for settings operations.
-func (h *SettingsHandler) logSettingsAudit(c *gin.Context, operatorID string, event *SettingsAuditEvent) {
+func (h *SettingsHandler) logSettingsAudit(c *gin.Context, userID string, event *SettingsAuditEvent) {
 	if h.auditLogger == nil {
 		return
 	}
@@ -119,27 +119,27 @@ func (h *SettingsHandler) logSettingsAudit(c *gin.Context, operatorID string, ev
 			if rt, ok := event.Changes["responseTime"].(int64); ok {
 				responseTime = rt
 			}
-			h.auditLogger.WebhookTest(ctx, operatorID, url, ipAddress, userAgent, event.Success, responseTime)
+			h.auditLogger.WebhookTest(ctx, userID, url, ipAddress, userAgent, event.Success, responseTime)
 			return
 		}
 	}
 
 	if event.Action == "webhook_rotate" {
-		h.auditLogger.WebhookSecretRotated(ctx, operatorID, ipAddress, userAgent)
+		h.auditLogger.WebhookSecretRotated(ctx, userID, ipAddress, userAgent)
 		return
 	}
 
-	h.auditLogger.SettingsChanged(ctx, operatorID, event.Section, event.Action, ipAddress, userAgent, metadata)
+	h.auditLogger.SettingsChanged(ctx, userID, event.Section, event.Action, ipAddress, userAgent, metadata)
 }
 
-// getOperatorFromSession extracts operator ID from the authenticated session.
+// getUserFromSession extracts user ID from the authenticated session.
 // The cookieAuth middleware already validated the session and decrypted the.
-// cookie, populating the operator in the gin context. Re-reading the raw.
+// cookie, populating the user in the gin context. Re-reading the raw.
 // (encrypted) vyz_session cookie and passing it to ValidateSession is wrong —.
 // ValidateSession expects the decrypted session ID, not the cookie ciphertext.
 // We reuse the context value the middleware set instead of re-validating.
-func (h *SettingsHandler) getOperatorFromSession(c *gin.Context) (string, error) {
-	op := middleware.GetOperatorFromContext(c)
+func (h *SettingsHandler) getUserFromSession(c *gin.Context) (string, error) {
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		return "", application.ErrUnauthorized
 	}
@@ -148,17 +148,17 @@ func (h *SettingsHandler) getOperatorFromSession(c *gin.Context) (string, error)
 }
 
 // GetSettings handles GET /v1/auth/me/settings.
-// @Summary      Get operator settings
-// @Description  Returns the current operator's settings
+// @Summary      Get user settings
+// @Description  Returns the current user's settings
 // @Tags         settings
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  openapi.OperatorSettingsResult  "operator settings"
+// @Success      200  {object}  openapi.UserSettingsResult  "user settings"
 // @Failure      401  {object}  openapi.ErrorResponse  "not authenticated"
 // @Failure      500  {object}  openapi.ErrorResponse  "failed to get settings"
 // @Router       /me/settings [get]
 func (h *SettingsHandler) GetSettings(c *gin.Context) {
-	operatorID, err := h.getOperatorFromSession(c)
+	userID, err := h.getUserFromSession(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "not authenticated")
 		return
@@ -167,8 +167,8 @@ func (h *SettingsHandler) GetSettings(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	// Get all operator settings.
-	settings, err := h.operatorRepo.GetOperatorSettings(ctx, operatorID)
+	// Get all user settings.
+	settings, err := h.userRepo.GetUserSettings(ctx, userID)
 	if err != nil {
 		h.presenter.InternalError(c, "failed to get settings")
 		return
@@ -178,19 +178,19 @@ func (h *SettingsHandler) GetSettings(c *gin.Context) {
 }
 
 // UpdateName handles PATCH /v1/auth/me.
-// @Summary      Update operator name
-// @Description  Updates the current operator's display name
+// @Summary      Update user name
+// @Description  Updates the current user's display name
 // @Tags         settings
 // @Accept       json
 // @Produce      json
 // @Param        body  body  openapi.UpdateNameRequest  true  "new name"
-// @Success      200  {object}  openapi.OperatorSettingsResultLegacy  "updated operator"
+// @Success      200  {object}  openapi.UserSettingsResultLegacy  "updated user"
 // @Failure      400  {object}  openapi.ErrorResponse  "name required / invalid body"
 // @Failure      401  {object}  openapi.ErrorResponse  "not authenticated"
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/me [patch]
 func (h *SettingsHandler) UpdateName(c *gin.Context) {
-	operatorID, err := h.getOperatorFromSession(c)
+	userID, err := h.getUserFromSession(c)
 	if err != nil {
 		if errors.Is(err, application.ErrUnauthorized) || errors.Is(err, application.ErrTokenExpired) {
 			h.presenter.Unauthorized(c, "not authenticated")
@@ -216,25 +216,25 @@ func (h *SettingsHandler) UpdateName(c *gin.Context) {
 		return
 	}
 
-	op, err := h.authService.UpdateOperatorName(c.Request.Context(), operatorID, *req.Name)
+	op, err := h.authService.UpdateUserName(c.Request.Context(), userID, *req.Name)
 	if err != nil {
 		h.presenter.InternalError(c, "update failed")
 		return
 	}
 
-	h.presenter.OK(c, openapi.OperatorSettingsResultLegacy{
+	h.presenter.OK(c, openapi.UserSettingsResultLegacy{
 		ID:            op.ID,
 		Email:         op.Email,
 		Name:          op.Name,
-		Role:          h.getOperatorRole(c, op),
+		Role:          h.getUserRole(c, op),
 		MFAEnabled:    op.MFAEnabled,
 		EmailVerified: op.EmailVerified,
 		Client:        &openapi.ClientSettings{ServerURL: op.ClientSettings.ServerURL, DeviceID: op.ClientSettings.DeviceID, RequestTimeoutMs: op.ClientSettings.RequestTimeoutMs, LogBufferLimit: op.ClientSettings.LogBufferLimit, SignalHistoryLimit: op.ClientSettings.SignalHistoryLimit, AutoReconnect: op.ClientSettings.AutoReconnect, StrictHmac: op.ClientSettings.StrictHmac, NotificationsEnabled: op.ClientSettings.NotificationsEnabled},
 	})
 }
 
-// getOperatorRole returns the operator's role in the current organization context.
-func (h *SettingsHandler) getOperatorRole(c *gin.Context, op *operator.Operator) string {
+// getUserRole returns the user's role in the current organization context.
+func (h *SettingsHandler) getUserRole(c *gin.Context, op *user.User) string {
 	orgID := middleware.GetOrganizationID(c)
 	if orgID == "" {
 		return ""
@@ -246,8 +246,8 @@ func (h *SettingsHandler) getOperatorRole(c *gin.Context, op *operator.Operator)
 }
 
 // UpdateSettings handles PATCH /v1/auth/me/settings.
-// @Summary      Update operator settings
-// @Description  Updates the current operator's settings
+// @Summary      Update user settings
+// @Description  Updates the current user's settings
 // @Tags         settings
 // @Accept       json
 // @Produce      json
@@ -258,7 +258,7 @@ func (h *SettingsHandler) getOperatorRole(c *gin.Context, op *operator.Operator)
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /me/settings [patch]
 func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
-	operatorID, err := h.getOperatorFromSession(c)
+	userID, err := h.getUserFromSession(c)
 	if err != nil {
 		if errors.Is(err, application.ErrUnauthorized) || errors.Is(err, application.ErrTokenExpired) {
 			h.presenter.Unauthorized(c, "not authenticated")
@@ -277,23 +277,23 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 	}
 
 	if req.Reset {
-		if _, err = h.authService.ResetSettings(c.Request.Context(), operatorID); err != nil {
+		if _, err = h.authService.ResetSettings(c.Request.Context(), userID); err != nil {
 			h.presenter.InternalError(c, "update failed")
 			return
 		}
 	} else {
-		if _, err = h.authService.UpdateSettings(c.Request.Context(), operatorID, &req); err != nil {
+		if _, err = h.authService.UpdateSettings(c.Request.Context(), userID, &req); err != nil {
 			h.presenter.InternalError(c, "update failed")
 			return
 		}
 	}
 
-	// Return the full OperatorSettings (same shape as GET /me/settings) so the.
+	// Return the full UserSettings (same shape as GET /me/settings) so the.
 	// client receives thresholds + notifications alongside client settings.
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	settings, err := h.operatorRepo.GetOperatorSettings(ctx, operatorID)
+	settings, err := h.userRepo.GetUserSettings(ctx, userID)
 	if err != nil {
 		h.presenter.InternalError(c, "failed to get settings")
 		return
@@ -303,8 +303,8 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 }
 
 // GetThresholds handles GET /v1/auth/me/thresholds.
-// @Summary      Get operator thresholds
-// @Description  Returns the current operator's alert thresholds
+// @Summary      Get user thresholds
+// @Description  Returns the current user's alert thresholds
 // @Tags         settings
 // @Accept       json
 // @Produce      json
@@ -313,7 +313,7 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /me/thresholds [get]
 func (h *SettingsHandler) GetThresholds(c *gin.Context) {
-	operatorID, err := h.getOperatorFromSession(c)
+	userID, err := h.getUserFromSession(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "not authenticated")
 		return
@@ -322,7 +322,7 @@ func (h *SettingsHandler) GetThresholds(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	thresholds, err := h.operatorRepo.GetThresholds(ctx, operatorID)
+	thresholds, err := h.userRepo.GetThresholds(ctx, userID)
 	if err != nil {
 		h.presenter.InternalError(c, "failed to get thresholds")
 		return
@@ -342,8 +342,8 @@ type ThresholdUpdateRequest struct {
 }
 
 // UpdateThresholds handles PATCH /v1/auth/me/thresholds.
-// @Summary      Update operator thresholds
-// @Description  Updates the current operator's alert thresholds
+// @Summary      Update user thresholds
+// @Description  Updates the current user's alert thresholds
 // @Tags         settings
 // @Accept       json
 // @Produce      json
@@ -354,7 +354,7 @@ type ThresholdUpdateRequest struct {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /me/thresholds [patch]
 func (h *SettingsHandler) UpdateThresholds(c *gin.Context) {
-	operatorID, err := h.getOperatorFromSession(c)
+	userID, err := h.getUserFromSession(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "not authenticated")
 		return
@@ -369,7 +369,7 @@ func (h *SettingsHandler) UpdateThresholds(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	thresholds, err := h.operatorRepo.GetThresholds(ctx, operatorID)
+	thresholds, err := h.userRepo.GetThresholds(ctx, userID)
 	if err != nil {
 		h.presenter.InternalError(c, "failed to get current thresholds")
 		return
@@ -394,8 +394,8 @@ func (h *SettingsHandler) UpdateThresholds(c *gin.Context) {
 		thresholds.BufferCrit = *req.BufferCrit
 	}
 
-	if err = h.operatorRepo.UpdateThresholds(ctx, operatorID, thresholds); err != nil {
-		h.logSettingsAudit(c, operatorID, &SettingsAuditEvent{
+	if err = h.userRepo.UpdateThresholds(ctx, userID, thresholds); err != nil {
+		h.logSettingsAudit(c, userID, &SettingsAuditEvent{
 			Action:  "update",
 			Section: "thresholds",
 			Changes: map[string]interface{}{
@@ -413,7 +413,7 @@ func (h *SettingsHandler) UpdateThresholds(c *gin.Context) {
 		return
 	}
 
-	h.logSettingsAudit(c, operatorID, &SettingsAuditEvent{
+	h.logSettingsAudit(c, userID, &SettingsAuditEvent{
 		Action:  "update",
 		Section: "thresholds",
 		Changes: map[string]interface{}{
@@ -432,7 +432,7 @@ func (h *SettingsHandler) UpdateThresholds(c *gin.Context) {
 
 // GetNotifications handles GET /v1/auth/me/notifications.
 // @Summary      Get notification settings
-// @Description  Returns the current operator's notification settings
+// @Description  Returns the current user's notification settings
 // @Tags         settings
 // @Accept       json
 // @Produce      json
@@ -441,7 +441,7 @@ func (h *SettingsHandler) UpdateThresholds(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /me/notifications [get]
 func (h *SettingsHandler) GetNotifications(c *gin.Context) {
-	operatorID, err := h.getOperatorFromSession(c)
+	userID, err := h.getUserFromSession(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "not authenticated")
 		return
@@ -450,7 +450,7 @@ func (h *SettingsHandler) GetNotifications(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	notifications, err := h.operatorRepo.GetNotifications(ctx, operatorID)
+	notifications, err := h.userRepo.GetNotifications(ctx, userID)
 	if err != nil {
 		h.presenter.InternalError(c, "failed to get notifications")
 		return
@@ -463,14 +463,14 @@ func (h *SettingsHandler) GetNotifications(c *gin.Context) {
 type NotificationUpdateRequest struct {
 	Enabled  *bool                          `json:"enabled,omitempty"`
 	Channels *[]string                      `json:"channels,omitempty"`
-	Email    *operator.EmailNotifications   `json:"email,omitempty"`
-	Push     *operator.PushNotifications    `json:"push,omitempty"`
-	Webhook  *operator.WebhookNotifications `json:"webhook,omitempty"`
+	Email    *user.EmailNotifications   `json:"email,omitempty"`
+	Push     *user.PushNotifications    `json:"push,omitempty"`
+	Webhook  *user.WebhookNotifications `json:"webhook,omitempty"`
 }
 
 // UpdateNotifications handles PATCH /v1/auth/me/notifications.
 // @Summary      Update notification settings
-// @Description  Updates the current operator's notification settings
+// @Description  Updates the current user's notification settings
 // @Tags         settings
 // @Accept       json
 // @Produce      json
@@ -481,7 +481,7 @@ type NotificationUpdateRequest struct {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /me/notifications [patch]
 func (h *SettingsHandler) UpdateNotifications(c *gin.Context) {
-	operatorID, err := h.getOperatorFromSession(c)
+	userID, err := h.getUserFromSession(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "not authenticated")
 		return
@@ -497,7 +497,7 @@ func (h *SettingsHandler) UpdateNotifications(c *gin.Context) {
 	defer cancel()
 
 	// Get current notifications.
-	notifications, err := h.operatorRepo.GetNotifications(ctx, operatorID)
+	notifications, err := h.userRepo.GetNotifications(ctx, userID)
 	if err != nil {
 		h.presenter.InternalError(c, "failed to get current notifications")
 		return
@@ -533,8 +533,8 @@ func (h *SettingsHandler) UpdateNotifications(c *gin.Context) {
 	}
 
 	// Save updated notifications.
-	if err = h.operatorRepo.UpdateNotifications(ctx, operatorID, notifications); err != nil {
-		h.logSettingsAudit(c, operatorID, &SettingsAuditEvent{
+	if err = h.userRepo.UpdateNotifications(ctx, userID, notifications); err != nil {
+		h.logSettingsAudit(c, userID, &SettingsAuditEvent{
 			Action:  "update",
 			Section: "notifications",
 			Changes: changes,
@@ -546,7 +546,7 @@ func (h *SettingsHandler) UpdateNotifications(c *gin.Context) {
 	}
 
 	// Log successful update.
-	h.logSettingsAudit(c, operatorID, &SettingsAuditEvent{
+	h.logSettingsAudit(c, userID, &SettingsAuditEvent{
 		Action:  "update",
 		Section: "notifications",
 		Changes: changes,
@@ -573,7 +573,7 @@ type WebhookTestRequest struct {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /me/notifications/webhook/test [post]
 func (h *SettingsHandler) TestWebhook(c *gin.Context) {
-	operatorID, err := h.getOperatorFromSession(c)
+	userID, err := h.getUserFromSession(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "not authenticated")
 		return
@@ -619,7 +619,7 @@ func (h *SettingsHandler) TestWebhook(c *gin.Context) {
 	responseTime := time.Since(start).Milliseconds()
 
 	// Log webhook test attempt.
-	h.logSettingsAudit(c, operatorID, &SettingsAuditEvent{
+	h.logSettingsAudit(c, userID, &SettingsAuditEvent{
 		Action:  "webhook_test",
 		Section: "notifications",
 		Changes: map[string]interface{}{
@@ -677,7 +677,7 @@ func (h *SettingsHandler) TestWebhook(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /me/notifications/webhook/rotate [post]
 func (h *SettingsHandler) RotateWebhookSecret(c *gin.Context) {
-	operatorID, err := h.getOperatorFromSession(c)
+	userID, err := h.getUserFromSession(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "not authenticated")
 		return
@@ -686,9 +686,9 @@ func (h *SettingsHandler) RotateWebhookSecret(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	secret, err := h.operatorRepo.RotateWebhookSecret(ctx, operatorID)
+	secret, err := h.userRepo.RotateWebhookSecret(ctx, userID)
 	if err != nil {
-		h.logSettingsAudit(c, operatorID, &SettingsAuditEvent{
+		h.logSettingsAudit(c, userID, &SettingsAuditEvent{
 			Action:  "webhook_rotate",
 			Section: "notifications",
 			Success: false,
@@ -699,7 +699,7 @@ func (h *SettingsHandler) RotateWebhookSecret(c *gin.Context) {
 	}
 
 	// Log successful rotation.
-	h.logSettingsAudit(c, operatorID, &SettingsAuditEvent{
+	h.logSettingsAudit(c, userID, &SettingsAuditEvent{
 		Action:  "webhook_rotate",
 		Section: "notifications",
 		Success: true,
@@ -711,8 +711,8 @@ func (h *SettingsHandler) RotateWebhookSecret(c *gin.Context) {
 }
 
 // GetPreferences handles GET /v1/auth/me/preferences.
-// @Summary      Get operator preferences
-// @Description  Returns the current operator's UI preferences
+// @Summary      Get user preferences
+// @Description  Returns the current user's UI preferences
 // @Tags         settings
 // @Accept       json
 // @Produce      json
@@ -721,7 +721,7 @@ func (h *SettingsHandler) RotateWebhookSecret(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /me/preferences [get]
 func (h *SettingsHandler) GetPreferences(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -735,8 +735,8 @@ func (h *SettingsHandler) GetPreferences(c *gin.Context) {
 }
 
 // UpdatePreferences handles PATCH /v1/auth/me/preferences.
-// @Summary      Update operator preferences
-// @Description  Updates the current operator's UI preferences
+// @Summary      Update user preferences
+// @Description  Updates the current user's UI preferences
 // @Tags         settings
 // @Accept       json
 // @Produce      json
@@ -747,7 +747,7 @@ func (h *SettingsHandler) GetPreferences(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /me/preferences [patch]
 func (h *SettingsHandler) UpdatePreferences(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return

@@ -67,7 +67,7 @@ var upgrader = websocket.Upgrader{
 
 // AuditLogger interface for audit logging.
 type AuditLogger interface {
-	LogAction(ctx context.Context, operatorID, action, resourceType, resourceID string)
+	LogAction(ctx context.Context, userID, action, resourceType, resourceID string)
 }
 
 // Config holds handler configuration.
@@ -121,9 +121,9 @@ func (h *Handler) HandleWebSocket(c *gin.Context) {
 	}
 
 	// The system middleware chain (cookieAuth/tenantAPIKeyAuth) has already.
-	// authenticated the operator and set it in the gin context. Extract it.
+	// authenticated the user and set it in the gin context. Extract it.
 	// from there instead of re-authenticating.
-	op := h.authMw.GetOperatorFromGinContext(c)
+	op := h.authMw.GetUserFromGinContext(c)
 	if op == nil {
 		h.presenter.LogAuthFail(c.Request.Context(), nil)
 		responses.RespondStructured(c, http.StatusUnauthorized, "unauthorized")

@@ -84,7 +84,7 @@ type Entry struct {
 	CreatedAt    time.Time         `json:"created_at"`
 	Metadata     map[string]string `json:"metadata,omitempty"`
 	ID           string            `json:"id"`
-	OperatorID   string            `json:"operator_id,omitempty"`
+	UserID   string            `json:"user_id,omitempty"`
 	Action       Action            `json:"action"`
 	ResourceType string            `json:"resource_type,omitempty"`
 	ResourceID   string            `json:"resource_id,omitempty"`
@@ -97,10 +97,10 @@ type Entry struct {
 	// RiskTier records the risk classification of the audited operation, when.
 	// applicable (e.g. command execution). Empty for non-risky events.
 	RiskTier string `json:"risk_tier,omitempty"`
-	// ActorType classifies the actor: "operator", "api_key", or "system".
+	// ActorType classifies the actor: "user", "api_key", or "system".
 	ActorType string `json:"actor_type,omitempty"`
-	// ActorEmail is the operator's email, when available, for human-readable.
-	// audit queries (the OperatorID is an opaque ID).
+	// ActorEmail is the user's email, when available, for human-readable.
+	// audit queries (the UserID is an opaque ID).
 	ActorEmail string `json:"actor_email,omitempty"`
 	// OldValue/NewValue capture the before/after state of a mutated resource.
 	// for change-tracking compliance (e.g. settings updates, command state.
@@ -139,7 +139,7 @@ func (r *Repository) Log(ctx context.Context, entry *Entry) error {
 
 	_, err := r.db.ExecContext(ctx, query,
 		entry.ID,
-		nullableString(entry.OperatorID),
+		nullableString(entry.UserID),
 		string(entry.Action),
 		nullableString(entry.ResourceType),
 		nullableString(entry.ResourceID),
@@ -163,7 +163,7 @@ func (r *Repository) Log(ctx context.Context, entry *Entry) error {
 type Query struct {
 	StartTime    time.Time
 	EndTime      time.Time
-	OperatorID   string
+	UserID   string
 	Action       Action
 	ResourceType string
 	ResourceID   string
@@ -189,10 +189,10 @@ func (r *Repository) List(ctx context.Context, q Query) ([]Entry, error) {
 	`
 	args := []any{}
 
-	if q.OperatorID != "" {
+	if q.UserID != "" {
 		query += " AND operator_id = ?"
 
-		args = append(args, q.OperatorID)
+		args = append(args, q.UserID)
 	}
 
 	if q.Action != "" {
@@ -253,18 +253,18 @@ func (r *Repository) List(ctx context.Context, q Query) ([]Entry, error) {
 	for rows.Next() {
 		var e Entry
 
-		var operatorID, resourceType, resourceID, ipAddress, userAgent, metadataJSON sql.NullString
+		var userID, resourceType, resourceID, ipAddress, userAgent, metadataJSON sql.NullString
 
 		var action, result string
 
 		var createdAt int64
 
-		err := rows.Scan(&e.ID, &operatorID, &action, &resourceType, &resourceID, &ipAddress, &userAgent, &metadataJSON, &result, &createdAt)
+		err := rows.Scan(&e.ID, &userID, &action, &resourceType, &resourceID, &ipAddress, &userAgent, &metadataJSON, &result, &createdAt)
 		if err != nil {
 			return nil, err
 		}
 
-		e.OperatorID = operatorID.String
+		e.UserID = userID.String
 		e.Action = Action(action)
 		e.ResourceType = resourceType.String
 		e.ResourceID = resourceID.String
@@ -288,10 +288,10 @@ func (r *Repository) Count(ctx context.Context, q Query) (int, error) {
 	query := `SELECT COUNT(*) FROM audit_logs WHERE 1=1`
 	args := []any{}
 
-	if q.OperatorID != "" {
+	if q.UserID != "" {
 		query += " AND operator_id = ?"
 
-		args = append(args, q.OperatorID)
+		args = append(args, q.UserID)
 	}
 
 	if q.Action != "" {

@@ -22,7 +22,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
   export const getInvitations = () => {
 /**
- * Returns invitations sent by the authenticated operator
+ * Returns invitations sent by the authenticated user
  * @summary List sent invitations
  */
 const getInvitations = (
@@ -34,7 +34,7 @@ const getInvitations = (
       options);
     }
   /**
- * Invites an operator to an organization by email
+ * Invites a user to an organization by email
  * @summary Create invitation
  */
 const postInvitations = (
@@ -72,7 +72,7 @@ const getInviteToken = (
       options);
     }
   /**
- * Accepts an invitation and adds the operator to the organization
+ * Accepts an invitation and adds the user to the organization
  * @summary Accept invitation
  */
 const postInviteTokenAccept = (
@@ -96,8 +96,8 @@ const postInviteTokenReject = (
       options);
     }
   /**
- * Returns pending invitations addressed to the authenticated operator's email
- * @summary List pending invitations for current operator
+ * Returns pending invitations addressed to the authenticated user's email
+ * @summary List pending invitations for current user
  */
 const getMeInvitations = (
 

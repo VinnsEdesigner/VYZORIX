@@ -81,8 +81,8 @@ func (s *Service) WithTxManager(txManager transaction.TxManager) *Service {
 	return s
 }
 
-// GetInbox returns paginated inbox entries for a specific operator within an organization.
-func (s *Service) GetInbox(ctx context.Context, operatorID, orgID, status string, page, limit int) (*InboxListResponse, error) {
+// GetInbox returns paginated inbox entries for a specific user within an organization.
+func (s *Service) GetInbox(ctx context.Context, userID, orgID, status string, page, limit int) (*InboxListResponse, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -95,7 +95,7 @@ func (s *Service) GetInbox(ctx context.Context, operatorID, orgID, status string
 
 	offset := (page - 1) * limit
 
-	entries, total, err := s.repo.ListByOperator(ctx, operatorID, orgID, status, limit, offset)
+	entries, total, err := s.repo.ListByUser(ctx, userID, orgID, status, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list inbox entries: %w", err)
 	}
@@ -117,7 +117,7 @@ func (s *Service) GetInbox(ctx context.Context, operatorID, orgID, status string
 			CreatedAt:         e.CreatedAt,
 			ApprovedAt:        e.ApprovedAt,
 			RejectedAt:        e.RejectedAt,
-			OperatorID:        e.OperatorID,
+			UserID:        e.UserID,
 		})
 	}
 
@@ -167,22 +167,22 @@ func (s *Service) GetInboxEntry(ctx context.Context, imei, orgID string) (*Inbox
 		ApprovedAt:        entry.ApprovedAt,
 		RejectedAt:        entry.RejectedAt,
 		Notes:             entry.Notes,
-		OperatorID:        entry.OperatorID,
+		UserID:        entry.UserID,
 	}, nil
 }
 
 // AckInbox handles the inbox acknowledgement based on action type.
-func (s *Service) AckInbox(ctx context.Context, imei, action, operatorID, orgID, notes string) (*AckResponse, error) {
+func (s *Service) AckInbox(ctx context.Context, imei, action, userID, orgID, notes string) (*AckResponse, error) {
 	if action == string(inbox.DeviceAckActionAcknowledge) {
 		return s.DeviceAcknowledge(ctx, imei)
-	} else if action == string(inbox.OperatorActionApprove) {
-		return s.ApproveDevice(ctx, imei, operatorID, orgID, notes)
-	} else if action == string(inbox.OperatorActionReject) {
-		return s.RejectDevice(ctx, imei, operatorID, orgID, notes)
+	} else if action == string(inbox.UserActionApprove) {
+		return s.ApproveDevice(ctx, imei, userID, orgID, notes)
+	} else if action == string(inbox.UserActionReject) {
+		return s.RejectDevice(ctx, imei, userID, orgID, notes)
 	} else if action == string(inbox.AckActionApprove) {
-		return s.ApproveDevice(ctx, imei, operatorID, orgID, notes)
+		return s.ApproveDevice(ctx, imei, userID, orgID, notes)
 	} else if action == string(inbox.AckActionReject) {
-		return s.RejectDevice(ctx, imei, operatorID, orgID, notes)
+		return s.RejectDevice(ctx, imei, userID, orgID, notes)
 	}
 
 	return nil, ErrInvalidAckAction
@@ -222,9 +222,9 @@ func (s *Service) DeviceAcknowledge(ctx context.Context, imei string) (*AckRespo
 	}, nil
 }
 
-// ApproveDevice handles operator approval of a device registration.
+// ApproveDevice handles user approval of a device registration.
 // Transitions from ACKNOWLEDGED -> APPROVING -> APPROVED.
-func (s *Service) ApproveDevice(ctx context.Context, imei string, operatorID, orgID, notes string) (*AckResponse, error) {
+func (s *Service) ApproveDevice(ctx context.Context, imei string, userID, orgID, notes string) (*AckResponse, error) {
 	entry, err := s.repo.GetByIMEI(ctx, imei)
 	if err != nil {
 		if err == inbox.ErrInboxNotFound {
@@ -242,10 +242,10 @@ func (s *Service) ApproveDevice(ctx context.Context, imei string, operatorID, or
 	}
 
 	now := time.Now()
-	entry.OperatorID = operatorID
+	entry.UserID = userID
 
-	// Claim the entry for the operator's org on first action (public inbox.
-	// entries have no org until an operator approves/rejects them).
+	// Claim the entry for the user's org on first action (public inbox.
+	// entries have no org until a user approves/rejects them).
 	if entry.OrganizationID == "" && orgID != "" {
 		entry.OrganizationID = orgID
 	}
@@ -311,11 +311,11 @@ func (s *Service) ApproveDevice(ctx context.Context, imei string, operatorID, or
 		}
 	}
 
-	s.logRegistrationAction(ctx, entry, "approved", operatorID, "")
+	s.logRegistrationAction(ctx, entry, "approved", userID, "")
 
 	s.logger.Info("device approved by operator",
 		"imei", entry.IMEI,
-		"operator_id", operatorID,
+		"user_id", userID,
 		"fcm_push_sent", fcmPushSent,
 	)
 
@@ -329,9 +329,9 @@ func (s *Service) ApproveDevice(ctx context.Context, imei string, operatorID, or
 	}, nil
 }
 
-// RejectDevice handles operator rejection of a device registration.
+// RejectDevice handles user rejection of a device registration.
 // Transitions from PENDING/ACKNOWLEDGED -> REJECTED.
-func (s *Service) RejectDevice(ctx context.Context, imei string, operatorID, orgID, notes string) (*AckResponse, error) {
+func (s *Service) RejectDevice(ctx context.Context, imei string, userID, orgID, notes string) (*AckResponse, error) {
 	entry, err := s.repo.GetByIMEI(ctx, imei)
 	if err != nil {
 		if err == inbox.ErrInboxNotFound {
@@ -352,11 +352,11 @@ func (s *Service) RejectDevice(ctx context.Context, imei string, operatorID, org
 	entry.Status = inbox.StatusRejected
 	entry.RejectedAt = PtrToInt64(now.UnixMilli())
 	entry.UpdatedAt = now.UnixMilli()
-	entry.OperatorID = operatorID
+	entry.UserID = userID
 	entry.Notes = notes
 
-	// Claim the entry for the operator's org on first action (public inbox.
-	// entries have no org until an operator approves/rejects them).
+	// Claim the entry for the user's org on first action (public inbox.
+	// entries have no org until a user approves/rejects them).
 	if entry.OrganizationID == "" && orgID != "" {
 		entry.OrganizationID = orgID
 	}
@@ -365,11 +365,11 @@ func (s *Service) RejectDevice(ctx context.Context, imei string, operatorID, org
 		return nil, fmt.Errorf("failed to update inbox entry: %w", err)
 	}
 
-	s.logRegistrationAction(ctx, entry, "rejected", operatorID, notes)
+	s.logRegistrationAction(ctx, entry, "rejected", userID, notes)
 
 	s.logger.Info("device rejected by operator",
 		"imei", entry.IMEI,
-		"operator_id", operatorID,
+		"user_id", userID,
 	)
 
 	return &AckResponse{
@@ -556,13 +556,13 @@ func (s *Service) buildInboxEntryResponse(entry *inbox.InboxEntry) *InboxEntryRe
 		ApprovedAt:        entry.ApprovedAt,
 		RejectedAt:        entry.RejectedAt,
 		Notes:             entry.Notes,
-		OperatorID:        entry.OperatorID,
+		UserID:        entry.UserID,
 		CreatedAt:         entry.CreatedAt,
 	}
 }
 
 // logRegistrationAction logs a registration action to the audit log.
-func (s *Service) logRegistrationAction(ctx context.Context, entry *inbox.InboxEntry, action, operatorID, details string) {
+func (s *Service) logRegistrationAction(ctx context.Context, entry *inbox.InboxEntry, action, userID, details string) {
 	if s.logRepo == nil {
 		return
 	}
@@ -572,7 +572,7 @@ func (s *Service) logRegistrationAction(ctx context.Context, entry *inbox.InboxE
 		DeviceID:   "",
 		IMEI:       entry.IMEI,
 		Action:     action,
-		OperatorID: operatorID,
+		UserID: userID,
 		Details:    details,
 		Timestamp:  time.Now().UnixMilli(),
 		ClientIP:   extractClientIP(ctx),
@@ -583,7 +583,7 @@ func (s *Service) logRegistrationAction(ctx context.Context, entry *inbox.InboxE
 		s.logger.Error("failed to create audit log entry",
 			"action", action,
 			"imei", entry.IMEI,
-			"operatorId", operatorID,
+			"userId", userID,
 			"error", err,
 		)
 	}
@@ -665,8 +665,8 @@ func isValidFCMToken(token string) bool {
 	return true
 }
 
-// UpdateInboxEntry updates an inbox entry (e.g., operator notes).
-func (s *Service) UpdateInboxEntry(ctx context.Context, imei, operatorID, orgID, notes string) (*InboxEntryResponse, error) {
+// UpdateInboxEntry updates an inbox entry (e.g., user notes).
+func (s *Service) UpdateInboxEntry(ctx context.Context, imei, userID, orgID, notes string) (*InboxEntryResponse, error) {
 	entry, err := s.repo.GetByIMEI(ctx, imei)
 	if err != nil {
 		if err == inbox.ErrInboxNotFound {
@@ -690,7 +690,7 @@ func (s *Service) UpdateInboxEntry(ctx context.Context, imei, operatorID, orgID,
 		return nil, fmt.Errorf("failed to update inbox entry: %w", err)
 	}
 
-	s.logRegistrationAction(ctx, entry, "updated", operatorID, notes)
+	s.logRegistrationAction(ctx, entry, "updated", userID, notes)
 
 	return &InboxEntryResponse{
 		ID:                entry.ID,
@@ -708,12 +708,12 @@ func (s *Service) UpdateInboxEntry(ctx context.Context, imei, operatorID, orgID,
 		ApprovedAt:        entry.ApprovedAt,
 		RejectedAt:        entry.RejectedAt,
 		Notes:             entry.Notes,
-		OperatorID:        entry.OperatorID,
+		UserID:        entry.UserID,
 	}, nil
 }
 
 // ResendApproval resends the FCM notification to a device that was approved.
-func (s *Service) ResendApproval(ctx context.Context, imei, operatorID, orgID string) (*ResendResponse, error) {
+func (s *Service) ResendApproval(ctx context.Context, imei, userID, orgID string) (*ResendResponse, error) {
 	entry, err := s.repo.GetByIMEI(ctx, imei)
 	if err != nil {
 		if err == inbox.ErrInboxNotFound {
@@ -753,7 +753,7 @@ func (s *Service) ResendApproval(ctx context.Context, imei, operatorID, orgID st
 		}
 	}
 
-	s.logRegistrationAction(ctx, entry, "resend_approval", operatorID, "")
+	s.logRegistrationAction(ctx, entry, "resend_approval", userID, "")
 
 	s.logger.Info("resent approval notification",
 		"imei", entry.IMEI,

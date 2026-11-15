@@ -15,7 +15,7 @@ func migratePermissionGrants(tx *sql.Tx) error {
 	_, err := tx.ExecContext(ctx, `
 	CREATE TABLE IF NOT EXISTS permission_grants (
 		id          TEXT PRIMARY KEY,
-		operator_id TEXT NOT NULL,
+		user_id TEXT NOT NULL,
 		org_id      TEXT NOT NULL,
 		action      TEXT NOT NULL,
 		scope       TEXT NOT NULL,
@@ -26,7 +26,7 @@ func migratePermissionGrants(tx *sql.Tx) error {
 	}
 
 	ndx := []string{
-		`CREATE INDEX IF NOT EXISTS idx_permission_grants_operator_org ON permission_grants(operator_id, org_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_permission_grants_operator_org ON permission_grants(user_id, org_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_permission_grants_scope ON permission_grants(scope)`,
 	}
 	for _, q := range ndx {
@@ -35,10 +35,10 @@ func migratePermissionGrants(tx *sql.Tx) error {
 		}
 	}
 
-	// Prevent duplicate (operator, org, action, scope) grants; idempotent insert.
+	// Prevent duplicate (user, org, action, scope) grants; idempotent insert.
 	if _, err := tx.ExecContext(ctx, `
 	CREATE UNIQUE INDEX IF NOT EXISTS idx_permission_grants_unique
-	ON permission_grants(operator_id, org_id, action, scope)`); err != nil {
+	ON permission_grants(user_id, org_id, action, scope)`); err != nil {
 		return err
 	}
 	return nil

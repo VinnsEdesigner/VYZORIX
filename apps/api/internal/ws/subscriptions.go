@@ -134,8 +134,8 @@ func (h *Hub) InitSubscriptions() {
 }
 
 // SubscribeDeviceUpdates subscribes to device update events for an organization.
-// Keyed by organization (not operator): a device event is an org-level fact, so
-// every operator in the org should observe it.
+// Keyed by organization (not user): a device event is an org-level fact, so
+// every user in the org should observe it.
 func (h *Hub) SubscribeDeviceUpdates(orgID, deviceID string, callback subscriptionCallback) func() {
 	h.InitSubscriptions()
 
@@ -177,7 +177,7 @@ func (h *Hub) SubscribeDeviceUpdates(orgID, deviceID string, callback subscripti
 }
 
 // SubscribeTelemetry subscribes to real-time telemetry events for an organization.
-// Keyed by organization so any operator in the org receives the org's telemetry.
+// Keyed by organization so any user in the org receives the org's telemetry.
 func (h *Hub) SubscribeTelemetry(orgID, deviceID string, callback subscriptionCallback) func() {
 	h.InitSubscriptions()
 
@@ -220,7 +220,7 @@ func (h *Hub) SubscribeTelemetry(orgID, deviceID string, callback subscriptionCa
 }
 
 // SubscribeCommandStatus subscribes to command status change events for an organization.
-// Keyed by organization so any operator in the org observes command progress.
+// Keyed by organization so any user in the org observes command progress.
 func (h *Hub) SubscribeCommandStatus(orgID, dispatchID string, callback subscriptionCallback) func() {
 	h.InitSubscriptions()
 
@@ -259,7 +259,7 @@ func (h *Hub) SubscribeCommandStatus(orgID, dispatchID string, callback subscrip
 }
 
 // SubscribeOrganizationEvents subscribes to organization events.
-func (h *Hub) SubscribeOrganizationEvents(operatorID, orgID string, callback subscriptionCallback) func() {
+func (h *Hub) SubscribeOrganizationEvents(userID, orgID string, callback subscriptionCallback) func() {
 	h.InitSubscriptions()
 
 	subMgr := subscriptionMgr
@@ -297,7 +297,7 @@ func (h *Hub) SubscribeOrganizationEvents(operatorID, orgID string, callback sub
 }
 
 // SubscribeMemberEvents subscribes to member events for an organization.
-func (h *Hub) SubscribeMemberEvents(operatorID, orgID string, callback subscriptionCallback) func() {
+func (h *Hub) SubscribeMemberEvents(userID, orgID string, callback subscriptionCallback) func() {
 	h.InitSubscriptions()
 
 	subMgr := subscriptionMgr
@@ -356,7 +356,7 @@ func (h *Hub) PublishCommandStatusForDevice(ctx context.Context, dispatchID, dev
 
 // OrganizationForDevice returns the organization ID a device belongs to, or ""
 // if it cannot be resolved. Used by the realtime fan-out so device, telemetry
-// and command events are delivered to every operator in the device's org.
+// and command events are delivered to every user in the device's org.
 func (h *Hub) OrganizationForDevice(ctx context.Context, deviceID string) string {
 	if h.deviceRepo == nil || deviceID == "" {
 		return ""

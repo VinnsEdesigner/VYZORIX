@@ -12,7 +12,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/dto"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/inbox"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/transaction"
 )
 
@@ -27,7 +27,7 @@ var (
 // Service handles device operations.
 type Service struct {
 	deviceRepo    device.Repository
-	operatorRepo  operator.Repository
+	userRepo  user.Repository
 	txManager     transaction.TxManager
 	logger        *slog.Logger
 	statusUpdater DeviceStatusUpdater
@@ -43,7 +43,7 @@ type DeviceStatusUpdater interface {
 // NewService creates a new DeviceService.
 func NewService(
 	deviceRepo device.Repository,
-	operatorRepo operator.Repository,
+	userRepo user.Repository,
 	logger *slog.Logger,
 ) *Service {
 	if logger == nil {
@@ -51,7 +51,7 @@ func NewService(
 	}
 	return &Service{
 		deviceRepo:   deviceRepo,
-		operatorRepo: operatorRepo,
+		userRepo: userRepo,
 		logger:       logger,
 	}
 }
@@ -163,10 +163,10 @@ func (s *Service) GetStatus(ctx context.Context, deviceID string) (*dto.DeviceSt
 	}, nil
 }
 
-// GetStatusByOperator retrieves device status with DOA verification.
-// Only returns device if it belongs to the specified operator.
-func (s *Service) GetStatusByOperator(ctx context.Context, deviceID, operatorID string) (*dto.DeviceStatusResponse, error) {
-	d, err := s.deviceRepo.FindByIDAndOperator(ctx, deviceID, operatorID)
+// GetStatusByUser retrieves device status with DOA verification.
+// Only returns device if it belongs to the specified user.
+func (s *Service) GetStatusByUser(ctx context.Context, deviceID, userID string) (*dto.DeviceStatusResponse, error) {
+	d, err := s.deviceRepo.FindByIDAndUser(ctx, deviceID, userID)
 	if err != nil {
 		if errors.Is(err, device.ErrNotFound) {
 			return nil, application.ErrDeviceNotFound
@@ -184,9 +184,9 @@ func (s *Service) GetStatusByOperator(ctx context.Context, deviceID, operatorID 
 	}, nil
 }
 
-// GetDeviceByOperator retrieves a device with DOA verification.
-func (s *Service) GetDeviceByOperator(ctx context.Context, deviceID, operatorID string) (*dto.DeviceResponse, error) {
-	d, err := s.deviceRepo.FindByIDAndOperator(ctx, deviceID, operatorID)
+// GetDeviceByUser retrieves a device with DOA verification.
+func (s *Service) GetDeviceByUser(ctx context.Context, deviceID, userID string) (*dto.DeviceResponse, error) {
+	d, err := s.deviceRepo.FindByIDAndUser(ctx, deviceID, userID)
 	if err != nil {
 		if errors.Is(err, device.ErrNotFound) {
 			return nil, application.ErrDeviceNotFound
@@ -331,9 +331,9 @@ func (s *Service) ListByOrganization(ctx context.Context, orgID string, limit, o
 	return response, nil
 }
 
-// ListByOperator returns all devices for an operator.
-func (s *Service) ListByOperator(ctx context.Context, operatorID string) ([]dto.DeviceResponse, error) {
-	devices, err := s.deviceRepo.ListByOperator(ctx, operatorID)
+// ListByUser returns all devices for a user.
+func (s *Service) ListByUser(ctx context.Context, userID string) ([]dto.DeviceResponse, error) {
+	devices, err := s.deviceRepo.ListByUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -360,9 +360,9 @@ func (s *Service) ListByOperator(ctx context.Context, operatorID string) ([]dto.
 	return response, nil
 }
 
-// ListByOperatorEntity returns all devices for an operator as domain entities.
-func (s *Service) ListByOperatorEntity(ctx context.Context, operatorID string) ([]*device.Device, error) {
-	return s.deviceRepo.ListByOperator(ctx, operatorID)
+// ListByUserEntity returns all devices for a user as domain entities.
+func (s *Service) ListByUserEntity(ctx context.Context, userID string) ([]*device.Device, error) {
+	return s.deviceRepo.ListByUser(ctx, userID)
 }
 
 // Delete deletes a device.
@@ -385,9 +385,9 @@ func (s *Service) Count(ctx context.Context, orgID string) (int, error) {
 	return s.deviceRepo.Count(ctx, orgID)
 }
 
-// CountByOperator returns the total number of devices for an operator.
-func (s *Service) CountByOperator(ctx context.Context, operatorID string) (int, error) {
-	devices, err := s.deviceRepo.ListByOperator(ctx, operatorID)
+// CountByUser returns the total number of devices for a user.
+func (s *Service) CountByUser(ctx context.Context, userID string) (int, error) {
+	devices, err := s.deviceRepo.ListByUser(ctx, userID)
 	if err != nil {
 		return 0, err
 	}
@@ -400,8 +400,8 @@ func (s *Service) CountByOrganization(ctx context.Context, orgID string) (int, e
 	return s.deviceRepo.CountByOrganization(ctx, orgID)
 }
 
-// ListByOperatorPaginated returns paginated devices for an operator.
-func (s *Service) ListByOperatorPaginated(ctx context.Context, operatorID string, limit, offset int) ([]*device.Device, error) {
+// ListByUserPaginated returns paginated devices for a user.
+func (s *Service) ListByUserPaginated(ctx context.Context, userID string, limit, offset int) ([]*device.Device, error) {
 	if limit <= 0 {
 		limit = 50
 	}
@@ -410,7 +410,7 @@ func (s *Service) ListByOperatorPaginated(ctx context.Context, operatorID string
 		limit = 100
 	}
 
-	allDevices, err := s.deviceRepo.ListByOperator(ctx, operatorID)
+	allDevices, err := s.deviceRepo.ListByUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -551,9 +551,9 @@ func (s *Service) GetDeviceDetail(ctx context.Context, imei string) (*dto.Device
 	return s.deviceDetailResponse(d), nil
 }
 
-// GetDeviceDetailByOperator returns detailed device information with DOA verification.
-func (s *Service) GetDeviceDetailByOperator(ctx context.Context, imei, operatorID string) (*dto.DeviceDetailResponse, error) {
-	d, err := s.deviceRepo.FindByIMEIAndOperator(ctx, imei, operatorID)
+// GetDeviceDetailByUser returns detailed device information with DOA verification.
+func (s *Service) GetDeviceDetailByUser(ctx context.Context, imei, userID string) (*dto.DeviceDetailResponse, error) {
+	d, err := s.deviceRepo.FindByIMEIAndUser(ctx, imei, userID)
 	if err != nil {
 		if errors.Is(err, device.ErrNotFound) {
 			return nil, device.ErrNotFound
@@ -731,10 +731,10 @@ func (s *Service) DeregisterDevice(ctx context.Context, imei string, hard bool) 
 	}, nil
 }
 
-// DeregisterDeviceByOperator soft-deletes a device with DOA and org verification.
-// Only the operator who owns the device within an organization can deregister it.
-func (s *Service) DeregisterDeviceByOperator(ctx context.Context, imei, operatorID, orgID string, hard bool) (*dto.DeregisterResponse, error) {
-	// First verify device exists and belongs to this operator and organization.
+// DeregisterDeviceByUser soft-deletes a device with DOA and org verification.
+// Only the user who owns the device within an organization can deregister it.
+func (s *Service) DeregisterDeviceByUser(ctx context.Context, imei, userID, orgID string, hard bool) (*dto.DeregisterResponse, error) {
+	// First verify device exists and belongs to this user and organization.
 	d, err := s.deviceRepo.FindByIDAndOrganization(ctx, imei, orgID)
 	if err != nil {
 		if errors.Is(err, device.ErrNotFound) {
@@ -743,8 +743,8 @@ func (s *Service) DeregisterDeviceByOperator(ctx context.Context, imei, operator
 		return nil, err
 	}
 
-	// Verify operator owns this device.
-	if d.OperatorID != operatorID {
+	// Verify user owns this device.
+	if d.UserID != userID {
 		return nil, device.ErrNotFound
 	}
 
@@ -770,7 +770,7 @@ func (s *Service) DeregisterDeviceByOperator(ctx context.Context, imei, operator
 	}
 
 	// Log the deregistration for audit.
-	s.logDeviceAction(ctx, d.ID, imei, "deregistered", operatorID, fmt.Sprintf("Device deregistered, hard=%v", hard))
+	s.logDeviceAction(ctx, d.ID, imei, "deregistered", userID, fmt.Sprintf("Device deregistered, hard=%v", hard))
 
 	return &dto.DeregisterResponse{
 		IMEI:           imei,
@@ -781,9 +781,9 @@ func (s *Service) DeregisterDeviceByOperator(ctx context.Context, imei, operator
 }
 
 // logDeviceAction logs device-related actions for audit trail.
-func (s *Service) logDeviceAction(ctx context.Context, deviceID, imei, action, operatorID, details string) {
+func (s *Service) logDeviceAction(ctx context.Context, deviceID, imei, action, userID, details string) {
 	// This would typically write to an audit log.
-	// For now, we rely on the operator repository for ownership verification.
+	// For now, we rely on the user repository for ownership verification.
 }
 
 // CreateFromInbox creates a device from an approved inbox entry.
@@ -800,7 +800,7 @@ func (s *Service) CreateFromInbox(ctx context.Context, entry *inbox.InboxEntry) 
 		Model:             entry.Model,
 		Manufacturer:      entry.Manufacturer,
 		OSVersion:         entry.OSVersion,
-		OperatorID:        entry.OperatorID,
+		UserID:        entry.UserID,
 		Online:            false,
 		RegisteredAt:      now.UnixMilli(),
 		LastSeen:          now.UnixMilli(),
@@ -868,7 +868,7 @@ func contains(s, substr string) bool {
 // Prerequisites:.
 // - Device must be OFFLINE.
 // - Actor must have permission in source AND target orgs.
-func (s *Service) TransferDevice(ctx context.Context, imei, sourceOrgID, targetOrgID, actorOperatorID string) error {
+func (s *Service) TransferDevice(ctx context.Context, imei, sourceOrgID, targetOrgID, actorUserID string) error {
 	// Get the device.
 	d, err := s.deviceRepo.FindByIMEI(ctx, imei)
 	if err != nil {
@@ -900,7 +900,7 @@ func (s *Service) TransferDevice(ctx context.Context, imei, sourceOrgID, targetO
 		"imei", imei,
 		"from_org", sourceOrgID,
 		"to_org", targetOrgID,
-		"actor_id", actorOperatorID,
+		"actor_id", actorUserID,
 	)
 
 	return nil

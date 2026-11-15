@@ -330,10 +330,10 @@ func readAndRestoreBody(r *http.Request) ([]byte, error) {
 	return body, nil
 }
 
-// requireStrictHMAC checks the operator's strictHmac setting and enforces HMAC.
+// requireStrictHMAC checks the user's strictHmac setting and enforces HMAC.
 func (s *Server) requireStrictHMAC() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		op := middleware.GetOperatorFromContext(c)
+		op := middleware.GetUserFromContext(c)
 		if op == nil {
 			c.Next()
 			return

@@ -13,7 +13,7 @@ func migrateCommandConfirmations(tx *sql.Tx) error {
 	_, err := tx.ExecContext(ctx, `
 	CREATE TABLE IF NOT EXISTS command_confirmations (
 		token       TEXT PRIMARY KEY,
-		operator_id TEXT NOT NULL,
+		user_id TEXT NOT NULL,
 		org_id      TEXT,
 		command     TEXT NOT NULL,
 		device_id   TEXT,
@@ -26,10 +26,10 @@ func migrateCommandConfirmations(tx *sql.Tx) error {
 		return err
 	}
 
-	// Lookup by operator + command (the consume path filters on these).
+	// Lookup by user + command (the consume path filters on these).
 	if _, err := tx.ExecContext(ctx, `
 	CREATE INDEX IF NOT EXISTS idx_command_confirmations_operator
-	ON command_confirmations(operator_id, command)`); err != nil {
+	ON command_confirmations(user_id, command)`); err != nil {
 		return err
 	}
 

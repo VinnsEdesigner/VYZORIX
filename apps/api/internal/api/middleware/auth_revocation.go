@@ -45,7 +45,7 @@ func AuthRevocationMiddleware(revocationList *infraauth.RevocationList) func(c *
 		}
 
 		// Hash the cookie value to check against revocation list.
-		tokenHash := infraauth.HashOperatorID(cookieValue)
+		tokenHash := infraauth.HashUserID(cookieValue)
 
 		if revocationList.IsRevoked(tokenHash) {
 			responses.RespondStructuredAbort(c, http.StatusUnauthorized,

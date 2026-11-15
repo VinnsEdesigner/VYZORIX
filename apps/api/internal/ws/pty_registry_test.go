@@ -70,7 +70,7 @@ func TestPTYRegistryCreditWindow(t *testing.T) {
 		t.Fatalf("take after grant: %v", err)
 	}
 
-	// ...but never beyond the window, so a buggy operator cannot inflate it.
+	// ...but never beyond the window, so a buggy user cannot inflate it.
 	r.GrantCredit("11111111-1111-4111-8111-111111111111", 1000)
 	s, _ := r.Get("11111111-1111-4111-8111-111111111111")
 	if s.Credit > 3 {
@@ -151,7 +151,7 @@ func TestPTYRegistryCloseIsIdempotent(t *testing.T) {
 	}
 }
 
-func TestPTYRegistryReopenSameOperatorRebinds(t *testing.T) {
+func TestPTYRegistryReopenSameUserRebinds(t *testing.T) {
 	r := NewPTYRegistry(PTYRegistryConfig{})
 
 	first, err := r.Open("11111111-1111-4111-8111-111111111111", "dev-1", "op-1", "org-1", false)
@@ -163,7 +163,7 @@ func TestPTYRegistryReopenSameOperatorRebinds(t *testing.T) {
 		t.Fatalf("TakeCredit: %v", err)
 	}
 
-	// The same operator re-opening the same id is a reattach, not an error.
+	// The same user re-opening the same id is a reattach, not an error.
 	again, err := r.Open("11111111-1111-4111-8111-111111111111", "dev-1", "op-1", "org-1", false)
 	if err != nil {
 		t.Fatalf("re-open must rebind, got: %v", err)
@@ -180,9 +180,9 @@ func TestPTYRegistryReopenSameOperatorRebinds(t *testing.T) {
 	}
 }
 
-func TestPTYRegistryReopenDifferentOperatorIsRefused(t *testing.T) {
-	// The session id is client-supplied, so a different operator re-opening a live
-	// id must be refused: allowing it would let one operator adopt another's shell
+func TestPTYRegistryReopenDifferentUserIsRefused(t *testing.T) {
+	// The session id is client-supplied, so a different user re-opening a live
+	// id must be refused: allowing it would let one user adopt another's shell
 	// by guessing the id.
 	r := NewPTYRegistry(PTYRegistryConfig{})
 

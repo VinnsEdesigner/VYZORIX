@@ -39,7 +39,7 @@ func NewEmailVerifyHandler(authService *auth.AuthService, emailSvc *emailService
 
 // VerifyEmail handles POST /v1/auth/verify-email.
 // @Summary      Verify email
-// @Description  Verifies an operator's email using a verification token
+// @Description  Verifies a user's email using a verification token
 // @Tags         auth
 // @Accept       json
 // @Produce      json
@@ -74,7 +74,7 @@ func (h *EmailVerifyHandler) VerifyEmail(c *gin.Context) {
 
 // ResendVerification handles POST /v1/auth/resend-verification.
 // @Summary      Resend verification email
-// @Description  Resends the verification email to an operator
+// @Description  Resends the verification email to a user
 // @Tags         auth
 // @Accept       json
 // @Produce      json
@@ -139,7 +139,7 @@ func (h *EmailVerifyHandler) PollVerification(c *gin.Context) {
 
 // VerifyEmailGet handles GET /v1/auth/verify-email (alternative to POST).
 // @Summary      Verify email (GET)
-// @Description  Verifies an operator's email via a token query parameter (alternative to POST)
+// @Description  Verifies a user's email via a token query parameter (alternative to POST)
 // @Tags         auth
 // @Accept       json
 // @Produce      json
@@ -170,7 +170,7 @@ func (h *EmailVerifyHandler) VerifyEmailGet(c *gin.Context) {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        email  query string  true  "operator email"
+// @Param        email  query string  true  "user email"
 // @Success      200  {object}  openapi.MessageResult  "verification email sent (if email exists)"
 // @Failure      400  {object}  openapi.ErrorResponse  "email required"
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"

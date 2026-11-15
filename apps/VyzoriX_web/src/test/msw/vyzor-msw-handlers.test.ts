@@ -106,7 +106,7 @@ describe('vyzor-msw-handlers', () => {
     expect(res.status).toBe(404);
   });
 
-  it('POST /v1/auth/login returns operator (browser — no tokens in body)', async () => {
+  it('POST /v1/auth/login returns user (browser — no tokens in body)', async () => {
     const res = await fetch('/v1/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -114,7 +114,7 @@ describe('vyzor-msw-handlers', () => {
     });
     expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data.operator_id).toBe('operator-test-1');
+    expect(data.user_id).toBe('operator-test-1');
     expect(data.email).toBe('test@vyzorix.com');
     expect(data.role).toBe('admin');
     expect(data.mfa_enabled).toBe(false);
@@ -123,7 +123,7 @@ describe('vyzor-msw-handlers', () => {
     expect(data.access_token).toBeUndefined();
   });
 
-  it('POST /v1/auth/login/tokens returns operator + tokens (API client)', async () => {
+  it('POST /v1/auth/login/tokens returns user + tokens (API client)', async () => {
     const res = await fetch('/v1/auth/login/tokens', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -131,7 +131,7 @@ describe('vyzor-msw-handlers', () => {
     });
     expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data.operator_id).toBe('operator-test-1');
+    expect(data.user_id).toBe('operator-test-1');
     expect(data.access_token).toBe('mock-access-token');
     expect(data.refresh_token).toBe('mock-refresh-token');
     expect(data.session_id).toBe('session-test-1');
@@ -169,13 +169,13 @@ describe('vyzor-msw-handlers', () => {
     expect(res.status).toBe(400);
   });
 
-  it('GET /v1/auth/me returns operator profile', async () => {
+  it('GET /v1/auth/me returns user profile', async () => {
     const res = await fetch('/v1/auth/me');
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.id).toBe('operator-test-1');
     expect(data.email).toBe('test@vyzorix.com');
-    expect(data.name).toBe('Test Operator');
+    expect(data.name).toBe('Test User');
     expect(data.mfa_enabled).toBe(false);
     expect(data.email_verified).toBe(true);
     expect(data.needs_organization).toBe(false);
@@ -205,7 +205,7 @@ describe('vyzor-msw-handlers', () => {
   });
 });
 
-describe('settings handlers — operator tier', () => {
+describe('settings handlers — user tier', () => {
   it('GET /v1/auth/me/settings returns client + thresholds + notifications', async () => {
     const res = await fetch('/v1/auth/me/settings');
     expect(res.status).toBe(200);

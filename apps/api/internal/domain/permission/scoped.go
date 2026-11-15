@@ -1,7 +1,7 @@
 // Package permission provides scoped, resource-aware authorization. A
 // permission is an action granted on a resource scope, where the scope is a
 // hierarchical resource path (for example "devices:imei:<id>") that may end in
-// a trailing wildcard ("devices:*"). Evaluation matches an operator's action
+// a trailing wildcard ("devices:*"). Evaluation matches a user's action
 // and scope against its granted permissions rather than relying on role tier
 // alone. This is the scoped-RBAC model the coarse role-bundle replaced.
 package permission
@@ -37,7 +37,7 @@ const (
 
 	// Declarative deployment of what runs on a device. Deliberately separate
 	// from apps.read/apps.write and in no action set: deploy changes what code
-	// runs, so the grant that lets an operator observe an app must not also let
+	// runs, so the grant that lets a user observe an app must not also let
 	// them install one. Granted explicitly, or not at all.
 	ActionDeviceDeploy Action = "device.deploy"
 
@@ -89,15 +89,31 @@ const (
 	ActionUpdateDelete Action = "update.delete"
 
 	// Settings, keys, members, audit, and admin actions.
-	ActionSettingsRead     Action = "settings.read"
-	ActionSettingsWrite    Action = "settings.write"
-	ActionMembersRead      Action = "members.read"
-	ActionMembersWrite     Action = "members.write"
-	ActionMembersDelete    Action = "members.delete"
-	ActionAuditRead        Action = "audit.read"
-	ActionKeysManage       Action = "keys.manage"
+	ActionSettingsRead  Action = "settings.read"
+	ActionSettingsWrite Action = "settings.write"
+	ActionMembersRead   Action = "members.read"
+	ActionMembersWrite  Action = "members.write"
+	ActionMembersDelete Action = "members.delete"
+	ActionAuditRead     Action = "audit.read"
+	ActionKeysManage    Action = "keys.manage"
+
+	// Instance-scoped actions. Their resource is the deployment, not an
+	// organisation, so they are granted on ScopeInstance and never satisfy an
+	// org-scoped check. admin.lockout locks a user out of the deployment;
+	// admin.impersonate assumes a user's full membership set, which crosses orgs.
+	// The org-local sibling is members.write (suspend/reinstate a member of this org).
 	ActionAdminLockout     Action = "admin.lockout"
 	ActionAdminImpersonate Action = "admin.impersonate"
+	ActionOrgList          Action = "org.list"
+	ActionOrgCreate        Action = "org.create"
+
+	// Personal-scoped actions. Their resource is the caller's own account, so
+	// they are granted on ScopePersonal and never satisfy an org-scoped check.
+	// The same action name may appear at org scope (settings.write on org:*);
+	// the scope is what tells the two stores apart.
+	ActionAccountRead    Action = "account.read"
+	ActionAccountWrite   Action = "account.write"
+	ActionInvitationRead Action = "invitation.read"
 )
 
 // Well-known resource scope prefixes. A scope is a sequence of `prefix:id`
@@ -109,6 +125,12 @@ const (
 	ScopeTelemetry   = "telemetry"
 	ScopeDiagnostics = "diagnostics"
 	ScopeInbox       = "inbox"
+	// ScopeInstance is the deployment itself; disjoint from every org scope.
+	ScopeInstance = "instance"
+	// ScopePersonal is the caller's own account. It is identity-derived — the
+	// caller is the subject — rather than granted by a membership, so it is
+	// disjoint from every org scope and from the instance scope.
+	ScopePersonal = "personal"
 )
 
 // ScopedPermission is one action granted on one resource scope.
@@ -117,7 +139,7 @@ type ScopedPermission struct {
 	Scope  string
 }
 
-// ScopedPermissions is the set an operator may act with in an organization.
+// ScopedPermissions is the set a user may act with in an organization.
 type ScopedPermissions []ScopedPermission
 
 // Grants reports whether the set grants `action` on the resource `scope`. A
@@ -187,7 +209,7 @@ func WildcardScope(prefix string) string {
 
 // Capability tags — the second authorization axis.
 //
-// The scoped engine above answers "on which resource may this operator act?".
+// The scoped engine above answers "on which resource may this user act?".
 // Tags answer a different question: "does this role hold the capability an API
 // requires?". The two compose; neither implies the other. A capability tag is
 // written "dimension:value" and carries no resource identity — the resource axis

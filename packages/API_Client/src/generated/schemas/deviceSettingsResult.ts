@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.0.01
  */
 import type { DeviceSettingsResultMetadata } from './deviceSettingsResultMetadata';
-import type { OperatorThresholds } from './operatorThresholds';
+import type { UserThresholds } from './userThresholds';
 
 export interface DeviceSettingsResult {
   createdAt?: string;
@@ -15,6 +15,6 @@ export interface DeviceSettingsResult {
   id?: string;
   location?: string;
   metadata?: DeviceSettingsResultMetadata;
-  thresholds?: OperatorThresholds;
+  thresholds?: UserThresholds;
   updatedAt?: string;
 }

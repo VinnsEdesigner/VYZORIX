@@ -9,7 +9,7 @@ import (
 	orgapplication "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/organization"
 	apikeydomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device_group"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/storage"
@@ -21,13 +21,13 @@ import (
 
 type provOrgRepo struct{ s *storage.OrganizationStorage }
 
-func (a provOrgRepo) FindByName(ctx context.Context, operatorID, name string) (*organization.Organization, error) {
-	return a.s.FindByName(ctx, operatorID, name)
+func (a provOrgRepo) FindByName(ctx context.Context, userID, name string) (*organization.Organization, error) {
+	return a.s.FindByName(ctx, userID, name)
 }
 
-type provOperatorRepo struct{ s *storage.OperatorRepository }
+type provUserRepo struct{ s *storage.UserRepository }
 
-func (a provOperatorRepo) FindByEmail(ctx context.Context, email string) (*operator.Operator, error) {
+func (a provUserRepo) FindByEmail(ctx context.Context, email string) (*user.User, error) {
 	return a.s.FindByEmail(ctx, email)
 }
 
@@ -39,8 +39,8 @@ func (a provGroupRepo) Save(ctx context.Context, g *device_group.Group) error {
 	return a.s.Save(ctx, g)
 }
 
-func (a provGroupRepo) AddMember(ctx context.Context, groupID, operatorID string) error {
-	return a.s.AddMember(ctx, groupID, operatorID)
+func (a provGroupRepo) AddMember(ctx context.Context, groupID, userID string) error {
+	return a.s.AddMember(ctx, groupID, userID)
 }
 
 func (a provGroupRepo) ListByOrg(ctx context.Context, orgID string) ([]*device_group.Group, error) {
@@ -57,20 +57,20 @@ type provOrgCreator struct {
 	s *orgapplication.OrganizationService
 }
 
-func (a provOrgCreator) CreateOrganization(ctx context.Context, operatorID, name, description string, maxMembers int, role string) (*organization.Organization, error) {
-	return a.s.CreateOrganization(ctx, operatorID, name, description, maxMembers, role)
+func (a provOrgCreator) CreateOrganization(ctx context.Context, userID, name, description string, maxMembers int, role string) (*organization.Organization, error) {
+	return a.s.CreateOrganization(ctx, userID, name, description, maxMembers, role)
 }
 
-type provOperatorCreator struct{ s *auth.AuthService }
+type provUserCreator struct{ s *auth.AuthService }
 
-func (a provOperatorCreator) CreateOperator(ctx context.Context, email, name, password, role string) (*operator.Operator, error) {
-	return a.s.CreateOperator(ctx, &dto.RegisterRequest{Email: email, Name: name, Password: password, Role: role})
+func (a provUserCreator) CreateUser(ctx context.Context, email, name, password, role string) (*user.User, error) {
+	return a.s.CreateUser(ctx, &dto.RegisterRequest{Email: email, Name: name, Password: password, Role: role})
 }
 
 type provKeyCreator struct{ s *keys.APIKeyService }
 
-func (a provKeyCreator) CreateKey(ctx context.Context, operatorID, orgID, name, scope string) (string, error) {
-	res, err := a.s.GenerateKey(ctx, operatorID, orgID, &apikeydomain.CreateAPIKeyRequest{
+func (a provKeyCreator) CreateKey(ctx context.Context, userID, orgID, name, scope string) (string, error) {
+	res, err := a.s.GenerateKey(ctx, userID, orgID, &apikeydomain.CreateAPIKeyRequest{
 		Name:  name,
 		Scope: apikeydomain.Scope(scope),
 	})
@@ -80,8 +80,8 @@ func (a provKeyCreator) CreateKey(ctx context.Context, operatorID, orgID, name, 
 	return res.FullKey, nil
 }
 
-func (a provKeyCreator) HasKey(ctx context.Context, operatorID, name string) (bool, error) {
-	res, err := a.s.ListKeys(ctx, operatorID, 1, 100)
+func (a provKeyCreator) HasKey(ctx context.Context, userID, name string) (bool, error) {
+	res, err := a.s.ListKeys(ctx, userID, 1, 100)
 	if err != nil {
 		return false, err
 	}

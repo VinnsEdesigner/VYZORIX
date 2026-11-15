@@ -68,7 +68,7 @@ export const getGetAuthClientCredentialsUrl = () => {
 }
 
 /**
- * Returns all client credentials for the authenticated operator
+ * Returns all client credentials for the authenticated user
  * @summary List client credentials
  */
 export const getAuthClientCredentials = async ( options?: Parameters<typeof customAxios>[1]): Promise<ClientCredentialListResult> => {

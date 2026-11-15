@@ -68,7 +68,7 @@ export const getGetAuthSessionsUrl = () => {
 }
 
 /**
- * Returns all active sessions for the authenticated operator
+ * Returns all active sessions for the authenticated user
  * @summary List sessions
  */
 export const getAuthSessions = async ( options?: Parameters<typeof customAxios>[1]): Promise<SessionListResult> => {
@@ -255,7 +255,7 @@ export const useDeleteAuthSessions = <TError = ErrorResponse,
 }
 
 /**
- * Returns whether the operator has concurrent active logins
+ * Returns whether the user has concurrent active logins
  * @summary Check concurrent sessions
  */
 export const getAuthSessionsConcurrent = async ( options?: Parameters<typeof customAxios>[1]): Promise<ConcurrentSessionsResult> => {

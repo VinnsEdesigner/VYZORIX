@@ -29,7 +29,7 @@ func seedOrg(t *testing.T, s *storage.SQLite) {
 	now := time.Now().UnixMilli()
 
 	if _, err := s.DB().ExecContext(ctx,
-		`INSERT INTO operators (id, email, password_hash, name, role, email_verified, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO users (id, email, password_hash, name, role, email_verified, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		"op-1", "op@test.local", "hash", "Operator", "admin", 1, now, now); err != nil {
 		t.Fatalf("insert operator: %v", err)
 	}

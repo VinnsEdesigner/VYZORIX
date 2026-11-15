@@ -10,8 +10,8 @@ import type { DeviceSummary } from './deviceSummary';
 export interface IdentityResponse {
   device?: DeviceSummary;
   email?: string;
-  operatorName?: string;
   orgId?: string;
   orgName?: string;
   role?: string;
+  userName?: string;
 }

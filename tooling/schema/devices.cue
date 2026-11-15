@@ -73,7 +73,7 @@ package vyzorix
         customName?: string
         location?: string
         metadata?: {[string]: string}
-        thresholds?: #OperatorThresholds
+        thresholds?: #UserThresholds
         createdAt: string
         updatedAt: string
 }
@@ -83,7 +83,7 @@ package vyzorix
         customName?: string
         location?: string
         metadata?: {[string]: string}
-        thresholds?: #OperatorThresholds
+        thresholds?: #UserThresholds
 }
 
 // DeviceTagAddedResult.
@@ -121,7 +121,7 @@ package vyzorix
 // DeviceDisconnectResult.
 #DeviceDisconnectResult: {
         deviceId: string
-        operatorId?: string
+        userId?: string
         disconnected: bool
 }
 

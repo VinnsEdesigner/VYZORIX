@@ -14,10 +14,10 @@ export interface AdminAPIKey {
   key_prefix?: string;
   last_request_at?: number;
   name?: string;
-  operator_id?: string;
-  operator_name?: string;
   request_count?: number;
   revoked_at?: number;
   scope?: string;
   updated_at?: number;
+  user_id?: string;
+  user_name?: string;
 }

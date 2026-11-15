@@ -34,13 +34,13 @@ func (s *MemberStorage) getQuerier(ctx context.Context) Querier {
 // Create creates a new membership.
 func (s *MemberStorage) Create(ctx context.Context, member *organization.OrganizationMember) error {
 	query := `
-		INSERT INTO organization_members (id, organization_id, operator_id, role, invited_by, joined_at, status)
+		INSERT INTO organization_members (id, organization_id, user_id, role, invited_by, joined_at, status)
 		VALUES (?, ?, ?, ?, ?, ?, ?)`
 
 	_, err := s.getQuerier(ctx).ExecContext(ctx, query,
 		member.ID,
 		member.OrganizationID,
-		member.OperatorID,
+		member.UserID,
 		string(member.Role),
 		member.InvitedBy,
 		member.JoinedAt.UnixMilli(),
@@ -62,20 +62,20 @@ func scanMember(row *sql.Row) (*organization.OrganizationMember, error) {
 	var joinedAtMs int64
 	var invitedBy sql.NullString
 	var removedAt sql.NullInt64
-	var operatorName, operatorEmail sql.NullString
+	var userName, userEmail sql.NullString
 	var status string
 
 	err := row.Scan(
 		&member.ID,
 		&member.OrganizationID,
-		&member.OperatorID,
+		&member.UserID,
 		&member.Role,
 		&invitedBy,
 		&joinedAtMs,
 		&removedAt,
 		&status,
-		&operatorName,
-		&operatorEmail,
+		&userName,
+		&userEmail,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -94,8 +94,8 @@ func scanMember(row *sql.Row) (*organization.OrganizationMember, error) {
 		t := time.UnixMilli(removedAt.Int64)
 		member.RemovedAt = &t
 	}
-	member.OperatorName = operatorName.String
-	member.OperatorEmail = operatorEmail.String
+	member.UserName = userName.String
+	member.UserEmail = userEmail.String
 
 	return &member, nil
 }
@@ -103,10 +103,10 @@ func scanMember(row *sql.Row) (*organization.OrganizationMember, error) {
 // FindByID retrieves a member by ID.
 func (s *MemberStorage) FindByID(ctx context.Context, id string) (*organization.OrganizationMember, error) {
 	query := `
-		SELECT om.id, om.organization_id, om.operator_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
-			   COALESCE(op.name, '') as operator_name, COALESCE(op.email, '') as operator_email
+		SELECT om.id, om.organization_id, om.user_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
+			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email
 		FROM organization_members om
-		LEFT JOIN operators op ON om.operator_id = op.id
+		LEFT JOIN users op ON om.user_id = op.id
 		WHERE om.id = ?`
 
 	return scanMember(s.getQuerier(ctx).QueryRowContext(ctx, query, id))
@@ -117,33 +117,33 @@ func (s *MemberStorage) FindByMemberID(ctx context.Context, id organization.Memb
 	return s.FindByID(ctx, id.String())
 }
 
-// FindByOperatorAndOrg finds a membership by operator ID and organization ID.
-func (s *MemberStorage) FindByOperatorAndOrg(ctx context.Context, operatorID, orgID string) (*organization.OrganizationMember, error) {
+// FindByUserAndOrg finds a membership by user ID and organization ID.
+func (s *MemberStorage) FindByUserAndOrg(ctx context.Context, userID, orgID string) (*organization.OrganizationMember, error) {
 	query := `
-		SELECT om.id, om.organization_id, om.operator_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
-			   COALESCE(op.name, '') as operator_name, COALESCE(op.email, '') as operator_email
+		SELECT om.id, om.organization_id, om.user_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
+			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email
 		FROM organization_members om
-		LEFT JOIN operators op ON om.operator_id = op.id
-		WHERE om.operator_id = ? AND om.organization_id = ? AND om.status = 'active'`
+		LEFT JOIN users op ON om.user_id = op.id
+		WHERE om.user_id = ? AND om.organization_id = ? AND om.status = 'active'`
 
 	var member organization.OrganizationMember
 	var joinedAtMs int64
 	var invitedBy sql.NullString
 	var removedAt sql.NullInt64
 	var status string
-	var operatorName, operatorEmail sql.NullString
+	var userName, userEmail sql.NullString
 
-	err := s.getQuerier(ctx).QueryRowContext(ctx, query, operatorID, orgID).Scan(
+	err := s.getQuerier(ctx).QueryRowContext(ctx, query, userID, orgID).Scan(
 		&member.ID,
 		&member.OrganizationID,
-		&member.OperatorID,
+		&member.UserID,
 		&member.Role,
 		&invitedBy,
 		&joinedAtMs,
 		&removedAt,
 		&status,
-		&operatorName,
-		&operatorEmail,
+		&userName,
+		&userEmail,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -164,8 +164,8 @@ func (s *MemberStorage) FindByOperatorAndOrg(ctx context.Context, operatorID, or
 		t := time.UnixMilli(removedAt.Int64)
 		member.RemovedAt = &t
 	}
-	member.OperatorName = operatorName.String
-	member.OperatorEmail = operatorEmail.String
+	member.UserName = userName.String
+	member.UserEmail = userEmail.String
 
 	return &member, nil
 }
@@ -173,10 +173,10 @@ func (s *MemberStorage) FindByOperatorAndOrg(ctx context.Context, operatorID, or
 // FindByOrganization lists all members of an organization.
 func (s *MemberStorage) FindByOrganization(ctx context.Context, orgID string) ([]*organization.OrganizationMember, error) {
 	query := `
-		SELECT om.id, om.organization_id, om.operator_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
-			   COALESCE(op.name, '') as operator_name, COALESCE(op.email, '') as operator_email
+		SELECT om.id, om.organization_id, om.user_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
+			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email
 		FROM organization_members om
-		LEFT JOIN operators op ON om.operator_id = op.id
+		LEFT JOIN users op ON om.user_id = op.id
 		WHERE om.organization_id = ? AND om.status = 'active'
 		ORDER BY om.joined_at ASC`
 
@@ -193,19 +193,19 @@ func (s *MemberStorage) FindByOrganization(ctx context.Context, orgID string) ([
 		var invitedBy sql.NullString
 		var removedAt sql.NullInt64
 		var status string
-		var operatorName, operatorEmail sql.NullString
+		var userName, userEmail sql.NullString
 
 		err := rows.Scan(
 			&member.ID,
 			&member.OrganizationID,
-			&member.OperatorID,
+			&member.UserID,
 			&member.Role,
 			&invitedBy,
 			&joinedAtMs,
 			&removedAt,
 			&status,
-			&operatorName,
-			&operatorEmail,
+			&userName,
+			&userEmail,
 		)
 		if err != nil {
 			return nil, err
@@ -222,8 +222,8 @@ func (s *MemberStorage) FindByOrganization(ctx context.Context, orgID string) ([
 			t := time.UnixMilli(removedAt.Int64)
 			member.RemovedAt = &t
 		}
-		member.OperatorName = operatorName.String
-		member.OperatorEmail = operatorEmail.String
+		member.UserName = userName.String
+		member.UserEmail = userEmail.String
 
 		members = append(members, &member)
 	}
@@ -246,10 +246,10 @@ func (s *MemberStorage) FindActiveByOrganizationPaginated(ctx context.Context, o
 
 	// Get paginated results.
 	query := `
-		SELECT om.id, om.organization_id, om.operator_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
-			   COALESCE(op.name, '') as operator_name, COALESCE(op.email, '') as operator_email
+		SELECT om.id, om.organization_id, om.user_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
+			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email
 		FROM organization_members om
-		LEFT JOIN operators op ON om.operator_id = op.id
+		LEFT JOIN users op ON om.user_id = op.id
 		WHERE om.organization_id = ? AND om.status = 'active'
 		ORDER BY om.joined_at ASC
 		LIMIT ? OFFSET ?`
@@ -267,19 +267,19 @@ func (s *MemberStorage) FindActiveByOrganizationPaginated(ctx context.Context, o
 		var invitedBy sql.NullString
 		var removedAt sql.NullInt64
 		var status string
-		var operatorName, operatorEmail sql.NullString
+		var userName, userEmail sql.NullString
 
 		err := rows.Scan(
 			&member.ID,
 			&member.OrganizationID,
-			&member.OperatorID,
+			&member.UserID,
 			&member.Role,
 			&invitedBy,
 			&joinedAtMs,
 			&removedAt,
 			&status,
-			&operatorName,
-			&operatorEmail,
+			&userName,
+			&userEmail,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -295,8 +295,8 @@ func (s *MemberStorage) FindActiveByOrganizationPaginated(ctx context.Context, o
 			t := time.UnixMilli(removedAt.Int64)
 			member.RemovedAt = &t
 		}
-		member.OperatorName = operatorName.String
-		member.OperatorEmail = operatorEmail.String
+		member.UserName = userName.String
+		member.UserEmail = userEmail.String
 
 		members = append(members, &member)
 	}
@@ -394,17 +394,17 @@ func (s *MemberStorage) CountSuperAdminsByOrganization(ctx context.Context, orgI
 	return count, nil
 }
 
-// ListByOperator lists all memberships for an operator.
-func (s *MemberStorage) ListByOperator(ctx context.Context, operatorID string) ([]*organization.OrganizationMember, error) {
+// ListByUser lists all memberships for a user.
+func (s *MemberStorage) ListByUser(ctx context.Context, userID string) ([]*organization.OrganizationMember, error) {
 	query := `
-		SELECT om.id, om.organization_id, om.operator_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
-			   COALESCE(op.name, '') as operator_name, COALESCE(op.email, '') as operator_email
+		SELECT om.id, om.organization_id, om.user_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
+			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email
 		FROM organization_members om
-		LEFT JOIN operators op ON om.operator_id = op.id
-		WHERE om.operator_id = ? AND om.status = 'active'
+		LEFT JOIN users op ON om.user_id = op.id
+		WHERE om.user_id = ? AND om.status = 'active'
 		ORDER BY om.joined_at DESC`
 
-	rows, err := s.getQuerier(ctx).QueryContext(ctx, query, operatorID)
+	rows, err := s.getQuerier(ctx).QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -417,19 +417,19 @@ func (s *MemberStorage) ListByOperator(ctx context.Context, operatorID string) (
 		var invitedBy sql.NullString
 		var removedAt sql.NullInt64
 		var status string
-		var operatorName, operatorEmail sql.NullString
+		var userName, userEmail sql.NullString
 
 		err := rows.Scan(
 			&member.ID,
 			&member.OrganizationID,
-			&member.OperatorID,
+			&member.UserID,
 			&member.Role,
 			&invitedBy,
 			&joinedAtMs,
 			&removedAt,
 			&status,
-			&operatorName,
-			&operatorEmail,
+			&userName,
+			&userEmail,
 		)
 		if err != nil {
 			return nil, err
@@ -446,8 +446,8 @@ func (s *MemberStorage) ListByOperator(ctx context.Context, operatorID string) (
 			t := time.UnixMilli(removedAt.Int64)
 			member.RemovedAt = &t
 		}
-		member.OperatorName = operatorName.String
-		member.OperatorEmail = operatorEmail.String
+		member.UserName = userName.String
+		member.UserEmail = userEmail.String
 
 		members = append(members, &member)
 	}
@@ -455,30 +455,30 @@ func (s *MemberStorage) ListByOperator(ctx context.Context, operatorID string) (
 	return members, rows.Err()
 }
 
-// ListByOperatorPaginated lists memberships for an operator with pagination.
-func (s *MemberStorage) ListByOperatorPaginated(ctx context.Context, operatorID string, limit, offset int) ([]*organization.OrganizationMember, int, error) {
+// ListByUserPaginated lists memberships for a user with pagination.
+func (s *MemberStorage) ListByUserPaginated(ctx context.Context, userID string, limit, offset int) ([]*organization.OrganizationMember, int, error) {
 	// Get total count.
 	countQuery := `
 		SELECT COUNT(*) FROM organization_members
-		WHERE operator_id = ? AND status = 'active'`
+		WHERE user_id = ? AND status = 'active'`
 
 	var total int
-	err := s.getQuerier(ctx).QueryRowContext(ctx, countQuery, operatorID).Scan(&total)
+	err := s.getQuerier(ctx).QueryRowContext(ctx, countQuery, userID).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// Get paginated results.
 	query := `
-		SELECT om.id, om.organization_id, om.operator_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
-			   COALESCE(op.name, '') as operator_name, COALESCE(op.email, '') as operator_email
+		SELECT om.id, om.organization_id, om.user_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
+			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email
 		FROM organization_members om
-		LEFT JOIN operators op ON om.operator_id = op.id
-		WHERE om.operator_id = ? AND om.status = 'active'
+		LEFT JOIN users op ON om.user_id = op.id
+		WHERE om.user_id = ? AND om.status = 'active'
 		ORDER BY om.joined_at DESC
 		LIMIT ? OFFSET ?`
 
-	rows, err := s.getQuerier(ctx).QueryContext(ctx, query, operatorID, limit, offset)
+	rows, err := s.getQuerier(ctx).QueryContext(ctx, query, userID, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -491,19 +491,19 @@ func (s *MemberStorage) ListByOperatorPaginated(ctx context.Context, operatorID 
 		var invitedBy sql.NullString
 		var removedAt sql.NullInt64
 		var status string
-		var operatorName, operatorEmail sql.NullString
+		var userName, userEmail sql.NullString
 
 		err := rows.Scan(
 			&member.ID,
 			&member.OrganizationID,
-			&member.OperatorID,
+			&member.UserID,
 			&member.Role,
 			&invitedBy,
 			&joinedAtMs,
 			&removedAt,
 			&status,
-			&operatorName,
-			&operatorEmail,
+			&userName,
+			&userEmail,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -519,8 +519,8 @@ func (s *MemberStorage) ListByOperatorPaginated(ctx context.Context, operatorID 
 			t := time.UnixMilli(removedAt.Int64)
 			member.RemovedAt = &t
 		}
-		member.OperatorName = operatorName.String
-		member.OperatorEmail = operatorEmail.String
+		member.UserName = userName.String
+		member.UserEmail = userEmail.String
 
 		members = append(members, &member)
 	}
@@ -528,21 +528,21 @@ func (s *MemberStorage) ListByOperatorPaginated(ctx context.Context, operatorID 
 	return members, total, rows.Err()
 }
 
-// SoftDeleteByOperator soft-deletes all memberships for an operator (used during operator deletion).
-func (s *MemberStorage) SoftDeleteByOperator(ctx context.Context, operatorID string) error {
+// SoftDeleteByUser soft-deletes all memberships for a user (used during user deletion).
+func (s *MemberStorage) SoftDeleteByUser(ctx context.Context, userID string) error {
 	query := `
 		UPDATE organization_members
 		SET status = 'removed', removed_at = ?
-		WHERE operator_id = ? AND status = 'active'`
+		WHERE user_id = ? AND status = 'active'`
 
 	now := time.Now().UnixMilli()
-	_, err := s.getQuerier(ctx).ExecContext(ctx, query, now, operatorID)
+	_, err := s.getQuerier(ctx).ExecContext(ctx, query, now, userID)
 	return err
 }
 
-// FindByOperatorAndOrgID finds a membership by OperatorID and OrganizationID value objects.
-func (s *MemberStorage) FindByOperatorAndOrgID(ctx context.Context, operatorID organization.OperatorID, orgID organization.OrganizationID) (*organization.OrganizationMember, error) {
-	return s.FindByOperatorAndOrg(ctx, operatorID.String(), orgID.String())
+// FindByUserAndOrgID finds a membership by UserID and OrganizationID value objects.
+func (s *MemberStorage) FindByUserAndOrgID(ctx context.Context, userID organization.UserID, orgID organization.OrganizationID) (*organization.OrganizationMember, error) {
+	return s.FindByUserAndOrg(ctx, userID.String(), orgID.String())
 }
 
 // FindByOrganizationID lists all members by OrganizationID value object.
@@ -565,9 +565,9 @@ func (s *MemberStorage) SoftDeleteByMemberID(ctx context.Context, id organizatio
 	return s.SoftDelete(ctx, id.String())
 }
 
-// SoftDeleteByOperatorID soft-deletes all memberships for an OperatorID.
-func (s *MemberStorage) SoftDeleteByOperatorID(ctx context.Context, operatorID organization.OperatorID) error {
-	return s.SoftDeleteByOperator(ctx, operatorID.String())
+// SoftDeleteByUserID soft-deletes all memberships for an UserID.
+func (s *MemberStorage) SoftDeleteByUserID(ctx context.Context, userID organization.UserID) error {
+	return s.SoftDeleteByUser(ctx, userID.String())
 }
 
 // SoftDeleteByOrganization soft-deletes all memberships for an organization.
@@ -597,9 +597,9 @@ func (s *MemberStorage) CountSuperAdminsByOrganizationID(ctx context.Context, or
 	return s.CountSuperAdminsByOrganization(ctx, orgID.String())
 }
 
-// ListByOperatorID lists all memberships by OperatorID.
-func (s *MemberStorage) ListByOperatorID(ctx context.Context, operatorID organization.OperatorID) ([]*organization.OrganizationMember, error) {
-	return s.ListByOperator(ctx, operatorID.String())
+// ListByUserID lists all memberships by UserID.
+func (s *MemberStorage) ListByUserID(ctx context.Context, userID organization.UserID) ([]*organization.OrganizationMember, error) {
+	return s.ListByUser(ctx, userID.String())
 }
 
 // memberStatusToLifecycle maps a status string from the database to MemberLifecycle.

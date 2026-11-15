@@ -3,7 +3,7 @@ package vyzorix
 // ClientCredential.
 #ClientCredential: {
         id:               string
-        operator_id:      string
+        user_id:      string
         name:             string
         platform:         string
         allowed_origins:  [...string]

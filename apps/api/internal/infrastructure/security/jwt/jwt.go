@@ -21,16 +21,16 @@ var (
 	ErrInvalidJWTSecret  = errors.New("JWT secret must be at least 32 characters for proper security")
 )
 
-// OperatorClaims are the JWT claims for an authenticated operator.
-type OperatorClaims struct {
+// UserClaims are the JWT claims for an authenticated user.
+type UserClaims struct {
 	jwt.RegisteredClaims
-	OperatorID string `json:"oid"`
+	UserID string `json:"oid"`
 	Email      string `json:"email"`
 	Name       string `json:"name"`
 	Role       string `json:"role"`
 }
 
-// Manager handles signing and verifying JWT tokens for operator authentication.
+// Manager handles signing and verifying JWT tokens for user authentication.
 type Manager struct {
 	issuer string
 	secret []byte
@@ -57,15 +57,15 @@ func NewManager(secret string, expiry time.Duration, issuer string) (*Manager, e
 	}, nil
 }
 
-// Generate creates a new JWT token for an operator.
-func (m *Manager) Generate(operatorID, email, name, role string) (string, time.Time, error) {
+// Generate creates a new JWT token for a user.
+func (m *Manager) Generate(userID, email, name, role string) (string, time.Time, error) {
 	tokenID, err := generateTokenID()
 	if err != nil {
 		return "", time.Time{}, ErrTokenIDGeneration
 	}
 
 	expiresAt := time.Now().Add(m.expiry)
-	claims := OperatorClaims{
+	claims := UserClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -73,7 +73,7 @@ func (m *Manager) Generate(operatorID, email, name, role string) (string, time.T
 			Issuer:    m.issuer,
 			ID:        tokenID,
 		},
-		OperatorID: operatorID,
+		UserID: userID,
 		Email:      email,
 		Name:       name,
 		Role:       role,
@@ -85,8 +85,8 @@ func (m *Manager) Generate(operatorID, email, name, role string) (string, time.T
 }
 
 // Verify parses and validates a JWT token, returning the claims if valid.
-func (m *Manager) Verify(tokenString string) (*OperatorClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &OperatorClaims{}, func(token *jwt.Token) (any, error) {
+func (m *Manager) Verify(tokenString string) (*UserClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &UserClaims{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrInvalidToken
 		}
@@ -101,7 +101,7 @@ func (m *Manager) Verify(tokenString string) (*OperatorClaims, error) {
 		return nil, ErrInvalidToken
 	}
 
-	claims, ok := token.Claims.(*OperatorClaims)
+	claims, ok := token.Claims.(*UserClaims)
 	if !ok || !token.Valid {
 		return nil, ErrInvalidToken
 	}

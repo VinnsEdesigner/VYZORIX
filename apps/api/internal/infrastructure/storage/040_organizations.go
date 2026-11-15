@@ -8,9 +8,9 @@ import (
 
 // migrateOrganizations creates the organizations, organization_members, and invitations tables.
 // This migration implements the multi-tenant organization model where:.
-// - Operators are global identities (email, password, OAuth).
+// - Users are global identities (email, password, OAuth).
 // - Organizations are tenants that own resources.
-// - Memberships link operators to organizations with scoped roles.
+// - Memberships link users to organizations with scoped roles.
 // - Invitations manage the join request flow.
 func migrateOrganizations(tx *sql.Tx) error {
 	// Create organizations table.
@@ -58,7 +58,7 @@ func createOrganizationsTable(tx *sql.Tx) error {
 			deleted_at INTEGER,
 			is_active INTEGER NOT NULL DEFAULT 1,
 			max_members INTEGER NOT NULL DEFAULT 2,
-			FOREIGN KEY (created_by) REFERENCES operators(id),
+			FOREIGN KEY (created_by) REFERENCES users(id),
 			UNIQUE(created_by, name)
 		)
 	`)
@@ -80,16 +80,16 @@ func createOrganizationMembersTable(tx *sql.Tx) error {
 		CREATE TABLE IF NOT EXISTS organization_members (
 			id TEXT PRIMARY KEY,
 			organization_id TEXT NOT NULL,
-			operator_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
 			role TEXT NOT NULL CHECK (role IN ('super_admin', 'admin', 'operator', 'viewer')),
 			invited_by TEXT,
 			joined_at INTEGER NOT NULL,
 			removed_at INTEGER,
 			status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'removed')),
-			UNIQUE(organization_id, operator_id),
+			UNIQUE(organization_id, user_id),
 			FOREIGN KEY (organization_id) REFERENCES organizations(id),
-			FOREIGN KEY (operator_id) REFERENCES operators(id),
-			FOREIGN KEY (invited_by) REFERENCES operators(id)
+			FOREIGN KEY (user_id) REFERENCES users(id),
+			FOREIGN KEY (invited_by) REFERENCES users(id)
 		)
 	`)
 	if err != nil {
@@ -98,7 +98,7 @@ func createOrganizationMembersTable(tx *sql.Tx) error {
 
 	// Create indexes for efficient lookups.
 	_, err = tx.ExecContext(context.Background(), `
-		CREATE INDEX IF NOT EXISTS idx_org_members_operator ON organization_members(operator_id)
+		CREATE INDEX IF NOT EXISTS idx_org_members_operator ON organization_members(user_id)
 	`)
 	if err != nil {
 		return err
@@ -129,8 +129,8 @@ func createInvitationsTable(tx *sql.Tx) error {
 			responder_id TEXT,
 			expires_at INTEGER NOT NULL,
 			FOREIGN KEY (organization_id) REFERENCES organizations(id),
-			FOREIGN KEY (invited_by) REFERENCES operators(id),
-			FOREIGN KEY (responder_id) REFERENCES operators(id)
+			FOREIGN KEY (invited_by) REFERENCES users(id),
+			FOREIGN KEY (responder_id) REFERENCES users(id)
 		)
 	`)
 	if err != nil {

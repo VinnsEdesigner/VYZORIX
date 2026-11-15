@@ -23,7 +23,7 @@ type Handler struct {
 	devices           deploy.DeviceLookup
 	membershipChecker MembershipChecker
 	grants            GrantLister
-	operators         OperatorLookup
+	users         UserLookup
 	organizations     OrganizationLookup
 	log               *slog.Logger
 	pusher            ConfigPusher
@@ -56,7 +56,7 @@ func NewHandler(
 	devices deploy.DeviceLookup,
 	membershipChecker MembershipChecker,
 	grants GrantLister,
-	operators OperatorLookup,
+	users UserLookup,
 	organizations OrganizationLookup,
 	log *slog.Logger,
 ) *Handler {
@@ -67,7 +67,7 @@ func NewHandler(
 		devices:           devices,
 		membershipChecker: membershipChecker,
 		grants:            grants,
-		operators:         operators,
+		users:         users,
 		organizations:     organizations,
 		log:               log,
 	}
@@ -75,7 +75,7 @@ func NewHandler(
 
 // respondDeployError maps a deploy-package refusal to its HTTP response. The
 // mapping lives in one place so a new refusal cannot ship without a status, and
-// so the reason an operator sees is decided by the predicate rather than guessed
+// so the reason a user sees is decided by the predicate rather than guessed
 // from an error string.
 func (h *Handler) respondDeployError(c *gin.Context, err error) {
 	var denied *deploy.DeniedError

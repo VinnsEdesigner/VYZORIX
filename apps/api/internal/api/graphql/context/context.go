@@ -4,13 +4,13 @@ package gqlcontext
 import (
 	"context"
 
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 )
 
 type contextKey string
 
 const (
-	operatorKey       contextKey = "operator"
+	userKey       contextKey = "user"
 	metadataKey       contextKey = "requestMetadata"
 	organizationIDKey contextKey = "organizationID"
 	mfaVerifiedKey    contextKey = "mfaVerified"
@@ -22,19 +22,19 @@ type RequestMetadata struct {
 	UserAgent string
 }
 
-// WithOperator adds the operator to the context.
-func WithOperator(ctx context.Context, op *operator.Operator) context.Context {
-	return context.WithValue(ctx, operatorKey, op)
+// WithUser adds the user to the context.
+func WithUser(ctx context.Context, op *user.User) context.Context {
+	return context.WithValue(ctx, userKey, op)
 }
 
-// GetOperator retrieves the operator from context.
-func GetOperator(ctx context.Context) (*operator.Operator, bool) {
-	val := ctx.Value(operatorKey)
+// GetUser retrieves the user from context.
+func GetUser(ctx context.Context) (*user.User, bool) {
+	val := ctx.Value(userKey)
 	if val == nil {
 		return nil, false
 	}
 
-	op, ok := val.(*operator.Operator)
+	op, ok := val.(*user.User)
 
 	return op, ok
 }

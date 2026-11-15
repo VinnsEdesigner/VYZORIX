@@ -84,7 +84,7 @@ type Policy struct {
 	DisallowCommon bool
 }
 
-// DefaultPolicy is the standard password policy for operators.
+// DefaultPolicy is the standard password policy for users.
 var DefaultPolicy = Policy{
 	MinLength:      12, // Increased from 8.
 	MaxLength:      128,

@@ -4,13 +4,13 @@ Terms used throughout the Vyzorix codebase and documentation. Organized by domai
 
 ## Authentication & Security
 
-**Argon2id** — The password hashing algorithm used for operator passwords and API key storage. Parameters: 64 MB memory, 3 iterations, 4 parallelism, 16-byte salt, 32-byte key. The hash format is `$argon2id$v=19$m=65536,t=3,p=4$<salt>$<hash>` with raw base64 encoding.
+**Argon2id** — The password hashing algorithm used for user passwords and API key storage. Parameters: 64 MB memory, 3 iterations, 4 parallelism, 16-byte salt, 32-byte key. The hash format is `$argon2id$v=19$m=65536,t=3,p=4$<salt>$<hash>` with raw base64 encoding.
 
 **API Key** — A service-to-service credential. Format: `vxyz-<prefix>-<secret>`. Stored as an argon2id hash (never plaintext). Scoped to an organization with a role (read, write, admin). Has monthly usage limits and optional expiry.
 
 **ActorContext** — A value type passed to the `RiskEvaluator` carrying the caller's identity: `OperatorID`, `OrgID`, `IsSuperAdmin`, `MFAVerified`, `Confirmed`. The evaluator uses it to decide whether a command is allowed.
 
-**Audit Entry** — A row in the `audit_logs` table recording a security-relevant event. Contains: who (operator, actor type, email), what (action, resource), when (timestamp), where (IP, user agent), result (success/failure/blocked), and context (trace ID, risk tier, old/new values).
+**Audit Entry** — A row in the `audit_logs` table recording a security-relevant event. Contains: who (user, actor type, email), what (action, resource), when (timestamp), where (IP, user agent), result (success/failure/blocked), and context (trace ID, risk tier, old/new values).
 
 **Confirmation Token** — A single-use, TTL-bounded authorization for a risky command. Issued by `POST /v1/devices/:imei/command/confirm`, consumed by the command execution handler. Stored in the `command_confirmations` table.
 
@@ -24,17 +24,17 @@ Terms used throughout the Vyzorix codebase and documentation. Organized by domai
 
 **Idempotency Key** — A client-provided key (`X-Idempotency-Key` header) that makes a request idempotent. If the same key is sent twice, the second request returns the original response instead of creating a duplicate. Stored in the `idempotency_records` table with a 24-hour TTL.
 
-**JWT** — JSON Web Token. Used for token-based auth (`POST /v1/auth/login/tokens`). Signed with `JWT_SECRET`. Contains operator ID, email, and expiration. Short-lived (access token) with a long-lived refresh token.
+**JWT** — JSON Web Token. Used for token-based auth (`POST /v1/auth/login/tokens`). Signed with `JWT_SECRET`. Contains user ID, email, and expiration. Short-lived (access token) with a long-lived refresh token.
 
-**MFA** — Multi-Factor Authentication. TOTP-based (RFC 6238). The operator scans a QR code during enrollment (`POST /v1/mfa/enroll`), then provides a 6-digit code on each login. The session's `MFAVerifiedAt` field records when MFA was completed.
+**MFA** — Multi-Factor Authentication. TOTP-based (RFC 6238). The user scans a QR code during enrollment (`POST /v1/mfa/enroll`), then provides a 6-digit code on each login. The session's `MFAVerifiedAt` field records when MFA was completed.
 
 **Nonce** — A unique value included in each HMAC-signed request. The `ReplayProtectionMiddleware` tracks nonces and rejects duplicates within the HMAC window. Prevents replay attacks.
 
-**OAuth** — Sign-in with Google or GitHub. The OAuth flow exchanges an authorization code for user info (email, name). If the email matches an existing operator, a session is created. State is stored in the `oauth_states` table to prevent CSRF during the redirect flow.
+**OAuth** — Sign-in with Google or GitHub. The OAuth flow exchanges an authorization code for user info (email, name). If the email matches an existing user, a session is created. State is stored in the `oauth_states` table to prevent CSRF during the redirect flow.
 
-**Operator** — A person who can log in to the dashboard. Identified by email + password (or OAuth). Global across organizations — one operator can belong to multiple orgs with different roles.
+**User** — A person who can log in to the dashboard. Identified by email + password (or OAuth). Global across organizations — one user can belong to multiple orgs with different roles.
 
-**Session** — An authenticated operator session stored in the `auth_sessions` table. The cookie value (`vyz_session`) is AES-GCM encrypted — the cookie contains the encrypted session ID, not the raw ID. Sessions expire after `JWT_DURATION_HOURS` (default 24).
+**Session** — An authenticated user session stored in the `auth_sessions` table. The cookie value (`vyz_session`) is AES-GCM encrypted — the cookie contains the encrypted session ID, not the raw ID. Sessions expire after `JWT_DURATION_HOURS` (default 24).
 
 **SessionSecret** — The AES-256 key used to encrypt session cookie values. Set via `SESSION_SECRET` env var (must be 32+ characters in production).
 
@@ -106,13 +106,13 @@ Terms used throughout the Vyzorix codebase and documentation. Organized by domai
 
 ## Organizations
 
-**Organization** — A tenant in the multi-tenant system. Owns devices, updates, API keys. Has members (operators with roles), settings (webhook, password policy), and a member limit.
+**Organization** — A tenant in the multi-tenant system. Owns devices, updates, API keys. Has members (users with roles), settings (webhook, password policy), and a member limit.
 
-**Invitation** — The flow for adding an operator to an organization. An admin creates an invitation with the invitee's email and a role. The invitee receives an email and accepts. Invitations expire (default 7 days) and can be revoked.
+**Invitation** — The flow for adding a user to an organization. An admin creates an invitation with the invitee's email and a role. The invitee receives an email and accepts. Invitations expire (default 7 days) and can be revoked.
 
-**Membership** — A row in `organization_members` linking an operator to an organization with a role (`super_admin`, `admin`, `operator`, `viewer`) and a status (`active`, `removed`).
+**Membership** — A row in `organization_members` linking a user to an organization with a role (`super_admin`, `admin`, `operator`, `viewer`) and a status (`active`, `removed`).
 
-**Role** — The permission level of an operator within an organization. Enforced by the `RBACAuthorize` middleware and the `RequireSuperAdmin` middleware. CHECK-constrained in the database.
+**Role** — The permission level of a user within an organization. Enforced by the `RBACAuthorize` middleware and the `RequireSuperAdmin` middleware. CHECK-constrained in the database.
 
 **Scope** — The permission level of an API key within an organization: `read`, `write`, `admin`. Enforced by the `ScopeEnforcement` middleware. Maps to HTTP methods.
 

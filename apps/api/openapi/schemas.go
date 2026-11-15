@@ -8,15 +8,15 @@
 
 package openapi
 
-type TopOperatorStat struct {
-	OperatorID     string `json:"operator_id"`
-	OperatorName   string `json:"operator_name"`
+type TopUserStat struct {
+	UserID         string `json:"user_id"`
+	UserName       string `json:"user_name"`
 	ActiveKeyCount int    `json:"active_key_count"`
 	TotalRequests  int64  `json:"total_requests"`
 }
 
-type OperatorAPIKeyStatsResult struct {
-	OperatorID           string `json:"operator_id"`
+type UserAPIKeyStatsResult struct {
+	UserID               string `json:"user_id"`
 	ActiveKeys           int64  `json:"active_keys"`
 	KeysCreatedThisMonth int    `json:"keys_created_this_month"`
 	MonthlyLimit         int    `json:"monthly_limit"`
@@ -24,7 +24,7 @@ type OperatorAPIKeyStatsResult struct {
 	TotalKeys            int64  `json:"total_keys"`
 }
 
-type AdminOperator struct {
+type AdminUser struct {
 	Email         string `json:"email"`
 	ID            string `json:"id"`
 	Name          string `json:"name"`
@@ -35,19 +35,19 @@ type AdminOperator struct {
 	MFAEnabled    bool   `json:"mfa_enabled"`
 }
 
-type AdminOperatorListResult struct {
-	Operators []AdminOperator `json:"operators"`
-	Total     int             `json:"total"`
+type AdminUserListResult struct {
+	Users []AdminUser `json:"users"`
+	Total int         `json:"total"`
 }
 
-type CreateOperatorRequest struct {
+type CreateUserRequest struct {
 	Email    string `json:"email"`
 	Name     string `json:"name"`
 	Password string `json:"password"`
 	Role     string `json:"role,omitempty"`
 }
 
-type OperatorThresholds struct {
+type UserThresholds struct {
 	BufferCrit  int `json:"bufferCrit,omitempty"`
 	BufferWarn  int `json:"bufferWarn,omitempty"`
 	RiskCrit    int `json:"riskCrit,omitempty"`
@@ -56,13 +56,13 @@ type OperatorThresholds struct {
 	ThermalWarn int `json:"thermalWarn,omitempty"`
 }
 
-type OperatorSettingsResult struct {
+type UserSettingsResult struct {
 	Client        *ClientSettings       `json:"client,omitempty"`
 	Notifications *NotificationSettings `json:"notifications,omitempty"`
-	Thresholds    *OperatorThresholds   `json:"thresholds,omitempty"`
+	Thresholds    *UserThresholds       `json:"thresholds,omitempty"`
 }
 
-type OperatorSettingsResultLegacy struct {
+type UserSettingsResultLegacy struct {
 	Client        *ClientSettings `json:"client,omitempty"`
 	Email         string          `json:"email"`
 	ID            string          `json:"id"`
@@ -175,9 +175,9 @@ type APIKey struct {
 	KeyPrefix     string `json:"key_prefix"`
 	LastRequestAt *int64 `json:"last_request_at,omitempty"`
 	Name          string `json:"name"`
-	OperatorID    string `json:"operator_id,omitempty"`
 	RevokedAt     *int64 `json:"revoked_at,omitempty"`
 	Scope         string `json:"scope"`
+	UserID        string `json:"user_id,omitempty"`
 	CreatedAt     int64  `json:"created_at"`
 	RequestCount  int64  `json:"request_count"`
 	UpdatedAt     int64  `json:"updated_at"`
@@ -191,9 +191,9 @@ type APIKeyWithSecret struct {
 	KeyPrefix     string `json:"key_prefix"`
 	LastRequestAt *int64 `json:"last_request_at,omitempty"`
 	Name          string `json:"name"`
-	OperatorID    string `json:"operator_id,omitempty"`
 	RevokedAt     *int64 `json:"revoked_at,omitempty"`
 	Scope         string `json:"scope"`
+	UserID        string `json:"user_id,omitempty"`
 	CreatedAt     int64  `json:"created_at"`
 	RequestCount  int64  `json:"request_count"`
 	UpdatedAt     int64  `json:"updated_at"`
@@ -208,14 +208,14 @@ type APIKeyListResult struct {
 }
 
 type GlobalAPIKeyStatsResult struct {
-	RequestsByScope map[string]int64  `json:"requests_by_scope"`
-	TopOperators    []TopOperatorStat `json:"top_operators"`
-	ActiveKeys      int               `json:"active_keys"`
-	MaxPerMonth     int               `json:"max_per_month"`
-	RevokedKeys     int               `json:"revoked_keys"`
-	TotalKeys       int               `json:"total_keys"`
-	TotalOperators  int               `json:"total_operators"`
-	TotalRequests   int64             `json:"total_requests"`
+	RequestsByScope map[string]int64 `json:"requests_by_scope"`
+	TopUsers        []TopUserStat    `json:"top_users"`
+	ActiveKeys      int              `json:"active_keys"`
+	MaxPerMonth     int              `json:"max_per_month"`
+	RevokedKeys     int              `json:"revoked_keys"`
+	TotalKeys       int              `json:"total_keys"`
+	TotalRequests   int64            `json:"total_requests"`
+	TotalUsers      int              `json:"total_users"`
 }
 
 type AdminAPIKey struct {
@@ -224,10 +224,10 @@ type AdminAPIKey struct {
 	KeyPrefix     string `json:"key_prefix"`
 	LastRequestAt *int64 `json:"last_request_at,omitempty"`
 	Name          string `json:"name"`
-	OperatorID    string `json:"operator_id,omitempty"`
-	OperatorName  string `json:"operator_name,omitempty"`
 	RevokedAt     *int64 `json:"revoked_at,omitempty"`
 	Scope         string `json:"scope"`
+	UserID        string `json:"user_id,omitempty"`
+	UserName      string `json:"user_name,omitempty"`
 	CreatedAt     int64  `json:"created_at"`
 	RequestCount  int64  `json:"request_count"`
 	UpdatedAt     int64  `json:"updated_at"`
@@ -257,10 +257,10 @@ type LoginResult struct {
 	Message              string             `json:"message,omitempty"`
 	MFASession           string             `json:"mfa_session,omitempty"`
 	Name                 string             `json:"name"`
-	OperatorID           string             `json:"operator_id"`
 	RetryAfter           *int64             `json:"retry_after,omitempty"`
 	SelectedOrganization *OrganizationInfo  `json:"selected_organization,omitempty"`
 	SigningKey           string             `json:"signing_key"`
+	UserID               string             `json:"user_id"`
 	Organizations        []OrganizationInfo `json:"organizations,omitempty"`
 	MFAEnabled           bool               `json:"mfa_enabled"`
 	NeedsOrganization    bool               `json:"needs_organization"`
@@ -277,12 +277,12 @@ type LoginWithTokensResult struct {
 	Message              string             `json:"message,omitempty"`
 	MFASession           string             `json:"mfa_session,omitempty"`
 	Name                 string             `json:"name"`
-	OperatorID           string             `json:"operator_id"`
 	RefreshToken         string             `json:"refresh_token"`
 	RetryAfter           *int64             `json:"retry_after,omitempty"`
 	SelectedOrganization *OrganizationInfo  `json:"selected_organization,omitempty"`
 	SessionID            string             `json:"session_id"`
 	SigningKey           string             `json:"signing_key"`
+	UserID               string             `json:"user_id"`
 	Organizations        []OrganizationInfo `json:"organizations,omitempty"`
 	ExpiresAt            int64              `json:"expires_at"`
 	MFAEnabled           bool               `json:"mfa_enabled"`
@@ -298,9 +298,9 @@ type RegisterRequest struct {
 }
 
 type RegisterResult struct {
-	Email      string `json:"email"`
-	Name       string `json:"name"`
-	OperatorID string `json:"operator_id"`
+	Email  string `json:"email"`
+	Name   string `json:"name"`
+	UserID string `json:"user_id"`
 }
 
 type RefreshTokenRequest struct {
@@ -337,9 +337,9 @@ type ClientCredential struct {
 	ID             string   `json:"id"`
 	LastRequestAt  *int64   `json:"last_request_at,omitempty"`
 	Name           string   `json:"name"`
-	OperatorID     string   `json:"operator_id"`
 	Platform       string   `json:"platform"`
 	Secret         string   `json:"secret,omitempty"`
+	UserID         string   `json:"user_id"`
 	AllowedOrigins []string `json:"allowed_origins"`
 	AllowedPaths   []string `json:"allowed_paths"`
 	CreatedAt      int64    `json:"created_at"`
@@ -618,21 +618,21 @@ type SetDeviceTagsRequest struct {
 }
 
 type DeviceSettingsResult struct {
-	CreatedAt  string              `json:"createdAt"`
-	CustomName string              `json:"customName,omitempty"`
-	DeviceIMEI string              `json:"deviceImei"`
-	ID         string              `json:"id"`
-	Location   string              `json:"location,omitempty"`
-	Metadata   map[string]string   `json:"metadata,omitempty"`
-	Thresholds *OperatorThresholds `json:"thresholds,omitempty"`
-	UpdatedAt  string              `json:"updatedAt"`
+	CreatedAt  string            `json:"createdAt"`
+	CustomName string            `json:"customName,omitempty"`
+	DeviceIMEI string            `json:"deviceImei"`
+	ID         string            `json:"id"`
+	Location   string            `json:"location,omitempty"`
+	Metadata   map[string]string `json:"metadata,omitempty"`
+	Thresholds *UserThresholds   `json:"thresholds,omitempty"`
+	UpdatedAt  string            `json:"updatedAt"`
 }
 
 type UpdateDeviceSettingsRequest struct {
-	CustomName string              `json:"customName,omitempty"`
-	Location   string              `json:"location,omitempty"`
-	Metadata   map[string]string   `json:"metadata,omitempty"`
-	Thresholds *OperatorThresholds `json:"thresholds,omitempty"`
+	CustomName string            `json:"customName,omitempty"`
+	Location   string            `json:"location,omitempty"`
+	Metadata   map[string]string `json:"metadata,omitempty"`
+	Thresholds *UserThresholds   `json:"thresholds,omitempty"`
 }
 
 type DeviceTagAddedResult struct {
@@ -664,7 +664,7 @@ type DeviceFCMTokenRequest struct {
 
 type DeviceDisconnectResult struct {
 	DeviceID     string `json:"deviceId"`
-	OperatorID   string `json:"operatorId,omitempty"`
+	UserID       string `json:"userId,omitempty"`
 	Disconnected bool   `json:"disconnected"`
 }
 
@@ -852,10 +852,10 @@ type InboxEntryResponse struct {
 	Manufacturer      string `json:"manufacturer"`
 	Model             string `json:"model"`
 	Notes             string `json:"notes,omitempty"`
-	OperatorID        string `json:"operatorId,omitempty"`
 	OSVersion         string `json:"osVersion"`
 	RejectedAt        *int64 `json:"rejectedAt,omitempty"`
 	Status            string `json:"status"`
+	UserID            string `json:"userId,omitempty"`
 	CreatedAt         int64  `json:"createdAt"`
 }
 
@@ -962,17 +962,24 @@ type MetricAggregateResult struct {
 	Min float64 `json:"min"`
 }
 
+type CapabilitiesResult struct {
+	InstanceRole string   `json:"instance_role"`
+	Instance     []string `json:"instance"`
+	Org          []string `json:"org"`
+	Personal     []string `json:"personal"`
+}
+
 type OrganizationMember struct {
 	ID             string `json:"id"`
 	InvitedBy      string `json:"invited_by,omitempty"`
 	JoinedAt       *int64 `json:"joined_at,omitempty"`
-	OperatorEmail  string `json:"operator_email,omitempty"`
-	OperatorID     string `json:"operator_id"`
-	OperatorName   string `json:"operator_name,omitempty"`
 	OrganizationID string `json:"organization_id"`
 	RemovedAt      *int64 `json:"removed_at,omitempty"`
 	Role           string `json:"role"`
 	Status         string `json:"status"`
+	UserEmail      string `json:"user_email,omitempty"`
+	UserID         string `json:"user_id"`
+	UserName       string `json:"user_name,omitempty"`
 }
 
 type OrganizationMemberListResult struct {
@@ -1024,21 +1031,21 @@ type MFARegenerateResult struct {
 }
 
 type MFAVerifyRequest struct {
-	Code       string `json:"code"`
-	OperatorID string `json:"operator_id"`
+	Code   string `json:"code"`
+	UserID string `json:"user_id"`
 }
 
 type MFAVerifyResult struct {
-	AccessToken  string      `json:"access_token"`
-	Operator     MFAOperator `json:"operator"`
-	RefreshToken string      `json:"refresh_token"`
-	SessionID    string      `json:"session_id"`
-	SigningKey   string      `json:"signing_key"`
-	ExpiresAt    int64       `json:"expires_at"`
-	Success      bool        `json:"success"`
+	AccessToken  string  `json:"access_token"`
+	RefreshToken string  `json:"refresh_token"`
+	SessionID    string  `json:"session_id"`
+	SigningKey   string  `json:"signing_key"`
+	User         MFAUser `json:"user"`
+	ExpiresAt    int64   `json:"expires_at"`
+	Success      bool    `json:"success"`
 }
 
-type MFAOperator struct {
+type MFAUser struct {
 	Email      string `json:"email"`
 	ID         string `json:"id"`
 	Name       string `json:"name"`
@@ -1077,8 +1084,8 @@ type AdminClient struct {
 	ID             string   `json:"id"`
 	LastRequestAt  *int64   `json:"last_request_at,omitempty"`
 	Name           string   `json:"name"`
-	OperatorID     string   `json:"operator_id"`
 	Platform       string   `json:"platform"`
+	UserID         string   `json:"user_id"`
 	AllowedOrigins []string `json:"allowed_origins"`
 	AllowedPaths   []string `json:"allowed_paths"`
 	CreatedAt      int64    `json:"created_at"`
@@ -1105,9 +1112,9 @@ type SupportBundleResult struct {
 	GoMaxProcs    int    `json:"go_max_procs"`
 	GoNumCpu      int    `json:"go_num_cpu"`
 	Goroutines    int    `json:"goroutines"`
-	OperatorCount int    `json:"operator_count,omitempty"`
 	OrgCount      int    `json:"org_count,omitempty"`
 	SchemaVersion int    `json:"schema_version,omitempty"`
+	UserCount     int    `json:"user_count,omitempty"`
 }
 
 type LogoutRequest struct {
@@ -1176,7 +1183,7 @@ type SettingsResponseResult struct {
 }
 
 type ThresholdsResult struct {
-	Thresholds *OperatorThresholds `json:"thresholds,omitempty"`
+	Thresholds *UserThresholds `json:"thresholds,omitempty"`
 }
 
 type PreferencesResult struct {
@@ -1255,21 +1262,21 @@ type OrganizationInfo struct {
 }
 
 type OrganizationSettingsResult struct {
-	CreatedAt            string              `json:"createdAt"`
-	DateFormat           string              `json:"dateFormat"`
-	DefaultThresholds    *OperatorThresholds `json:"defaultThresholds,omitempty"`
-	ID                   string              `json:"id"`
-	OrganizationID       string              `json:"organizationId"`
-	Timezone             string              `json:"timezone"`
-	UpdatedAt            string              `json:"updatedAt"`
-	AlertCooldownMinutes int                 `json:"alertCooldownMinutes"`
+	CreatedAt            string          `json:"createdAt"`
+	DateFormat           string          `json:"dateFormat"`
+	DefaultThresholds    *UserThresholds `json:"defaultThresholds,omitempty"`
+	ID                   string          `json:"id"`
+	OrganizationID       string          `json:"organizationId"`
+	Timezone             string          `json:"timezone"`
+	UpdatedAt            string          `json:"updatedAt"`
+	AlertCooldownMinutes int             `json:"alertCooldownMinutes"`
 }
 
 type UpdateOrganizationSettingsRequest struct {
-	DateFormat           string              `json:"dateFormat,omitempty"`
-	DefaultThresholds    *OperatorThresholds `json:"defaultThresholds,omitempty"`
-	Timezone             string              `json:"timezone,omitempty"`
-	AlertCooldownMinutes int                 `json:"alertCooldownMinutes,omitempty"`
+	DateFormat           string          `json:"dateFormat,omitempty"`
+	DefaultThresholds    *UserThresholds `json:"defaultThresholds,omitempty"`
+	Timezone             string          `json:"timezone,omitempty"`
+	AlertCooldownMinutes int             `json:"alertCooldownMinutes,omitempty"`
 }
 
 type UpdateOrganizationRequest struct {
@@ -1447,7 +1454,7 @@ type UpdateAdminClientRequest struct {
 	IsActive       bool     `json:"is_active,omitempty"`
 }
 
-type UpdateOperatorRequest struct {
+type UpdateUserRequest struct {
 	Email         string `json:"email,omitempty"`
 	Name          string `json:"name,omitempty"`
 	Role          string `json:"role,omitempty"`
@@ -1696,9 +1703,9 @@ type UsageStatsCounts struct {
 	Annotations     int `json:"annotations"`
 	ContactPoints   int `json:"contact_points"`
 	Devices         int `json:"devices"`
-	Operators       int `json:"operators"`
 	Organizations   int `json:"organizations"`
 	ServiceAccounts int `json:"service_accounts"`
+	Users           int `json:"users"`
 }
 
 type PollVerificationResult struct {

@@ -194,7 +194,7 @@ still gets a working container.
 Measured, not estimated: `debian-core` is about **46 MB** compressed (~145 MB extracted)
 and `debian-extended` about **108 MB** compressed. A device with both carries roughly
 **300 MB** in `files/rootfs`. Budget for it in any storage check, and never assume `/data`
-has room without asking `StatFs` — a phone's free space is not the operator's to assume.
+has room without asking `StatFs` — a phone's free space is not the user's to assume.
 
 ---
 

@@ -26,12 +26,12 @@ type Repository interface {
 	Save(ctx context.Context, g *Group) error
 	// GetByID returns a group or ErrNotFound.
 	GetByID(ctx context.Context, id string) (*Group, error)
-	// AddMember adds an operator to a group (idempotent).
-	AddMember(ctx context.Context, groupID, operatorID string) error
-	// RemoveMember removes an operator from a group, returning whether it existed.
-	RemoveMember(ctx context.Context, groupID, operatorID string) (bool, error)
-	// IsMember reports whether the operator belongs to the group.
-	IsMember(ctx context.Context, groupID, operatorID string) (bool, error)
+	// AddMember adds a user to a group (idempotent).
+	AddMember(ctx context.Context, groupID, userID string) error
+	// RemoveMember removes a user from a group, returning whether it existed.
+	RemoveMember(ctx context.Context, groupID, userID string) (bool, error)
+	// IsMember reports whether the user belongs to the group.
+	IsMember(ctx context.Context, groupID, userID string) (bool, error)
 	// AddDevice assigns a device to a group (idempotent).
 	AddDevice(ctx context.Context, groupID, deviceID string) error
 	// RemoveDevice unassigns a device from a group, returning whether it existed.

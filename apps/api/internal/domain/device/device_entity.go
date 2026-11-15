@@ -64,7 +64,7 @@ type Device struct {
 	Lifecycle             Lifecycle
 	FirebaseInstallID     string
 	DeviceClass           string
-	OperatorID            string
+	UserID            string
 	DeviceName            string
 	OrganizationID        string
 	SupportedABIs         string

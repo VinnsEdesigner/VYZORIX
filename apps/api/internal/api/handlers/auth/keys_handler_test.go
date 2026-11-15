@@ -65,12 +65,12 @@ func (r *mockAPIKeyRepository) GetByKeyHash(ctx context.Context, keyHash string)
 	return nil, sql.ErrNoRows
 }
 
-func (r *mockAPIKeyRepository) ListByOperator(ctx context.Context, operatorID string, limit, offset int) ([]*infraStorage.APIKey, int, error) {
+func (r *mockAPIKeyRepository) ListByUser(ctx context.Context, userID string, limit, offset int) ([]*infraStorage.APIKey, int, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	var result []*infraStorage.APIKey
 	for _, k := range r.keys {
-		if k.OperatorID == operatorID {
+		if k.UserID == userID {
 			result = append(result, k)
 		}
 	}
@@ -105,13 +105,13 @@ func (r *mockAPIKeyRepository) ListAll(ctx context.Context, limit, offset int) (
 	return result[offset:end], total, nil
 }
 
-func (r *mockAPIKeyRepository) ListAllWithOperator(ctx context.Context, limit, offset int, operatorID, search string) ([]infraStorage.APIKeyWithOperator, int, error) {
+func (r *mockAPIKeyRepository) ListAllWithUser(ctx context.Context, limit, offset int, userID, search string) ([]infraStorage.APIKeyWithUser, int, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	var result []infraStorage.APIKeyWithOperator
+	var result []infraStorage.APIKeyWithUser
 	for _, k := range r.keys {
 		if k.IsActive {
-			if operatorID != "" && k.OperatorID != operatorID {
+			if userID != "" && k.UserID != userID {
 				continue
 			}
 			if search != "" {
@@ -119,12 +119,12 @@ func (r *mockAPIKeyRepository) ListAllWithOperator(ctx context.Context, limit, o
 					continue
 				}
 			}
-			result = append(result, infraStorage.APIKeyWithOperator{APIKey: *k})
+			result = append(result, infraStorage.APIKeyWithUser{APIKey: *k})
 		}
 	}
 	total := len(result)
 	if offset >= len(result) {
-		return []infraStorage.APIKeyWithOperator{}, total, nil
+		return []infraStorage.APIKeyWithUser{}, total, nil
 	}
 	end := offset + limit
 	if end > len(result) {
@@ -162,13 +162,13 @@ func (r *mockAPIKeyRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *mockAPIKeyRepository) CountByOperatorThisMonth(ctx context.Context, operatorID string) (int, error) {
+func (r *mockAPIKeyRepository) CountByUserThisMonth(ctx context.Context, userID string) (int, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	monthStart := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.UTC).UnixMilli()
 	count := 0
 	for _, k := range r.keys {
-		if k.OperatorID == operatorID && k.CreatedAt >= monthStart {
+		if k.UserID == userID && k.CreatedAt >= monthStart {
 			count++
 		}
 	}
@@ -215,22 +215,22 @@ func (r *mockAPIKeyRepository) SumRequestsByScope(ctx context.Context) (map[stri
 	return result, nil
 }
 
-func (r *mockAPIKeyRepository) TopOperatorsByRequests(ctx context.Context, limit int) ([]infraStorage.OperatorRequestTotal, int, error) {
+func (r *mockAPIKeyRepository) TopUsersByRequests(ctx context.Context, limit int) ([]infraStorage.UserRequestTotal, int, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	byOp := make(map[string]int64)
 	for _, k := range r.keys {
-		byOp[k.OperatorID] += k.RequestCount
+		byOp[k.UserID] += k.RequestCount
 	}
-	totalOperators := len(byOp)
-	var results []infraStorage.OperatorRequestTotal
+	totalUsers := len(byOp)
+	var results []infraStorage.UserRequestTotal
 	for opID, total := range byOp {
-		results = append(results, infraStorage.OperatorRequestTotal{OperatorID: opID, TotalRequests: total})
+		results = append(results, infraStorage.UserRequestTotal{UserID: opID, TotalRequests: total})
 		if len(results) >= limit {
 			break
 		}
 	}
-	return results, totalOperators, nil
+	return results, totalUsers, nil
 }
 
 func (r *mockAPIKeyRepository) IncrementRequestCount(ctx context.Context, id string) error {
@@ -245,22 +245,22 @@ func (r *mockAPIKeyRepository) IncrementRequestCount(ctx context.Context, id str
 	return nil
 }
 
-func (r *mockAPIKeyRepository) ExistsByOperatorAndName(ctx context.Context, operatorID, name string) (bool, error) {
+func (r *mockAPIKeyRepository) ExistsByUserAndName(ctx context.Context, userID, name string) (bool, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	for _, k := range r.keys {
-		if k.OperatorID == operatorID && k.Name == name && k.IsActive {
+		if k.UserID == userID && k.Name == name && k.IsActive {
 			return true, nil
 		}
 	}
 	return false, nil
 }
 
-func (r *mockAPIKeyRepository) ExistsByOperatorAndNameExcluding(ctx context.Context, operatorID, name, excludeKeyID string) (bool, error) {
+func (r *mockAPIKeyRepository) ExistsByUserAndNameExcluding(ctx context.Context, userID, name, excludeKeyID string) (bool, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	for _, k := range r.keys {
-		if k.OperatorID == operatorID && k.Name == name && k.ID != excludeKeyID && k.IsActive {
+		if k.UserID == userID && k.Name == name && k.ID != excludeKeyID && k.IsActive {
 			return true, nil
 		}
 	}
@@ -271,10 +271,10 @@ func (r *mockAPIKeyRepository) ExistsByOperatorAndNameExcluding(ctx context.Cont
 // Test Setup.
 // =============================================================================.
 
-// testOperatorMiddleware sets default operator_id and organization_id in context for testing.
-func testOperatorMiddleware(operatorID, organizationID string) gin.HandlerFunc {
+// testUserMiddleware sets default user_id and organization_id in context for testing.
+func testUserMiddleware(userID, organizationID string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Set("operator_id", operatorID)
+		c.Set("user_id", userID)
 		c.Set("organization_id", organizationID)
 		c.Next()
 	}
@@ -296,8 +296,8 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *Handler, *mockAPIKeyRepository
 	r := gin.New()
 	r.Use(middleware.ErrorHandler(slog.Default()))
 	keysGroup := r.Group("/v1")
-	// Apply test middleware to set operator_id and organization_id.
-	keysGroup.Use(testOperatorMiddleware("test-operator-001", "test-org-001"))
+	// Apply test middleware to set user_id and organization_id.
+	keysGroup.Use(testUserMiddleware("test-operator-001", "test-org-001"))
 	handler.RegisterRoutes(keysGroup)
 
 	return r, handler, repo
@@ -892,7 +892,7 @@ func TestRotateKey_NotFound(t *testing.T) {
 func TestTenantIsolation_ListKeys(t *testing.T) {
 	router, _, _ := setupTestRouter(t)
 
-	// Create keys for operator-1 (simulated via session).
+	// Create keys for user-1 (simulated via session).
 	// In real test, we'd use different sessions.
 	for i := 0; i < 3; i++ {
 		body := `{"name": "Op1 Key ` + string(rune('A'+i)) + `", "scope": "read"}`
@@ -903,7 +903,7 @@ func TestTenantIsolation_ListKeys(t *testing.T) {
 		router.ServeHTTP(w, req)
 	}
 
-	// List should only show keys for this operator.
+	// List should only show keys for this user.
 	req, _ := http.NewRequest("GET", "/v1/api-keys", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -932,9 +932,9 @@ func TestTenantIsolation_GetOtherTenantKey(t *testing.T) {
 	json.Unmarshal(createW.Body.Bytes(), &created)
 	keyID := created["id"].(string)
 
-	// Note: In this test setup, operator_id comes from context.
-	// In real scenario, another operator would get 404.
-	// This tests that keys are isolated by operator_id in context.
+	// Note: In this test setup, user_id comes from context.
+	// In real scenario, another user would get 404.
+	// This tests that keys are isolated by user_id in context.
 	req, _ := http.NewRequest("GET", "/v1/api-keys/"+keyID, nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)

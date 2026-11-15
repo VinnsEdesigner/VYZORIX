@@ -13,7 +13,7 @@ MEDIUM (design gap, no immediate hole).
 
 The REST command path (`POST /v1/device/:imei/command` → `command_execute.go`)
 enforces the risk/confirmation/MFA system before dispatch: `authorizeCommand`
-builds an `ActorContext` (operator, MFA-verified-from-session), runs
+builds an `ActorContext` (user, MFA-verified-from-session), runs
 `RiskEvaluator.Evaluate`, and for high/critical-tier commands consumes a
 single-use confirmation token. `device.factory_reset` requires MFA **and** a
 confirmation token.
@@ -61,15 +61,15 @@ This sits inside `setupOrganizationRoutes`, whose group is only
 `orgs.Use(s.cookieAuth.Middleware())` (line 508). There is **no**
 `OrganizationContext`, **no** `OrganizationMembership`, **no**
 `RequireSuperAdmin`. The handler (`internal/api/handlers/device/
-device_transfer.go`) checks only that the operator is authenticated, then calls
+device_transfer.go`) checks only that the user is authenticated, then calls
 `TransferDevice`. `TransferDevice` (`device_service.go:980`) verifies the
 device belongs to the source org and is offline — but **never checks the
-operator's role in the source org, nor any membership in the target org.**
+user's role in the source org, nor any membership in the target org.**
 
 Contrast: the *member* endpoints self-enforce (`CheckCanManageMembers`,
 super_admin check in `TransferOwnership`). Device transfer does not.
 
-**Result:** any authenticated operator who knows a source org ID, a device IMEI,
+**Result:** any authenticated user who knows a source org ID, a device IMEI,
 and a target org ID can move a device out of an org — effectively removing it
 from that org's control — regardless of their role, and into an org they may not
 even belong to.
@@ -84,7 +84,7 @@ service layer (defense in depth).
 ## Issue 3 — No per-device authorization within an org (HIGH)
 
 Every device read and every command is scoped only to the org, not to the
-operator or the device.
+user or the device.
 
 `internal/application/device/device_service.go:529` — `GetDevices`:
 
@@ -96,14 +96,14 @@ Loads **all** devices in the org regardless of the caller. The repository has
 `ListByOperator`, `ListActiveByOperator`, and `FindByIMEIAndOperator`
 (`device_repository.go`), but **none are called on the read path.** Command
 execution checks only `verifyDeviceInOrganization` — that the device is in the
-org — never that the operator is authorized for *this* device.
+org — never that the user is authorized for *this* device.
 
 **Result:** a `viewer` sees the same device list as a `super_admin`, and (once
 Issue 1 is fixed) any operator-tier member can still send `factory_reset` to any
 device in the org. The org is the only authorization boundary.
 
 **Best fix:** introduce per-device authorization. Devices already carry an
-`OperatorID` (the owning/registering operator, `device_storage.go:88`). Enforce
+`OperatorID` (the owning/registering user, `device_storage.go:88`). Enforce
 **owner-or-admin**: admin/super_admin can access any device in the org;
 operator-tier members only devices they own (`device.OperatorID == op.ID`).
 Apply it on the command-execution path first (the destructive surface), then the
@@ -126,7 +126,7 @@ A scoped engine evaluates `EvalPermission(action, scopes...)` evaluates
 (`datasources:uid:abc` matches `datasources:uid:*`). Permissions are
 independently grantable, persisted, and evaluated per resource at the route.
 
-**Result:** vyzorix can't express "operator A can command device X but not
+**Result:** vyzorix can't express "user A can command device X but not
 device Y" or "this API key can only push updates, not reboot." Authorization
 granularity went *backwards* (a permission system was deleted for role bundles).
 
@@ -140,7 +140,7 @@ increment and does not require the full RBAC rewrite.
 
 No `Team` concept exists anywhere in vyzorix (`find internal/domain -iname
 '*team*'` → empty). a mature system partitions org access via teams + scoped
-folder/dashboard permissions. vyzorix has operators ↔ orgs and nothing between.
+folder/dashboard permissions. vyzorix has users ↔ orgs and nothing between.
 
 **Result:** no way to say "field-ops team manages these 200 devices, NOC manages
 these 50." Every device is accessible to every member.
@@ -165,7 +165,7 @@ A server-driven model treats org ID as a server-side property of the signed-in i
 auth.go:208`), and org-switching is an explicit validated `POST /user/using/:id`
 (`api/user.go:499`, `validateUsingOrg`).
 
-**Result:** in vyzorix, "which org was the operator acting in" is whatever the
+**Result:** in vyzorix, "which org was the user acting in" is whatever the
 client claimed that request — auditable via the membership check, but not a
 stable session property. Audit accuracy depends on correctly logging the
 resolved org every time.

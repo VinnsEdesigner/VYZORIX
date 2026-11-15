@@ -50,9 +50,9 @@ func (h *Handler) Status(c *gin.Context) {
 }
 
 // Subscribe registers a logical subscription to a channel scope for the
-// operator. Events arrive on the operator's existing websocket.
+// user. Events arrive on the user's existing websocket.
 // @Summary      Subscribe to channel
-// @Description  Registers a logical subscription to a channel scope for the operator
+// @Description  Registers a logical subscription to a channel scope for the user
 // @Tags         channels
 // @Accept       json
 // @Produce      json
@@ -63,7 +63,7 @@ func (h *Handler) Status(c *gin.Context) {
 // @Failure      401  {object}  openapi.ErrorResponse  "authentication required"
 // @Router       /channels/subscribe [post]
 func (h *Handler) Subscribe(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -109,7 +109,7 @@ func (h *Handler) Subscribe(c *gin.Context) {
 // @Failure      401  {object}  openapi.ErrorResponse  "authentication required"
 // @Router       /channels/unsubscribe [post]
 func (h *Handler) Unsubscribe(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return

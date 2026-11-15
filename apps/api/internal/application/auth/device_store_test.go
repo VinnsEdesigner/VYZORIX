@@ -29,7 +29,7 @@ func TestDeviceStore_NotifiesOnceThenSuppresses(t *testing.T) {
 }
 
 // TestDeviceStore_NewFingerprintNotifies proves a different device (different
-// fingerprint) for the same operator notifies.
+// fingerprint) for the same user notifies.
 func TestDeviceStore_NewFingerprintNotifies(t *testing.T) {
 	s := &AuthService{deviceStore: NewDeviceStore()}
 	ctx := context.Background()
@@ -72,9 +72,9 @@ func TestDeviceStore_NewIPOnKnownFingerprintNotifies(t *testing.T) {
 	}
 }
 
-// TestDeviceStore_OperatorsAreIsolated proves one operator's known device does not
-// suppress another operator's notification.
-func TestDeviceStore_OperatorsAreIsolated(t *testing.T) {
+// TestDeviceStore_UsersAreIsolated proves one user's known device does not
+// suppress another user's notification.
+func TestDeviceStore_UsersAreIsolated(t *testing.T) {
 	s := &AuthService{deviceStore: NewDeviceStore()}
 	ctx := context.Background()
 
@@ -92,21 +92,21 @@ func TestDeviceStore_OperatorsAreIsolated(t *testing.T) {
 	}
 }
 
-// TestDeviceStore_StaysBounded proves the per-operator device map and the
+// TestDeviceStore_StaysBounded proves the per-user device map and the
 // per-device signal sets cannot grow without bound.
 func TestDeviceStore_StaysBounded(t *testing.T) {
 	ds := NewDeviceStore()
 
-	// Many distinct fingerprints for one operator.
-	for i := 0; i < maxDevicesPerOperator*3; i++ {
+	// Many distinct fingerprints for one user.
+	for i := 0; i < maxDevicesPerUser*3; i++ {
 		ds.RegisterDevice(context.Background(), "op-1", fingerprintN(i), "203.0.113.10", "UA")
 	}
 
 	ds.mu.RLock()
 	deviceCount := len(ds.devices["op-1"])
 	ds.mu.RUnlock()
-	if deviceCount > maxDevicesPerOperator {
-		t.Fatalf("device map grew past its cap: %d > %d", deviceCount, maxDevicesPerOperator)
+	if deviceCount > maxDevicesPerUser {
+		t.Fatalf("device map grew past its cap: %d > %d", deviceCount, maxDevicesPerUser)
 	}
 
 	// Many distinct IPs for a single device.

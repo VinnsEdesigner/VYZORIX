@@ -46,9 +46,9 @@ export function createAuthHandlers() {
         return HttpResponse.json({ error: 'invalid credentials' }, { status: 401 });
       }
       return HttpResponse.json({
-        operator_id: 'operator-test-1',
+        user_id: 'operator-test-1',
         email: body.email,
-        name: 'Test Operator',
+        name: 'Test User',
         role: 'admin',
         mfa_enabled: false,
         needs_organization: false,
@@ -66,9 +66,9 @@ export function createAuthHandlers() {
         return HttpResponse.json({ error: 'invalid credentials' }, { status: 401 });
       }
       return HttpResponse.json({
-        operator_id: 'operator-test-1',
+        user_id: 'operator-test-1',
         email: body.email,
-        name: 'Test Operator',
+        name: 'Test User',
         role: 'admin',
         mfa_enabled: false,
         needs_organization: false,
@@ -112,7 +112,7 @@ export function createAuthHandlers() {
         return HttpResponse.json({ error: 'missing fields' }, { status: 400 });
       }
       return HttpResponse.json({
-        operator_id: 'operator-test-2',
+        user_id: 'operator-test-2',
         email: body.email,
         name: body.name,
       });
@@ -124,7 +124,7 @@ export function createAuthHandlers() {
       return HttpResponse.json({
         id: 'operator-test-1',
         email: 'test@vyzorix.com',
-        name: 'Test Operator',
+        name: 'Test User',
         mfa_enabled: false,
         email_verified: true,
         needs_organization: false,
@@ -154,14 +154,14 @@ export function createAuthHandlers() {
       return HttpResponse.json({
         id: 'operator-test-1',
         email: 'test@vyzorix.com',
-        name: body.name ?? 'Test Operator',
+        name: body.name ?? 'Test User',
         role: 'admin',
         mfa_enabled: false,
         email_verified: true,
       });
     }),
 
-    // GET /v1/me/invitations — pending invitations for the current operator
+    // GET /v1/me/invitations — pending invitations for the current user
     http.get('/v1/me/invitations', async () => {
       return HttpResponse.json({ invitations: [] });
     }),
@@ -209,7 +209,7 @@ export function createAuthHandlers() {
     }),
 
     http.post(`${API_BASE}/mfa/verify`, async ({ request }) => {
-      const body = (await request.json()) as { operator_id?: string; code?: string };
+      const body = (await request.json()) as { user_id?: string; code?: string };
       if (body.code !== '123456') {
         return HttpResponse.json({ error: 'invalid code' }, { status: 400 });
       }
@@ -220,10 +220,10 @@ export function createAuthHandlers() {
         refresh_token: 'mock-refresh-token-mfa',
         expires_at: Math.floor(Date.now() / 1000) + 3600,
         signing_key: 'mock-signing-key-mfa',
-        operator: {
-          id: body.operator_id ?? 'operator-test-1',
+        user: {
+          id: body.user_id ?? 'operator-test-1',
           email: 'test@vyzorix.com',
-          name: 'Test Operator',
+          name: 'Test User',
           role: 'admin',
           mfa_enabled: true,
         },

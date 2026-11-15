@@ -44,7 +44,7 @@ The `RedactStruct` method recursively walks a `map[string]any` or `[]any` and re
 ## What it catches
 
 ```
-Input:  "api_key=sk_test_1234567890abcdef"
+Input:  "api_key=<a stripe-style test key>"
 Output: "********=[REDACTED]"
 
 Input:  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."

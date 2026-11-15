@@ -10,22 +10,22 @@ func migrateCreateNotificationAuditLog(tx *sql.Tx) error {
 	_, err := tx.ExecContext(context.Background(), `
 		CREATE TABLE IF NOT EXISTS notification_audit_log (
 			id              TEXT PRIMARY KEY,
-			operator_id     TEXT NOT NULL,
+			user_id     TEXT NOT NULL,
 			event_type      TEXT NOT NULL,
 			channel         TEXT NOT NULL,
 			payload         TEXT,
 			sent_at         INTEGER NOT NULL,
-			FOREIGN KEY(operator_id) REFERENCES operators(id)
+			FOREIGN KEY(user_id) REFERENCES users(id)
 		)
 	`)
 	if err != nil {
 		return err
 	}
 
-	// Create index for querying by operator.
+	// Create index for querying by user.
 	_, err = tx.ExecContext(context.Background(), `
 		CREATE INDEX IF NOT EXISTS idx_notification_audit_operator 
-		ON notification_audit_log(operator_id, sent_at DESC)
+		ON notification_audit_log(user_id, sent_at DESC)
 	`)
 	if err != nil {
 		return err

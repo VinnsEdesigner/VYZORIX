@@ -29,7 +29,7 @@ import (
 	orgapplication "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/organization"
 	updatesapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/updates"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/transaction"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/appcheck"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/config"
@@ -177,9 +177,9 @@ func ProvideGoogleVerifier(cfg config.Config) *infraauth.GoogleTokenVerifier {
 	return infraauth.NewGoogleTokenVerifier(cfg.GoogleOAuthClientID)
 }
 
-// ProvideOperatorRepository creates the operator repository.
-func ProvideOperatorRepository(db *sql.DB) *storage.OperatorRepository {
-	return storage.NewOperatorRepository(db)
+// ProvideUserRepository creates the user repository.
+func ProvideUserRepository(db *sql.DB) *storage.UserRepository {
+	return storage.NewUserRepository(db)
 }
 
 // ProvideDeviceRepository creates the device repository.
@@ -253,14 +253,14 @@ func ProvideEventProcessor(
 
 // ProvideNotificationService creates the notification service.
 func ProvideNotificationService(
-	operatorRepo *storage.OperatorRepository,
+	userRepo *storage.UserRepository,
 	emailSvc *emailService.Service,
 	webhookClient *webhook.Client,
 	auditRepo *infranotification.Repository,
 	cfg config.Config,
 	log *slog.Logger,
 ) *appnotification.Service {
-	return appnotification.NewService(operatorRepo, emailSvc, webhookClient, auditRepo, cfg.BaseURL, log)
+	return appnotification.NewService(userRepo, emailSvc, webhookClient, auditRepo, cfg.BaseURL, log)
 }
 
 // WireNotificationServiceToProcessor wires the notification service to the event processor.
@@ -298,7 +298,7 @@ func ProvideJWTManager(cfg config.Config) (*infraauth.JWTManager, error) {
 // ProvideAuthService creates the auth service with full refresh token support.
 func ProvideAuthService(
 	log *slog.Logger,
-	operatorRepo *storage.OperatorRepository,
+	userRepo *storage.UserRepository,
 	sessionRepo *storage.SessionRepository,
 	emailVerifyRepo *storage.EmailVerificationRepository,
 	passwordResetRepo *storage.PasswordResetRepository,
@@ -311,7 +311,7 @@ func ProvideAuthService(
 ) *auth.AuthService {
 	sessionTTL := 7 * 24 * time.Hour
 	svc := auth.NewAuthServiceWithRefresh(
-		operatorRepo,
+		userRepo,
 		sessionRepo,
 		emailVerifyRepo,
 		passwordResetRepo,
@@ -324,18 +324,18 @@ func ProvideAuthService(
 	)
 	svc.SetLogger(log)
 	// Wire the member repository so membership-dependent flows work: listing the.
-	// operator's organizations (GET /v1/auth/organizations, /v1/auth/me) and.
+	// user's organizations (GET /v1/auth/organizations, /v1/auth/me) and.
 	// organization selection (POST /v1/auth/organizations/select). Without this,
 	// these endpoints silently return empty / "not a member" even when the.
-	// operator owns an organization.
+	// user owns an organization.
 	svc.SetMemberRepository(memberRepo)
-	// Wire the invitation repository so the operator deletion flow.
-	// (DELETE /v1/auth/admin/operators/:id) can cancel pending invitations.
-	// Without this, s.invitationRepo is nil and DeleteOperator panics.
+	// Wire the invitation repository so the user deletion flow.
+	// (DELETE /v1/auth/admin/users/:id) can cancel pending invitations.
+	// Without this, s.invitationRepo is nil and DeleteUser panics.
 	svc.SetInvitationRepository(invitationRepo)
 	// Use the persistent device store so "known device" state survives restarts
 	// and deploys. The in-memory default created by the constructor would reset on
-	// every deploy and re-notify every operator on their first login after it.
+	// every deploy and re-notify every user on their first login after it.
 	if sqlite != nil {
 		svc.SetDeviceStore(storage.NewKnownDeviceRepository(sqlite.DB()))
 	}
@@ -344,8 +344,8 @@ func ProvideAuthService(
 
 // ProvideDeviceService creates the device service.
 
-func ProvideDeviceService(deviceRepo *storage.DeviceRepository, operatorRepo *storage.OperatorRepository, txManager transaction.TxManager, log *slog.Logger, hub *hub.Hub) *device.Service {
-	svc := device.NewService(deviceRepo, operatorRepo, log)
+func ProvideDeviceService(deviceRepo *storage.DeviceRepository, userRepo *storage.UserRepository, txManager transaction.TxManager, log *slog.Logger, hub *hub.Hub) *device.Service {
+	svc := device.NewService(deviceRepo, userRepo, log)
 	svc.WithTxManager(txManager)
 	svc.WithStatusUpdater(hub)
 	return svc
@@ -396,7 +396,7 @@ func ProvideOrganizationService(
 	orgRepo *storage.OrganizationStorage,
 	memberRepo *storage.MemberStorage,
 	invitationRepo *storage.InvitationStorage,
-	operatorRepo *storage.OperatorRepository,
+	userRepo *storage.UserRepository,
 	sessionRepo *storage.SessionRepository,
 	deviceRepo *storage.DeviceRepository,
 	telemetryRepo *storage.TelemetryRepository,
@@ -404,7 +404,7 @@ func ProvideOrganizationService(
 	txManager transaction.TxManager,
 	log *slog.Logger,
 ) *orgapplication.OrganizationService {
-	return orgapplication.NewOrganizationService(orgRepo, memberRepo, invitationRepo, operatorRepo, sessionRepo, deviceRepo, telemetryRepo, commandRepo, txManager, log)
+	return orgapplication.NewOrganizationService(orgRepo, memberRepo, invitationRepo, userRepo, sessionRepo, deviceRepo, telemetryRepo, commandRepo, txManager, log)
 }
 
 // ProvideMemberService creates the member service.
@@ -755,7 +755,7 @@ func ProvideHandlerSet(
 	clientService *client.Service,
 	emailService *emailService.Service,
 	lockout *middleware.Lockout,
-	operatorRepo *storage.OperatorRepository,
+	userRepo *storage.UserRepository,
 	auditLogger *audit.Logger,
 	ipIntelligence *middleware.IPIntelligence,
 	presenter *response.Presenter,
@@ -779,7 +779,7 @@ func ProvideHandlerSet(
 		ClientService:  clientService,
 		EmailService:   emailService,
 		Lockout:        lockout,
-		OperatorRepo:   operatorRepo,
+		UserRepo:   userRepo,
 		AuditLogger:    auditLogger,
 	})
 
@@ -828,7 +828,7 @@ var WireInjector = wire.NewSet(
 	ProvidePasswordHasher,
 	ProvideSessionManager,
 	ProvideGoogleVerifier,
-	ProvideOperatorRepository,
+	ProvideUserRepository,
 	ProvideDeviceRepository,
 	ProvideCommandRepository,
 	ProvideSessionRepository,
@@ -877,7 +877,7 @@ var WireInjector = wire.NewSet(
 	ProvideOrganizationSettingsService,
 	ProvideDeviceSettingsRepository,
 	ProvideDeviceSettingsService,
-	wire.Bind(new(operator.Repository), new(*storage.OperatorRepository)),
+	wire.Bind(new(user.Repository), new(*storage.UserRepository)),
 )
 
 // ProvideServerDependencies creates ServerDependencies from all required components.
@@ -888,7 +888,7 @@ func ProvideServerDependencies(
 	auditLogger *audit.Logger,
 	sessionManager *infraauth.SessionManager,
 	googleVerifier *infraauth.GoogleTokenVerifier,
-	operatorRepo *storage.OperatorRepository,
+	userRepo *storage.UserRepository,
 	deviceRepo *storage.DeviceRepository,
 	commandRepo *storage.CommandRepository,
 	sessionRepo *storage.SessionRepository,
@@ -932,7 +932,7 @@ func ProvideServerDependencies(
 		DeviceDeletionWorker:  deviceDeletionWorker,
 		CommandOutbox:         commandOutbox,
 		DeviceRepo:            deviceRepo,
-		OperatorRepo:          operatorRepo,
+		UserRepo:          userRepo,
 		RateLimiter:           rateLimiter,
 		Hub:                   hubResult.Hub,
 		AuthService:           authService,

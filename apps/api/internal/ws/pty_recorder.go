@@ -37,8 +37,8 @@ type castHeader struct {
 // PTYRecorder writes one session's output to an asciinema cast file.
 //
 // Recording is deliberately server-side: the device cannot be trusted to record
-// itself, and the operator's browser is the wrong place to keep an audit copy.
-// Only output is recorded (what the operator saw), not keystrokes, which keeps
+// itself, and the user's browser is the wrong place to keep an audit copy.
+// Only output is recorded (what the user saw), not keystrokes, which keeps
 // secrets typed into a prompt out of the cast.
 type PTYRecorder struct {
 	file      *os.File

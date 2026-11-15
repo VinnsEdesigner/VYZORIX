@@ -187,7 +187,7 @@ func (h *DeviceFrameHandler) handleCommandResult(frame hub.DeviceFrame) {
 	err := h.commands.ReportResult(context.Background(), frame.DeviceID, payload.DispatchID, payload.Success, output)
 	switch {
 	case err == nil:
-		// Info, with the output: an operator watching a command run reads the server
+		// Info, with the output: a user watching a command run reads the server
 		// log, and the result is the thing they came for. Debug hid it, so the only
 		// place a command's output was visible was the database.
 		h.log.Info("command result recorded",
@@ -207,7 +207,7 @@ func (h *DeviceFrameHandler) handleCommandResult(frame hub.DeviceFrame) {
 }
 
 // commandOutputLogLimit bounds how much of a command's output is written to the
-// log. The full result is stored on the command; the log line is for an operator
+// log. The full result is stored on the command; the log line is for a user
 // watching a command run, and an unbounded line — a device that prints a large file
 // or a runaway process — would flood the log with one frame.
 const commandOutputLogLimit = 2048
@@ -241,7 +241,7 @@ func (h *DeviceFrameHandler) handleDeviceReady(frame hub.DeviceFrame) {
 
 	// A refused apply is reported, not recorded. The device keeps running what it
 	// had and reports why; recording it as applied would show the console a deploy
-	// that never took effect, and would hide the refusal from the operator.
+	// that never took effect, and would hide the refusal from the user.
 	if !payload.succeeded() {
 		h.log.Warn("device refused a config",
 			"deviceId", frame.DeviceID,

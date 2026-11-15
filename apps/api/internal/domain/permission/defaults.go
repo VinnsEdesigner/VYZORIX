@@ -3,7 +3,7 @@ package permission
 // DefaultScopesForRole returns the scoped permissions a role grants by default.
 // Mapping is by role name so this package stays dependency-free; the caller
 // passes membership.Role (or another role string). Custom grants are added on
-// top of these defaults by the operator's permission evaluator.
+// top of these defaults by the user's permission evaluator.
 func DefaultScopesForRole(roleName string) ScopedPermissions {
 	devicesAll := WildcardScope(ScopeDevices)
 	updatesAll := WildcardScope(ScopeUpdates)
@@ -32,11 +32,11 @@ func DefaultScopesForRole(roleName string) ScopedPermissions {
 			{ActionAnnotationsRead, orgAll},
 			{ActionConfigVersionsRead, orgAll},
 			// Visibility into supervised apps; starting/stopping them is an
-			// operator action.
+			// user action.
 			{ActionAppsRead, devicesAll},
 		}
 	}
-	appendOperator := func() {
+	appendUser := func() {
 		perms = append(perms,
 			ScopedPermission{ActionDeviceWrite, devicesAll},
 			ScopedPermission{ActionCommand, devicesAll},
@@ -71,33 +71,30 @@ func DefaultScopesForRole(roleName string) ScopedPermissions {
 			ScopedPermission{ActionConfigVersionsWrite, orgAll},
 			// Arbitrary device access. A shell is unbounded code execution and a
 			// USB attach can flash external hardware, so both are admin-only and
-			// never implied by the operator defaults above.
+			// never implied by the user defaults above.
 			ScopedPermission{ActionShell, devicesAll},
 			ScopedPermission{ActionUsb, devicesAll},
 		)
 	}
-	appendSuperAdmin := func() {
-		perms = append(perms,
-			ScopedPermission{ActionAdminLockout, orgAll},
-			ScopedPermission{ActionAdminImpersonate, orgAll},
-		)
-	}
+	// super_admin adds no org-scoped action over admin: its extra authority
+	// (admin.lockout, admin.impersonate) is instance-scoped, granted by the
+	// user's InstanceRole rather than an org membership. See
+	// DefaultScopesForInstanceRole.
 
 	switch roleName {
 	case "viewer":
 		appendViewer()
 	case "operator":
 		appendViewer()
-		appendOperator()
+		appendUser()
 	case "admin":
 		appendViewer()
-		appendOperator()
+		appendUser()
 		appendAdmin()
 	case "super_admin":
 		appendViewer()
-		appendOperator()
+		appendUser()
 		appendAdmin()
-		appendSuperAdmin()
 	default:
 		// Unknown role: fall back to viewer-only (fail to the least privilege).
 		appendViewer()
@@ -112,7 +109,7 @@ func DefaultScopesForRole(roleName string) ScopedPermissions {
 // capability an API requires". Both are consulted; neither implies the other.
 //
 // The role ladder is the same four roles, each a strict superset of the one
-// below, so a viewer can never satisfy a requirement an operator cannot.
+// below, so a viewer can never satisfy a requirement a user cannot.
 //
 // Fail-closed: an unknown role falls back to the viewer set, mirroring
 // DefaultScopesForRole.
@@ -124,13 +121,13 @@ func DefaultTagsForRole(roleName string) TagSet {
 		VisibilityPublic,
 	}
 
-	operator := append(append(TagSet{}, viewer...),
+	user := append(append(TagSet{}, viewer...),
 		DataApp,
 		DataPrivate,
 		VisibilityPrivate,
 	)
 
-	admin := append(append(TagSet{}, operator...),
+	admin := append(append(TagSet{}, user...),
 		OpWrite,
 		ProtectionDangerous,
 		ProtectionSignature,
@@ -149,7 +146,7 @@ func DefaultTagsForRole(roleName string) TagSet {
 	case "viewer":
 		return viewer
 	case "operator":
-		return operator
+		return user
 	case "admin":
 		return admin
 	case "super_admin":

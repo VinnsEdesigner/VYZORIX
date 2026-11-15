@@ -22,40 +22,40 @@ func NewPresenter(auditLogger *audit.Logger) *Presenter {
 }
 
 // LogAction logs a GraphQL operation using AdminAction.
-func (p *Presenter) LogAction(ctx context.Context, operatorID, action, resourceType, resourceID string) {
-	if p.auditLogger != nil && operatorID != "" {
-		p.auditLogger.AdminAction(ctx, operatorID, action, resourceType, resourceID, "", nil)
+func (p *Presenter) LogAction(ctx context.Context, userID, action, resourceType, resourceID string) {
+	if p.auditLogger != nil && userID != "" {
+		p.auditLogger.AdminAction(ctx, userID, action, resourceType, resourceID, "", nil)
 	}
 }
 
 // DeviceView logs a device view.
-func (p *Presenter) DeviceView(ctx context.Context, operatorID, deviceID string) {
-	p.LogAction(ctx, operatorID, "graphql_device_view", "device", deviceID)
+func (p *Presenter) DeviceView(ctx context.Context, userID, deviceID string) {
+	p.LogAction(ctx, userID, "graphql_device_view", "device", deviceID)
 }
 
 // DeviceList logs a device list query.
-func (p *Presenter) DeviceList(ctx context.Context, operatorID string) {
-	p.LogAction(ctx, operatorID, "graphql_device_list", "devices", "")
+func (p *Presenter) DeviceList(ctx context.Context, userID string) {
+	p.LogAction(ctx, userID, "graphql_device_list", "devices", "")
 }
 
 // DeviceCount logs a device count query.
-func (p *Presenter) DeviceCount(ctx context.Context, operatorID string) {
-	p.LogAction(ctx, operatorID, "graphql_device_count", "devices", "")
+func (p *Presenter) DeviceCount(ctx context.Context, userID string) {
+	p.LogAction(ctx, userID, "graphql_device_count", "devices", "")
 }
 
 // CommandSend logs a command send.
-func (p *Presenter) CommandSend(ctx context.Context, operatorID, deviceID, commandID string) {
-	p.LogAction(ctx, operatorID, "graphql_command_send", "device", deviceID)
+func (p *Presenter) CommandSend(ctx context.Context, userID, deviceID, commandID string) {
+	p.LogAction(ctx, userID, "graphql_command_send", "device", deviceID)
 }
 
 // CommandBlocked logs a command execution blocked by the risk gate, mirroring
 // the audit shape the REST command path writes for blocked attempts.
-func (p *Presenter) CommandBlocked(ctx context.Context, operatorID, deviceID, command, riskTier, reason string) {
-	if p.auditLogger == nil || operatorID == "" {
+func (p *Presenter) CommandBlocked(ctx context.Context, userID, deviceID, command, riskTier, reason string) {
+	if p.auditLogger == nil || userID == "" {
 		return
 	}
 	p.auditLogger.CommandExecuted(ctx, audit.CommandExecutedEvent{
-		OperatorID: operatorID,
+		UserID: userID,
 		DeviceID:   deviceID,
 		Command:    command,
 		IPAddress:  gqlcontext.GetClientIP(ctx),
@@ -63,33 +63,33 @@ func (p *Presenter) CommandBlocked(ctx context.Context, operatorID, deviceID, co
 		RiskTier:   riskTier,
 		Result:     audit.ResultBlocked,
 		Reason:     reason,
-		ActorType:  "operator",
+		ActorType:  "user",
 	})
 }
 
 // CommandView logs a command view.
-func (p *Presenter) CommandView(ctx context.Context, operatorID, commandID string) {
-	p.LogAction(ctx, operatorID, "graphql_command_view", "command", commandID)
+func (p *Presenter) CommandView(ctx context.Context, userID, commandID string) {
+	p.LogAction(ctx, userID, "graphql_command_view", "command", commandID)
 }
 
 // CommandCancel logs a command cancel.
-func (p *Presenter) CommandCancel(ctx context.Context, operatorID, commandID string) {
-	p.LogAction(ctx, operatorID, "graphql_command_cancel", "command", commandID)
+func (p *Presenter) CommandCancel(ctx context.Context, userID, commandID string) {
+	p.LogAction(ctx, userID, "graphql_command_cancel", "command", commandID)
 }
 
 // DeviceDelete logs a device deletion.
-func (p *Presenter) DeviceDelete(ctx context.Context, operatorID, deviceID string) {
-	p.LogAction(ctx, operatorID, "graphql_device_delete", "device", deviceID)
+func (p *Presenter) DeviceDelete(ctx context.Context, userID, deviceID string) {
+	p.LogAction(ctx, userID, "graphql_device_delete", "device", deviceID)
 }
 
 // TelemetryQuery logs a telemetry query.
-func (p *Presenter) TelemetryQuery(ctx context.Context, operatorID, deviceID string) {
-	p.LogAction(ctx, operatorID, "graphql_telemetry_query", "device", deviceID)
+func (p *Presenter) TelemetryQuery(ctx context.Context, userID, deviceID string) {
+	p.LogAction(ctx, userID, "graphql_telemetry_query", "device", deviceID)
 }
 
 // FCMTokenUpdate logs an FCM token update.
-func (p *Presenter) FCMTokenUpdate(ctx context.Context, operatorID, deviceID string) {
-	p.LogAction(ctx, operatorID, "graphql_fcm_token_update", "device", deviceID)
+func (p *Presenter) FCMTokenUpdate(ctx context.Context, userID, deviceID string) {
+	p.LogAction(ctx, userID, "graphql_fcm_token_update", "device", deviceID)
 }
 
 // BadRequestError returns a GraphQL bad request error.

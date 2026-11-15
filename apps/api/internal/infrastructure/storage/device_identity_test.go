@@ -31,7 +31,7 @@ func newTestDeviceDB(t *testing.T) *sql.DB {
 			online INTEGER NOT NULL DEFAULT 0,
 			registered_at INTEGER NOT NULL DEFAULT 0,
 			last_seen INTEGER NOT NULL DEFAULT 0,
-			operator_id TEXT,
+			user_id TEXT,
 			organization_id TEXT,
 			created_at TIMESTAMP,
 			updated_at TIMESTAMP,
@@ -105,7 +105,7 @@ func TestDeviceRoundTripKeepsIdentityAndTier(t *testing.T) {
 }
 
 // TestFindByPairingCodeOnlyMatchesLiveCodes proves an expired code is not
-// returned, so an operator cannot claim a device whose notification went stale.
+// returned, so a user cannot claim a device whose notification went stale.
 func TestFindByPairingCodeOnlyMatchesLiveCodes(t *testing.T) {
 	db := newTestDeviceDB(t)
 	repo := NewDeviceRepository(db)

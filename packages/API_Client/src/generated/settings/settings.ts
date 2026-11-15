@@ -8,14 +8,14 @@
 import type {
   NotificationSettings,
   NotificationUpdateRequest,
-  OperatorSettingsResult,
-  OperatorSettingsResultLegacy,
   PreferencesResult,
   SettingsResponseResult,
   ThresholdUpdateRequest,
   ThresholdsResult,
   UpdateNameRequest,
   UpdateSettingsRequest,
+  UserSettingsResult,
+  UserSettingsResultLegacy,
   WebhookSecretResult,
   WebhookTestRequest,
   WebhookTestResult
@@ -29,13 +29,13 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
   export const getSettings = () => {
 /**
- * Updates the current operator's display name
- * @summary Update operator name
+ * Updates the current user's display name
+ * @summary Update user name
  */
 const patchAuthMe = (
     updateNameRequest: UpdateNameRequest,
- options?: SecondParameter<typeof customAxios<OperatorSettingsResultLegacy>>,) => {
-      return customAxios<OperatorSettingsResultLegacy>(
+ options?: SecondParameter<typeof customAxios<UserSettingsResultLegacy>>,) => {
+      return customAxios<UserSettingsResultLegacy>(
       {url: `/auth/me`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
       data: updateNameRequest
@@ -43,7 +43,7 @@ const patchAuthMe = (
       options);
     }
   /**
- * Returns the current operator's notification settings
+ * Returns the current user's notification settings
  * @summary Get notification settings
  */
 const getMeNotifications = (
@@ -55,7 +55,7 @@ const getMeNotifications = (
       options);
     }
   /**
- * Updates the current operator's notification settings
+ * Updates the current user's notification settings
  * @summary Update notification settings
  */
 const patchMeNotifications = (
@@ -95,8 +95,8 @@ const postMeNotificationsWebhookTest = (
       options);
     }
   /**
- * Returns the current operator's UI preferences
- * @summary Get operator preferences
+ * Returns the current user's UI preferences
+ * @summary Get user preferences
  */
 const getMePreferences = (
 
@@ -107,8 +107,8 @@ const getMePreferences = (
       options);
     }
   /**
- * Updates the current operator's UI preferences
- * @summary Update operator preferences
+ * Updates the current user's UI preferences
+ * @summary Update user preferences
  */
 const patchMePreferences = (
     preferencesResult: PreferencesResult,
@@ -121,20 +121,20 @@ const patchMePreferences = (
       options);
     }
   /**
- * Returns the current operator's settings
- * @summary Get operator settings
+ * Returns the current user's settings
+ * @summary Get user settings
  */
 const getMeSettings = (
 
- options?: SecondParameter<typeof customAxios<OperatorSettingsResult>>,) => {
-      return customAxios<OperatorSettingsResult>(
+ options?: SecondParameter<typeof customAxios<UserSettingsResult>>,) => {
+      return customAxios<UserSettingsResult>(
       {url: `/me/settings`, method: 'GET'
     },
       options);
     }
   /**
- * Updates the current operator's settings
- * @summary Update operator settings
+ * Updates the current user's settings
+ * @summary Update user settings
  */
 const patchMeSettings = (
     updateSettingsRequest: UpdateSettingsRequest,
@@ -147,8 +147,8 @@ const patchMeSettings = (
       options);
     }
   /**
- * Returns the current operator's alert thresholds
- * @summary Get operator thresholds
+ * Returns the current user's alert thresholds
+ * @summary Get user thresholds
  */
 const getMeThresholds = (
 
@@ -159,8 +159,8 @@ const getMeThresholds = (
       options);
     }
   /**
- * Updates the current operator's alert thresholds
- * @summary Update operator thresholds
+ * Updates the current user's alert thresholds
+ * @summary Update user thresholds
  */
 const patchMeThresholds = (
     thresholdUpdateRequest: ThresholdUpdateRequest,

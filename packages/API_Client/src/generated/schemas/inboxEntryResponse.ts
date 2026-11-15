@@ -21,8 +21,8 @@ export interface InboxEntryResponse {
   manufacturer?: string;
   model?: string;
   notes?: string;
-  operatorId?: string;
   osVersion?: string;
   rejectedAt?: number;
   status?: string;
+  userId?: string;
 }

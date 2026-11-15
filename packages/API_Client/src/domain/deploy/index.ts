@@ -122,7 +122,7 @@ export interface DeployDrift {
 export interface DeployIdentity {
   orgId: string | null;
   orgName: string | null;
-  operatorName: string | null;
+  userName: string | null;
   email: string | null;
   role: string | null;
   device: DeviceSummary | null;
@@ -198,7 +198,7 @@ export function deployIdentityFromWire(wire: IdentityResponse): DeployIdentity {
   return {
     orgId: wire.orgId ?? null,
     orgName: wire.orgName ?? null,
-    operatorName: wire.operatorName ?? null,
+    userName: wire.userName ?? null,
     email: wire.email ?? null,
     role: wire.role ?? null,
     device: wire.device ?? null,

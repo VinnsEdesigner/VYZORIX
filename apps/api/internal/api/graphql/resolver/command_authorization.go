@@ -7,7 +7,7 @@ import (
 	cmdapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/command"
 	domaincommand "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
 	devicedomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
-	domainoperator "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	domainuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	orgdomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
 )
@@ -19,14 +19,14 @@ import (
 //     unioned with any custom per-resource grants must grant command.execute on
 //     the devices scope. Viewers lack that grant and are blocked.
 //  2. Per-device ownership: a non-admin member may only command devices they
-//     own (device.OperatorID); admins and super_admins may command any device
+//     own (device.UserID); admins and super_admins may command any device
 //     in the org. Custom grants can widen this via the evaluator.
 //  3. Risk gate: the shared Authorizer applies MFA (critical tier) and
 //     confirmation-token requirements identical to REST.
 //
 // Returning the shared AuthorizeOutcome keeps the GraphQL and REST paths
 // behaviorally identical instead of drifting apart.
-func (r *Resolver) authorizeCommand(ctx context.Context, op *domainoperator.Operator, orgID string, dev *devicedomain.Device, cmdName, confirmationToken string) cmdapp.AuthorizeOutcome {
+func (r *Resolver) authorizeCommand(ctx context.Context, op *domainuser.User, orgID string, dev *devicedomain.Device, cmdName, confirmationToken string) cmdapp.AuthorizeOutcome {
 	m := op.GetMembership(orgID)
 	if m == nil || !m.IsActive() {
 		return cmdapp.AuthorizeOutcome{
@@ -49,7 +49,7 @@ func (r *Resolver) authorizeCommand(ctx context.Context, op *domainoperator.Oper
 	// Per-device ownership: non-admins may only command devices they own, or
 	// devices assigned to a group they belong to. Devices without a recorded
 	// owner remain org-shared.
-	if m.Role.Level() < orgdomain.RoleAdmin.Level() && dev.OperatorID != "" && dev.OperatorID != op.ID {
+	if m.Role.Level() < orgdomain.RoleAdmin.Level() && dev.UserID != "" && dev.UserID != op.ID {
 		if !r.sharesGroupWithDevice(ctx, op, dev.ID) {
 			return cmdapp.AuthorizeOutcome{
 				Reason: "you do not have access to this device",
@@ -60,7 +60,7 @@ func (r *Resolver) authorizeCommand(ctx context.Context, op *domainoperator.Oper
 
 	// Risk gate (MFA + confirmation), shared with the REST path.
 	actor := domaincommand.ActorContext{
-		OperatorID:   op.ID,
+		UserID:   op.ID,
 		OrgID:        orgID,
 		IsSuperAdmin: op.IsSuperAdmin(),
 		MFAVerified:  gqlcontext.GetMFAVerified(ctx),
@@ -68,9 +68,9 @@ func (r *Resolver) authorizeCommand(ctx context.Context, op *domainoperator.Oper
 	return r.Authorizer.Authorize(ctx, actor, cmdName, dev.ID, confirmationToken)
 }
 
-// scopeEvaluator builds the scoped permission evaluator for an operator in an
+// scopeEvaluator builds the scoped permission evaluator for a user in an
 // org: role defaults unioned with custom grants. Nil grant repo → defaults only.
-func (r *Resolver) scopeEvaluator(ctx context.Context, op *domainoperator.Operator, orgID, role string) *permission.Evaluator {
+func (r *Resolver) scopeEvaluator(ctx context.Context, op *domainuser.User, orgID, role string) *permission.Evaluator {
 	if r.GrantRepo == nil {
 		return permission.NewEvaluator(role, nil)
 	}
@@ -82,8 +82,8 @@ func (r *Resolver) scopeEvaluator(ctx context.Context, op *domainoperator.Operat
 }
 
 // sharesGroupWithDevice reports whether the device is assigned to a group the
-// operator belongs to (team/group-based device scoping, Issue 5).
-func (r *Resolver) sharesGroupWithDevice(ctx context.Context, op *domainoperator.Operator, deviceID string) bool {
+// user belongs to (team/group-based device scoping, Issue 5).
+func (r *Resolver) sharesGroupWithDevice(ctx context.Context, op *domainuser.User, deviceID string) bool {
 	if r.GroupRepo == nil {
 		return false
 	}

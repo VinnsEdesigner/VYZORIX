@@ -5,11 +5,11 @@ import (
 	"testing"
 )
 
-// TestPTYRegistryRejectsDuplicateSessionID is the cross-operator isolation
-// guard: session IDs are client-supplied, so two operators (or one operator
+// TestPTYRegistryRejectsDuplicateSessionID is the cross-user isolation
+// guard: session IDs are client-supplied, so two users (or one user
 // replaying a request) can send the same ID. If Open overwrote the existing
 // entry, the first session would leak (never closed, still counted against the
-// device cap) and the second operator would inherit the first's session.
+// device cap) and the second user would inherit the first's session.
 func TestPTYRegistryRejectsDuplicateSessionID(t *testing.T) {
 	r := NewPTYRegistry(PTYRegistryConfig{})
 
@@ -18,7 +18,7 @@ func TestPTYRegistryRejectsDuplicateSessionID(t *testing.T) {
 		t.Fatalf("first Open: %v", err)
 	}
 
-	// A different operator reusing the same ID must be refused.
+	// A different user reusing the same ID must be refused.
 	_, err = r.Open("aaaaaaaa-1111-4111-8111-111111111111", "dev-2", "op-2", "org-1", false)
 	if !errors.Is(err, ErrPTYSessionExists) {
 		t.Fatalf("duplicate Open err = %v, want ErrPTYSessionExists", err)
@@ -29,7 +29,7 @@ func TestPTYRegistryRejectsDuplicateSessionID(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Get: %v", err)
 	}
-	if got.OperatorID != "op-1" || got.DeviceID != "dev-1" {
+	if got.UserID != "op-1" || got.DeviceID != "dev-1" {
 		t.Fatalf("session = %+v, want the original op-1/dev-1", got)
 	}
 	if got != first {

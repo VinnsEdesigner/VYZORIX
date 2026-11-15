@@ -107,13 +107,13 @@ definitions:
         $ref: '#/definitions/internal_api_handlers_deploy.deviceSummary'
       email:
         type: string
-      operatorName:
-        type: string
       orgId:
         type: string
       orgName:
         type: string
       role:
+        type: string
+      userName:
         type: string
     type: object
   internal_api_handlers_deploy.mintCredentialRequest:
@@ -250,7 +250,7 @@ definitions:
         description: |-
           PollIntervalSeconds is how often the device should ask for its config while
           it waits to be claimed. The config normally arrives over the held WebSocket
-          the moment an operator claims the code, so this is the fallback for a device
+          the moment a user claims the code, so this is the fallback for a device
           whose socket is not up — it bounds how long a claimed device can sit
           unconfigured. The server owns the value so the cadence can be tuned without
           shipping a new APK.
@@ -272,8 +272,6 @@ definitions:
         type: integer
       name:
         type: string
-      operator_id:
-        type: string
       request_count:
         type: integer
       revoked_at:
@@ -282,6 +280,8 @@ definitions:
         type: string
       updated_at:
         type: integer
+      user_id:
+        type: string
     type: object
   openapi.APIKeyListResult:
     properties:
@@ -314,8 +314,6 @@ definitions:
         type: integer
       name:
         type: string
-      operator_id:
-        type: string
       request_count:
         type: integer
       revoked_at:
@@ -324,6 +322,8 @@ definitions:
         type: string
       updated_at:
         type: integer
+      user_id:
+        type: string
     type: object
   openapi.AdminAPIKey:
     properties:
@@ -341,10 +341,6 @@ definitions:
         type: integer
       name:
         type: string
-      operator_id:
-        type: string
-      operator_name:
-        type: string
       request_count:
         type: integer
       revoked_at:
@@ -353,6 +349,10 @@ definitions:
         type: string
       updated_at:
         type: integer
+      user_id:
+        type: string
+      user_name:
+        type: string
     type: object
   openapi.AdminAPIKeyListResult:
     properties:
@@ -387,8 +387,6 @@ definitions:
         type: integer
       name:
         type: string
-      operator_id:
-        type: string
       platform:
         type: string
       rate_limit:
@@ -397,6 +395,8 @@ definitions:
         type: integer
       updated_at:
         type: integer
+      user_id:
+        type: string
     type: object
   openapi.AdminClientListResult:
     properties:
@@ -412,7 +412,7 @@ definitions:
       client:
         $ref: '#/definitions/openapi.AdminClient'
     type: object
-  openapi.AdminOperator:
+  openapi.AdminUser:
     properties:
       created_at:
         type: integer
@@ -431,14 +431,14 @@ definitions:
       updated_at:
         type: integer
     type: object
-  openapi.AdminOperatorListResult:
+  openapi.AdminUserListResult:
     properties:
-      operators:
-        items:
-          $ref: '#/definitions/openapi.AdminOperator'
-        type: array
       total:
         type: integer
+      users:
+        items:
+          $ref: '#/definitions/openapi.AdminUser'
+        type: array
     type: object
   openapi.AlertEvaluateResult:
     properties:
@@ -601,6 +601,23 @@ definitions:
       email:
         type: string
     type: object
+  openapi.CapabilitiesResult:
+    properties:
+      instance:
+        items:
+          type: string
+        type: array
+      instance_role:
+        type: string
+      org:
+        items:
+          type: string
+        type: array
+      personal:
+        items:
+          type: string
+        type: array
+    type: object
   openapi.ChannelStatusResult:
     properties:
       active_streams:
@@ -647,8 +664,6 @@ definitions:
         type: integer
       name:
         type: string
-      operator_id:
-        type: string
       platform:
         type: string
       rate_limit:
@@ -659,6 +674,8 @@ definitions:
         type: string
       updated_at:
         type: integer
+      user_id:
+        type: string
     type: object
   openapi.ClientCredentialListResult:
     properties:
@@ -1010,17 +1027,6 @@ definitions:
       role:
         type: string
     type: object
-  openapi.CreateOperatorRequest:
-    properties:
-      email:
-        type: string
-      name:
-        type: string
-      password:
-        type: string
-      role:
-        type: string
-    type: object
   openapi.CreateOrganizationRequest:
     properties:
       description:
@@ -1048,6 +1054,17 @@ definitions:
           type: string
         type: array
       service_id:
+        type: string
+    type: object
+  openapi.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      role:
         type: string
     type: object
   openapi.CursorPaginationResult:
@@ -1123,7 +1140,7 @@ definitions:
         type: string
       disconnected:
         type: boolean
-      operatorId:
+      userId:
         type: string
     type: object
   openapi.DeviceEvent:
@@ -1247,7 +1264,7 @@ definitions:
           type: string
         type: object
       thresholds:
-        $ref: '#/definitions/openapi.OperatorThresholds'
+        $ref: '#/definitions/openapi.UserThresholds'
       updatedAt:
         type: string
     type: object
@@ -1467,15 +1484,15 @@ definitions:
         type: object
       revoked_keys:
         type: integer
-      top_operators:
+      top_users:
         items:
-          $ref: '#/definitions/openapi.TopOperatorStat'
+          $ref: '#/definitions/openapi.TopUserStat'
         type: array
       total_keys:
         type: integer
-      total_operators:
-        type: integer
       total_requests:
+        type: integer
+      total_users:
         type: integer
     type: object
   openapi.InboxAckRequest:
@@ -1536,13 +1553,13 @@ definitions:
         type: string
       notes:
         type: string
-      operatorId:
-        type: string
       osVersion:
         type: string
       rejectedAt:
         type: integer
       status:
+        type: string
+      userId:
         type: string
     type: object
   openapi.InboxListResult:
@@ -1693,8 +1710,6 @@ definitions:
         type: string
       needs_organization:
         type: boolean
-      operator_id:
-        type: string
       organizations:
         items:
           $ref: '#/definitions/openapi.OrganizationInfo'
@@ -1706,6 +1721,8 @@ definitions:
       selected_organization:
         $ref: '#/definitions/openapi.OrganizationInfo'
       signing_key:
+        type: string
+      user_id:
         type: string
     type: object
   openapi.LoginWithTokensResult:
@@ -1734,8 +1751,6 @@ definitions:
         type: string
       needs_organization:
         type: boolean
-      operator_id:
-        type: string
       organizations:
         items:
           $ref: '#/definitions/openapi.OrganizationInfo'
@@ -1751,6 +1766,8 @@ definitions:
       session_id:
         type: string
       signing_key:
+        type: string
+      user_id:
         type: string
     type: object
   openapi.LogoutRequest:
@@ -1796,19 +1813,6 @@ definitions:
       uri:
         type: string
     type: object
-  openapi.MFAOperator:
-    properties:
-      email:
-        type: string
-      id:
-        type: string
-      mfa_enabled:
-        type: boolean
-      name:
-        type: string
-      role:
-        type: string
-    type: object
   openapi.MFARegenerateResult:
     properties:
       backup_codes:
@@ -1821,11 +1825,24 @@ definitions:
       mfa_enabled:
         type: boolean
     type: object
+  openapi.MFAUser:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      mfa_enabled:
+        type: boolean
+      name:
+        type: string
+      role:
+        type: string
+    type: object
   openapi.MFAVerifyRequest:
     properties:
       code:
         type: string
-      operator_id:
+      user_id:
         type: string
     type: object
   openapi.MFAVerifyResult:
@@ -1834,8 +1851,6 @@ definitions:
         type: string
       expires_at:
         type: integer
-      operator:
-        $ref: '#/definitions/openapi.MFAOperator'
       refresh_token:
         type: string
       session_id:
@@ -1844,6 +1859,8 @@ definitions:
         type: string
       success:
         type: boolean
+      user:
+        $ref: '#/definitions/openapi.MFAUser'
     type: object
   openapi.MFAVerifySetupRequest:
     properties:
@@ -1930,62 +1947,6 @@ definitions:
       webhook:
         $ref: '#/definitions/openapi.WebhookNotifications'
     type: object
-  openapi.OperatorAPIKeyStatsResult:
-    properties:
-      active_keys:
-        type: integer
-      keys_created_this_month:
-        type: integer
-      monthly_limit:
-        type: integer
-      operator_id:
-        type: string
-      revoked_keys:
-        type: integer
-      total_keys:
-        type: integer
-    type: object
-  openapi.OperatorSettingsResult:
-    properties:
-      client:
-        $ref: '#/definitions/openapi.ClientSettings'
-      notifications:
-        $ref: '#/definitions/openapi.NotificationSettings'
-      thresholds:
-        $ref: '#/definitions/openapi.OperatorThresholds'
-    type: object
-  openapi.OperatorSettingsResultLegacy:
-    properties:
-      client:
-        $ref: '#/definitions/openapi.ClientSettings'
-      email:
-        type: string
-      email_verified:
-        type: boolean
-      id:
-        type: string
-      mfa_enabled:
-        type: boolean
-      name:
-        type: string
-      role:
-        type: string
-    type: object
-  openapi.OperatorThresholds:
-    properties:
-      bufferCrit:
-        type: integer
-      bufferWarn:
-        type: integer
-      riskCrit:
-        type: integer
-      riskWarn:
-        type: integer
-      thermalCrit:
-        type: integer
-      thermalWarn:
-        type: integer
-    type: object
   openapi.Organization:
     properties:
       created_at:
@@ -2031,12 +1992,6 @@ definitions:
         type: string
       joined_at:
         type: integer
-      operator_email:
-        type: string
-      operator_id:
-        type: string
-      operator_name:
-        type: string
       organization_id:
         type: string
       removed_at:
@@ -2044,6 +1999,12 @@ definitions:
       role:
         type: string
       status:
+        type: string
+      user_email:
+        type: string
+      user_id:
+        type: string
+      user_name:
         type: string
     type: object
   openapi.OrganizationMemberListResult:
@@ -2062,7 +2023,7 @@ definitions:
       dateFormat:
         type: string
       defaultThresholds:
-        $ref: '#/definitions/openapi.OperatorThresholds'
+        $ref: '#/definitions/openapi.UserThresholds'
       id:
         type: string
       organizationId:
@@ -2146,7 +2107,7 @@ definitions:
         type: string
       name:
         type: string
-      operator_id:
+      user_id:
         type: string
     type: object
   openapi.ResendVerificationRequest:
@@ -2328,11 +2289,11 @@ definitions:
         type: integer
       hostname:
         type: string
-      operator_count:
-        type: integer
       org_count:
         type: integer
       schema_version:
+        type: integer
+      user_count:
         type: integer
     type: object
   openapi.TelemetryEntry:
@@ -2452,7 +2413,7 @@ definitions:
   openapi.ThresholdsResult:
     properties:
       thresholds:
-        $ref: '#/definitions/openapi.OperatorThresholds'
+        $ref: '#/definitions/openapi.UserThresholds'
     type: object
   openapi.TimelineEventResult:
     properties:
@@ -2475,16 +2436,16 @@ definitions:
       pagination:
         $ref: '#/definitions/openapi.CursorPaginationResult'
     type: object
-  openapi.TopOperatorStat:
+  openapi.TopUserStat:
     properties:
       active_key_count:
         type: integer
-      operator_id:
-        type: string
-      operator_name:
-        type: string
       total_requests:
         type: integer
+      user_id:
+        type: string
+      user_name:
+        type: string
     type: object
   openapi.UpdateAPIKeyRequest:
     properties:
@@ -2572,7 +2533,7 @@ definitions:
           type: string
         type: object
       thresholds:
-        $ref: '#/definitions/openapi.OperatorThresholds'
+        $ref: '#/definitions/openapi.UserThresholds'
     type: object
   openapi.UpdateDeviceStatusInfo:
     properties:
@@ -2635,19 +2596,6 @@ definitions:
       name:
         type: string
     type: object
-  openapi.UpdateOperatorRequest:
-    properties:
-      email:
-        type: string
-      email_verified:
-        type: boolean
-      mfa_enabled:
-        type: boolean
-      name:
-        type: string
-      role:
-        type: string
-    type: object
   openapi.UpdateOrganizationRequest:
     properties:
       isActive:
@@ -2664,7 +2612,7 @@ definitions:
       dateFormat:
         type: string
       defaultThresholds:
-        $ref: '#/definitions/openapi.OperatorThresholds'
+        $ref: '#/definitions/openapi.UserThresholds'
       timezone:
         type: string
     type: object
@@ -2863,6 +2811,19 @@ definitions:
       versionsFound:
         type: integer
     type: object
+  openapi.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      email_verified:
+        type: boolean
+      mfa_enabled:
+        type: boolean
+      name:
+        type: string
+      role:
+        type: string
+    type: object
   openapi.UpdateVersionListResult:
     properties:
       pagination:
@@ -2935,11 +2896,11 @@ definitions:
         type: integer
       devices:
         type: integer
-      operators:
-        type: integer
       organizations:
         type: integer
       service_accounts:
+        type: integer
+      users:
         type: integer
     type: object
   openapi.UsageStatsSnapshot:
@@ -2952,6 +2913,62 @@ definitions:
         additionalProperties:
           type: boolean
         type: object
+    type: object
+  openapi.UserAPIKeyStatsResult:
+    properties:
+      active_keys:
+        type: integer
+      keys_created_this_month:
+        type: integer
+      monthly_limit:
+        type: integer
+      revoked_keys:
+        type: integer
+      total_keys:
+        type: integer
+      user_id:
+        type: string
+    type: object
+  openapi.UserSettingsResult:
+    properties:
+      client:
+        $ref: '#/definitions/openapi.ClientSettings'
+      notifications:
+        $ref: '#/definitions/openapi.NotificationSettings'
+      thresholds:
+        $ref: '#/definitions/openapi.UserThresholds'
+    type: object
+  openapi.UserSettingsResultLegacy:
+    properties:
+      client:
+        $ref: '#/definitions/openapi.ClientSettings'
+      email:
+        type: string
+      email_verified:
+        type: boolean
+      id:
+        type: string
+      mfa_enabled:
+        type: boolean
+      name:
+        type: string
+      role:
+        type: string
+    type: object
+  openapi.UserThresholds:
+    properties:
+      bufferCrit:
+        type: integer
+      bufferWarn:
+        type: integer
+      riskCrit:
+        type: integer
+      riskWarn:
+        type: integer
+      thermalCrit:
+        type: integer
+      thermalWarn:
+        type: integer
     type: object
   openapi.WebhookNotifications:
     properties:
@@ -2996,7 +3013,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Lists all API keys across all operators (super admin only)
+      description: Lists all API keys across all users (super admin only)
       parameters:
       - description: Organization ID
         in: header
@@ -3011,9 +3028,9 @@ paths:
         in: query
         name: limit
         type: integer
-      - description: filter by operator ID
+      - description: filter by user ID
         in: query
-        name: operator_id
+        name: user_id
         type: string
       - description: search by key name
         in: query
@@ -3023,7 +3040,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: API keys with operator identity
+          description: API keys with user identity
           schema:
             $ref: '#/definitions/openapi.AdminAPIKeyListResult'
         "401":
@@ -3041,7 +3058,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Force revokes an API key for any operator (super admin only)
+      description: Force revokes an API key for any user (super admin only)
       parameters:
       - description: Organization ID
         in: header
@@ -3075,48 +3092,6 @@ paths:
       summary: Force revoke API key
       tags:
       - admin
-  /admin/api-keys/operator/{operatorId}:
-    get:
-      consumes:
-      - application/json
-      description: Lists all API keys for a specific operator (super admin only)
-      parameters:
-      - description: Organization ID
-        in: header
-        name: X-Organization-ID
-        required: true
-        type: string
-      - description: operator ID
-        in: path
-        name: operatorId
-        required: true
-        type: string
-      - description: page number (default 1)
-        in: query
-        name: page
-        type: integer
-      - description: page size (default 20)
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: operator API keys
-          schema:
-            $ref: '#/definitions/openapi.AdminAPIKeyListResult'
-        "401":
-          description: not authenticated
-          schema:
-            $ref: '#/definitions/openapi.ErrorResponse'
-        "403":
-          description: super_admin required
-          schema:
-            $ref: '#/definitions/openapi.ErrorResponse'
-      summary: List operator API keys
-      tags:
-      - admin
   /admin/api-keys/stats:
     get:
       consumes:
@@ -3146,30 +3121,29 @@ paths:
       summary: Get global API key stats
       tags:
       - admin
-  /admin/api-keys/stats/operator/{operatorId}:
+  /admin/api-keys/stats/user/{userId}:
     get:
       consumes:
       - application/json
-      description: Returns API key statistics for a specific operator (super admin
-        only)
+      description: Returns API key statistics for a specific user (super admin only)
       parameters:
       - description: Organization ID
         in: header
         name: X-Organization-ID
         required: true
         type: string
-      - description: operator ID
+      - description: user ID
         in: path
-        name: operatorId
+        name: userId
         required: true
         type: string
       produces:
       - application/json
       responses:
         "200":
-          description: operator stats
+          description: user stats
           schema:
-            $ref: '#/definitions/openapi.OperatorAPIKeyStatsResult'
+            $ref: '#/definitions/openapi.UserAPIKeyStatsResult'
         "401":
           description: not authenticated
           schema:
@@ -3178,7 +3152,49 @@ paths:
           description: super_admin required
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Get operator API key stats
+      summary: Get user API key stats
+      tags:
+      - admin
+  /admin/api-keys/user/{userId}:
+    get:
+      consumes:
+      - application/json
+      description: Lists all API keys for a specific user (super admin only)
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: user ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: page size (default 20)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: user API keys
+          schema:
+            $ref: '#/definitions/openapi.AdminAPIKeyListResult'
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: super_admin required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: List user API keys
       tags:
       - admin
   /admin/clients:
@@ -3883,53 +3899,11 @@ paths:
       summary: Download APK
       tags:
       - updater
-  /auth/admin/lockout/unlock/{operator_id}:
-    post:
-      consumes:
-      - application/json
-      description: Clears an operator's account lockout. Requires org-scoped super_admin
-      parameters:
-      - description: Organization ID
-        in: header
-        name: X-Organization-ID
-        required: true
-        type: string
-      - description: operator ID to unlock
-        in: path
-        name: operator_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: account unlocked
-          schema:
-            $ref: '#/definitions/openapi.SuccessResult'
-        "400":
-          description: operator_id required
-          schema:
-            $ref: '#/definitions/openapi.ErrorResponse'
-        "401":
-          description: not authenticated
-          schema:
-            $ref: '#/definitions/openapi.ErrorResponse'
-        "403":
-          description: super_admin required
-          schema:
-            $ref: '#/definitions/openapi.ErrorResponse'
-        "404":
-          description: operator not found
-          schema:
-            $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Unlock account
-      tags:
-      - auth
-  /auth/admin/operators:
+  /auth/admin/users:
     get:
       consumes:
       - application/json
-      description: Lists all operators in the system (super_admin only)
+      description: Lists all users in the system (super_admin only)
       parameters:
       - description: Organization ID
         in: header
@@ -3940,9 +3914,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: operators
+          description: users
           schema:
-            $ref: '#/definitions/openapi.AdminOperatorListResult'
+            $ref: '#/definitions/openapi.AdminUserListResult'
         "401":
           description: not authenticated
           schema:
@@ -3955,32 +3929,32 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: List operators
+      summary: List users
       tags:
       - admin
     post:
       consumes:
       - application/json
-      description: Creates a new operator (super_admin only)
+      description: Creates a new user (super_admin only)
       parameters:
       - description: Organization ID
         in: header
         name: X-Organization-ID
         required: true
         type: string
-      - description: operator credentials
+      - description: user credentials
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/openapi.CreateOperatorRequest'
+          $ref: '#/definitions/openapi.CreateUserRequest'
       produces:
       - application/json
       responses:
         "201":
-          description: created operator
+          description: created user
           schema:
-            $ref: '#/definitions/openapi.AdminOperator'
+            $ref: '#/definitions/openapi.AdminUser'
         "400":
           description: invalid input
           schema:
@@ -4001,21 +3975,21 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Create operator
+      summary: Create user
       tags:
       - admin
-  /auth/admin/operators/{id}:
+  /auth/admin/users/{id}:
     delete:
       consumes:
       - application/json
-      description: Deletes an operator. Cannot delete yourself or the last super_admin
+      description: Deletes a user. Cannot delete yourself or the last super_admin
       parameters:
       - description: Organization ID
         in: header
         name: X-Organization-ID
         required: true
         type: string
-      - description: operator ID
+      - description: user ID
         in: path
         name: id
         required: true
@@ -4024,11 +3998,11 @@ paths:
       - application/json
       responses:
         "200":
-          description: operator deleted
+          description: user deleted
           schema:
             $ref: '#/definitions/openapi.SuccessResult'
         "400":
-          description: operator id required / cannot delete self
+          description: user id required / cannot delete self
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
         "401":
@@ -4051,20 +4025,20 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Delete operator
+      summary: Delete user
       tags:
       - admin
     get:
       consumes:
       - application/json
-      description: Returns a single operator by ID (super_admin only)
+      description: Returns a single user by ID (super_admin only)
       parameters:
       - description: Organization ID
         in: header
         name: X-Organization-ID
         required: true
         type: string
-      - description: operator ID
+      - description: user ID
         in: path
         name: id
         required: true
@@ -4073,9 +4047,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: operator
+          description: created user
           schema:
-            $ref: '#/definitions/openapi.AdminOperator'
+            $ref: '#/definitions/openapi.AdminUser'
         "401":
           description: not authenticated
           schema:
@@ -4092,37 +4066,37 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Get operator
+      summary: Get user
       tags:
       - admin
     patch:
       consumes:
       - application/json
-      description: Updates mutable operator fields (super_admin only)
+      description: Updates mutable user fields (super_admin only)
       parameters:
       - description: Organization ID
         in: header
         name: X-Organization-ID
         required: true
         type: string
-      - description: operator ID
+      - description: user ID
         in: path
         name: id
         required: true
         type: string
-      - description: operator update
+      - description: user update
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/openapi.UpdateOperatorRequest'
+          $ref: '#/definitions/openapi.UpdateUserRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: updated operator
+          description: updated user
           schema:
-            $ref: '#/definitions/openapi.AdminOperator'
+            $ref: '#/definitions/openapi.AdminUser'
         "400":
           description: invalid input
           schema:
@@ -4147,15 +4121,14 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Update operator
+      summary: Update user
       tags:
       - admin
   /auth/api-keys:
     get:
       consumes:
       - application/json
-      description: Returns paginated API keys for the operator with monthly quota
-        usage
+      description: Returns paginated API keys for the user with monthly quota usage
       parameters:
       - description: Organization ID
         in: header
@@ -4418,7 +4391,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns all client credentials for the authenticated operator
+      description: Returns all client credentials for the authenticated user
       produces:
       - application/json
       responses:
@@ -4659,7 +4632,7 @@ paths:
       consumes:
       - application/json
       description: Returns the current account lockout status for the authenticated
-        operator
+        user
       produces:
       - application/json
       responses:
@@ -4678,7 +4651,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Authenticates an operator with email/password and starts a session
+      description: Authenticates a user with email/password and starts a session
       parameters:
       - description: login credentials
         in: body
@@ -4705,14 +4678,14 @@ paths:
           description: account locked
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Operator login
+      summary: User login
       tags:
       - auth
   /auth/login/tokens:
     post:
       consumes:
       - application/json
-      description: Authenticates an operator and returns access/refresh tokens instead
+      description: Authenticates a user and returns access/refresh tokens instead
         of a cookie
       parameters:
       - description: login credentials
@@ -4736,7 +4709,7 @@ paths:
           description: invalid credentials
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Operator login (token response)
+      summary: User login (token response)
       tags:
       - auth
   /auth/logout:
@@ -4772,12 +4745,12 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns the authenticated operator's profile and organization context
+      description: Returns the authenticated user's profile and organization context
       produces:
       - application/json
       responses:
         "200":
-          description: current operator
+          description: current user
           schema:
             $ref: '#/definitions/openapi.MeResult'
         "401":
@@ -4788,13 +4761,13 @@ paths:
           description: failed to get organizations
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Get current operator
+      summary: Get current user
       tags:
       - auth
     patch:
       consumes:
       - application/json
-      description: Updates the current operator's display name
+      description: Updates the current user's display name
       parameters:
       - description: new name
         in: body
@@ -4806,9 +4779,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: updated operator
+          description: updated user
           schema:
-            $ref: '#/definitions/openapi.OperatorSettingsResultLegacy'
+            $ref: '#/definitions/openapi.UserSettingsResultLegacy'
         "400":
           description: name required / invalid body
           schema:
@@ -4821,7 +4794,7 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Update operator name
+      summary: Update user name
       tags:
       - settings
   /auth/mfa/disable:
@@ -4942,7 +4915,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns whether MFA is enabled for the current operator
+      description: Returns whether MFA is enabled for the current user
       produces:
       - application/json
       responses:
@@ -4968,7 +4941,7 @@ paths:
       description: Completes login by verifying an MFA code and creating a session
         with tokens
       parameters:
-      - description: operator_id + MFA code
+      - description: user_id + MFA code
         in: body
         name: body
         required: true
@@ -4982,11 +4955,11 @@ paths:
           schema:
             $ref: '#/definitions/openapi.MFAVerifyResult'
         "400":
-          description: operator_id and code required
+          description: user_id and code required
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
         "401":
-          description: invalid MFA code / operator invalid
+          description: invalid MFA code / user invalid
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
         "500":
@@ -5000,7 +4973,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Verifies a backup code for an operator with MFA enabled
+      description: Verifies a backup code for a user with MFA enabled
       parameters:
       - description: backup code
         in: body
@@ -5122,7 +5095,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: operator's organizations
+          description: user's organizations
           schema:
             $ref: '#/definitions/openapi.OrganizationListResult'
         "401":
@@ -5139,7 +5112,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Switches the operator's active organization context
+      description: Switches the user's active organization context
       parameters:
       - description: Organization ID
         in: header
@@ -5241,7 +5214,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Registers a new operator account and sends a verification email
+      description: Registers a new user account and sends a verification email
       parameters:
       - description: registration credentials
         in: body
@@ -5253,7 +5226,7 @@ paths:
       - application/json
       responses:
         "201":
-          description: created operator
+          description: created user
           schema:
             $ref: '#/definitions/openapi.RegisterResult'
         "400":
@@ -5268,7 +5241,7 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Register operator
+      summary: Register user
       tags:
       - auth
   /auth/resend-password-reset:
@@ -5312,7 +5285,7 @@ paths:
       description: Resends the verification email via a query parameter (alternative
         to POST)
       parameters:
-      - description: operator email
+      - description: user email
         in: query
         name: email
         required: true
@@ -5338,7 +5311,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Resends the verification email to an operator
+      description: Resends the verification email to a user
       parameters:
       - description: email
         in: body
@@ -5424,7 +5397,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns all active sessions for the authenticated operator
+      description: Returns all active sessions for the authenticated user
       produces:
       - application/json
       responses:
@@ -5520,7 +5493,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns whether the operator has concurrent active logins
+      description: Returns whether the user has concurrent active logins
       produces:
       - application/json
       responses:
@@ -5567,7 +5540,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Verifies an operator's email via a token query parameter (alternative
+      description: Verifies a user's email via a token query parameter (alternative
         to POST)
       parameters:
       - description: verification token
@@ -5596,7 +5569,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Verifies an operator's email using a verification token
+      description: Verifies a user's email using a verification token
       parameters:
       - description: verification token
         in: body
@@ -5697,7 +5670,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Registers a logical subscription to a channel scope for the operator
+      description: Registers a logical subscription to a channel scope for the user
       parameters:
       - description: Organization ID
         in: header
@@ -6117,7 +6090,7 @@ paths:
           schema:
             $ref: '#/definitions/openapi.CommandHistoryResult'
         "401":
-          description: operator context required
+          description: user context required
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
         "404":
@@ -6378,20 +6351,20 @@ paths:
       summary: List dashboard devices
       tags:
       - devices
-  /dashboard/devices/operator:
+  /dashboard/devices/user:
     get:
       consumes:
       - application/json
-      description: Returns devices assigned to a specific operator
+      description: Returns devices assigned to a specific user
       parameters:
       - description: Organization ID
         in: header
         name: X-Organization-ID
         required: true
         type: string
-      - description: operator ID
+      - description: user ID
         in: query
-        name: operatorId
+        name: userId
         type: string
       produces:
       - application/json
@@ -6408,7 +6381,7 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: List devices by operator
+      summary: List devices by user
       tags:
       - devices
   /dashboard/events/{id}:
@@ -6472,7 +6445,7 @@ paths:
           schema:
             $ref: '#/definitions/openapi.DeviceEventListResult'
         "401":
-          description: operator context required
+          description: user context required
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
         "500":
@@ -6543,7 +6516,7 @@ paths:
           schema:
             $ref: '#/definitions/openapi.DashboardStats'
         "401":
-          description: operator context required
+          description: user context required
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
         "500":
@@ -6996,7 +6969,7 @@ paths:
           description: authentication required
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Current operator identity for the deploy surface
+      summary: Current user identity for the deploy surface
       tags:
       - deploy
   /device/{imei}:
@@ -7481,8 +7454,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns paginated inbox entries for the authenticated operator
-        within the organization
+      description: Returns paginated inbox entries for the authenticated user within
+        the organization
       parameters:
       - description: Organization ID
         in: header
@@ -7522,7 +7495,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Submits a device registration request to the operator inbox. Requires
+      description: Submits a device registration request to the user inbox. Requires
         device attestation when configured
       parameters:
       - description: Organization ID
@@ -7606,7 +7579,7 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Updates an inbox entry (e.g., add operator notes) within the organization
+      description: Updates an inbox entry (e.g., add user notes) within the organization
       parameters:
       - description: Organization ID
         in: header
@@ -8276,11 +8249,50 @@ paths:
       summary: Read a device's update download progress
       tags:
       - updater
+  /instance/lockout/unlock/{user_id}:
+    post:
+      consumes:
+      - application/json
+      description: 'Clears a user''s account lockout. Instance-scoped: requires admin.lockout
+        on the deployment, not an organization role. Locking a user out of the deployment
+        is not contained by any single organization.'
+      parameters:
+      - description: user ID to unlock
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: account unlocked
+          schema:
+            $ref: '#/definitions/openapi.SuccessResult'
+        "400":
+          description: user_id required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: instance admin required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: user not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Unlock account
+      tags:
+      - instance
   /invitations:
     get:
       consumes:
       - application/json
-      description: Returns invitations sent by the authenticated operator
+      description: Returns invitations sent by the authenticated user
       produces:
       - application/json
       responses:
@@ -8302,7 +8314,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Invites an operator to an organization by email
+      description: Invites a user to an organization by email
       parameters:
       - description: Organization ID
         in: header
@@ -8437,7 +8449,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Accepts an invitation and adds the operator to the organization
+      description: Accepts an invitation and adds the user to the organization
       parameters:
       - description: invitation token
         in: path
@@ -8507,11 +8519,31 @@ paths:
       summary: Reject invitation
       tags:
       - invitations
+  /me/capabilities:
+    get:
+      consumes:
+      - application/json
+      description: Returns the caller's effective permissions across the personal,
+        organization and instance grant stores, as "action:scope" strings.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: effective capabilities
+          schema:
+            $ref: '#/definitions/openapi.CapabilitiesResult'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Get effective capabilities
+      tags:
+      - me
   /me/invitations:
     get:
       consumes:
       - application/json
-      description: Returns pending invitations addressed to the authenticated operator's
+      description: Returns pending invitations addressed to the authenticated user's
         email
       produces:
       - application/json
@@ -8528,14 +8560,14 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: List pending invitations for current operator
+      summary: List pending invitations for current user
       tags:
       - invitations
   /me/notifications:
     get:
       consumes:
       - application/json
-      description: Returns the current operator's notification settings
+      description: Returns the current user's notification settings
       produces:
       - application/json
       responses:
@@ -8557,7 +8589,7 @@ paths:
     patch:
       consumes:
       - application/json
-      description: Updates the current operator's notification settings
+      description: Updates the current user's notification settings
       parameters:
       - description: notification updates
         in: body
@@ -8646,7 +8678,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns the current operator's UI preferences
+      description: Returns the current user's UI preferences
       produces:
       - application/json
       responses:
@@ -8662,13 +8694,13 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Get operator preferences
+      summary: Get user preferences
       tags:
       - settings
     patch:
       consumes:
       - application/json
-      description: Updates the current operator's UI preferences
+      description: Updates the current user's UI preferences
       parameters:
       - description: preference updates
         in: body
@@ -8695,21 +8727,21 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Update operator preferences
+      summary: Update user preferences
       tags:
       - settings
   /me/settings:
     get:
       consumes:
       - application/json
-      description: Returns the current operator's settings
+      description: Returns the current user's settings
       produces:
       - application/json
       responses:
         "200":
-          description: operator settings
+          description: user settings
           schema:
-            $ref: '#/definitions/openapi.OperatorSettingsResult'
+            $ref: '#/definitions/openapi.UserSettingsResult'
         "401":
           description: not authenticated
           schema:
@@ -8718,13 +8750,13 @@ paths:
           description: failed to get settings
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Get operator settings
+      summary: Get user settings
       tags:
       - settings
     patch:
       consumes:
       - application/json
-      description: Updates the current operator's settings
+      description: Updates the current user's settings
       parameters:
       - description: settings updates
         in: body
@@ -8751,14 +8783,14 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Update operator settings
+      summary: Update user settings
       tags:
       - settings
   /me/thresholds:
     get:
       consumes:
       - application/json
-      description: Returns the current operator's alert thresholds
+      description: Returns the current user's alert thresholds
       produces:
       - application/json
       responses:
@@ -8774,13 +8806,13 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Get operator thresholds
+      summary: Get user thresholds
       tags:
       - settings
     patch:
       consumes:
       - application/json
-      description: Updates the current operator's alert thresholds
+      description: Updates the current user's alert thresholds
       parameters:
       - description: threshold updates
         in: body
@@ -8807,7 +8839,7 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Update operator thresholds
+      summary: Update user thresholds
       tags:
       - settings
   /notifications/contact-points:
@@ -9013,7 +9045,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Returns all organizations the operator is a member of
+      description: Returns all organizations the user is a member of
       parameters:
       - description: Organization ID
         in: header

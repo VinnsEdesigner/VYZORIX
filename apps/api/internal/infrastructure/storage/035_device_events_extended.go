@@ -25,8 +25,8 @@ func migrateDeviceEventsExtended(tx *sql.Tx) error {
 		}
 	}
 
-	// Add operator_id column if not exists (with idempotent error handling for SQLite).
-	_, err = tx.ExecContext(ctx, `ALTER TABLE device_events ADD COLUMN operator_id TEXT`)
+	// Add user_id column if not exists (with idempotent error handling for SQLite).
+	_, err = tx.ExecContext(ctx, `ALTER TABLE device_events ADD COLUMN user_id TEXT`)
 	if err != nil {
 		if !isColumnExistsError(err) {
 			return err

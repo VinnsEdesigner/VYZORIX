@@ -51,7 +51,7 @@ func TestAuthController_LoginRequest_JSONUnmarshal(t *testing.T) {
 }
 
 func TestAuthController_RegisterRequest_JSON(t *testing.T) {
-	req := dto.OperatorRegisterRequest{
+	req := dto.UserRegisterRequest{
 		Email:    "new@example.com",
 		Password: "newpassword",
 		Name:     "New User",
@@ -75,7 +75,7 @@ func TestAuthController_RegisterRequest_JSON(t *testing.T) {
 func TestAuthController_AuthResponse_JSON(t *testing.T) {
 	resp := dto.AuthResponse{
 		Token: "jwt-token-abc123",
-		Operator: dto.OperatorResponse{
+		User: dto.UserResponse{
 			ID:    "op-001",
 			Email: "test@example.com",
 			Name:  "Test User",
@@ -95,8 +95,8 @@ func TestAuthController_AuthResponse_JSON(t *testing.T) {
 	if result["token"] != "jwt-token-abc123" {
 		t.Errorf("token = %v, want jwt-token-abc123", result["token"])
 	}
-	if result["operator"] == nil {
-		t.Error("operator should not be nil")
+	if result["user"] == nil {
+		t.Error("user should not be nil")
 	}
 }
 
@@ -310,7 +310,7 @@ func TestAuthController_ClientSettings_PartialJSON(t *testing.T) {
 	}
 }
 
-func TestAuthController_OperatorResponse_IncludesClientSettings(t *testing.T) {
+func TestAuthController_UserResponse_IncludesClientSettings(t *testing.T) {
 	thresholds := dto.Thresholds{
 		RiskWarn:    50,
 		RiskCrit:    75,
@@ -324,7 +324,7 @@ func TestAuthController_OperatorResponse_IncludesClientSettings(t *testing.T) {
 		AutoReconnect:        true,
 		NotificationsEnabled: true,
 	}
-	resp := dto.OperatorResponse{
+	resp := dto.UserResponse{
 		ID:         "op-001",
 		Email:      "test@example.com",
 		Name:       "Test User",

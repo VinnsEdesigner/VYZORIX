@@ -16,9 +16,9 @@ page?: number;
  */
 limit?: number;
 /**
- * filter by operator ID
+ * filter by user ID
  */
-operator_id?: string;
+user_id?: string;
 /**
  * search by key name
  */

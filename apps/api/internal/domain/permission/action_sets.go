@@ -152,7 +152,7 @@ var DeviceAPICatalog = map[string]ApiRequirement{
 		Tags:    Requirement{All: []Tag{DataPublic, OpRead, ProtectionNormal, VisibilityPublic}},
 		MinTier: TierUnrooted,
 	},
-	// Recent logcat: private, readable by operator and above.
+	// Recent logcat: private, readable by user and above.
 	"logcat": {
 		Action:  ActionDeviceRead,
 		Scope:   ScopeDevices,

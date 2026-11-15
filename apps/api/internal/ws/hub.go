@@ -28,7 +28,7 @@ type EventProcessor interface {
 
 // DashboardBroadcaster sends events to dashboard clients.
 type DashboardBroadcaster interface {
-	BroadcastToDashboard(deviceID string, operatorID string, eventType string, data []byte) error
+	BroadcastToDashboard(deviceID string, userID string, eventType string, data []byte) error
 }
 
 // Hub manages WebSocket connections and routes messages between devices and dashboard.

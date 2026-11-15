@@ -30,7 +30,7 @@ func TestUnknownKeyIsRefused(t *testing.T) {
 	}
 }
 
-// TestMissingSha256IsRefused names the artifact, because an operator has to find it.
+// TestMissingSha256IsRefused names the artifact, because a user has to find it.
 func TestMissingSha256IsRefused(t *testing.T) {
 	t.Parallel()
 

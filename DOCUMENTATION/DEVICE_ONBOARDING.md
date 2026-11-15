@@ -25,7 +25,7 @@ Three consequences, and they are the whole point:
   never leaves it. There is nothing to intercept, on any channel.
 - **The APK is generic.** One artifact, one release pipeline. Nothing user-specific is
   compiled in, so a downloaded APK is worth nothing on its own.
-- **The server stays authoritative.** The device reports facts; the operator decides
+- **The server stays authoritative.** The device reports facts; the user decides
   ownership and policy; the server assembles and signs the config.
 
 This replaced an earlier flow where the server pushed a shared secret over FCM and the
@@ -36,9 +36,9 @@ by removing the secret.
 
 ---
 
-## 2. What the operator does
+## 2. What the user does
 
-From the operator's side the whole thing is three actions:
+From the user's side the whole thing is three actions:
 
 1. **Install the APK** on the phone (sideload — see `APK_DISTRIBUTION.md`).
 2. **Open it once** and grant the accessibility service when the notification asks, so
@@ -62,7 +62,7 @@ token to paste — by design, because every one of those is a step a user can ge
 3. The device collects its facts: a **device-generated UUID** (the stable id), model,
    manufacturer, OS version, API level, build id, security patch level, supported ABIs,
    RAM, storage, device class, and a **tier hint** (unrooted / rooted / advanced).
-   Everything is sent at enroll so the operator sees the whole picture at claim time.
+   Everything is sent at enroll so the user sees the whole picture at claim time.
 4. The device `POST`s `{deviceUuid, publicKey, secretKey, deviceInfo}` to
    **`POST /v1/device/enroll`** — public, because there is nothing to authenticate
    *with* yet. This endpoint must be rate-limited per IP from the start: an
@@ -78,12 +78,12 @@ The device then opens its WebSocket and waits.
 
 ---
 
-## 4. Phase B — the operator claims it
+## 4. Phase B — the user claims it
 
-7. The operator, already signed in to the console, opens `/pair` and types the code.
+7. The user, already signed in to the console, opens `/pair` and types the code.
 8. The server looks it up: valid, not expired, not already claimed.
 9. The server shows the device's facts — *"Pixel 7a · Android 13 · 4 GB · added 40
-   seconds ago"* — and the operator confirms it is theirs, picks the organization, a
+   seconds ago"* — and the user confirms it is theirs, picks the organization, a
    name, and the policy.
 10. The server binds the device: owner, org, name, tier cap. It consumes the code and
     transitions **pending → registered**.
@@ -163,7 +163,7 @@ and delivering the config are both the single `pending → registered` transitio
      │  POST /v1/device/enroll
      ▼
   PENDING ────── code expires ──────────► (record expires, device re-enrolls)
-     │  operator claims the code, binds owner + org, config delivered
+     │  user claims the code, binds owner + org, config delivered
      ▼
  REGISTERED ──────── device offline mid-claim ─► re-fetches config on reconnect
      │

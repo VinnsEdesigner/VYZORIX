@@ -40,25 +40,25 @@ func NewMeHandler(authService *auth.AuthService, presenter *response.Presenter) 
 }
 
 // Handle handles GET /v1/auth/me.
-// @Summary      Get current operator
-// @Description  Returns the authenticated operator's profile and organization context
+// @Summary      Get current user
+// @Description  Returns the authenticated user's profile and organization context
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  openapi.MeResult  "current operator"
+// @Success      200  {object}  openapi.MeResult  "current user"
 // @Failure      401  {object}  openapi.ErrorResponse  "not authenticated"
 // @Failure      500  {object}  openapi.ErrorResponse  "failed to get organizations"
 // @Router       /auth/me [get]
 func (h *MeHandler) Handle(c *gin.Context) {
-	// Get operator from context (set by cookieAuth middleware).
-	op := middleware.GetOperatorFromContext(c)
+	// Get user from context (set by cookieAuth middleware).
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "not authenticated")
 		return
 	}
 
-	// Get operator's organizations.
-	orgs, err := h.authService.GetOperatorOrganizations(c.Request.Context(), op)
+	// Get user's organizations.
+	orgs, err := h.authService.GetUserOrganizations(c.Request.Context(), op)
 	if err != nil {
 		h.presenter.InternalError(c, "failed to get organizations")
 		return

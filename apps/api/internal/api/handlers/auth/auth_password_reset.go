@@ -69,8 +69,8 @@ func (h *PasswordResetHandler) ForgotPassword(c *gin.Context) {
 
 	// Send password reset email if configured.
 	if token != "" && h.emailSvc != nil && h.emailSvc.IsConfigured() {
-		// Get operator name for email.
-		op, err := h.authService.GetOperatorByEmail(c.Request.Context(), req.Email)
+		// Get user name for email.
+		op, err := h.authService.GetUserByEmail(c.Request.Context(), req.Email)
 		name := ""
 
 		if err == nil && op != nil {
@@ -147,7 +147,7 @@ func (h *PasswordResetHandler) ResendPasswordReset(c *gin.Context) {
 
 	// Send password reset email if configured.
 	if token != "" && h.emailSvc != nil && h.emailSvc.IsConfigured() {
-		op, err := h.authService.GetOperatorByEmail(c.Request.Context(), req.Email)
+		op, err := h.authService.GetUserByEmail(c.Request.Context(), req.Email)
 		name := ""
 
 		if err == nil && op != nil {
@@ -198,7 +198,7 @@ func (h *PasswordResetHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	// Get operator email from token for validation.
+	// Get user email from token for validation.
 	// First, validate the token exists and is not expired.
 	if err := h.authService.ValidatePasswordResetToken(c.Request.Context(), req.Token, ""); err != nil {
 		h.presenter.Unauthorized(c, "invalid or expired reset token")

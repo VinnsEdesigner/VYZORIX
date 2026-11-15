@@ -193,7 +193,7 @@ func (s *PushService) PushUpdate(ctx context.Context, req *PushUpdateRequest, in
 			failedCount++  // Count as failed.
 			pendingCount-- // No longer pending.
 			reconcileCount++
-			// Mark device push as failed but keep it in the push so operators can see it.
+			// Mark device push as failed but keep it in the push so users can see it.
 			_ = s.repo.UpdatePushDeviceStatus(ctx, devicePush.ID, updates.DevicePushStatusFailed, notifyErr.Error())
 			continue
 		}

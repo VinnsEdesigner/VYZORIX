@@ -1,7 +1,7 @@
 # Provisioning
 
 Provisioning lets you declare what a server should contain in a single file, and
-have the server create it at boot. Organizations, operators, groups, API keys,
+have the server create it at boot. Organizations, users, groups, API keys,
 permission grants, contact points, alert rules, service accounts, annotations —
 all of it, from one YAML or JSON document.
 
@@ -21,7 +21,7 @@ The order matters, because later sections reference earlier ones by name:
 
 ```
 organizations
-  → operators
+  → users
   → device_groups
   → api_keys
   → permission_grants
@@ -33,10 +33,10 @@ organizations
 
 Operators are created **before** organizations on purpose: creating an org
 inserts a membership and records who created it, both of which point at an
-operator. An organization with no operator to own it can't exist, so the
-provisioner picks a creator from the operators you declared — the first one whose
-`org_name` matches the organization, or the first operator if none matches. If
-there is no operator at all, that org is skipped with a clear log line rather
+user. An organization with no user to own it can't exist, so the
+provisioner picks a creator from the users you declared — the first one whose
+`org_name` matches the organization, or the first user if none matches. If
+there is no user at all, that org is skipped with a clear log line rather
 than created in a broken state.
 
 ---
@@ -45,7 +45,7 @@ than created in a broken state.
 
 Run it on every boot. Every resource is looked up before it's created:
 
-- Organizations, operators, groups, alert rules, contact points, service
+- Organizations, users, groups, alert rules, contact points, service
   accounts, and annotations are matched by name (or email) within their
   organization and **skipped** if they already exist.
 - API keys are matched by name; a key that exists is skipped.
@@ -66,7 +66,7 @@ organizations:
   - name: Default Org
     description: Auto-provisioned default organization
 
-operators:
+users:
   - email: admin@vyzorix.local
     name: Admin
     password: ChangeMe123!
@@ -76,7 +76,7 @@ operators:
 device_groups:
   - name: production
     org_name: Default Org
-    operator_emails: [admin@vyzorix.local]
+    user_emails: [admin@vyzorix.local]
 
 api_keys:
   - name: ci-pipeline
@@ -84,7 +84,7 @@ api_keys:
     scope: admin
 
 permission_grants:
-  - subject_type: operator
+  - subject_type: user
     subject_id: admin@vyzorix.local
     org_name: Default Org
     scope: "devices:*"
@@ -127,8 +127,8 @@ for the full shape of every section.
 | Section | Fields |
 |:--------|:-------|
 | `organizations` | `name`, `description` |
-| `operators` | `email`, `name`, `password`, `org_name`, `role` (`super_admin` or `admin`) |
-| `device_groups` | `name`, `org_name`, `operator_emails[]` |
+| `users` | `email`, `name`, `password`, `org_name`, `role` (`super_admin` or `admin`) |
+| `device_groups` | `name`, `org_name`, `user_emails[]` |
 | `api_keys` | `name`, `org_name`, `scope` (`read` / `write` / `admin`) |
 | `permission_grants` | `subject_type`, `subject_id`, `org_name`, `scope`, `actions[]` |
 | `contact_points` | `name`, `org_name`, `channel` (`email` / `webhook` / `slack`), `enabled`, `config{}` |

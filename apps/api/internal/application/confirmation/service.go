@@ -30,12 +30,12 @@ func NewService(repo domainconfirmation.Repository) *Service {
 }
 
 // RequestConfirmation issues a single-use token authorizing the given.
-// operator to execute the named command (optionally on a specific device).
+// user to execute the named command (optionally on a specific device).
 // The TTL is taken from the command's risk profile, falling back to.
 // DefaultConfirmationTTL. The returned token must be presented back within.
 // the TTL via ConsumeForCommand.
-func (s *Service) RequestConfirmation(ctx context.Context, operatorID, orgID, commandName, deviceID string) (*domainconfirmation.PendingConfirmation, error) {
-	if operatorID == "" || commandName == "" {
+func (s *Service) RequestConfirmation(ctx context.Context, userID, orgID, commandName, deviceID string) (*domainconfirmation.PendingConfirmation, error) {
+	if userID == "" || commandName == "" {
 		return nil, errors.New("operatorID and commandName are required")
 	}
 
@@ -48,7 +48,7 @@ func (s *Service) RequestConfirmation(ctx context.Context, operatorID, orgID, co
 	now := time.Now()
 	c := &domainconfirmation.PendingConfirmation{
 		Token:      shared.GenerateID(),
-		OperatorID: operatorID,
+		UserID: userID,
 		OrgID:      orgID,
 		Command:    commandName,
 		DeviceID:   deviceID,
@@ -75,7 +75,7 @@ type ConsumeResult struct {
 // failure. A caller that receives EffectUnknown must treat the token as
 // possibly consumed and reconcile rather than blindly retrying, since a second
 // successful consume of a destructive command's token would double-execute it.
-func (s *Service) ConsumeForCommandTyped(ctx context.Context, token, operatorID, commandName, deviceID string) ConsumeResult {
+func (s *Service) ConsumeForCommandTyped(ctx context.Context, token, userID, commandName, deviceID string) ConsumeResult {
 	c, err := s.repo.Get(ctx, token)
 	if err != nil {
 		if errors.Is(err, domainconfirmation.ErrNotFound) {
@@ -86,7 +86,7 @@ func (s *Service) ConsumeForCommandTyped(ctx context.Context, token, operatorID,
 	if c.IsExpired() {
 		return ConsumeResult{Confirmation: c, Failure: outcome.Invalid("confirmation_expired", "This confirmation has expired.")}
 	}
-	if !c.Matches(operatorID, commandName, deviceID) {
+	if !c.Matches(userID, commandName, deviceID) {
 		return ConsumeResult{Confirmation: c, Failure: outcome.Denied("confirmation_mismatch", "This confirmation does not match the request.")}
 	}
 	if c.IsConsumed() {
@@ -109,12 +109,12 @@ func (s *Service) ConsumeForCommandTyped(ctx context.Context, token, operatorID,
 }
 
 // ConsumeForCommand validates and consumes a confirmation token for a specific.
-// operator/command/device execution. It enforces ownership, command match,
+// user/command/device execution. It enforces ownership, command match,
 // device scope, expiry, and single-use semantics, marking the token consumed.
 // on success. Returns the consumed confirmation so the caller can include its.
 // risk tier / timing in audit records.
-func (s *Service) ConsumeForCommand(ctx context.Context, token, operatorID, commandName, deviceID string) (*domainconfirmation.PendingConfirmation, error) {
-	result := s.ConsumeForCommandTyped(ctx, token, operatorID, commandName, deviceID)
+func (s *Service) ConsumeForCommand(ctx context.Context, token, userID, commandName, deviceID string) (*domainconfirmation.PendingConfirmation, error) {
+	result := s.ConsumeForCommandTyped(ctx, token, userID, commandName, deviceID)
 	if result.Failure == nil {
 		return result.Confirmation, nil
 	}

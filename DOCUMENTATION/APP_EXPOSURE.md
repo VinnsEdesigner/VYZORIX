@@ -70,7 +70,7 @@ the config would be a token in five places, the same reasoning as secrets.
 `cloud` would make the app reachable from the internet through the cloud relay. It needs
 the wildcard-DNS/TLS proxy that Layer 3 defers, and it is **refused in v1**: a manifest
 that sets `expose = "cloud"` is rejected rather than silently downgraded. A silent
-downgrade would leave an operator believing an app is on the internet when it is not.
+downgrade would leave a user believing an app is on the internet when it is not.
 
 ---
 
@@ -92,7 +92,7 @@ to be exposed is simply run and supervised; reachability is opt-in.
 ## 7. The limits
 
 - **No TLS for `lan`.** The token is the protection; a local-network deployment is
-  expected to be on a network the operator trusts. This is stated rather than implied.
+  expected to be on a network the user trusts. This is stated rather than implied.
 - **No per-path or per-user authorization.** The token grants reach to the whole app.
   Fine-grained authorization is the app's job.
 - **`cloud` is not here yet.** Until the wildcard proxy lands, an app reachable from the

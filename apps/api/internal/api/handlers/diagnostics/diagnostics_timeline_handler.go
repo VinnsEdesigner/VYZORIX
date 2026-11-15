@@ -62,15 +62,15 @@ func (h *TimelineHandler) GetDeviceTimeline(c *gin.Context) {
 		return
 	}
 
-	// Get operator from context for DOA check.
-	op := middleware.GetOperatorFromContext(c)
-	operatorID := ""
+	// Get user from context for DOA check.
+	op := middleware.GetUserFromContext(c)
+	userID := ""
 	if op != nil {
-		operatorID = op.ID
+		userID = op.ID
 	}
 
-	// Verify operator authorization (DOA check).
-	authResp := h.service.VerifyDeviceOwnership(c.Request.Context(), imei, operatorID, orgID)
+	// Verify user authorization (DOA check).
+	authResp := h.service.VerifyDeviceOwnership(c.Request.Context(), imei, userID, orgID)
 	if !authResp.Authorized {
 		if authResp.Forbidden {
 			_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthzInsufficientPermissions, "Access denied - device does not belong to organization"))

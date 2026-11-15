@@ -5,43 +5,43 @@ import (
 	"time"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/shared"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 )
 
-// FindOrCreateGitHubOperator finds or creates an operator by GitHub ID.
-func (s *AuthService) FindOrCreateGitHubOperator(ctx context.Context, githubID, email, name string) (*OAuthResult, error) {
+// FindOrCreateGitHubUser finds or creates a user by GitHub ID.
+func (s *AuthService) FindOrCreateGitHubUser(ctx context.Context, githubID, email, name string) (*OAuthResult, error) {
 	// Try to find by GitHub ID.
-	op, err := s.operatorRepo.FindByGitHubID(ctx, githubID)
-	if err != nil && err != operator.ErrNotFound {
+	op, err := s.userRepo.FindByGitHubID(ctx, githubID)
+	if err != nil && err != user.ErrNotFound {
 		return nil, err
 	}
 
 	if op != nil {
-		return &OAuthResult{Operator: op, IsNew: false}, nil
+		return &OAuthResult{User: op, IsNew: false}, nil
 	}
 
 	// Try to find by email and link GitHub account.
-	op, err = s.operatorRepo.FindByEmail(ctx, email)
-	if err != nil && err != operator.ErrNotFound {
+	op, err = s.userRepo.FindByEmail(ctx, email)
+	if err != nil && err != user.ErrNotFound {
 		return nil, err
 	}
 
 	if op != nil {
 		// Link existing account to GitHub.
-		if err = s.operatorRepo.UpdateGitHubID(ctx, op.ID, githubID); err != nil {
+		if err = s.userRepo.UpdateGitHubID(ctx, op.ID, githubID); err != nil {
 			return nil, err
 		}
 
 		op.GitHubID = githubID
 
-		return &OAuthResult{Operator: op, IsNew: false}, nil
+		return &OAuthResult{User: op, IsNew: false}, nil
 	}
 
-	// Create new operator.
+	// Create new user.
 	id := shared.GenerateID()
 
 	now := time.Now()
-	newOp := &operator.Operator{
+	newOp := &user.User{
 		ID:            id,
 		Email:         email,
 		Name:          name,
@@ -51,9 +51,9 @@ func (s *AuthService) FindOrCreateGitHubOperator(ctx context.Context, githubID, 
 		UpdatedAt:     now,
 	}
 
-	if err := s.operatorRepo.Create(ctx, newOp); err != nil {
+	if err := s.userRepo.Create(ctx, newOp); err != nil {
 		return nil, err
 	}
 
-	return &OAuthResult{Operator: newOp, IsNew: true}, nil
+	return &OAuthResult{User: newOp, IsNew: true}, nil
 }

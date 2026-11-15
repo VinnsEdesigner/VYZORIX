@@ -8,7 +8,7 @@
 
 export type GetAuthResendVerificationParams = {
 /**
- * operator email
+ * user email
  */
 email: string;
 };

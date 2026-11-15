@@ -1,5 +1,5 @@
 /**
- * create-account.tsx - Operator registration page.
+ * create-account.tsx - User registration page.
  *
  * Uses the wolf background layout and SignUpForm component.
  */

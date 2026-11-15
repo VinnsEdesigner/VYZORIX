@@ -5,14 +5,14 @@
  * Go-generated OpenAPI contract from handler annotations
  * OpenAPI spec version: 0.0.01
  */
-import type { MFAOperator } from './mFAOperator';
+import type { MFAUser } from './mFAUser';
 
 export interface MFAVerifyResult {
   access_token?: string;
   expires_at?: number;
-  operator?: MFAOperator;
   refresh_token?: string;
   session_id?: string;
   signing_key?: string;
   success?: boolean;
+  user?: MFAUser;
 }

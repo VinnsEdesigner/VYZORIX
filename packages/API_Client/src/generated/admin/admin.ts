@@ -9,17 +9,17 @@ import type {
   AdminAPIKeyListResult,
   AdminClientListResult,
   AdminClientResult,
-  AdminOperator,
-  AdminOperatorListResult,
-  CreateOperatorRequest,
-  GetAdminApiKeysOperatorOperatorIdParams,
+  AdminUser,
+  AdminUserListResult,
+  CreateUserRequest,
   GetAdminApiKeysParams,
+  GetAdminApiKeysUserUserIdParams,
   GlobalAPIKeyStatsResult,
-  OperatorAPIKeyStatsResult,
   SuccessResult,
   SupportBundleResult,
   UpdateAdminClientRequest,
-  UpdateOperatorRequest
+  UpdateUserRequest,
+  UserAPIKeyStatsResult
 } from '../vyzorixUpdateServerAPI.schemas';
 
 import { customAxios } from '.././rest-bridge';
@@ -30,7 +30,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
   export const getAdmin = () => {
 /**
- * Lists all API keys across all operators (super admin only)
+ * Lists all API keys across all users (super admin only)
  * @summary List all API keys
  */
 const getAdminApiKeys = (
@@ -38,20 +38,6 @@ const getAdminApiKeys = (
  options?: SecondParameter<typeof customAxios<AdminAPIKeyListResult>>,) => {
       return customAxios<AdminAPIKeyListResult>(
       {url: `/admin/api-keys`, method: 'GET',
-        params
-    },
-      options);
-    }
-  /**
- * Lists all API keys for a specific operator (super admin only)
- * @summary List operator API keys
- */
-const getAdminApiKeysOperatorOperatorId = (
-    operatorId: string,
-    params?: GetAdminApiKeysOperatorOperatorIdParams,
- options?: SecondParameter<typeof customAxios<AdminAPIKeyListResult>>,) => {
-      return customAxios<AdminAPIKeyListResult>(
-      {url: `/admin/api-keys/operator/${operatorId}`, method: 'GET',
         params
     },
       options);
@@ -69,19 +55,33 @@ const getAdminApiKeysStats = (
       options);
     }
   /**
- * Returns API key statistics for a specific operator (super admin only)
- * @summary Get operator API key stats
+ * Returns API key statistics for a specific user (super admin only)
+ * @summary Get user API key stats
  */
-const getAdminApiKeysStatsOperatorOperatorId = (
-    operatorId: string,
- options?: SecondParameter<typeof customAxios<OperatorAPIKeyStatsResult>>,) => {
-      return customAxios<OperatorAPIKeyStatsResult>(
-      {url: `/admin/api-keys/stats/operator/${operatorId}`, method: 'GET'
+const getAdminApiKeysStatsUserUserId = (
+    userId: string,
+ options?: SecondParameter<typeof customAxios<UserAPIKeyStatsResult>>,) => {
+      return customAxios<UserAPIKeyStatsResult>(
+      {url: `/admin/api-keys/stats/user/${userId}`, method: 'GET'
     },
       options);
     }
   /**
- * Force revokes an API key for any operator (super admin only)
+ * Lists all API keys for a specific user (super admin only)
+ * @summary List user API keys
+ */
+const getAdminApiKeysUserUserId = (
+    userId: string,
+    params?: GetAdminApiKeysUserUserIdParams,
+ options?: SecondParameter<typeof customAxios<AdminAPIKeyListResult>>,) => {
+      return customAxios<AdminAPIKeyListResult>(
+      {url: `/admin/api-keys/user/${userId}`, method: 'GET',
+        params
+    },
+      options);
+    }
+  /**
+ * Force revokes an API key for any user (super admin only)
  * @summary Force revoke API key
  */
 const deleteAdminApiKeysKeyId = (
@@ -168,75 +168,75 @@ const getAdminSupportBundle = (
       options);
     }
   /**
- * Lists all operators in the system (super_admin only)
- * @summary List operators
+ * Lists all users in the system (super_admin only)
+ * @summary List users
  */
-const getAuthAdminOperators = (
+const getAuthAdminUsers = (
 
- options?: SecondParameter<typeof customAxios<AdminOperatorListResult>>,) => {
-      return customAxios<AdminOperatorListResult>(
-      {url: `/auth/admin/operators`, method: 'GET'
+ options?: SecondParameter<typeof customAxios<AdminUserListResult>>,) => {
+      return customAxios<AdminUserListResult>(
+      {url: `/auth/admin/users`, method: 'GET'
     },
       options);
     }
   /**
- * Creates a new operator (super_admin only)
- * @summary Create operator
+ * Creates a new user (super_admin only)
+ * @summary Create user
  */
-const postAuthAdminOperators = (
-    createOperatorRequest: CreateOperatorRequest,
- options?: SecondParameter<typeof customAxios<AdminOperator>>,) => {
-      return customAxios<AdminOperator>(
-      {url: `/auth/admin/operators`, method: 'POST',
+const postAuthAdminUsers = (
+    createUserRequest: CreateUserRequest,
+ options?: SecondParameter<typeof customAxios<AdminUser>>,) => {
+      return customAxios<AdminUser>(
+      {url: `/auth/admin/users`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
-      data: createOperatorRequest
+      data: createUserRequest
     },
       options);
     }
   /**
- * Returns a single operator by ID (super_admin only)
- * @summary Get operator
+ * Returns a single user by ID (super_admin only)
+ * @summary Get user
  */
-const getAuthAdminOperatorsId = (
+const getAuthAdminUsersId = (
     id: string,
- options?: SecondParameter<typeof customAxios<AdminOperator>>,) => {
-      return customAxios<AdminOperator>(
-      {url: `/auth/admin/operators/${id}`, method: 'GET'
+ options?: SecondParameter<typeof customAxios<AdminUser>>,) => {
+      return customAxios<AdminUser>(
+      {url: `/auth/admin/users/${id}`, method: 'GET'
     },
       options);
     }
   /**
- * Deletes an operator. Cannot delete yourself or the last super_admin
- * @summary Delete operator
+ * Deletes a user. Cannot delete yourself or the last super_admin
+ * @summary Delete user
  */
-const deleteAuthAdminOperatorsId = (
+const deleteAuthAdminUsersId = (
     id: string,
  options?: SecondParameter<typeof customAxios<SuccessResult>>,) => {
       return customAxios<SuccessResult>(
-      {url: `/auth/admin/operators/${id}`, method: 'DELETE'
+      {url: `/auth/admin/users/${id}`, method: 'DELETE'
     },
       options);
     }
   /**
- * Updates mutable operator fields (super_admin only)
- * @summary Update operator
+ * Updates mutable user fields (super_admin only)
+ * @summary Update user
  */
-const patchAuthAdminOperatorsId = (
+const patchAuthAdminUsersId = (
     id: string,
-    updateOperatorRequest: UpdateOperatorRequest,
- options?: SecondParameter<typeof customAxios<AdminOperator>>,) => {
-      return customAxios<AdminOperator>(
-      {url: `/auth/admin/operators/${id}`, method: 'PATCH',
+    updateUserRequest: UpdateUserRequest,
+ options?: SecondParameter<typeof customAxios<AdminUser>>,) => {
+      return customAxios<AdminUser>(
+      {url: `/auth/admin/users/${id}`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
-      data: updateOperatorRequest
+      data: updateUserRequest
     },
       options);
     }
-  return {getAdminApiKeys,getAdminApiKeysOperatorOperatorId,getAdminApiKeysStats,getAdminApiKeysStatsOperatorOperatorId,deleteAdminApiKeysKeyId,getAdminClients,getAdminClientsClientId,deleteAdminClientsClientId,patchAdminClientsClientId,postAdminClientsClientIdRotateKey,getAdminSupportBundle,getAuthAdminOperators,postAuthAdminOperators,getAuthAdminOperatorsId,deleteAuthAdminOperatorsId,patchAuthAdminOperatorsId}};
+  return {getAdminApiKeys,getAdminApiKeysStats,getAdminApiKeysStatsUserUserId,getAdminApiKeysUserUserId,deleteAdminApiKeysKeyId,getAdminClients,getAdminClientsClientId,deleteAdminClientsClientId,patchAdminClientsClientId,postAdminClientsClientIdRotateKey,getAdminSupportBundle,getAuthAdminUsers,postAuthAdminUsers,getAuthAdminUsersId,deleteAuthAdminUsersId,patchAuthAdminUsersId}};
 export type GetAdminApiKeysResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAdminApiKeys']>>>
-export type GetAdminApiKeysOperatorOperatorIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAdminApiKeysOperatorOperatorId']>>>
 export type GetAdminApiKeysStatsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAdminApiKeysStats']>>>
-export type GetAdminApiKeysStatsOperatorOperatorIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAdminApiKeysStatsOperatorOperatorId']>>>
+export type GetAdminApiKeysStatsUserUserIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAdminApiKeysStatsUserUserId']>>>
+export type GetAdminApiKeysUserUserIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAdminApiKeysUserUserId']>>>
 export type DeleteAdminApiKeysKeyIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['deleteAdminApiKeysKeyId']>>>
 export type GetAdminClientsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAdminClients']>>>
 export type GetAdminClientsClientIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAdminClientsClientId']>>>
@@ -244,8 +244,8 @@ export type DeleteAdminClientsClientIdResult = NonNullable<Awaited<ReturnType<Re
 export type PatchAdminClientsClientIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['patchAdminClientsClientId']>>>
 export type PostAdminClientsClientIdRotateKeyResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['postAdminClientsClientIdRotateKey']>>>
 export type GetAdminSupportBundleResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAdminSupportBundle']>>>
-export type GetAuthAdminOperatorsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAuthAdminOperators']>>>
-export type PostAuthAdminOperatorsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['postAuthAdminOperators']>>>
-export type GetAuthAdminOperatorsIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAuthAdminOperatorsId']>>>
-export type DeleteAuthAdminOperatorsIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['deleteAuthAdminOperatorsId']>>>
-export type PatchAuthAdminOperatorsIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['patchAuthAdminOperatorsId']>>>
+export type GetAuthAdminUsersResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAuthAdminUsers']>>>
+export type PostAuthAdminUsersResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['postAuthAdminUsers']>>>
+export type GetAuthAdminUsersIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAuthAdminUsersId']>>>
+export type DeleteAuthAdminUsersIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['deleteAuthAdminUsersId']>>>
+export type PatchAuthAdminUsersIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['patchAuthAdminUsersId']>>>

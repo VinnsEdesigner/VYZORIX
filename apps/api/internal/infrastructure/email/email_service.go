@@ -17,7 +17,7 @@ import (
 
 // NotificationData contains data for notification email templates.
 type NotificationData struct {
-	OperatorName  string
+	UserName  string
 	DeviceID      string
 	DeviceName    string
 	EventType     string
@@ -87,7 +87,7 @@ type Data struct {
 // LoginNotificationData contains data for new login notification emails.
 // 10: Added for login notification feature.
 type LoginNotificationData struct {
-	OperatorName string
+	UserName string
 	IPAddress    string
 	UserAgent    string
 	Location     string
@@ -304,7 +304,7 @@ func (s *Service) SendErrorAlertEmail(ctx context.Context, to string, data Notif
 	return s.send(ctx, to, subject, html)
 }
 
-// SendNewLoginNotificationEmail sends a new login notification email to the operator.
+// SendNewLoginNotificationEmail sends a new login notification email to the user.
 // 10: Added for login notification feature.
 func (s *Service) SendNewLoginNotificationEmail(ctx context.Context, to string, data LoginNotificationData) error {
 	if s.apiKey == "" {

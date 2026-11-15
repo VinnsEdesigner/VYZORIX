@@ -11,7 +11,7 @@ export interface UsageStatsCounts {
   annotations?: number;
   contact_points?: number;
   devices?: number;
-  operators?: number;
   organizations?: number;
   service_accounts?: number;
+  users?: number;
 }

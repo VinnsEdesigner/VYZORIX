@@ -6,7 +6,7 @@
  *   2. Browser is redirected to /v1/auth/google on the Go server
  *   3. Go server redirects to Google's consent screen
  *   4. Google redirects to /v1/auth/google/callback on the Go server
- *   5. Go server validates the code, creates/retrieves the operator, sets HttpOnly cookie
+ *   5. Go server validates the code, creates/retrieves the user, sets HttpOnly cookie
  *   6. Go server redirects browser to: FRONTEND_URL/dashboard?oauth=success&new=<bool>
  *
  * This route is kept for backwards compatibility but OAuth now redirects to dashboard

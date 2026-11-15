@@ -134,7 +134,7 @@ func TestSecretEnvelopeRejectsBadRecipient(t *testing.T) {
 
 // TestSecretEnvelopeBoundsThePlaintext proves an over-long secret is refused
 // with a message that names the limit, rather than RSA's bare "message too
-// long". A bound an operator cannot read is a bound they will report as a bug.
+// long". A bound a user cannot read is a bound they will report as a bug.
 func TestSecretEnvelopeBoundsThePlaintext(t *testing.T) {
 	priv := newSecretKey(t)
 

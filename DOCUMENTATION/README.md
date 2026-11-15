@@ -68,7 +68,7 @@ Start with the overview; the index groups everything by task.
 - [Service Accounts](SERVICE_ACCOUNTS.md) — Non-human identities with scoped, rotatable tokens for automation.
 - [Config Versioning](CONFIG_VERSIONING.md) — Versioned snapshots of org settings and thresholds, with restore.
 - [Live Channels](LIVE_CHANNELS.md) — Org-scoped event streams (`stream/<org>/<scope>`), permission-gated subscriptions.
-- [Provisioning](PROVISIONING.md) — Declare orgs, operators, keys, alert rules, contact points and more in one file, applied idempotently at boot.
+- [Provisioning](PROVISIONING.md) — Declare orgs, users, keys, alert rules, contact points and more in one file, applied idempotently at boot.
 
 ## Architecture Decisions
 

@@ -8,7 +8,7 @@ under `/dashboard`.
 `CONTAINER_ANDROID_APIS.md` (the other thing that crosses the same boundary),
 `WEBSOCKET_SYSTEM.md` (the transport).
 
-This document explains how an operator gets a shell inside the container, and the two
+This document explains how a user gets a shell inside the container, and the two
 design decisions that make it work on a phone: the PTY is allocated **outside** proot,
 and the shell **outlives** the socket.
 
@@ -41,7 +41,7 @@ Both are the reason a terminal here is robust where a naive one is fragile.
                                              └──────────────►  the container's shell
 ```
 
-1. The operator opens a terminal in the console.
+1. The user opens a terminal in the console.
 2. The server mints a session id and sends the device a binary **OPEN** frame over the
    device WebSocket.
 3. The device allocates a PTY (Layer 1's NDK code: `posix_openpt` → `grantpt` →
@@ -88,10 +88,10 @@ it:
 
 The buffer is bounded, because an unbounded one would grow with whatever the shell prints
 while nobody is watching. When it overflows, the **oldest** bytes are dropped — a
-terminal is a tail, and the most recent output is what an operator needs.
+terminal is a tail, and the most recent output is what a user needs.
 
 A detached session is reaped after a device-side TTL. The server also has an idle TTL, as
-a backstop for a session the operator forgets; the device's is deliberately shorter,
+a backstop for a session the user forgets; the device's is deliberately shorter,
 because a phone should reclaim the memory of a shell whose client is not coming back
 sooner rather than later.
 
@@ -124,7 +124,7 @@ Two consequences worth knowing:
 
 ## 5. Flow control
 
-The server applies a credit window to output going *to* the operator, but it never sends
+The server applies a credit window to output going *to* the user, but it never sends
 credit back to the device (its own accounting governs input). So the device must not
 stall waiting for an ACK that never comes: the reader's window is replenished locally as
 output is handed to the socket, and a session whose socket write fails is **closed**
@@ -156,7 +156,7 @@ The token is an env var rather than an argv entry so `ps` cannot show it.
 
 - **`shell.execute` is a separate grant.** The terminal route is gated on it, not on a
   general device-read permission, because a shell is the highest-consequence thing an
-  operator can open.
+  user can open.
 - **A recorded session is as sensitive as the terminal itself.** Reading a recording is
   gated the same way, because a recording contains everything that appeared on the
   terminal.

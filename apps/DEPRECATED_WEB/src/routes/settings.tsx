@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const tabs: { to: string; label: string; exact?: boolean }[] = [
   { to: "/settings", label: "Overview", exact: true },
   { to: "/settings/connection", label: "Connection" },
-  { to: "/settings/operator", label: "Operator" },
+  { to: "/settings/user", label: "Operator" },
   { to: "/settings/thresholds", label: "Thresholds" },
   { to: "/settings/advanced", label: "Advanced" },
 ];

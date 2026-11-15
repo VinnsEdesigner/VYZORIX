@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-// TestSubscription_OrgFanOut_MultipleOperators proves the core fix: device,
-// telemetry and command events are keyed by organization, so every operator in
-// the org receives them - not only the operator that happened to trigger it.
-func TestSubscription_OrgFanOut_MultipleOperators(t *testing.T) {
+// TestSubscription_OrgFanOut_MultipleUsers proves the core fix: device,
+// telemetry and command events are keyed by organization, so every user in
+// the org receives them - not only the user that happened to trigger it.
+func TestSubscription_OrgFanOut_MultipleUsers(t *testing.T) {
 	h := newTestHub()
 	h.InitSubscriptions()
 
@@ -18,7 +18,7 @@ func TestSubscription_OrgFanOut_MultipleOperators(t *testing.T) {
 	var mu sync.Mutex
 	deviceHits, telemetryHits, commandHits := 0, 0, 0
 
-	// Two different operators subscribe to the same organization.
+	// Two different users subscribe to the same organization.
 	unsubA := h.SubscribeDeviceUpdates(org, "dev-1", func(interface{}) error {
 		mu.Lock()
 		deviceHits++

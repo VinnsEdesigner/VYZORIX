@@ -92,7 +92,7 @@ func TestGrantOnAnotherDeviceIsRefused(t *testing.T) {
 }
 
 // TestAppsWriteDoesNotImplyDeploy is the invariant: the permission to
-// observe an app must not let an operator install one.
+// observe an app must not let a user install one.
 func TestAppsWriteDoesNotImplyDeploy(t *testing.T) {
 	t.Parallel()
 

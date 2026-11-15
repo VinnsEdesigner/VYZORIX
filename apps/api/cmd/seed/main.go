@@ -59,10 +59,10 @@ func main() {
 	password := "KamauV#2026"
 
 	var existing string
-	_ = db.QueryRowContext(ctx, "SELECT id FROM operators WHERE email = ?", email).Scan(&existing)
+	_ = db.QueryRowContext(ctx, "SELECT id FROM users WHERE email = ?", email).Scan(&existing)
 	if existing != "" {
 		hash := hashArgon2id(password)
-		_, err = db.ExecContext(ctx, "UPDATE operators SET password_hash = ?, email_verified = 1, role = 'super_admin' WHERE id = ?", hash, existing)
+		_, err = db.ExecContext(ctx, "UPDATE users SET password_hash = ?, email_verified = 1, role = 'super_admin' WHERE id = ?", hash, existing)
 		if err != nil {
 			fmt.Println("update error:", err)
 			os.Exit(1)
@@ -74,7 +74,7 @@ func main() {
 	id := uuid.New().String()
 	hash := hashArgon2id(password)
 	now := time.Now().UnixMilli()
-	_, err = db.ExecContext(ctx, `INSERT INTO operators (id, email, name, password_hash, google_id, github_id,
+	_, err = db.ExecContext(ctx, `INSERT INTO users (id, email, name, password_hash, google_id, github_id,
 		mfa_secret, mfa_secret_mac, mfa_enabled, email_verified, created_at, updated_at, fcm_token, last_organization_id, role)
 		VALUES (?, ?, ?, ?,
 			`+nullStr+`, `+nullStr+`,

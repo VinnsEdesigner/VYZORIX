@@ -1,7 +1,7 @@
 // Package serviceaccount provides non-human identities for automation:
 // named, org-scoped service accounts with scoped tokens. They carry the same
 // scope model as API keys (read/write/admin) but are not attached to an
-// operator, so key rotation and audit stay separate from human auth.
+// user, so key rotation and audit stay separate from human auth.
 package serviceaccount
 
 import (

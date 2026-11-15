@@ -16,10 +16,10 @@ export interface ClientCredential {
   is_active?: boolean;
   last_request_at?: number;
   name?: string;
-  operator_id?: string;
   platform?: string;
   rate_limit?: number;
   request_count?: number;
   secret?: string;
   updated_at?: number;
+  user_id?: string;
 }
