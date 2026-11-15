@@ -57,7 +57,7 @@
 
 ### 1.1 Purpose
 
-The Updates page allows operators to:
+The Updates page allows users to:
 - View current and available versions
 - Push updates to registered devices
 - View changelogs across versions

@@ -6,7 +6,7 @@
  *
  * Flow:
  *   - On mount: fetches /v1/auth/me with cookie credentials
- *   - Caches the operator in React state
+ *   - Caches the user in React state
  *   - Provides logout function that calls /v1/auth/logout
  *   - Clears signed API credentials on logout
  */

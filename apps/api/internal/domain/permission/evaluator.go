@@ -4,9 +4,9 @@ import (
 	"context"
 )
 
-// Evaluator resolves an operator's effective scoped permissions within an
+// Evaluator resolves a user's effective scoped permissions within an
 // organization: the member's role defaults unioned with custom
-// ResourcePermissions (operator-direct and team grants), with action sets
+// ResourcePermissions (user-direct and team grants), with action sets
 // expanded into base actions. Authorization layers evaluate (action, scope)
 // against it instead of checking role tier.
 type Evaluator struct {
@@ -48,7 +48,7 @@ func (e *Evaluator) Grants(action Action, scope string) bool {
 // GrantsResolved reports whether the evaluator grants `action` on `scope`,
 // resolving the scope through registered scope-attribute resolvers first. This
 // is the entry point that should be used at access time — it expands a runtime
-// scope (e.g. devices:imei:X) into the concrete scopes an operator might hold,
+// scope (e.g. devices:imei:X) into the concrete scopes a user might hold,
 // including inherited/group scopes, and checks each.
 func (e *Evaluator) GrantsResolved(ctx context.Context, action Action, scope string) bool {
 	return e.scopes.GrantsResolved(ctx, action, scope)

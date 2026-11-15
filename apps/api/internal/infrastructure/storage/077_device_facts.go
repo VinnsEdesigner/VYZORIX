@@ -12,7 +12,7 @@ import (
 // The device already collected apiLevel, ABIs, RAM and storage at enroll, but the
 // request dropped them and the server had nowhere to put them; security_patch and
 // build_id existed as columns but were never written. This reconciles the record
-// with what the device reports, so the operator sees the whole picture — model,
+// with what the device reports, so the user sees the whole picture — model,
 // build, patch level, capacity — when they claim it.
 //
 // Every column is nullable/zero-defaulted: a device that omits a fact (an older

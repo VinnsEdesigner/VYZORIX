@@ -64,7 +64,7 @@ const jsonOrThrow = async <T>(res: Response): Promise<T> => {
 };
 
 /**
- * Register a new operator account.
+ * Register a new user account.
  */
 export const registerOperator = async (payload: SignUpPayload): Promise<MessageResponse> => {
   logger.info("auth", "-> POST /v1/auth/register", {
@@ -93,12 +93,12 @@ export const loginOperator = async (identity: string, password: string): Promise
     body: JSON.stringify({ identity, password }),
   });
   const out = await jsonOrThrow<AuthResponse>(res);
-  logger.info("auth", "<- login OK", { role: out.operator.role });
+  logger.info("auth", "<- login OK", { role: out.user.role });
   return out;
 };
 
 /**
- * Logout the current operator.
+ * Logout the current user.
  */
 export const logoutOperator = async (): Promise<void> => {
   logger.info("auth", "-> POST /v1/auth/logout");
@@ -114,7 +114,7 @@ export const logoutOperator = async (): Promise<void> => {
 };
 
 /**
- * Get current operator profile from session cookie.
+ * Get current user profile from session cookie.
  */
 export const getCurrentSession = async (): Promise<OperatorResponse | null> => {
   logger.info("auth", "-> GET /v1/auth/me");

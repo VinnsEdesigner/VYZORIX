@@ -176,7 +176,7 @@ Messages exceeding the rate are dropped with a `WARN` log. The rate limiter trac
 
 ## Dashboard broadcasting
 
-Dashboard clients (operators viewing the dashboard) connect via WebSocket and subscribe to device updates. The `DashboardBroadcaster` interface on the Hub handles this:
+Dashboard clients (users viewing the dashboard) connect via WebSocket and subscribe to device updates. The `DashboardBroadcaster` interface on the Hub handles this:
 
 ```go
 type DashboardBroadcaster interface {

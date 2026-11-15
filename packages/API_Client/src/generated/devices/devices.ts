@@ -28,8 +28,8 @@ import type {
   GetDashboardDeviceImeiMetricsExportParams,
   GetDashboardDeviceImeiMetricsParams,
   GetDashboardDeviceImeiTelemetryParams,
-  GetDashboardDevicesOperatorParams,
   GetDashboardDevicesParams,
+  GetDashboardDevicesUserParams,
   GetDashboardEventsRecentParams,
   GetDashboardEventsTypesTypeParams,
   GetDevicesParams,
@@ -132,14 +132,14 @@ const getDashboardDevices = (
       options);
     }
   /**
- * Returns devices assigned to a specific operator
- * @summary List devices by operator
+ * Returns devices assigned to a specific user
+ * @summary List devices by user
  */
-const getDashboardDevicesOperator = (
-    params?: GetDashboardDevicesOperatorParams,
+const getDashboardDevicesUser = (
+    params?: GetDashboardDevicesUserParams,
  options?: SecondParameter<typeof customAxios<DeviceListResult>>,) => {
       return customAxios<DeviceListResult>(
-      {url: `/dashboard/devices/operator`, method: 'GET',
+      {url: `/dashboard/devices/user`, method: 'GET',
         params
     },
       options);
@@ -432,14 +432,14 @@ const postOrganizationsIdDevicesImeiTransfer = (
     },
       options);
     }
-  return {getDashboardDeviceImeiEvents,getDashboardDeviceImeiLogs,getDashboardDeviceImeiMetrics,getDashboardDeviceImeiMetricsExport,getDashboardDeviceImeiTelemetry,getDashboardDevices,getDashboardDevicesOperator,getDashboardEventsRecent,getDashboardEventsTypesType,getDashboardEventsId,getDeviceCount,getDeviceImei,deleteDeviceImei,getDeviceImeiConnectionStatus,postDeviceImeiDisconnect,patchDeviceImeiFcmToken,getDevices,getDevicesImei,deleteDevicesImei,getDevicesImeiSettings,patchDevicesImeiSettings,getDevicesImeiSettingsThresholds,patchDevicesImeiSettingsThresholds,getDevicesImeiStatus,getDevicesImeiTags,putDevicesImeiTags,postDevicesImeiTagsTag,deleteDevicesImeiTagsTag,postOrganizationsIdDevicesImeiTransfer}};
+  return {getDashboardDeviceImeiEvents,getDashboardDeviceImeiLogs,getDashboardDeviceImeiMetrics,getDashboardDeviceImeiMetricsExport,getDashboardDeviceImeiTelemetry,getDashboardDevices,getDashboardDevicesUser,getDashboardEventsRecent,getDashboardEventsTypesType,getDashboardEventsId,getDeviceCount,getDeviceImei,deleteDeviceImei,getDeviceImeiConnectionStatus,postDeviceImeiDisconnect,patchDeviceImeiFcmToken,getDevices,getDevicesImei,deleteDevicesImei,getDevicesImeiSettings,patchDevicesImeiSettings,getDevicesImeiSettingsThresholds,patchDevicesImeiSettingsThresholds,getDevicesImeiStatus,getDevicesImeiTags,putDevicesImeiTags,postDevicesImeiTagsTag,deleteDevicesImeiTagsTag,postOrganizationsIdDevicesImeiTransfer}};
 export type GetDashboardDeviceImeiEventsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardDeviceImeiEvents']>>>
 export type GetDashboardDeviceImeiLogsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardDeviceImeiLogs']>>>
 export type GetDashboardDeviceImeiMetricsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardDeviceImeiMetrics']>>>
 export type GetDashboardDeviceImeiMetricsExportResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardDeviceImeiMetricsExport']>>>
 export type GetDashboardDeviceImeiTelemetryResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardDeviceImeiTelemetry']>>>
 export type GetDashboardDevicesResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardDevices']>>>
-export type GetDashboardDevicesOperatorResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardDevicesOperator']>>>
+export type GetDashboardDevicesUserResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardDevicesUser']>>>
 export type GetDashboardEventsRecentResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardEventsRecent']>>>
 export type GetDashboardEventsTypesTypeResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardEventsTypesType']>>>
 export type GetDashboardEventsIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getDevices>['getDashboardEventsId']>>>

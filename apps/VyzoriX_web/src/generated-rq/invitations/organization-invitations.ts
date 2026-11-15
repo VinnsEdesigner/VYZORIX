@@ -69,7 +69,7 @@ export const getGetInvitationsUrl = () => {
 }
 
 /**
- * Returns invitations sent by the authenticated operator
+ * Returns invitations sent by the authenticated user
  * @summary List sent invitations
  */
 export const getInvitations = async ( options?: Parameters<typeof customAxios>[1]): Promise<InvitationListResult> => {
@@ -178,7 +178,7 @@ export const getPostInvitationsUrl = () => {
 }
 
 /**
- * Invites an operator to an organization by email
+ * Invites a user to an organization by email
  * @summary Create invitation
  */
 export const postInvitations = async (createInvitationRequest: CreateInvitationRequest, options?: Parameters<typeof customAxios>[1]): Promise<Invitation> => {
@@ -449,7 +449,7 @@ export const getPostInviteTokenAcceptUrl = (token: string,) => {
 }
 
 /**
- * Accepts an invitation and adds the operator to the organization
+ * Accepts an invitation and adds the user to the organization
  * @summary Accept invitation
  */
 export const postInviteTokenAccept = async (token: string, options?: Parameters<typeof customAxios>[1]): Promise<MessageResult> => {
@@ -605,8 +605,8 @@ export const usePostInviteTokenReject = <TError = ErrorResponse,
 }
 
 /**
- * Returns pending invitations addressed to the authenticated operator's email
- * @summary List pending invitations for current operator
+ * Returns pending invitations addressed to the authenticated user's email
+ * @summary List pending invitations for current user
  */
 export const getMeInvitations = async ( options?: Parameters<typeof customAxios>[1]): Promise<InvitationListResult> => {
 
@@ -674,7 +674,7 @@ export function useGetMeInvitations<TData = Awaited<ReturnType<typeof getMeInvit
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary List pending invitations for current operator
+ * @summary List pending invitations for current user
  */
 
 export function useGetMeInvitations<TData = Awaited<ReturnType<typeof getMeInvitations>>, TError = ErrorResponse>(
@@ -691,7 +691,7 @@ export function useGetMeInvitations<TData = Awaited<ReturnType<typeof getMeInvit
 
 
 /**
- * @summary List pending invitations for current operator
+ * @summary List pending invitations for current user
  */
 export const invalidateGetMeInvitations = async (
  queryClient: QueryClient,  options?: InvalidateOptions

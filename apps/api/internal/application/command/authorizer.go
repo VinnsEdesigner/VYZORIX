@@ -12,7 +12,7 @@ import (
 // ConfirmationConsumer consumes a single-use confirmation token for a command,
 // returning an error when the token is missing, expired, consumed, or mismatched.
 type ConfirmationConsumer interface {
-	ConsumeForCommand(ctx context.Context, token, operatorID, commandName, deviceID string) error
+	ConsumeForCommand(ctx context.Context, token, userID, commandName, deviceID string) error
 }
 
 // Authorizer applies the command risk gate uniformly for every entry point
@@ -23,7 +23,7 @@ type Authorizer struct {
 	confirmations ConfirmationConsumer
 	// requireMFAForCritical gates critical-tier commands on an MFA-verified session.
 	// It is a deployment setting, not a constant: a self-hosted deployment whose
-	// operator has no second factor (MFA off) cannot open a terminal or run any
+	// user has no second factor (MFA off) cannot open a terminal or run any
 	// critical command otherwise, because a token alone never satisfies the gate.
 	// The safe value is true; a deployment opts out explicitly.
 	requireMFAForCritical bool
@@ -51,10 +51,10 @@ func NewAuthorizerFromService(svc *confirmationapp.Service, requireMFAForCritica
 
 // consumerFunc adapts the service method (which returns a PendingConfirmation)
 // to the error-only ConfirmationConsumer interface.
-type consumerFunc func(ctx context.Context, token, operatorID, commandName, deviceID string) (*domainconfirmation.PendingConfirmation, error)
+type consumerFunc func(ctx context.Context, token, userID, commandName, deviceID string) (*domainconfirmation.PendingConfirmation, error)
 
-func (f consumerFunc) ConsumeForCommand(ctx context.Context, token, operatorID, commandName, deviceID string) error {
-	_, err := f(ctx, token, operatorID, commandName, deviceID)
+func (f consumerFunc) ConsumeForCommand(ctx context.Context, token, userID, commandName, deviceID string) error {
+	_, err := f(ctx, token, userID, commandName, deviceID)
 	return err
 }
 
@@ -109,7 +109,7 @@ func (a *Authorizer) confirm(ctx context.Context, actor domaincommand.ActorConte
 	if a.confirmations == nil {
 		return blocked("Confirmations are not enabled on this server.")
 	}
-	if err := a.confirmations.ConsumeForCommand(ctx, token, actor.OperatorID, commandName, deviceID); err != nil {
+	if err := a.confirmations.ConsumeForCommand(ctx, token, actor.UserID, commandName, deviceID); err != nil {
 		return blocked(confirmationErrorMessage(err))
 	}
 	return AuthorizeOutcome{Allowed: true, Tier: profile.Tier}

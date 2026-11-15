@@ -51,8 +51,8 @@ import type {
   GetDashboardDeviceImeiMetricsExportParams,
   GetDashboardDeviceImeiMetricsParams,
   GetDashboardDeviceImeiTelemetryParams,
-  GetDashboardDevicesOperatorParams,
   GetDashboardDevicesParams,
+  GetDashboardDevicesUserParams,
   GetDashboardEventsRecentParams,
   GetDashboardEventsTypesTypeParams,
   GetDevicesParams,
@@ -828,7 +828,7 @@ export const invalidateGetDashboardDevices = async (
 
 
 
-export const getGetDashboardDevicesOperatorUrl = (params?: GetDashboardDevicesOperatorParams,) => {
+export const getGetDashboardDevicesUserUrl = (params?: GetDashboardDevicesUserParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -840,16 +840,16 @@ export const getGetDashboardDevicesOperatorUrl = (params?: GetDashboardDevicesOp
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/dashboard/devices/operator?${stringifiedParams}` : `/dashboard/devices/operator`
+  return stringifiedParams.length > 0 ? `/dashboard/devices/user?${stringifiedParams}` : `/dashboard/devices/user`
 }
 
 /**
- * Returns devices assigned to a specific operator
- * @summary List devices by operator
+ * Returns devices assigned to a specific user
+ * @summary List devices by user
  */
-export const getDashboardDevicesOperator = async (params?: GetDashboardDevicesOperatorParams, options?: Parameters<typeof customAxios>[1]): Promise<DeviceListResult> => {
+export const getDashboardDevicesUser = async (params?: GetDashboardDevicesUserParams, options?: Parameters<typeof customAxios>[1]): Promise<DeviceListResult> => {
 
-  return customAxios<DeviceListResult>(getGetDashboardDevicesOperatorUrl(params),
+  return customAxios<DeviceListResult>(getGetDashboardDevicesUserUrl(params),
   {
     ...options,
     method: 'GET'
@@ -862,66 +862,66 @@ export const getDashboardDevicesOperator = async (params?: GetDashboardDevicesOp
 
 
 
-export const getGetDashboardDevicesOperatorQueryKey = (params?: GetDashboardDevicesOperatorParams,) =>
-    organizationScopedQueryKey({ params }, { url: `/dashboard/devices/operator` });
+export const getGetDashboardDevicesUserQueryKey = (params?: GetDashboardDevicesUserParams,) =>
+    organizationScopedQueryKey({ params }, { url: `/dashboard/devices/user` });
 
 
-export const useGetDashboardDevicesOperatorQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardDevicesOperator>>, TError = ErrorResponse>(params?: GetDashboardDevicesOperatorParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardDevicesOperator>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+export const useGetDashboardDevicesUserQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardDevicesUser>>, TError = ErrorResponse>(params?: GetDashboardDevicesUserParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardDevicesUser>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  organizationScopedQueryKey({ params }, { url: `/dashboard/devices/operator`, queryOptions });
+  const queryKey =  organizationScopedQueryKey({ params }, { url: `/dashboard/devices/user`, queryOptions });
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDashboardDevicesOperator>>> = ({ signal }) => getDashboardDevicesOperator(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDashboardDevicesUser>>> = ({ signal }) => getDashboardDevicesUser(params, { signal, ...requestOptions });
 
 
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDashboardDevicesOperator>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDashboardDevicesUser>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type GetDashboardDevicesOperatorQueryResult = NonNullable<Awaited<ReturnType<typeof getDashboardDevicesOperator>>>
-export type GetDashboardDevicesOperatorQueryError = ErrorResponse
+export type GetDashboardDevicesUserQueryResult = NonNullable<Awaited<ReturnType<typeof getDashboardDevicesUser>>>
+export type GetDashboardDevicesUserQueryError = ErrorResponse
 
 
-export function useGetDashboardDevicesOperator<TData = Awaited<ReturnType<typeof getDashboardDevicesOperator>>, TError = ErrorResponse>(
- params: undefined |  GetDashboardDevicesOperatorParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardDevicesOperator>>, TError, TData>> & Pick<
+export function useGetDashboardDevicesUser<TData = Awaited<ReturnType<typeof getDashboardDevicesUser>>, TError = ErrorResponse>(
+ params: undefined |  GetDashboardDevicesUserParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardDevicesUser>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getDashboardDevicesOperator>>,
+          Awaited<ReturnType<typeof getDashboardDevicesUser>>,
           TError,
-          Awaited<ReturnType<typeof getDashboardDevicesOperator>>
+          Awaited<ReturnType<typeof getDashboardDevicesUser>>
         > , 'initialData'
       >, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetDashboardDevicesOperator<TData = Awaited<ReturnType<typeof getDashboardDevicesOperator>>, TError = ErrorResponse>(
- params?: GetDashboardDevicesOperatorParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardDevicesOperator>>, TError, TData>> & Pick<
+export function useGetDashboardDevicesUser<TData = Awaited<ReturnType<typeof getDashboardDevicesUser>>, TError = ErrorResponse>(
+ params?: GetDashboardDevicesUserParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardDevicesUser>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getDashboardDevicesOperator>>,
+          Awaited<ReturnType<typeof getDashboardDevicesUser>>,
           TError,
-          Awaited<ReturnType<typeof getDashboardDevicesOperator>>
+          Awaited<ReturnType<typeof getDashboardDevicesUser>>
         > , 'initialData'
       >, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetDashboardDevicesOperator<TData = Awaited<ReturnType<typeof getDashboardDevicesOperator>>, TError = ErrorResponse>(
- params?: GetDashboardDevicesOperatorParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardDevicesOperator>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+export function useGetDashboardDevicesUser<TData = Awaited<ReturnType<typeof getDashboardDevicesUser>>, TError = ErrorResponse>(
+ params?: GetDashboardDevicesUserParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardDevicesUser>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary List devices by operator
+ * @summary List devices by user
  */
 
-export function useGetDashboardDevicesOperator<TData = Awaited<ReturnType<typeof getDashboardDevicesOperator>>, TError = ErrorResponse>(
- params?: GetDashboardDevicesOperatorParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardDevicesOperator>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+export function useGetDashboardDevicesUser<TData = Awaited<ReturnType<typeof getDashboardDevicesUser>>, TError = ErrorResponse>(
+ params?: GetDashboardDevicesUserParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardDevicesUser>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = useGetDashboardDevicesOperatorQueryOptions(params,options)
+  const queryOptions = useGetDashboardDevicesUserQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -930,13 +930,13 @@ export function useGetDashboardDevicesOperator<TData = Awaited<ReturnType<typeof
 
 
 /**
- * @summary List devices by operator
+ * @summary List devices by user
  */
-export const invalidateGetDashboardDevicesOperator = async (
- queryClient: QueryClient, params?: GetDashboardDevicesOperatorParams, options?: InvalidateOptions
+export const invalidateGetDashboardDevicesUser = async (
+ queryClient: QueryClient, params?: GetDashboardDevicesUserParams, options?: InvalidateOptions
   ): Promise<QueryClient> => {
 
-  await queryClient.invalidateQueries({ queryKey: organizationScopedQueryKey({ params }, { url: `/dashboard/devices/operator` }) }, options);
+  await queryClient.invalidateQueries({ queryKey: organizationScopedQueryKey({ params }, { url: `/dashboard/devices/user` }) }, options);
 
   return queryClient;
 }
@@ -1562,7 +1562,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   const onSuccess = (data: Awaited<ReturnType<typeof deleteDeviceImei>>, variables: {imei: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesOperatorQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesUserQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDashboardEventsRecentQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDeviceCountQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });
@@ -1752,7 +1752,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   const onSuccess = (data: Awaited<ReturnType<typeof postDeviceImeiDisconnect>>, variables: {imei: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesOperatorQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesUserQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDashboardEventsRecentQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDeviceCountQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });
@@ -1840,7 +1840,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   const onSuccess = (data: Awaited<ReturnType<typeof patchDeviceImeiFcmToken>>, variables: {imei: string;data: DeviceFCMTokenRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesOperatorQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesUserQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDashboardEventsRecentQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDeviceCountQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });
@@ -2155,7 +2155,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   const onSuccess = (data: Awaited<ReturnType<typeof deleteDevicesImei>>, variables: {imei: string;params?: DeleteDevicesImeiParams}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesOperatorQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesUserQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDashboardEventsRecentQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDeviceCountQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });
@@ -2352,7 +2352,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   const onSuccess = (data: Awaited<ReturnType<typeof patchDevicesImeiSettings>>, variables: {imei: string;data: UpdateDeviceSettingsRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesOperatorQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesUserQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDashboardEventsRecentQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDeviceCountQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });
@@ -2549,7 +2549,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   const onSuccess = (data: Awaited<ReturnType<typeof patchDevicesImeiSettingsThresholds>>, variables: {imei: string;data: ThresholdUpdateRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesOperatorQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesUserQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDashboardEventsRecentQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDeviceCountQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });
@@ -2855,7 +2855,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   const onSuccess = (data: Awaited<ReturnType<typeof putDevicesImeiTags>>, variables: {imei: string;data: SetDeviceTagsRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesOperatorQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesUserQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDashboardEventsRecentQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDeviceCountQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });
@@ -2938,7 +2938,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   const onSuccess = (data: Awaited<ReturnType<typeof postDevicesImeiTagsTag>>, variables: {imei: string;tag: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesOperatorQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesUserQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDashboardEventsRecentQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDeviceCountQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });
@@ -3021,7 +3021,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   const onSuccess = (data: Awaited<ReturnType<typeof deleteDevicesImeiTagsTag>>, variables: {imei: string;tag: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesOperatorQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesUserQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDashboardEventsRecentQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDeviceCountQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });
@@ -3111,7 +3111,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   const onSuccess = (data: Awaited<ReturnType<typeof postOrganizationsIdDevicesImeiTransfer>>, variables: {id: string;imei: string;data: DeviceTransferRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesOperatorQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesUserQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDashboardEventsRecentQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDeviceCountQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });

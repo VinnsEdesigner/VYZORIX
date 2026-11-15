@@ -231,7 +231,7 @@ Acknowledge (approve or reject) a pending request.
 ```json
 {
   "action": "approve",
-  "notes": "Optional operator notes"
+  "notes": "Optional user notes"
 }
 ```
 
@@ -366,7 +366,7 @@ Deregister a device (soft delete).
 
 #### POST /v1/device/inbox (DEPRECATED: was /v1/device/register)
 
-Operator-initiated registration (alternative to inbox flow).
+User-initiated registration (alternative to inbox flow).
 
 **Request:**
 ```json
@@ -1014,7 +1014,7 @@ type Mutation {
 
 ### 11.2 Security Requirements
 
-1. **Authentication** - All endpoints require authenticated operator
+1. **Authentication** - All endpoints require authenticated user
 2. **Device Ownership** - DOA check on all device-specific operations
 3. **Audit Logging** - Log all registration/deregistration actions
 4. **Secret Generation** - Use crypto/rand for commandSecret

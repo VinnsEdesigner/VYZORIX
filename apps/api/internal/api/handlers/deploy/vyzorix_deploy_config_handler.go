@@ -20,7 +20,7 @@ import (
 // parameter names at the same path position, and the device-signed routes under
 // /v1/device already use `:imei`. The value is a device id, not an IMEI.
 
-// deployResponse is what the operator is told. It names the version and the
+// deployResponse is what the user is told. It names the version and the
 // authoriser, so the receipt can be checked against the device's config.
 type deployResponse struct {
 	AuthorizedBy string       `json:"authorizedBy"`
@@ -82,8 +82,8 @@ func (h *Handler) Deploy(c *gin.Context) {
 		// target and the service reads it. Passing the path param here (always empty
 		// on this route) is what made every deploy fail authorization.
 		//
-		// The member is the resolved caller's, not the context operator's: a CI deploy
-		// authenticated by a credential has no operator in the context, and
+		// The member is the resolved caller's, not the context user's: a CI deploy
+		// authenticated by a credential has no user in the context, and
 		// requires the config to name the human who minted the credential.
 		MemberID: memberID,
 		Manifest: body,
@@ -141,7 +141,7 @@ func markApps(markings []deploy.AppMarking) []appMarking {
 }
 
 // currentResponse is the GET /v1/deploy/{imei} body. It carries the document,
-// because the console shows it and the operator can compare it to what the device
+// because the console shows it and the user can compare it to what the device
 // reports.
 type currentResponse struct {
 	DeviceID  string        `json:"deviceId"`

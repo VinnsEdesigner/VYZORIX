@@ -86,10 +86,10 @@ apps/api/internal/
     auth_service.go        # EXISTS (AuthService)
     auth_password.go       # EXISTS
  domain/
-    operator/               # EXISTS
-       operator_entity.go           # EXISTS (Operator struct)
-       operator_repository.go       # EXISTS
-       operator_errors.go           # EXISTS
+    user/                   # EXISTS
+       user_entity.go           # EXISTS (User struct)
+       user_repository.go       # EXISTS
+       user_errors.go           # EXISTS
        operator_password.go         # EXISTS
        operator_role.go            # EXISTS
        operator_requests.go         # EXISTS
@@ -145,22 +145,22 @@ apps/api/internal/
 |--------|----------|------|-------------|--------|
 | POST | `/v1/auth/login` | None | Credential login (browser — sets session cookie) | **EXISTS** |
 | POST | `/v1/auth/login/tokens` | None | Credential login (API clients — returns JWT + refresh token) | **EXISTS** |
-| POST | `/v1/auth/register` | None | Register new operator | **EXISTS** |
+| POST | `/v1/auth/register` | None | Register new user | **EXISTS** |
 | POST | `/v1/auth/logout` | Cookie | Logout current session | **EXISTS** |
 | GET | `/v1/auth/csrf-token` | None | Get CSRF token for mutating requests | **EXISTS** |
-| GET | `/v1/auth/me` | Cookie | Get current operator | **EXISTS** |
-| PATCH | `/v1/auth/me` | Cookie | Update operator name | **EXISTS** |
-| GET | `/v1/auth/me/settings` | Cookie | Get operator settings (thresholds + client) | **EXISTS** |
-| PATCH | `/v1/auth/me/settings` | Cookie | Update operator settings | **EXISTS** |
-| GET | `/v1/auth/me/thresholds` | Cookie | Get operator thresholds | **EXISTS** |
-| PATCH | `/v1/auth/me/thresholds` | Cookie | Update operator thresholds | **EXISTS** |
+| GET | `/v1/auth/me` | Cookie | Get current user | **EXISTS** |
+| PATCH | `/v1/auth/me` | Cookie | Update user name | **EXISTS** |
+| GET | `/v1/auth/me/settings` | Cookie | Get user settings (thresholds + client) | **EXISTS** |
+| PATCH | `/v1/auth/me/settings` | Cookie | Update user settings | **EXISTS** |
+| GET | `/v1/auth/me/thresholds` | Cookie | Get user thresholds | **EXISTS** |
+| PATCH | `/v1/auth/me/thresholds` | Cookie | Update user thresholds | **EXISTS** |
 | GET | `/v1/auth/me/notifications` | Cookie | Get notification settings | **EXISTS** |
 | PATCH | `/v1/auth/me/notifications` | Cookie | Update notification settings | **EXISTS** |
 | POST | `/v1/auth/me/notifications/webhook/test` | Cookie | Test webhook delivery | **EXISTS** |
 | POST | `/v1/auth/me/notifications/webhook/rotate` | Cookie | Rotate webhook secret | **EXISTS** |
 | POST | `/v1/auth/refresh` | None | Refresh access token (requires `refresh_token` in body) | **EXISTS** |
-| GET | `/v1/auth/lockout/status` | Cookie | Get current operator's lockout status | **EXISTS** |
-| GET | `/v1/auth/organizations` | Cookie | List operator's organizations | **EXISTS** |
+| GET | `/v1/auth/lockout/status` | Cookie | Get current user's lockout status | **EXISTS** |
+| GET | `/v1/auth/organizations` | Cookie | List user's organizations | **EXISTS** |
 | POST | `/v1/auth/organizations/select` | Cookie | Select active organization | **EXISTS** |
 
 ### 3.2 MFA Endpoints
@@ -208,7 +208,7 @@ apps/api/internal/
 
 | Method | Endpoint | Auth | Description | Status |
 |--------|----------|------|-------------|--------|
-| GET | `/v1/auth/sessions` | Cookie | List all active sessions for the operator | **EXISTS** |
+| GET | `/v1/auth/sessions` | Cookie | List all active sessions for the user | **EXISTS** |
 | GET | `/v1/auth/sessions/:id` | Cookie | Get a specific session by ID | **EXISTS** |
 | GET | `/v1/auth/sessions/concurrent` | Cookie | Check concurrent login count and limit | **EXISTS** |
 | DELETE | `/v1/auth/sessions/:id` | Cookie | Revoke a specific session | **EXISTS** |
@@ -230,22 +230,22 @@ apps/api/internal/
 
 | Method | Endpoint | Auth | Description | Status |
 |--------|----------|------|-------------|--------|
-| GET | `/v1/auth/admin/operators` | Admin | List all operators | **EXISTS** |
-| POST | `/v1/auth/admin/operators` | Admin | Create operator | **EXISTS** |
-| GET | `/v1/auth/admin/operators/:id` | Admin | Get operator | **EXISTS** |
-| PATCH | `/v1/auth/admin/operators/:id` | Admin | Update operator | **EXISTS** |
-| DELETE | `/v1/auth/admin/operators/:id` | Admin | Delete operator | **EXISTS** |
+| GET | `/v1/auth/admin/users` | Admin | List all users | **EXISTS** |
+| POST | `/v1/auth/admin/users` | Admin | Create user | **EXISTS** |
+| GET | `/v1/auth/admin/users/:id` | Admin | Get user | **EXISTS** |
+| PATCH | `/v1/auth/admin/users/:id` | Admin | Update user | **EXISTS** |
+| DELETE | `/v1/auth/admin/users/:id` | Admin | Delete user | **EXISTS** |
 
 ---
 
 ## 4. Domain Layer
 
-### 4.1 Operator Entity (EXISTING)
+### 4.1 User Entity (EXISTING)
 
 ```go
-// apps/api/internal/domain/operator/operator_entity.go
+// apps/api/internal/domain/user/user_entity.go
 
-type Operator struct {
+type User struct {
     CreatedAt      time.Time
     UpdatedAt      time.Time
     GitHubID       string
@@ -264,18 +264,18 @@ type Operator struct {
 }
 
 // Methods (EXISTING)
-func (o *Operator) IsSuperAdmin() bool
-func (o *Operator) IsAdmin() bool
-func (o *Operator) HasMFA() bool
-func (o *Operator) UsesOAuth() bool
-func (o *Operator) HasPassword() bool
+func (o *User) IsSuperAdmin() bool
+func (o *User) IsAdmin() bool
+func (o *User) HasMFA() bool
+func (o *User) UsesOAuth() bool
+func (o *User) HasPassword() bool
 ```
 
 ### 4.2 Required Domain Entities
 
 | Entity | File | Status | Purpose |
 |--------|------|--------|---------|
-| Operator | `domain/operator/operator_entity.go` | **EXISTS** | User/operator entity |
+| User | `domain/user/user_entity.go` | **EXISTS** | User/user entity |
 | Session | `domain/session/session_entity.go` | **EXISTS** | Session management |
 | RefreshToken | `domain/refresh_token/refresh_token_entity.go` | **EXISTS** | Refresh token storage |
 | EmailVerification | `domain/email_verification/email_verification_entity.go` | **EXISTS** | Email verification tokens |
@@ -285,17 +285,17 @@ func (o *Operator) HasPassword() bool
 ### 4.3 Domain Repository Interfaces
 
 ```go
-// domain/operator/operator_repository.go (EXISTING)
+// domain/user/user_repository.go (EXISTING)
 
 type Repository interface {
-    Create(ctx context.Context, op *Operator) error
-    FindByID(ctx context.Context, id string) (*Operator, error)
-    FindByEmail(ctx context.Context, email string) (*Operator, error)
-    FindByGoogleID(ctx context.Context, googleID string) (*Operator, error)
-    FindByGitHubID(ctx context.Context, githubID string) (*Operator, error)
-    Update(ctx context.Context, op *Operator) error
+    Create(ctx context.Context, op *User) error
+    FindByID(ctx context.Context, id string) (*User, error)
+    FindByEmail(ctx context.Context, email string) (*User, error)
+    FindByGoogleID(ctx context.Context, googleID string) (*User, error)
+    FindByGitHubID(ctx context.Context, githubID string) (*User, error)
+    Update(ctx context.Context, op *User) error
     Delete(ctx context.Context, id string) error
-    List(ctx context.Context, limit, offset int) ([]*Operator, int, error)
+    List(ctx context.Context, limit, offset int) ([]*User, int, error)
     Count(ctx context.Context) (int, error)
 }
 ```
@@ -325,7 +325,7 @@ type Repository interface {
 // application/auth/auth_service.go (EXISTS - major methods)
 
 type AuthService struct {
-    operatorRepo       operator.Repository
+    operatorRepo       user.Repository
     sessionRepo        session.Repository
     emailVerifyRepo    email_verification.Repository
     passwordResetRepo  password_reset.Repository
@@ -442,20 +442,20 @@ type MFAVerifyRequest struct {
 
 // MFAVerifyResponse is returned by POST /v1/auth/mfa/verify during login.
 // The handler returns a flat gin.H with success, session_id, access_token,
-// refresh_token, expires_at, and a nested operator object.
+// refresh_token, expires_at, and a nested user object.
 type MFAVerifyResponse struct {
     Success      bool   `json:"success"`
     SessionID    string `json:"session_id"`
     AccessToken  string `json:"access_token"`
     RefreshToken string `json:"refresh_token"`
     ExpiresAt    int64  `json:"expires_at"`
-    Operator     struct {
+    User     struct {
         ID         string `json:"id"`
         Email      string `json:"email"`
         Name       string `json:"name"`
         Role       string `json:"role"`
         MFAEnabled bool   `json:"mfa_enabled"`
-    } `json:"operator"`
+    } `json:"user"`
 }
 
 // Token Refresh — EXISTS
@@ -521,7 +521,7 @@ func (h *LoginHandler) HandleWithTokens(c *gin.Context) {
     // 1. Parse LoginRequest
     // 2. Call authService.LoginWithTokens()
     // 3. If ErrMFARequired, return { mfa_required: true, operator_id, email, name, mfa_enabled }
-    // 4. Return LoginWithTokensResponse (access_token, refresh_token, expires_at, session_id, operator fields)
+    // 4. Return LoginWithTokensResponse (access_token, refresh_token, expires_at, session_id, user fields)
 }
 ```
 
@@ -537,11 +537,11 @@ func (h *MFAHandler) VerifyMFA(c *gin.Context) {
     // 2. Audit-log MFA verify attempt
     // 3. Call authService.VerifyMFACode(operatorID, code) → returns session
     // 4. On failure: audit-log, return 401 "Invalid MFA code"
-    // 5. Re-validate operator (not deleted, MFA still enabled, role unchanged)
+    // 5. Re-validate user (not deleted, MFA still enabled, role unchanged)
     // 6. Create session cookie via SessionManager.CreateCookie(session.ID)
     // 7. Issue refresh token + generate JWT access token
     // 8. Audit-log success
-    // 9. Return { success, session_id, access_token, refresh_token, expires_at, operator: { id, email, name, role, mfa_enabled } }
+    // 9. Return { success, session_id, access_token, refresh_token, expires_at, user: { id, email, name, role, mfa_enabled } }
 }
 ```
 
@@ -575,7 +575,7 @@ type SettingsHandler struct {
 
 // PATCH /v1/auth/me
 func (h *SettingsHandler) UpdateName(c *gin.Context) {
-    // Update operator name
+    // Update user name
 }
 
 // PATCH /v1/auth/me/settings
@@ -627,8 +627,8 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 ### 8.1 Existing Tables
 
 ```sql
--- operators table (EXISTS)
-CREATE TABLE operators (
+-- users table (EXISTS)
+CREATE TABLE users (
     id TEXT PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
@@ -649,7 +649,7 @@ CREATE TABLE operators (
 -- sessions table (EXISTS)
 CREATE TABLE sessions (
     id TEXT PRIMARY KEY,
-    operator_id TEXT NOT NULL REFERENCES operators(id) ON DELETE CASCADE,
+    operator_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     expires_at TIMESTAMPTZ NOT NULL,
     ip_address TEXT,
@@ -660,7 +660,7 @@ CREATE TABLE sessions (
 CREATE TABLE refresh_tokens (
     id TEXT PRIMARY KEY,
     token_hash TEXT UNIQUE NOT NULL,
-    operator_id TEXT NOT NULL REFERENCES operators(id) ON DELETE CASCADE,
+    operator_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     session_id TEXT REFERENCES sessions(id) ON DELETE CASCADE,
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -671,7 +671,7 @@ CREATE TABLE refresh_tokens (
 -- email_verifications table (EXISTS)
 CREATE TABLE email_verifications (
     id TEXT PRIMARY KEY,
-    operator_id TEXT NOT NULL REFERENCES operators(id) ON DELETE CASCADE,
+    operator_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token_hash TEXT UNIQUE NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -680,7 +680,7 @@ CREATE TABLE email_verifications (
 -- password_resets table (EXISTS)
 CREATE TABLE password_resets (
     id TEXT PRIMARY KEY,
-    operator_id TEXT NOT NULL REFERENCES operators(id) ON DELETE CASCADE,
+    operator_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token_hash TEXT UNIQUE NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -690,9 +690,9 @@ CREATE TABLE password_resets (
 ### 8.2 Indexes (EXISTING)
 
 ```sql
-CREATE INDEX idx_operators_email ON operators(email);
-CREATE INDEX idx_operators_google_id ON operators(google_id);
-CREATE INDEX idx_operators_github_id ON operators(github_id);
+CREATE INDEX idx_operators_email ON users(email);
+CREATE INDEX idx_operators_google_id ON users(google_id);
+CREATE INDEX idx_operators_github_id ON users(github_id);
 CREATE INDEX idx_sessions_operator_id ON sessions(operator_id);
 CREATE INDEX idx_refresh_tokens_token_hash ON refresh_tokens(token_hash);
 CREATE INDEX idx_refresh_tokens_operator_id ON refresh_tokens(operator_id);
@@ -722,7 +722,7 @@ apps/api/internal/
        auth_password_reset.go   # EXISTS — forgot/reset/resend
        auth_email_verify.go     # EXISTS — verify/resend/cancel/poll
        auth_settings.go         # EXISTS — name/settings/thresholds/notifications
-       auth_admin.go            # EXISTS — operator CRUD
+       auth_admin.go            # EXISTS — user CRUD
        auth_lockout.go          # EXISTS — lockout status + admin unlock
        auth_sessions.go         # EXISTS — session list/revoke/concurrent
        auth_client_credentials.go # EXISTS — API key CRUD + rotate
@@ -745,10 +745,10 @@ apps/api/internal/
     auth_device_recognition.go   # EXISTS
 
  domain/
-    operator/
-       operator_entity.go           # EXISTS
-       operator_repository.go       # EXISTS
-       operator_errors.go           # EXISTS
+    user/
+       user_entity.go           # EXISTS
+       user_repository.go       # EXISTS
+       user_errors.go           # EXISTS
        operator_password.go         # EXISTS
        operator_role.go             # EXISTS
 
@@ -830,7 +830,7 @@ All auth endpoints are fully implemented. The phases below describe the complete
 - Concurrent session limit (default 5, configurable, oldest revoked)
 
 ### Phase 6: Admin + Client Credentials (COMPLETE)
-- Operator CRUD (SuperAdmin only)
+- User CRUD (SuperAdmin only)
 - Account unlock (SuperAdmin)
 - Client credentials (API key) CRUD + secret rotation
 

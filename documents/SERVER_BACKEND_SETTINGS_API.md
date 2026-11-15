@@ -36,7 +36,7 @@ This document maps out the server-side requirements to support the Settings page
 | Feature | Description | Required Endpoints |
 |---------|-------------|-------------------|
 | Connection Settings | Server URL, device ID, timeout | GET/PATCH /v1/auth/me/settings |
-| Operator Settings | Display name, account info | GET/PATCH /v1/auth/me |
+| User Settings | Display name, account info | GET/PATCH /v1/auth/me |
 | Thresholds | Risk, thermal, buffer thresholds | GET/PATCH /v1/auth/me/thresholds |
 | Notifications | Email, push, webhook settings | GET/PATCH /v1/auth/me/notifications |
 | Advanced Settings | Buffer limits, danger zone | GET/PATCH /v1/auth/me/settings |
@@ -50,7 +50,7 @@ This document maps out the server-side requirements to support the Settings page
 
 | Endpoint | Status | Handler | Notes |
 |----------|--------|---------|-------|
-| GET /v1/auth/me | EXISTS | AuthHandler.GetMe | Get operator info |
+| GET /v1/auth/me | EXISTS | AuthHandler.GetMe | Get user info |
 | PATCH /v1/auth/me | EXISTS | AuthHandler.UpdateMe | Update name |
 | GET /v1/auth/me/settings | EXISTS | SettingsHandler.Get | Get settings |
 | PATCH /v1/auth/me/settings | EXISTS | SettingsHandler.Patch | Update settings |
@@ -69,8 +69,8 @@ This document maps out the server-side requirements to support the Settings page
 
 | Model | Location | Status |
 |-------|----------|--------|
-| operator.Operator | domain/operator/entity.go | EXISTS |
-| operator.Settings | domain/operator/settings.go | EXISTS |
+| user.User | domain/user/entity.go | EXISTS |
+| user.Settings | domain/user/settings.go | EXISTS |
 
 ---
 
@@ -78,7 +78,7 @@ This document maps out the server-side requirements to support the Settings page
 
 ### 3.1 GET /v1/auth/me/settings
 
-Get current operator settings.
+Get current user settings.
 
 **Response (200 OK):**
 ```json
@@ -132,7 +132,7 @@ Get current operator settings.
 
 ### 3.2 PATCH /v1/auth/me/settings
 
-Update operator settings.
+Update user settings.
 
 **Request:**
 ```json
@@ -366,13 +366,13 @@ Rotate webhook secret.
 
 ### 3.9 GET /v1/auth/me
 
-Get operator profile (enhanced).
+Get user profile (enhanced).
 
 **Response (200 OK):**
 ```json
 {
   "id": "op_abc123",
-  "email": "operator@example.com",
+  "email": "user@example.com",
   "name": "John Doe",
   "role": "admin",
   "permissions": [
@@ -396,7 +396,7 @@ Get operator profile (enhanced).
 
 ### 3.10 PATCH /v1/auth/me
 
-Update operator profile.
+Update user profile.
 
 **Request:**
 ```json
@@ -409,7 +409,7 @@ Update operator profile.
 ```json
 {
   "id": "op_abc123",
-  "email": "operator@example.com",
+  "email": "user@example.com",
   "name": "John Doe",
   "role": "admin"
 }
@@ -474,11 +474,11 @@ Reset settings to defaults (super_admin only).
 
 ## 4. Database Schema
 
-### 4.1 Operator Settings Table (NEW)
+### 4.1 User Settings Table (NEW)
 
 ```sql
 CREATE TABLE operator_settings (
-    operator_id TEXT PRIMARY KEY REFERENCES operators(id) ON DELETE CASCADE,
+    operator_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     
     -- Connection settings
     server_url TEXT,
@@ -523,18 +523,18 @@ CREATE TABLE operator_settings (
 CREATE INDEX idx_operator_settings_id ON operator_settings(operator_id);
 ```
 
-### 4.2 Operator Notifications Audit Log (NEW)
+### 4.2 User Notifications Audit Log (NEW)
 
 ```sql
 CREATE TABLE notification_audit_log (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-    operator_id TEXT NOT NULL REFERENCES operators(id) ON DELETE CASCADE,
+    operator_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     event_type TEXT NOT NULL,
     channel TEXT NOT NULL,
     payload JSONB,
     sent_at TIMESTAMPTZ DEFAULT NOW(),
     
-    CONSTRAINT idx_operator_notifications FOREIGN KEY (operator_id) REFERENCES operators(id) ON DELETE CASCADE
+    CONSTRAINT idx_operator_notifications FOREIGN KEY (operator_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_notification_audit_operator ON notification_audit_log(operator_id, sent_at DESC);
@@ -552,7 +552,7 @@ apps/api/internal/
        auth/
           auth_handler.go       # EXISTS
           auth_settings_handler.go   # MODIFIED - settings handlers
-       operator/
+       user/
           operator_handler.go   # EXISTS
           operator_thresholds_handler.go  # NEW - threshold handlers
           operator_notifications_handler.go  # NEW - notification handlers
@@ -563,7 +563,7 @@ apps/api/internal/
     auth/
        auth_service.go         # EXISTS
        auth_settings_service.go # NEW - settings service
-    operator/
+    user/
        operator_service.go      # EXISTS
        operator_settings_service.go  # NEW - threshold/notification service
     dto/
@@ -571,10 +571,10 @@ apps/api/internal/
  domain/
     auth/
        session.go              # EXISTS
-    operator/
-       operator_entity.go       # EXISTS
+    user/
+       user_entity.go       # EXISTS
        operator_settings.go     # NEW - settings entity
-       operator_repository.go   # EXISTS - add settings methods
+       user_repository.go   # EXISTS - add settings methods
     errors.go                   # EXISTS
  infrastructure/
     storage/
@@ -688,24 +688,24 @@ func (h *SettingsHandler) PatchSettings(c *gin.Context) {
 
 ### 6.2 Threshold Handler
 
-**File:** `api/handlers/operator/thresholds.go`
+**File:** `api/handlers/user/thresholds.go`
 
 ```go
-package operator
+package user
 
 import (
     "net/http"
 
-    "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/operator"
+    "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/user"
     "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
     "github.com/gin-gonic/gin"
 )
 
 type ThresholdHandler struct {
-    service *operator.SettingsService
+    service *user.SettingsService
 }
 
-func NewThresholdHandler(svc *operator.SettingsService) *ThresholdHandler {
+func NewThresholdHandler(svc *user.SettingsService) *ThresholdHandler {
     return &ThresholdHandler{service: svc}
 }
 
@@ -734,7 +734,7 @@ func (h *ThresholdHandler) PatchThresholds(c *gin.Context) {
         return
     }
 
-    var req operator.ThresholdsInput
+    var req user.ThresholdsInput
     if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
         return
@@ -742,7 +742,7 @@ func (h *ThresholdHandler) PatchThresholds(c *gin.Context) {
 
     thresholds, err := h.service.UpdateThresholds(c.Request.Context(), op.ID, &req)
     if err != nil {
-        if err == operator.ErrValidation {
+        if err == user.ErrValidation {
             c.JSON(http.StatusBadRequest, gin.H{"error": "validation_error", "message": err.Error()})
             return
         }
@@ -758,25 +758,25 @@ func (h *ThresholdHandler) PatchThresholds(c *gin.Context) {
 
 ### 6.3 Notification Handler
 
-**File:** `api/handlers/operator/notifications.go`
+**File:** `api/handlers/user/notifications.go`
 
 ```go
-package operator
+package user
 
 import (
     "net/http"
 
-    "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/operator"
+    "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/user"
     "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/webhook"
     "github.com/gin-gonic/gin"
 )
 
 type NotificationHandler struct {
-    service       *operator.SettingsService
+    service       *user.SettingsService
     webhookClient *webhook.Client
 }
 
-func NewNotificationHandler(svc *operator.SettingsService, wh *webhook.Client) *NotificationHandler {
+func NewNotificationHandler(svc *user.SettingsService, wh *webhook.Client) *NotificationHandler {
     return &NotificationHandler{
         service:       svc,
         webhookClient: wh,
@@ -808,7 +808,7 @@ func (h *NotificationHandler) PatchNotifications(c *gin.Context) {
         return
     }
 
-    var req operator.NotificationInput
+    var req user.NotificationInput
     if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
         return
@@ -891,7 +891,7 @@ import (
     "net/url"
     "time"
 
-    "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+    "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 )
 
 var (
@@ -900,10 +900,10 @@ var (
 )
 
 type SettingsService struct {
-    repo *operator.Repository
+    repo *user.Repository
 }
 
-func NewSettingsService(repo *operator.Repository) *SettingsService {
+func NewSettingsService(repo *user.Repository) *SettingsService {
     return &SettingsService{repo: repo}
 }
 
@@ -929,16 +929,16 @@ type ClientSettings struct {
 
 type FullSettings struct {
     Client       *ClientSettings       `json:"client,omitempty"`
-    Thresholds   *operator.Thresholds `json:"thresholds,omitempty"`
-    Notifications *operator.NotificationSettings `json:"notifications,omitempty"`
+    Thresholds   *user.Thresholds `json:"thresholds,omitempty"`
+    Notifications *user.NotificationSettings `json:"notifications,omitempty"`
 }
 
 func (s *SettingsService) GetSettings(ctx context.Context, operatorID string) (*FullSettings, error) {
     settings, err := s.repo.GetSettings(ctx, operatorID)
     if err != nil {
-        if err == operator.ErrNotFound {
+        if err == user.ErrNotFound {
             // Create default settings
-            settings = &operator.Settings{
+            settings = &user.Settings{
                 OperatorID:           operatorID,
                 RequestTimeoutMs:     8000,
                 AutoReconnect:       true,
@@ -965,7 +965,7 @@ func (s *SettingsService) GetSettings(ctx context.Context, operatorID string) (*
             LogBufferLimit:     settings.LogBufferLimit,
             SignalHistoryLimit: settings.SignalHistoryLimit,
         },
-        Thresholds: &operator.Thresholds{
+        Thresholds: &user.Thresholds{
             RiskWarn:    settings.RiskWarn,
             RiskCrit:    settings.RiskCrit,
             ThermalWarn: settings.ThermalWarn,
@@ -1027,7 +1027,7 @@ func (s *SettingsService) UpdateClientSettings(ctx context.Context, operatorID s
 }
 
 func (s *SettingsService) ResetSettings(ctx context.Context, operatorID string) (*FullSettings, error) {
-    settings := operator.DefaultSettings(operatorID)
+    settings := user.DefaultSettings(operatorID)
     if err := s.repo.ResetSettings(ctx, operatorID, settings); err != nil {
         return nil, err
     }
@@ -1053,10 +1053,10 @@ func validateServerURL(urlStr string) error {
 
 ### 7.2 Threshold Service
 
-**File:** `application/operator/thresholds.go`
+**File:** `application/user/thresholds.go`
 
 ```go
-package operator
+package user
 
 import (
     "context"
@@ -1156,10 +1156,10 @@ func (s *ThresholdService) UpdateThresholds(ctx context.Context, operatorID stri
 
 ### 7.3 Notification Service
 
-**File:** `application/operator/notifications.go`
+**File:** `application/user/notifications.go`
 
 ```go
-package operator
+package user
 
 import (
     "context"
@@ -1497,7 +1497,7 @@ input WebhookNotificationInput {
 
 ### 10.2 Security Requirements
 
-1. **Authentication** - All endpoints require authenticated operator
+1. **Authentication** - All endpoints require authenticated user
 2. **Authorization** - Reset requires super_admin role
 3. **Webhook Secrets** - Stored hashed, rotated via dedicated endpoint
 4. **Input Validation** - All inputs validated server-side
@@ -1525,25 +1525,25 @@ input WebhookNotificationInput {
 
 | File | Status | Purpose |
 |------|--------|---------|
-| domain/operator/operator_settings.go | NEW | Settings entity types |
-| domain/operator/operator_repository.go | NEW | Repository interface |
-| domain/operator/operator_entity.go | MODIFIED | Add settings fields |
+| domain/user/operator_settings.go | NEW | Settings entity types |
+| domain/user/user_repository.go | NEW | Repository interface |
+| domain/user/user_entity.go | MODIFIED | Add settings fields |
 
 #### Application Layer (3 NEW)
 
 | File | Status | Purpose |
 |------|--------|---------|
 | application/auth/auth_settings_service.go | NEW | Settings service |
-| application/operator/operator_thresholds_service.go | NEW | Threshold service |
-| application/operator/operator_notifications_service.go | NEW | Notification service |
+| application/user/operator_thresholds_service.go | NEW | Threshold service |
+| application/user/operator_notifications_service.go | NEW | Notification service |
 
 #### Handler Layer (3 NEW, 1 MODIFIED)
 
 | File | Status | Purpose |
 |------|--------|---------|
 | api/handlers/auth/auth_settings_handler.go | MODIFIED | Add new settings methods |
-| api/handlers/operator/operator_thresholds_handler.go | NEW | Threshold handlers |
-| api/handlers/operator/operator_notifications_handler.go | NEW | Notification handlers |
+| api/handlers/user/operator_thresholds_handler.go | NEW | Threshold handlers |
+| api/handlers/user/operator_notifications_handler.go | NEW | Notification handlers |
 | api/handlers/router.go | MODIFIED | Add routes |
 
 #### Infrastructure (3 NEW, 1 MODIFIED)
@@ -1570,13 +1570,13 @@ input WebhookNotificationInput {
 ### Phase 1: Database (Day 1)
 1. Create operator_settings table
 2. Create notification_audit_log table
-3. Add columns to operators table if needed
+3. Add columns to users table if needed
 4. Test migrations
 
 ### Phase 2: Domain Layer (Day 1)
-1. Create `domain/operator/operator_settings.go`
-2. Create `domain/operator/operator_repository.go`
-3. Update `domain/operator/operator_entity.go`
+1. Create `domain/user/operator_settings.go`
+2. Create `domain/user/user_repository.go`
+3. Update `domain/user/user_entity.go`
 
 ### Phase 3: Infrastructure (Day 1-2)
 1. Update `infrastructure/storage/operator_storage.go`
@@ -1585,13 +1585,13 @@ input WebhookNotificationInput {
 
 ### Phase 4: Application Layer (Day 2)
 1. Create `application/auth/auth_settings_service.go`
-2. Create `application/operator/operator_thresholds_service.go`
-3. Create `application/operator/operator_notifications_service.go`
+2. Create `application/user/operator_thresholds_service.go`
+3. Create `application/user/operator_notifications_service.go`
 
 ### Phase 5: Handlers (Day 2)
 1. Create `handlers/auth/auth_settings_handler.go`
-2. Create `handlers/operator/operator_thresholds_handler.go`
-3. Create `handlers/operator/operator_notifications_handler.go`
+2. Create `handlers/user/operator_thresholds_handler.go`
+3. Create `handlers/user/operator_notifications_handler.go`
 4. Wire routes
 
 ### Phase 6: GraphQL (Day 2-3)

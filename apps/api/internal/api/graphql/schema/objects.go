@@ -1136,7 +1136,7 @@ var UpdatePushType = graphql.NewObject(graphql.ObjectConfig{
 		},
 		"initiatedBy": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.String),
-			Description: "Operator ID who initiated the push",
+			Description: "User ID who initiated the push",
 		},
 		"initiatedAt": &graphql.Field{
 			Type:        DateTimeScalar,
@@ -1184,7 +1184,7 @@ var PushHistoryEntryType = graphql.NewObject(graphql.ObjectConfig{
 		},
 		"initiatedBy": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.String),
-			Description: "Operator who initiated",
+			Description: "User who initiated",
 		},
 		"initiatedAt": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.Int),
@@ -1252,7 +1252,7 @@ var UpdateHistoryType = graphql.NewObject(graphql.ObjectConfig{
 		},
 		"initiatedBy": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.String),
-			Description: "Operator who initiated the push",
+			Description: "User who initiated the push",
 		},
 		"initiatedAt": &graphql.Field{
 			Type:        DateTimeScalar,
@@ -1304,7 +1304,7 @@ var PushUpdateResponseType = graphql.NewObject(graphql.ObjectConfig{
 		},
 		"initiatedBy": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.String),
-			Description: "Operator who initiated",
+			Description: "User who initiated",
 		},
 		"initiatedAt": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.Int),
@@ -1404,11 +1404,11 @@ var InboxEntryType = graphql.NewObject(graphql.ObjectConfig{
 		},
 		"notes": &graphql.Field{
 			Type:        graphql.String,
-			Description: "Operator notes",
+			Description: "User notes",
 		},
-		"operatorId": &graphql.Field{
+		"userId": &graphql.Field{
 			Type:        graphql.String,
-			Description: "Handling operator ID",
+			Description: "Handling user ID",
 		},
 		"createdAt": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.Int),
@@ -1462,9 +1462,9 @@ var RegistrationLogType = graphql.NewObject(graphql.ObjectConfig{
 			Type:        graphql.NewNonNull(graphql.String),
 			Description: "Action type",
 		},
-		"operatorId": &graphql.Field{
+		"userId": &graphql.Field{
 			Type:        graphql.String,
-			Description: "Operator ID",
+			Description: "User ID",
 		},
 		"clientIp": &graphql.Field{
 			Type:        graphql.String,
@@ -1556,7 +1556,7 @@ var AckResultType = graphql.NewObject(graphql.ObjectConfig{
 		},
 		"notes": &graphql.Field{
 			Type:        graphql.String,
-			Description: "Operator notes",
+			Description: "User notes",
 		},
 	},
 })
@@ -1737,22 +1737,22 @@ var NotificationSettingsType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
-// OperatorType represents an operator/user in the system.
-var OperatorType = graphql.NewObject(graphql.ObjectConfig{
-	Name:        "Operator",
-	Description: "An operator/user in the system",
+// UserType represents a user in the system.
+var UserType = graphql.NewObject(graphql.ObjectConfig{
+	Name:        "User",
+	Description: "A user in the system",
 	Fields: graphql.Fields{
 		"id": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.ID),
-			Description: "Unique operator identifier",
+			Description: "Unique user identifier",
 		},
 		"name": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.String),
-			Description: "Operator's display name",
+			Description: "User's display name",
 		},
 		"email": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.String),
-			Description: "Operator's email address",
+			Description: "User's email address",
 		},
 		"emailVerified": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.Boolean),
@@ -1764,19 +1764,19 @@ var OperatorType = graphql.NewObject(graphql.ObjectConfig{
 		},
 		"createdAt": &graphql.Field{
 			Type:        DateTimeScalar,
-			Description: "When the operator was created",
+			Description: "When the user was created",
 		},
 		"updatedAt": &graphql.Field{
 			Type:        DateTimeScalar,
-			Description: "When the operator was last updated",
+			Description: "When the user was last updated",
 		},
 	},
 })
 
-// OperatorSettingsType represents all operator settings.
-var OperatorSettingsType = graphql.NewObject(graphql.ObjectConfig{
+// UserSettingsType represents all user settings.
+var UserSettingsType = graphql.NewObject(graphql.ObjectConfig{
 	Name:        "OperatorSettings",
-	Description: "Complete operator settings",
+	Description: "Complete user settings",
 	Fields: graphql.Fields{
 		"client": &graphql.Field{
 			Type:        graphql.NewNonNull(ClientSettingsType),
@@ -1949,7 +1949,7 @@ var OrganizationType = graphql.NewObject(graphql.ObjectConfig{
 		},
 		"createdBy": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.ID),
-			Description: "ID of the operator who created this organization",
+			Description: "ID of the user who created this organization",
 		},
 	},
 })
@@ -1967,9 +1967,9 @@ var MembershipType = graphql.NewObject(graphql.ObjectConfig{
 			Type:        graphql.NewNonNull(graphql.ID),
 			Description: "Organization ID",
 		},
-		"operatorId": &graphql.Field{
+		"userId": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.ID),
-			Description: "Operator ID",
+			Description: "User ID",
 		},
 		"role": &graphql.Field{
 			Type:        graphql.NewNonNull(OrgRoleEnum),
@@ -1985,7 +1985,7 @@ var MembershipType = graphql.NewObject(graphql.ObjectConfig{
 		},
 		"joinedAt": &graphql.Field{
 			Type:        DateTimeScalar,
-			Description: "When the operator joined",
+			Description: "When the user joined",
 		},
 		"removedAt": &graphql.Field{
 			Type:        DateTimeScalar,
@@ -1995,9 +1995,9 @@ var MembershipType = graphql.NewObject(graphql.ObjectConfig{
 			Type:        DateTimeScalar,
 			Description: "When the member was suspended",
 		},
-		"operator": &graphql.Field{
-			Type:        OperatorType,
-			Description: "The operator associated with this membership",
+		"user": &graphql.Field{
+			Type:        UserType,
+			Description: "The user associated with this membership",
 		},
 		"organization": &graphql.Field{
 			Type:        OrganizationType,
@@ -2041,7 +2041,7 @@ var InvitationType = graphql.NewObject(graphql.ObjectConfig{
 		},
 		"inviterId": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.ID),
-			Description: "ID of the operator who sent the invitation",
+			Description: "ID of the user who sent the invitation",
 		},
 		"inviterName": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.String),
@@ -2049,7 +2049,7 @@ var InvitationType = graphql.NewObject(graphql.ObjectConfig{
 		},
 		"inviteeId": &graphql.Field{
 			Type:        graphql.ID,
-			Description: "ID of the invited operator (if accepted)",
+			Description: "ID of the invited user (if accepted)",
 		},
 		"inviteeNotes": &graphql.Field{
 			Type:        graphql.String,
@@ -2087,9 +2087,9 @@ var OrganizationMemberType = graphql.NewObject(graphql.ObjectConfig{
 			Type:        graphql.NewNonNull(MembershipType),
 			Description: "Membership details",
 		},
-		"operator": &graphql.Field{
-			Type:        OperatorType,
-			Description: "Operator information",
+		"user": &graphql.Field{
+			Type:        UserType,
+			Description: "User information",
 		},
 	},
 })
@@ -2287,9 +2287,9 @@ var OrganizationEventType = graphql.NewObject(graphql.ObjectConfig{
 			Type:        graphql.NewNonNull(graphql.ID),
 			Description: "Organization ID",
 		},
-		"operatorId": &graphql.Field{
+		"userId": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.ID),
-			Description: "Operator who triggered the event",
+			Description: "User who triggered the event",
 		},
 		"timestamp": &graphql.Field{
 			Type:        graphql.NewNonNull(DateTimeScalar),
@@ -2327,9 +2327,9 @@ var MemberEventType = graphql.NewObject(graphql.ObjectConfig{
 			Type:        graphql.NewNonNull(graphql.ID),
 			Description: "Membership ID affected",
 		},
-		"operatorId": &graphql.Field{
+		"userId": &graphql.Field{
 			Type:        graphql.NewNonNull(graphql.ID),
-			Description: "Operator who triggered the event",
+			Description: "User who triggered the event",
 		},
 		"timestamp": &graphql.Field{
 			Type:        graphql.NewNonNull(DateTimeScalar),
@@ -2371,7 +2371,7 @@ var AlertRuleType = graphql.NewObject(graphql.ObjectConfig{
 		"orgId":                 &graphql.Field{Type: graphql.NewNonNull(graphql.ID), Description: "Organization ID"},
 		"name":                  &graphql.Field{Type: graphql.NewNonNull(graphql.String), Description: "Rule name"},
 		"metric":                &graphql.Field{Type: graphql.NewNonNull(graphql.String), Description: "Metric to evaluate"},
-		"condition":             &graphql.Field{Type: graphql.NewNonNull(graphql.String), Description: "Comparison operator"},
+		"condition":             &graphql.Field{Type: graphql.NewNonNull(graphql.String), Description: "Comparison user"},
 		"threshold":             &graphql.Field{Type: graphql.NewNonNull(graphql.Float), Description: "Threshold value"},
 		"forSeconds":            &graphql.Field{Type: graphql.NewNonNull(graphql.Int), Description: "Pending duration before firing"},
 		"notifyIntervalSeconds": &graphql.Field{Type: graphql.NewNonNull(graphql.Int), Description: "Re-notification interval while firing"},

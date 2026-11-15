@@ -6,10 +6,10 @@ import (
 )
 
 // Cache is a TTL cache for permission-resolution results. It stores the
-// ResourcePermissions returned by ListEffective keyed by (operatorID, orgID),
+// ResourcePermissions returned by ListEffective keyed by (userID, orgID),
 // so repeated authorization checks within the TTL window skip the database. An
 // invalidation call (on grant mutation) clears entries for the affected
-// operator or org. The cache is lock-free on the hot read path: a
+// user or org. The cache is lock-free on the hot read path: a
 // sync.Map holds entries, each entry holds a deadline, and a stale entry is
 // simply refetched.
 type Cache struct {
@@ -18,7 +18,7 @@ type Cache struct {
 }
 
 type cacheKey struct {
-	operatorID string
+	userID string
 	orgID      string
 }
 
@@ -33,12 +33,12 @@ func NewCache(ttl time.Duration) *Cache {
 	return &Cache{ttl: ttl}
 }
 
-// Get returns the cached grants for (operatorID, orgID) if present and fresh.
-func (c *Cache) Get(operatorID, orgID string) []*ResourcePermission {
+// Get returns the cached grants for (userID, orgID) if present and fresh.
+func (c *Cache) Get(userID, orgID string) []*ResourcePermission {
 	if c == nil || c.ttl == 0 {
 		return nil
 	}
-	v, ok := c.entries.Load(cacheKey{operatorID, orgID})
+	v, ok := c.entries.Load(cacheKey{userID, orgID})
 	if !ok {
 		return nil
 	}
@@ -52,25 +52,25 @@ func (c *Cache) Get(operatorID, orgID string) []*ResourcePermission {
 	return e.perms
 }
 
-// Put stores grants for (operatorID, orgID) with the cache's TTL.
-func (c *Cache) Put(operatorID, orgID string, perms []*ResourcePermission) {
+// Put stores grants for (userID, orgID) with the cache's TTL.
+func (c *Cache) Put(userID, orgID string, perms []*ResourcePermission) {
 	if c == nil || c.ttl == 0 {
 		return
 	}
-	c.entries.Store(cacheKey{operatorID, orgID}, cacheEntry{
+	c.entries.Store(cacheKey{userID, orgID}, cacheEntry{
 		perms:    perms,
 		deadline: time.Now().Add(c.ttl),
 	})
 }
 
-// InvalidateOperator removes all cache entries for an operator (call on
-// operator-grant mutation).
-func (c *Cache) InvalidateOperator(operatorID string) {
+// InvalidateUser removes all cache entries for a user (call on
+// user-grant mutation).
+func (c *Cache) InvalidateUser(userID string) {
 	if c == nil {
 		return
 	}
 	c.entries.Range(func(key, _ any) bool {
-		if k, ok := key.(cacheKey); ok && k.operatorID == operatorID {
+		if k, ok := key.(cacheKey); ok && k.userID == userID {
 			c.entries.Delete(k)
 		}
 		return true

@@ -30,7 +30,7 @@ var (
 	// ErrInvalidRole is returned when an invalid role is provided.
 	ErrInvalidRole = errors.New("invalid role")
 
-	// ErrForbidden is returned when the operator doesn't have permission.
+	// ErrForbidden is returned when the user doesn't have permission.
 	ErrForbidden = errors.New("forbidden")
 
 	// ErrInvitationExpired is returned when an invitation has expired.
@@ -45,8 +45,8 @@ var (
 	// ErrCannotInviteSuperAdmin is returned when trying to invite a super_admin.
 	ErrCannotInviteSuperAdmin = errors.New("cannot invite super_admin role")
 
-	// ErrOperatorNotInOrganization is returned when operator is not a member of the organization.
-	ErrOperatorNotInOrganization = errors.New("operator is not a member of this organization")
+	// ErrUserNotInOrganization is returned when user is not a member of the organization.
+	ErrUserNotInOrganization = errors.New("operator is not a member of this organization")
 
 	// ErrAlreadyExists is a generic already exists error.
 	ErrAlreadyExists = errors.New("resource already exists")

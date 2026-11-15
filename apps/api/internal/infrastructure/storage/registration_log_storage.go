@@ -55,7 +55,7 @@ func (r *RegistrationLogRepository) Create(ctx context.Context, log *inbox.Regis
 
 	_, err := r.exec(ctx, query,
 		log.ID, "", log.DeviceID, log.Action, "",
-		"", log.OperatorID, log.Details, log.Timestamp,
+		"", log.UserID, log.Details, log.Timestamp,
 		nullString(log.ClientIP), nullString(log.UserAgent))
 	return err
 }
@@ -182,8 +182,8 @@ func (r *RegistrationLogRepository) ListByIMEI(ctx context.Context, imei string,
 	return logs, total, logRows.Err()
 }
 
-// ListByOperator retrieves all registration logs for an operator.
-func (r *RegistrationLogRepository) ListByOperator(ctx context.Context, operatorID string, limit, offset int) ([]*inbox.RegistrationLog, int, error) {
+// ListByUser retrieves all registration logs for a user.
+func (r *RegistrationLogRepository) ListByUser(ctx context.Context, userID string, limit, offset int) ([]*inbox.RegistrationLog, int, error) {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -194,7 +194,7 @@ func (r *RegistrationLogRepository) ListByOperator(ctx context.Context, operator
 	// Get total count.
 	var total int
 	countQuery := "SELECT COUNT(*) FROM registration_logs WHERE performed_by = ?"
-	if err := r.queryRow(ctx, countQuery, operatorID).Scan(&total); err != nil {
+	if err := r.queryRow(ctx, countQuery, userID).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
@@ -207,7 +207,7 @@ func (r *RegistrationLogRepository) ListByOperator(ctx context.Context, operator
 		ORDER BY created_at DESC
 		LIMIT ? OFFSET ?`
 
-	rows, err := r.queryRows(ctx, query, operatorID, limit, offset)
+	rows, err := r.queryRows(ctx, query, userID, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -225,11 +225,11 @@ func (r *RegistrationLogRepository) ListByOperator(ctx context.Context, operator
 	return logs, total, rows.Err()
 }
 
-// CountByOperator returns the number of registration logs for an operator.
-func (r *RegistrationLogRepository) CountByOperator(ctx context.Context, operatorID string) (int, error) {
+// CountByUser returns the number of registration logs for a user.
+func (r *RegistrationLogRepository) CountByUser(ctx context.Context, userID string) (int, error) {
 	var count int
 	err := r.queryRow(ctx,
-		"SELECT COUNT(*) FROM registration_logs WHERE performed_by = ?", operatorID).Scan(&count)
+		"SELECT COUNT(*) FROM registration_logs WHERE performed_by = ?", userID).Scan(&count)
 	return count, err
 }
 
@@ -240,7 +240,7 @@ func (r *RegistrationLogRepository) scanLog(rows *sql.Rows) (*inbox.Registration
 
 	err := rows.Scan(
 		&log.ID, &inboxRequestID, &log.DeviceID, &log.Action, &oldStatus,
-		&newStatus, &log.OperatorID, &reason, &log.Timestamp,
+		&newStatus, &log.UserID, &reason, &log.Timestamp,
 		&clientIP, &userAgent,
 	)
 	if err != nil {

@@ -12,7 +12,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/dto"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/devicestore"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/session"
 )
 
@@ -34,16 +34,16 @@ type KnownDevice struct {
 }
 
 // Bounds on the device store. Fingerprints are derived from request signals (IP,
-// User-Agent, ...), so an authenticated operator logging in from many networks or
+// User-Agent, ...), so an authenticated user logging in from many networks or
 // clients could otherwise grow these maps without limit.
 const (
-	// maxDevicesPerOperator caps fingerprints tracked per operator.
-	maxDevicesPerOperator = 50
+	// maxDevicesPerUser caps fingerprints tracked per user.
+	maxDevicesPerUser = 50
 	// maxSignalsPerDevice caps the distinct IPs / User-Agents retained per device.
 	maxSignalsPerDevice = 20
 )
 
-// DeviceStore manages known devices per operator.
+// DeviceStore manages known devices per user.
 type DeviceStore struct {
 	devices map[string]map[string]*KnownDevice
 	mu      sync.RWMutex
@@ -60,27 +60,27 @@ func NewDeviceStore() *DeviceStore {
 // can be injected into AuthService.
 var _ devicestore.Store = (*DeviceStore)(nil)
 
-// IsKnownDevice reports whether the operator has a device with this fingerprint.
-func (ds *DeviceStore) IsKnownDevice(ctx context.Context, operatorID, fingerprint string) (bool, error) {
+// IsKnownDevice reports whether the user has a device with this fingerprint.
+func (ds *DeviceStore) IsKnownDevice(ctx context.Context, userID, fingerprint string) (bool, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
-	operatorDevices, exists := ds.devices[operatorID]
+	userDevices, exists := ds.devices[userID]
 	if !exists {
 		return false, nil
 	}
 
-	_, exists = operatorDevices[fingerprint]
+	_, exists = userDevices[fingerprint]
 
 	return exists, nil
 }
 
 // HasSignal reports whether the device has been seen from this value of kind.
-func (ds *DeviceStore) HasSignal(ctx context.Context, operatorID, fingerprint, kind, value string) (bool, error) {
+func (ds *DeviceStore) HasSignal(ctx context.Context, userID, fingerprint, kind, value string) (bool, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
-	device, ok := ds.devices[operatorID][fingerprint]
+	device, ok := ds.devices[userID][fingerprint]
 	if !ok {
 		return false, nil
 	}
@@ -96,12 +96,12 @@ func (ds *DeviceStore) HasSignal(ctx context.Context, operatorID, fingerprint, k
 }
 
 // TouchDevice updates the last seen timestamp for a known device.
-func (ds *DeviceStore) TouchDevice(ctx context.Context, operatorID, fingerprint string) error {
+func (ds *DeviceStore) TouchDevice(ctx context.Context, userID, fingerprint string) error {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if operatorDevices, exists := ds.devices[operatorID]; exists {
-		if device, exists := operatorDevices[fingerprint]; exists {
+	if userDevices, exists := ds.devices[userID]; exists {
+		if device, exists := userDevices[fingerprint]; exists {
 			device.LastSeenAt = time.Now()
 		}
 	}
@@ -110,23 +110,23 @@ func (ds *DeviceStore) TouchDevice(ctx context.Context, operatorID, fingerprint 
 }
 
 // RegisterDevice adds or updates a known device.
-func (ds *DeviceStore) RegisterDevice(ctx context.Context, operatorID, fingerprint, ipAddress, userAgent string) error {
+func (ds *DeviceStore) RegisterDevice(ctx context.Context, userID, fingerprint, ipAddress, userAgent string) error {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if _, exists := ds.devices[operatorID]; !exists {
-		ds.devices[operatorID] = make(map[string]*KnownDevice)
+	if _, exists := ds.devices[userID]; !exists {
+		ds.devices[userID] = make(map[string]*KnownDevice)
 	}
 
-	device, exists := ds.devices[operatorID][fingerprint]
+	device, exists := ds.devices[userID][fingerprint]
 	if !exists {
-		// Evict the least-recently-seen device if this operator is at capacity, so
-		// the per-operator map stays bounded.
-		if len(ds.devices[operatorID]) >= maxDevicesPerOperator {
-			ds.evictOldestLocked(ds.devices[operatorID])
+		// Evict the least-recently-seen device if this user is at capacity, so
+		// the per-user map stays bounded.
+		if len(ds.devices[userID]) >= maxDevicesPerUser {
+			ds.evictOldestLocked(ds.devices[userID])
 		}
 
-		ds.devices[operatorID][fingerprint] = &KnownDevice{
+		ds.devices[userID][fingerprint] = &KnownDevice{
 			Fingerprint: fingerprint,
 			IPAddresses: make(map[string]bool),
 			UserAgents:  make(map[string]bool),
@@ -134,7 +134,7 @@ func (ds *DeviceStore) RegisterDevice(ctx context.Context, operatorID, fingerpri
 			LastSeenAt:  time.Now(),
 			IsTrusted:   true,
 		}
-		device = ds.devices[operatorID][fingerprint]
+		device = ds.devices[userID][fingerprint]
 	}
 
 	// Bound the per-device signal sets as well.
@@ -178,27 +178,27 @@ func dropOne(set map[string]bool) {
 }
 
 // RemoveDevice removes a known device.
-func (ds *DeviceStore) RemoveDevice(operatorID, fingerprint string) {
+func (ds *DeviceStore) RemoveDevice(userID, fingerprint string) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if operatorDevices, exists := ds.devices[operatorID]; exists {
-		delete(operatorDevices, fingerprint)
+	if userDevices, exists := ds.devices[userID]; exists {
+		delete(userDevices, fingerprint)
 	}
 }
 
-// GetDevices returns a copy of all known devices for an operator.
-func (ds *DeviceStore) GetDevices(operatorID string) []*KnownDevice {
+// GetDevices returns a copy of all known devices for a user.
+func (ds *DeviceStore) GetDevices(userID string) []*KnownDevice {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
-	operatorDevices, exists := ds.devices[operatorID]
+	userDevices, exists := ds.devices[userID]
 	if !exists {
 		return nil
 	}
 
-	devices := make([]*KnownDevice, 0, len(operatorDevices))
-	for _, device := range operatorDevices {
+	devices := make([]*KnownDevice, 0, len(userDevices))
+	for _, device := range userDevices {
 		// Create a copy to prevent external modification.
 		deviceCopy := &KnownDevice{
 			Fingerprint: device.Fingerprint,
@@ -232,13 +232,13 @@ func HashFingerprint(combined string) string {
 // The backing store is persistent in production (storage.KnownDeviceRepository),
 // so a device stays known across restarts and deploys; the in-memory DeviceStore is
 // used in tests.
-func (s *AuthService) ShouldNotifyLogin(ctx context.Context, operatorID, ipAddress, userAgent, fingerprint string) bool {
+func (s *AuthService) ShouldNotifyLogin(ctx context.Context, userID, ipAddress, userAgent, fingerprint string) bool {
 	// If no store is configured, always notify.
 	if s.deviceStore == nil {
 		return true
 	}
 
-	known, err := s.deviceStore.IsKnownDevice(ctx, operatorID, fingerprint)
+	known, err := s.deviceStore.IsKnownDevice(ctx, userID, fingerprint)
 	if err != nil {
 		// Fail closed: if we cannot tell, notify.
 		return true
@@ -246,23 +246,23 @@ func (s *AuthService) ShouldNotifyLogin(ctx context.Context, operatorID, ipAddre
 
 	if !known {
 		// New device - notify and register.
-		_ = s.deviceStore.RegisterDevice(ctx, operatorID, fingerprint, ipAddress, userAgent)
+		_ = s.deviceStore.RegisterDevice(ctx, userID, fingerprint, ipAddress, userAgent)
 		return true
 	}
 
 	// Known device. A changed IP (or User-Agent) is a significant change worth
 	// flagging, since the fingerprint includes them.
-	ipKnown, err := s.deviceStore.HasSignal(ctx, operatorID, fingerprint, devicestore.KindIP, ipAddress)
+	ipKnown, err := s.deviceStore.HasSignal(ctx, userID, fingerprint, devicestore.KindIP, ipAddress)
 	if err != nil {
 		return true
 	}
 	if !ipKnown {
-		_ = s.deviceStore.RegisterDevice(ctx, operatorID, fingerprint, ipAddress, userAgent)
+		_ = s.deviceStore.RegisterDevice(ctx, userID, fingerprint, ipAddress, userAgent)
 		return true // New IP from a known device - flag it.
 	}
 
 	// Known device on a known IP: refresh last-seen and stay quiet.
-	_ = s.deviceStore.TouchDevice(ctx, operatorID, fingerprint)
+	_ = s.deviceStore.TouchDevice(ctx, userID, fingerprint)
 
 	return false
 }
@@ -276,9 +276,9 @@ func (s *AuthService) LoginWithDevice(ctx context.Context, req *dto.LoginRequest
 	email := strings.ToLower(strings.TrimSpace(req.Email))
 
 	// Verify credentials.
-	op, err := s.operatorRepo.FindByEmail(ctx, email)
+	op, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
-		if errors.Is(err, operator.ErrNotFound) {
+		if errors.Is(err, user.ErrNotFound) {
 			// Constant-time fake hash to prevent timing attacks.
 			_ = s.passwordHasher.Verify(req.Password, "$argon2id$v=19$m=65536,t=3,p=4$YWRkcmVzc2FsdA$ZmFrZWhhc2hmb3J0aW1pbmdhdHRhY2tz")
 			return nil, nil, application.ErrInvalidCredentials

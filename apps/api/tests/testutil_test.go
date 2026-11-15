@@ -37,7 +37,7 @@ const (
 	dataDir  = "/tmp/vyzorix-data"
 )
 
-// testPassword is the shared password for all test operators.
+// testPassword is the shared password for all test users.
 const testPassword = "TestPass#2026!"
 
 // signingKeys maps a session HTTP client to the per-session HMAC signing key.
@@ -54,7 +54,7 @@ type TestState struct {
 	Password   string            `json:"password"`
 	Name       string            `json:"name"`
 	OrgID      string            `json:"org_id"`
-	OperatorID string            `json:"operator_id"`
+	UserID string            `json:"user_id"`
 	APIKeys    map[string]string `json:"api_keys"`
 	CSRF       string            `json:"csrf"`
 	Cookies    map[string]string `json:"cookies"`
@@ -358,7 +358,7 @@ func extractInviteToken(html string) string {
 	return ""
 }
 
-// registerAndVerify registers a new operator and verifies the email via the.
+// registerAndVerify registers a new user and verifies the email via the.
 // mock-resend token. Returns the authenticated session client and CSRF token.
 func registerAndVerify(t *testing.T, email, name string) (*http.Client, string) {
 	t.Helper()
@@ -622,13 +622,13 @@ func (r *noopDeviceRepoForTests) FindByIMEI(context.Context, string) (*device.De
 func (r *noopDeviceRepoForTests) FindByFirebaseInstallID(context.Context, string) (*device.Device, error) {
 	return nil, nil
 }
-func (r *noopDeviceRepoForTests) FindByIDAndOperator(context.Context, string, string) (*device.Device, error) {
+func (r *noopDeviceRepoForTests) FindByIDAndUser(context.Context, string, string) (*device.Device, error) {
 	return nil, nil
 }
-func (r *noopDeviceRepoForTests) FindByIDAndOperatorID(context.Context, device.DeviceID, device.OperatorID) (*device.Device, error) {
+func (r *noopDeviceRepoForTests) FindByIDAndUserID(context.Context, device.DeviceID, device.UserID) (*device.Device, error) {
 	return nil, nil
 }
-func (r *noopDeviceRepoForTests) FindByIMEIAndOperator(context.Context, string, string) (*device.Device, error) {
+func (r *noopDeviceRepoForTests) FindByIMEIAndUser(context.Context, string, string) (*device.Device, error) {
 	return nil, nil
 }
 func (r *noopDeviceRepoForTests) FindByIMEIAndOrganization(_ context.Context, imei, orgID string) (*device.Device, error) {
@@ -672,10 +672,10 @@ func (r *noopDeviceRepoForTests) HashAllSecrets(context.Context) (int, error) { 
 func (r *noopDeviceRepoForTests) List(context.Context, string, int, int) ([]*device.Device, int, error) {
 	return nil, 0, nil
 }
-func (r *noopDeviceRepoForTests) ListByOperator(context.Context, string) ([]*device.Device, error) {
+func (r *noopDeviceRepoForTests) ListByUser(context.Context, string) ([]*device.Device, error) {
 	return nil, nil
 }
-func (r *noopDeviceRepoForTests) ListByOperatorID(context.Context, device.OperatorID) ([]*device.Device, error) {
+func (r *noopDeviceRepoForTests) ListByUserID(context.Context, device.UserID) ([]*device.Device, error) {
 	return nil, nil
 }
 func (r *noopDeviceRepoForTests) ListByOrganization(context.Context, string) ([]*device.Device, error) {
@@ -685,7 +685,7 @@ func (r *noopDeviceRepoForTests) ListByOrganizationPaginated(context.Context, st
 	return nil, 0, nil
 }
 func (r *noopDeviceRepoForTests) Count(context.Context, string) (int, error) { return 0, nil }
-func (r *noopDeviceRepoForTests) CountByOperator(context.Context, string) (int, error) {
+func (r *noopDeviceRepoForTests) CountByUser(context.Context, string) (int, error) {
 	return 0, nil
 }
 func (r *noopDeviceRepoForTests) CountByOrganization(context.Context, string) (int, error) {
@@ -698,13 +698,13 @@ func (r *noopDeviceRepoForTests) SoftDeleteByIMEI(context.Context, string, int64
 func (r *noopDeviceRepoForTests) ListActive(context.Context, int, int) ([]*device.Device, int, error) {
 	return nil, 0, nil
 }
-func (r *noopDeviceRepoForTests) ListActiveByOperator(context.Context, string) ([]*device.Device, error) {
+func (r *noopDeviceRepoForTests) ListActiveByUser(context.Context, string) ([]*device.Device, error) {
 	return nil, nil
 }
 func (r *noopDeviceRepoForTests) ListPending(context.Context) ([]*device.Device, error) {
 	return nil, nil
 }
-func (r *noopDeviceRepoForTests) ListPendingByOperator(context.Context, device.OperatorID) ([]*device.Device, error) {
+func (r *noopDeviceRepoForTests) ListPendingByUser(context.Context, device.UserID) ([]*device.Device, error) {
 	return nil, nil
 }
 func (r *noopDeviceRepoForTests) DeleteScheduled(context.Context) (int, error) { return 0, nil }
@@ -724,7 +724,7 @@ func newTestAuditLogger(log *slog.Logger) *audit.Logger {
 	}
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS audit_logs (
 		id TEXT PRIMARY KEY,
-		operator_id TEXT,
+		user_id TEXT,
 		action TEXT NOT NULL,
 		details TEXT,
 		ip_address TEXT,

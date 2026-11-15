@@ -20,19 +20,19 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	hub "github.com/VinnsEdesigner/vyzorix/apps/api/internal/ws"
 )
 
 // End-to-end test for the terminal feature. Every server component is real -
 // the hub, the device frame handler, the PTY device handler, the relay and the
-// operator handler - talking over two real WebSocket servers. Only the device's
+// user handler - talking over two real WebSocket servers. Only the device's
 // shell is simulated, and it simulates it by echoing.
 //
 // Topology, identical to production:
 //
-//	operator browser --WS--> OperatorTerminalHandler --> PTYRelay --> Hub --> device WS
-//	device WS --> Hub.ReadPump --> DeviceFrameHandler --> PTYDeviceHandler --> PTYRelay --> operator
+//	user browser --WS--> UserTerminalHandler --> PTYRelay --> Hub --> device WS
+//	device WS --> Hub.ReadPump --> DeviceFrameHandler --> PTYDeviceHandler --> PTYRelay --> user
 //
 // The server owns the device socket's read loop (ReadPump dispatches into the
 // frame handler); the fake device is the dialer, reading what the server sends
@@ -93,14 +93,14 @@ func (d *fakeDevice) run(t *testing.T) {
 			d.sessionID = sessionID
 		case hub.PTYTypeData:
 			d.received <- string(data)
-			// A shell echoes its input back to the operator.
+			// A shell echoes its input back to the user.
 			d.write(t, hub.PTYTypeData, sessionID, append([]byte("echo:"), data...))
 		}
 	}
 }
 
 type e2eRig struct {
-	operatorConn *websocket.Conn
+	userConn *websocket.Conn
 	device       *fakeDevice
 	relay        *hub.PTYRelay
 	hub          *hub.Hub
@@ -125,7 +125,7 @@ func newE2ERig(t *testing.T, recordingDir string) *e2eRig {
 		},
 	}), hubInstance, discardLogger())
 
-	operatorHandler := websockethandlers.NewOperatorTerminalHandler(
+	userHandler := websockethandlers.NewUserTerminalHandler(
 		relay,
 		stubResolver{orgID: "org-1"},
 		nil,
@@ -138,7 +138,7 @@ func newE2ERig(t *testing.T, recordingDir string) *e2eRig {
 
 	// The hub routes frames it reads off the device socket to this handler,
 	// which sends binary PTY frames to the PTY sink.
-	ptySink := websockethandlers.NewPTYDeviceHandler(relay, operatorHandler, discardLogger())
+	ptySink := websockethandlers.NewPTYDeviceHandler(relay, userHandler, discardLogger())
 	hubInstance.SetDeviceFrameHandler(websockethandlers.NewDeviceFrameHandler(nil, ptySink, discardLogger()))
 
 	rig := &e2eRig{relay: relay, hub: hubInstance}
@@ -170,18 +170,18 @@ func newE2ERig(t *testing.T, recordingDir string) *e2eRig {
 	deviceSrv := httptest.NewServer(deviceMux)
 	t.Cleanup(deviceSrv.Close)
 
-	// Operator endpoint.
-	operatorMux := http.NewServeMux()
-	operatorMux.HandleFunc("/v1/device/dev-1/terminal", func(w http.ResponseWriter, r *http.Request) {
+	// User endpoint.
+	userMux := http.NewServeMux()
+	userMux.HandleFunc("/v1/device/dev-1/terminal", func(w http.ResponseWriter, r *http.Request) {
 		c, _ := gin.CreateTestContext(w)
 		c.Request = r
 		c.Params = gin.Params{{Key: "imei", Value: "dev-1"}}
-		c.Set(middleware.ContextKeyOperator, &operator.Operator{ID: "op-1"})
+		c.Set(middleware.ContextKeyUser, &user.User{ID: "op-1"})
 		c.Set(middleware.ContextKeyOrganizationID, "org-1")
-		operatorHandler.Handle(c)
+		userHandler.Handle(c)
 	})
-	operatorSrv := httptest.NewServer(operatorMux)
-	t.Cleanup(operatorSrv.Close)
+	userSrv := httptest.NewServer(userMux)
+	t.Cleanup(userSrv.Close)
 
 	// Connect the device (the fake agent) first, so the hub knows it.
 	deviceConn, _, err := websocket.DefaultDialer.Dial(
@@ -197,14 +197,14 @@ func newE2ERig(t *testing.T, recordingDir string) *e2eRig {
 
 	time.Sleep(80 * time.Millisecond)
 
-	// Then the operator.
-	operatorConn, _, err := websocket.DefaultDialer.Dial(
-		"ws"+strings.TrimPrefix(operatorSrv.URL, "http")+"/v1/device/dev-1/terminal", nil)
+	// Then the user.
+	userConn, _, err := websocket.DefaultDialer.Dial(
+		"ws"+strings.TrimPrefix(userSrv.URL, "http")+"/v1/device/dev-1/terminal", nil)
 	if err != nil {
-		t.Fatalf("dial operator: %v", err)
+		t.Fatalf("dial user: %v", err)
 	}
-	t.Cleanup(func() { _ = operatorConn.Close() })
-	rig.operatorConn = operatorConn
+	t.Cleanup(func() { _ = userConn.Close() })
+	rig.userConn = userConn
 
 	return rig
 }
@@ -229,25 +229,25 @@ func (stubCapabilityResolver) ResolveForSession(
 }
 
 // TestE2ETerminalRoundTrip drives the whole path over real WebSockets: the
-// operator opens a session, the device receives OPEN, keystrokes reach the
-// device, and the device's echoed output reaches the operator.
+// user opens a session, the device receives OPEN, keystrokes reach the
+// device, and the device's echoed output reaches the user.
 func TestE2ETerminalRoundTrip(t *testing.T) {
 	rig := newE2ERig(t, t.TempDir())
 
 	// 1. Open a session.
 	openMsg, _ := json.Marshal(map[string]any{"type": "pty_open", "sessionId": "aaaaaaaa-1111-4111-8111-111111111111"})
-	if err := rig.operatorConn.WriteMessage(websocket.TextMessage, openMsg); err != nil {
-		t.Fatalf("operator open: %v", err)
+	if err := rig.userConn.WriteMessage(websocket.TextMessage, openMsg); err != nil {
+		t.Fatalf("user open: %v", err)
 	}
 
-	if !awaitOperatorType(t, rig.operatorConn, "pty_opened", 3*time.Second) {
-		t.Fatal("operator never received pty_opened")
+	if !awaitUserType(t, rig.userConn, "pty_opened", 3*time.Second) {
+		t.Fatal("user never received pty_opened")
 	}
 
-	// 2. Operator input must reach the device.
+	// 2. User input must reach the device.
 	input := hub.EncodePTYFrame(hub.ChannelPTY, hub.PTYTypeData, hub.EncodeSessionData("aaaaaaaa-1111-4111-8111-111111111111", []byte("ls\n")))
-	if err := rig.operatorConn.WriteMessage(websocket.BinaryMessage, input); err != nil {
-		t.Fatalf("operator input: %v", err)
+	if err := rig.userConn.WriteMessage(websocket.BinaryMessage, input); err != nil {
+		t.Fatalf("user input: %v", err)
 	}
 
 	select {
@@ -256,74 +256,74 @@ func TestE2ETerminalRoundTrip(t *testing.T) {
 			t.Fatalf("device received %q, want ls\\n", got)
 		}
 	case <-time.After(3 * time.Second):
-		t.Fatal("device never received operator input")
+		t.Fatal("device never received user input")
 	}
 
-	// 3. The device echoed it; that output must reach the operator.
-	if !awaitOperatorBinary(t, rig.operatorConn, "echo:ls\n", 3*time.Second) {
-		t.Fatal("operator never received device output")
+	// 3. The device echoed it; that output must reach the user.
+	if !awaitUserBinary(t, rig.userConn, "echo:ls\n", 3*time.Second) {
+		t.Fatal("user never received device output")
 	}
 }
 
-// TestE2ESessionSurvivesOperatorDisconnect proves a session now outlives the
-// operator's connection, so a browser reconnect can reattach to the same shell.
+// TestE2ESessionSurvivesUserDisconnect proves a session now outlives the
+// user's connection, so a browser reconnect can reattach to the same shell.
 //
 // The session is instead ended by an explicit pty_close or by the registry's idle
 // TTL (the expiry worker) — not by the transient socket drop a reconnect would
 // ride out.
-func TestE2ESessionSurvivesOperatorDisconnect(t *testing.T) {
+func TestE2ESessionSurvivesUserDisconnect(t *testing.T) {
 	rig := newE2ERig(t, t.TempDir())
 
 	openMsg, _ := json.Marshal(map[string]any{"type": "pty_open", "sessionId": "aaaaaaaa-1111-4111-8111-111111111111"})
-	if err := rig.operatorConn.WriteMessage(websocket.TextMessage, openMsg); err != nil {
-		t.Fatalf("operator open: %v", err)
+	if err := rig.userConn.WriteMessage(websocket.TextMessage, openMsg); err != nil {
+		t.Fatalf("user open: %v", err)
 	}
-	if !awaitOperatorType(t, rig.operatorConn, "pty_opened", 3*time.Second) {
-		t.Fatal("operator never received pty_opened")
+	if !awaitUserType(t, rig.userConn, "pty_opened", 3*time.Second) {
+		t.Fatal("user never received pty_opened")
 	}
 
 	if rig.relay.Registry().Count() != 1 {
 		t.Fatalf("sessions = %d, want 1", rig.relay.Registry().Count())
 	}
 
-	_ = rig.operatorConn.Close()
+	_ = rig.userConn.Close()
 
 	// Give the disconnect handler time to run, then assert the session is still
-	// there: the whole point of the reattach model is that a dropped operator
+	// there: the whole point of the reattach model is that a dropped user
 	// socket does not kill the shell.
 	time.Sleep(300 * time.Millisecond)
 	if rig.relay.Registry().Count() != 1 {
-		t.Fatalf("sessions = %d, want 1 (a session must outlive the operator socket)",
+		t.Fatalf("sessions = %d, want 1 (a session must outlive the user socket)",
 			rig.relay.Registry().Count())
 	}
 }
 
 // TestE2ERecordingProducesCast proves an opted-in session writes a cast file
-// containing what the operator saw.
+// containing what the user saw.
 func TestE2ERecordingProducesCast(t *testing.T) {
 	dir := t.TempDir()
 	rig := newE2ERig(t, dir)
 
 	openMsg, _ := json.Marshal(map[string]any{"type": "pty_open", "sessionId": "bbbbbbbb-1111-4111-8111-111111111111", "record": true})
-	if err := rig.operatorConn.WriteMessage(websocket.TextMessage, openMsg); err != nil {
-		t.Fatalf("operator open: %v", err)
+	if err := rig.userConn.WriteMessage(websocket.TextMessage, openMsg); err != nil {
+		t.Fatalf("user open: %v", err)
 	}
-	if !awaitOperatorType(t, rig.operatorConn, "pty_opened", 3*time.Second) {
-		t.Fatal("operator never received pty_opened")
+	if !awaitUserType(t, rig.userConn, "pty_opened", 3*time.Second) {
+		t.Fatal("user never received pty_opened")
 	}
 
 	input := hub.EncodePTYFrame(hub.ChannelPTY, hub.PTYTypeData, hub.EncodeSessionData("bbbbbbbb-1111-4111-8111-111111111111", []byte("whoami\n")))
-	if err := rig.operatorConn.WriteMessage(websocket.BinaryMessage, input); err != nil {
-		t.Fatalf("operator input: %v", err)
+	if err := rig.userConn.WriteMessage(websocket.BinaryMessage, input); err != nil {
+		t.Fatalf("user input: %v", err)
 	}
 
-	if !awaitOperatorBinary(t, rig.operatorConn, "echo:whoami", 3*time.Second) {
-		t.Fatal("operator never received the echoed output")
+	if !awaitUserBinary(t, rig.userConn, "echo:whoami", 3*time.Second) {
+		t.Fatal("user never received the echoed output")
 	}
 
 	// Closing the session flushes the recorder.
 	closeMsg, _ := json.Marshal(map[string]any{"type": "pty_close", "sessionId": "bbbbbbbb-1111-4111-8111-111111111111"})
-	_ = rig.operatorConn.WriteMessage(websocket.TextMessage, closeMsg)
+	_ = rig.userConn.WriteMessage(websocket.TextMessage, closeMsg)
 	time.Sleep(200 * time.Millisecond)
 
 	path := dir + "/bbbbbbbb-1111-4111-8111-111111111111.cast"
@@ -336,8 +336,8 @@ func TestE2ERecordingProducesCast(t *testing.T) {
 	}
 }
 
-// awaitOperatorType waits for a JSON control message of the given type.
-func awaitOperatorType(t *testing.T, conn *websocket.Conn, want string, timeout time.Duration) bool {
+// awaitUserType waits for a JSON control message of the given type.
+func awaitUserType(t *testing.T, conn *websocket.Conn, want string, timeout time.Duration) bool {
 	t.Helper()
 
 	deadline := time.Now().Add(timeout)
@@ -363,9 +363,9 @@ func awaitOperatorType(t *testing.T, conn *websocket.Conn, want string, timeout 
 	return false
 }
 
-// awaitOperatorBinary waits for a binary PTY data frame whose payload contains
+// awaitUserBinary waits for a binary PTY data frame whose payload contains
 // want.
-func awaitOperatorBinary(t *testing.T, conn *websocket.Conn, want string, timeout time.Duration) bool {
+func awaitUserBinary(t *testing.T, conn *websocket.Conn, want string, timeout time.Duration) bool {
 	t.Helper()
 
 	deadline := time.Now().Add(timeout)

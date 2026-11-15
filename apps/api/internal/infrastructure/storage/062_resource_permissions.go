@@ -8,7 +8,7 @@ import (
 // migrateResourcePermissions creates the canonical ResourcePermission table and
 // retires the v60 permission_grants table (pre-production; no data to migrate).
 // A grant is one row per (subject, scope) with a comma-separated actions column,
-// grantable to operators, teams, or built-in roles, with managed/inherited flags.
+// grantable to users, teams, or built-in roles, with managed/inherited flags.
 func migrateResourcePermissions(tx *sql.Tx) error {
 	ctx := context.Background()
 

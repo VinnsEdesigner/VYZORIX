@@ -1,6 +1,6 @@
 package dto
 
-import "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+import "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 
 // LoginRequest represents a login request.
 type LoginRequest struct {
@@ -8,7 +8,7 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-// OrganizationInfo represents an organization with the operator's role in it.
+// OrganizationInfo represents an organization with the user's role in it.
 type OrganizationInfo struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
@@ -18,7 +18,7 @@ type OrganizationInfo struct {
 // LoginResponse represents a login response.
 type LoginResponse struct {
 	SelectedOrganization *OrganizationInfo  `json:"selected_organization,omitempty"`
-	OperatorID           string             `json:"operator_id"`
+	UserID           string             `json:"user_id"`
 	Email                string             `json:"email"`
 	Name                 string             `json:"name"`
 	LastOrganizationID   string             `json:"last_organization_id,omitempty"`
@@ -31,7 +31,7 @@ type LoginResponse struct {
 // LoginWithTokensResponse represents a login response with API tokens.
 type LoginWithTokensResponse struct {
 	SelectedOrganization *OrganizationInfo  `json:"selected_organization,omitempty"`
-	OperatorID           string             `json:"operator_id"`
+	UserID           string             `json:"user_id"`
 	Email                string             `json:"email"`
 	Name                 string             `json:"name"`
 	LastOrganizationID   string             `json:"last_organization_id,omitempty"`
@@ -55,7 +55,7 @@ type RegisterRequest struct {
 
 // RegisterResponse represents a registration response.
 type RegisterResponse struct {
-	OperatorID string `json:"operator_id"`
+	UserID string `json:"user_id"`
 	Email      string `json:"email"`
 	Name       string `json:"name"`
 }
@@ -95,8 +95,8 @@ type LogoutRequest struct {
 	AllDevices bool `json:"all_devices"`
 }
 
-// OperatorResponse represents an operator in responses.
-type OperatorResponse struct {
+// UserResponse represents a user in responses.
+type UserResponse struct {
 	Thresholds           *Thresholds        `json:"thresholds,omitempty"`
 	Client               *ClientSettings    `json:"client,omitempty"`
 	SelectedOrganization *OrganizationInfo  `json:"selected_organization,omitempty"`
@@ -117,8 +117,8 @@ type GoogleOAuthCallbackRequest struct {
 	State string `json:"state"`
 }
 
-// UpdateOperatorRequest represents an operator update request.
-type UpdateOperatorRequest struct {
+// UpdateUserRequest represents a user update request.
+type UpdateUserRequest struct {
 	Name string `json:"name"`
 }
 
@@ -144,8 +144,8 @@ type OAuthCallbackRequest struct {
 	State string `json:"state"`
 }
 
-// OperatorListResponse represents an operator in list responses (admin view).
-type OperatorListResponse struct {
+// UserListResponse represents a user in list responses (admin view).
+type UserListResponse struct {
 	ID            string `json:"id"`
 	Email         string `json:"email"`
 	Name          string `json:"name"`
@@ -155,16 +155,16 @@ type OperatorListResponse struct {
 	CreatedAt     int64  `json:"created_at"`
 }
 
-// RoleOperator is the role for regular operators.
+// RoleOperator is the role for regular users.
 const RoleOperator = "operator"
 
-// OperatorRegisterRequest represents a registration request (alias for RegisterRequest).
-type OperatorRegisterRequest = RegisterRequest
+// UserRegisterRequest represents a registration request (alias for RegisterRequest).
+type UserRegisterRequest = RegisterRequest
 
 // AuthResponse represents an authentication response.
 type AuthResponse struct {
 	Token    string           `json:"token"`
-	Operator OperatorResponse `json:"operator"`
+	User UserResponse `json:"user"`
 }
 
 // ErrorResponse represents an error response.
@@ -179,10 +179,10 @@ type UpdateNameRequest struct {
 }
 
 // Thresholds represents threshold settings (alias to domain).
-type Thresholds = operator.Thresholds
+type Thresholds = user.Thresholds
 
 // ClientSettings represents client settings (alias to domain).
-type ClientSettings = operator.ClientSettings
+type ClientSettings = user.ClientSettings
 
 // UpdateSettingsRequest represents a settings update request.
 type UpdateSettingsRequest struct {

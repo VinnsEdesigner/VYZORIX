@@ -8,7 +8,7 @@
 // - auth_password_reset.go: Password reset flows.
 // - auth_google_oauth.go: Google OAuth.
 // - auth_github_oauth.go: GitHub OAuth.
-// - auth_operator_settings.go: Operator settings.
-// - auth_operator_admin.go: Admin operator management.
+// - auth_user_settings.go: User settings.
+// - auth_user_admin.go: Admin user management.
 // - auth_refresh_token.go: Refresh token rotation.
 package auth

@@ -19,7 +19,7 @@ func migrateAddTagsAndQuotas(tx *sql.Tx) error {
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `ALTER TABLE operator_settings ADD COLUMN preferences TEXT DEFAULT '{}'`)
+	_, err = tx.ExecContext(ctx, `ALTER TABLE user_settings ADD COLUMN preferences TEXT DEFAULT '{}'`)
 	if err != nil && !isDuplicateColumn(err) {
 		return err
 	}

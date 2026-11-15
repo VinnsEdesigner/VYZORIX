@@ -13,7 +13,7 @@ import (
 //
 // Both tables are bounded here, in SQL, so the storage cannot grow without limit
 // regardless of how often a client changes its IP or User-Agent:
-//   - at most maxKnownDevicesPerOperator rows per operator, evicting the
+//   - at most maxKnownDevicesPerUser rows per user, evicting the
 //     least-recently-seen device, and
 //   - at most maxSignalsPerDevice signals per (device, kind), evicting the oldest.
 type KnownDeviceRepository struct {
@@ -22,7 +22,7 @@ type KnownDeviceRepository struct {
 
 // Bounds mirror the in-memory store's caps.
 const (
-	maxKnownDevicesPerOperator = 50
+	maxKnownDevicesPerUser = 50
 	maxSignalsPerDevice        = 20
 )
 
@@ -31,12 +31,12 @@ func NewKnownDeviceRepository(db *sql.DB) *KnownDeviceRepository {
 	return &KnownDeviceRepository{db: db}
 }
 
-// IsKnownDevice reports whether the operator has a device with this fingerprint.
-func (r *KnownDeviceRepository) IsKnownDevice(ctx context.Context, operatorID, fingerprint string) (bool, error) {
+// IsKnownDevice reports whether the user has a device with this fingerprint.
+func (r *KnownDeviceRepository) IsKnownDevice(ctx context.Context, userID, fingerprint string) (bool, error) {
 	var one int
 	err := r.db.QueryRowContext(ctx,
-		`SELECT 1 FROM known_devices WHERE operator_id = ? AND fingerprint = ? LIMIT 1`,
-		operatorID, fingerprint).Scan(&one)
+		`SELECT 1 FROM known_devices WHERE user_id = ? AND fingerprint = ? LIMIT 1`,
+		userID, fingerprint).Scan(&one)
 	if err == sql.ErrNoRows {
 		return false, nil
 	}
@@ -47,12 +47,12 @@ func (r *KnownDeviceRepository) IsKnownDevice(ctx context.Context, operatorID, f
 }
 
 // HasSignal reports whether the device has been seen from this value of kind.
-func (r *KnownDeviceRepository) HasSignal(ctx context.Context, operatorID, fingerprint, kind, value string) (bool, error) {
+func (r *KnownDeviceRepository) HasSignal(ctx context.Context, userID, fingerprint, kind, value string) (bool, error) {
 	var one int
 	err := r.db.QueryRowContext(ctx,
 		`SELECT 1 FROM known_device_signals
-		  WHERE operator_id = ? AND fingerprint = ? AND kind = ? AND value = ? LIMIT 1`,
-		operatorID, fingerprint, kind, value).Scan(&one)
+		  WHERE user_id = ? AND fingerprint = ? AND kind = ? AND value = ? LIMIT 1`,
+		userID, fingerprint, kind, value).Scan(&one)
 	if err == sql.ErrNoRows {
 		return false, nil
 	}
@@ -63,16 +63,16 @@ func (r *KnownDeviceRepository) HasSignal(ctx context.Context, operatorID, finge
 }
 
 // TouchDevice updates the device's last-seen timestamp.
-func (r *KnownDeviceRepository) TouchDevice(ctx context.Context, operatorID, fingerprint string) error {
+func (r *KnownDeviceRepository) TouchDevice(ctx context.Context, userID, fingerprint string) error {
 	_, err := r.db.ExecContext(ctx,
-		`UPDATE known_devices SET last_seen_at = ? WHERE operator_id = ? AND fingerprint = ?`,
-		time.Now().UnixMilli(), operatorID, fingerprint)
+		`UPDATE known_devices SET last_seen_at = ? WHERE user_id = ? AND fingerprint = ?`,
+		time.Now().UnixMilli(), userID, fingerprint)
 	return err
 }
 
 // RegisterDevice records the device and the observed IP / User-Agent, creating the
-// device row if needed and applying the per-operator and per-device bounds.
-func (r *KnownDeviceRepository) RegisterDevice(ctx context.Context, operatorID, fingerprint, ipAddress, userAgent string) error {
+// device row if needed and applying the per-user and per-device bounds.
+func (r *KnownDeviceRepository) RegisterDevice(ctx context.Context, userID, fingerprint, ipAddress, userAgent string) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -83,19 +83,19 @@ func (r *KnownDeviceRepository) RegisterDevice(ctx context.Context, operatorID, 
 
 	var exists int
 	err = tx.QueryRowContext(ctx,
-		`SELECT 1 FROM known_devices WHERE operator_id = ? AND fingerprint = ? LIMIT 1`,
-		operatorID, fingerprint).Scan(&exists)
+		`SELECT 1 FROM known_devices WHERE user_id = ? AND fingerprint = ? LIMIT 1`,
+		userID, fingerprint).Scan(&exists)
 	switch {
 	case err == sql.ErrNoRows:
-		// Bound the per-operator device count before inserting a new one.
-		err = r.evictOldestDeviceIfFull(ctx, tx, operatorID)
+		// Bound the per-user device count before inserting a new one.
+		err = r.evictOldestDeviceIfFull(ctx, tx, userID)
 		if err != nil {
 			return err
 		}
 		_, err = tx.ExecContext(ctx,
-			`INSERT INTO known_devices (operator_id, fingerprint, first_seen_at, last_seen_at, is_trusted)
+			`INSERT INTO known_devices (user_id, fingerprint, first_seen_at, last_seen_at, is_trusted)
 			 VALUES (?, ?, ?, ?, 1)`,
-			operatorID, fingerprint, now, now)
+			userID, fingerprint, now, now)
 		if err != nil {
 			return err
 		}
@@ -103,17 +103,17 @@ func (r *KnownDeviceRepository) RegisterDevice(ctx context.Context, operatorID, 
 		return err
 	default:
 		_, err = tx.ExecContext(ctx,
-			`UPDATE known_devices SET last_seen_at = ? WHERE operator_id = ? AND fingerprint = ?`,
-			now, operatorID, fingerprint)
+			`UPDATE known_devices SET last_seen_at = ? WHERE user_id = ? AND fingerprint = ?`,
+			now, userID, fingerprint)
 		if err != nil {
 			return err
 		}
 	}
 
-	if err := r.recordSignal(ctx, tx, operatorID, fingerprint, devicestore.KindIP, ipAddress, now); err != nil {
+	if err := r.recordSignal(ctx, tx, userID, fingerprint, devicestore.KindIP, ipAddress, now); err != nil {
 		return err
 	}
-	if err := r.recordSignal(ctx, tx, operatorID, fingerprint, devicestore.KindUserAgent, userAgent, now); err != nil {
+	if err := r.recordSignal(ctx, tx, userID, fingerprint, devicestore.KindUserAgent, userAgent, now); err != nil {
 		return err
 	}
 
@@ -122,7 +122,7 @@ func (r *KnownDeviceRepository) RegisterDevice(ctx context.Context, operatorID, 
 
 // recordSignal inserts a signal, evicting the oldest for that (device, kind) when
 // the per-device cap is reached.
-func (r *KnownDeviceRepository) recordSignal(ctx context.Context, tx *sql.Tx, operatorID, fingerprint, kind, value string, now int64) error {
+func (r *KnownDeviceRepository) recordSignal(ctx context.Context, tx *sql.Tx, userID, fingerprint, kind, value string, now int64) error {
 	if value == "" {
 		return nil
 	}
@@ -130,8 +130,8 @@ func (r *KnownDeviceRepository) recordSignal(ctx context.Context, tx *sql.Tx, op
 	var exists int
 	err := tx.QueryRowContext(ctx,
 		`SELECT 1 FROM known_device_signals
-		  WHERE operator_id = ? AND fingerprint = ? AND kind = ? AND value = ? LIMIT 1`,
-		operatorID, fingerprint, kind, value).Scan(&exists)
+		  WHERE user_id = ? AND fingerprint = ? AND kind = ? AND value = ? LIMIT 1`,
+		userID, fingerprint, kind, value).Scan(&exists)
 	if err == nil {
 		// Already recorded.
 		return nil
@@ -143,8 +143,8 @@ func (r *KnownDeviceRepository) recordSignal(ctx context.Context, tx *sql.Tx, op
 	var count int
 	err = tx.QueryRowContext(ctx,
 		`SELECT COUNT(*) FROM known_device_signals
-		  WHERE operator_id = ? AND fingerprint = ? AND kind = ?`,
-		operatorID, fingerprint, kind).Scan(&count)
+		  WHERE user_id = ? AND fingerprint = ? AND kind = ?`,
+		userID, fingerprint, kind).Scan(&count)
 	if err != nil {
 		return err
 	}
@@ -155,39 +155,39 @@ func (r *KnownDeviceRepository) recordSignal(ctx context.Context, tx *sql.Tx, op
 			`DELETE FROM known_device_signals
 			  WHERE rowid IN (
 				SELECT rowid FROM known_device_signals
-				 WHERE operator_id = ? AND fingerprint = ? AND kind = ?
+				 WHERE user_id = ? AND fingerprint = ? AND kind = ?
 				 ORDER BY seen_at ASC LIMIT 1
 			  )`,
-			operatorID, fingerprint, kind)
+			userID, fingerprint, kind)
 		if err != nil {
 			return err
 		}
 	}
 
 	_, err = tx.ExecContext(ctx,
-		`INSERT OR REPLACE INTO known_device_signals (operator_id, fingerprint, kind, value, seen_at)
+		`INSERT OR REPLACE INTO known_device_signals (user_id, fingerprint, kind, value, seen_at)
 		 VALUES (?, ?, ?, ?, ?)`,
-		operatorID, fingerprint, kind, value, now)
+		userID, fingerprint, kind, value, now)
 	return err
 }
 
-// evictOldestDeviceIfFull drops the least-recently-seen device for the operator when
-// the per-operator cap has been reached.
-func (r *KnownDeviceRepository) evictOldestDeviceIfFull(ctx context.Context, tx *sql.Tx, operatorID string) error {
+// evictOldestDeviceIfFull drops the least-recently-seen device for the user when
+// the per-user cap has been reached.
+func (r *KnownDeviceRepository) evictOldestDeviceIfFull(ctx context.Context, tx *sql.Tx, userID string) error {
 	var count int
 	err := tx.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM known_devices WHERE operator_id = ?`, operatorID).Scan(&count)
+		`SELECT COUNT(*) FROM known_devices WHERE user_id = ?`, userID).Scan(&count)
 	if err != nil {
 		return err
 	}
-	if count < maxKnownDevicesPerOperator {
+	if count < maxKnownDevicesPerUser {
 		return nil
 	}
 
 	var oldest string
 	err = tx.QueryRowContext(ctx,
-		`SELECT fingerprint FROM known_devices WHERE operator_id = ?
-		  ORDER BY last_seen_at ASC LIMIT 1`, operatorID).Scan(&oldest)
+		`SELECT fingerprint FROM known_devices WHERE user_id = ?
+		  ORDER BY last_seen_at ASC LIMIT 1`, userID).Scan(&oldest)
 	if err == sql.ErrNoRows {
 		return nil
 	}
@@ -196,16 +196,16 @@ func (r *KnownDeviceRepository) evictOldestDeviceIfFull(ctx context.Context, tx 
 	}
 
 	_, err = tx.ExecContext(ctx,
-		`DELETE FROM known_devices WHERE operator_id = ? AND fingerprint = ?`,
-		operatorID, oldest)
+		`DELETE FROM known_devices WHERE user_id = ? AND fingerprint = ?`,
+		userID, oldest)
 	if err != nil {
 		return err
 	}
 	// SQLite does not enforce ON DELETE CASCADE unless foreign_keys is on, so drop
 	// the signals explicitly.
 	_, err = tx.ExecContext(ctx,
-		`DELETE FROM known_device_signals WHERE operator_id = ? AND fingerprint = ?`,
-		operatorID, oldest)
+		`DELETE FROM known_device_signals WHERE user_id = ? AND fingerprint = ?`,
+		userID, oldest)
 	return err
 }
 

@@ -33,6 +33,7 @@ import type {
   CurrentResponse,
   DeployResponse,
   ErrorResponse,
+  GetDeployBuildSchemaVersion200,
   GetDeploySchemaVersion200,
   GetDeployWhoamiParams,
   IdentityResponse,
@@ -146,7 +147,116 @@ export const usePostDeploy = <TError = ErrorResponse,
       > => {
       return useMutation(getPostDeployMutationOptions(options), queryClient);
     }
-    export const getGetDeploySchemaVersionUrl = (version: string,) => {
+    export const getGetDeployBuildSchemaVersionUrl = (version: string,) => {
+
+
+
+
+  return `/deploy/build-schema/${version}`
+}
+
+/**
+ * The versioned JSON Schema for vyzorix.build.toml. Generated from the vyzorix-spec module.
+ * @summary The build-recipe JSON Schema
+ */
+export const getDeployBuildSchemaVersion = async (version: string, options?: Parameters<typeof customAxios>[1]): Promise<GetDeployBuildSchemaVersion200> => {
+
+  return customAxios<GetDeployBuildSchemaVersion200>(getGetDeployBuildSchemaVersionUrl(version),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDeployBuildSchemaVersionQueryKey = (version: string,) =>
+    organizationScopedQueryKey({ version }, { url: `/deploy/build-schema/${version}` });
+
+
+export const useGetDeployBuildSchemaVersionQueryOptions = <TData = Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>, TError = ErrorResponse>(version: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  organizationScopedQueryKey({ version }, { url: `/deploy/build-schema/${version}`, queryOptions });
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>> = ({ signal }) => getDeployBuildSchemaVersion(version, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: version !== null && version !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetDeployBuildSchemaVersionQueryResult = NonNullable<Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>>
+export type GetDeployBuildSchemaVersionQueryError = ErrorResponse
+
+
+export function useGetDeployBuildSchemaVersion<TData = Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>, TError = ErrorResponse>(
+ version: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>,
+          TError,
+          Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDeployBuildSchemaVersion<TData = Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>, TError = ErrorResponse>(
+ version: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>,
+          TError,
+          Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDeployBuildSchemaVersion<TData = Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>, TError = ErrorResponse>(
+ version: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary The build-recipe JSON Schema
+ */
+
+export function useGetDeployBuildSchemaVersion<TData = Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>, TError = ErrorResponse>(
+ version: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDeployBuildSchemaVersion>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = useGetDeployBuildSchemaVersionQueryOptions(version,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+/**
+ * @summary The build-recipe JSON Schema
+ */
+export const invalidateGetDeployBuildSchemaVersion = async (
+ queryClient: QueryClient, version: string, options?: InvalidateOptions
+  ): Promise<QueryClient> => {
+
+  await queryClient.invalidateQueries({ queryKey: organizationScopedQueryKey({ version }, { url: `/deploy/build-schema/${version}` }) }, options);
+
+  return queryClient;
+}
+
+
+
+
+export const getGetDeploySchemaVersionUrl = (version: string,) => {
 
 
 
@@ -271,7 +381,7 @@ export const getGetDeployWhoamiUrl = (params?: GetDeployWhoamiParams,) => {
 }
 
 /**
- * @summary Current operator identity for the deploy surface
+ * @summary Current user identity for the deploy surface
  */
 export const getDeployWhoami = async (params?: GetDeployWhoamiParams, options?: Parameters<typeof customAxios>[1]): Promise<IdentityResponse> => {
 
@@ -339,7 +449,7 @@ export function useGetDeployWhoami<TData = Awaited<ReturnType<typeof getDeployWh
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Current operator identity for the deploy surface
+ * @summary Current user identity for the deploy surface
  */
 
 export function useGetDeployWhoami<TData = Awaited<ReturnType<typeof getDeployWhoami>>, TError = ErrorResponse>(
@@ -356,7 +466,7 @@ export function useGetDeployWhoami<TData = Awaited<ReturnType<typeof getDeployWh
 
 
 /**
- * @summary Current operator identity for the deploy surface
+ * @summary Current user identity for the deploy surface
  */
 export const invalidateGetDeployWhoami = async (
  queryClient: QueryClient, params?: GetDeployWhoamiParams, options?: InvalidateOptions

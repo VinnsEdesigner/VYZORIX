@@ -1,11 +1,11 @@
 /**
- * MSW handlers for the operator-scoped API key endpoints.
+ * MSW handlers for the user-scoped API key endpoints.
  *
  * Mirrors the Go server contract in
  * apps/api/internal/api/handlers/auth/keys_handler.go:
  *   POST   /v1/auth/api-keys            -> 201, full key (api_key shown once)
  *   GET    /v1/auth/api-keys            -> 200, { keys, pagination, monthly_limit, keys_created_this_month }
- *   GET    /v1/auth/api-keys/:keyId     -> 200, single key (APIKeyResponse — no operator_id)
+ *   GET    /v1/auth/api-keys/:keyId     -> 200, single key (APIKeyResponse — no user_id)
  *   PATCH  /v1/auth/api-keys/:keyId     -> 200, updated key
  *   DELETE /v1/auth/api-keys/:keyId     -> 204 No Content
  *   POST   /v1/auth/api-keys/:keyId/rotate -> 200, new full key
@@ -21,7 +21,7 @@ const LATER = '2025-06-15T10:00:00.000Z';
 
 interface MockKey {
   id: string;
-  operator_id: string;
+  user_id: string;
   name: string;
   key_prefix: string;
   api_key?: string;
@@ -39,7 +39,7 @@ function seedKeys(): MockKey[] {
   return [
     {
       id: 'key-1',
-      operator_id: 'op-1',
+      user_id: 'op-1',
       name: 'Production Key',
       key_prefix: 'vxyz_abcd',
       scope: 'admin',
@@ -53,7 +53,7 @@ function seedKeys(): MockKey[] {
     },
     {
       id: 'key-2',
-      operator_id: 'op-1',
+      user_id: 'op-1',
       name: 'Read Only Key',
       key_prefix: 'vxyz_efgh',
       scope: 'read',
@@ -67,7 +67,7 @@ function seedKeys(): MockKey[] {
     },
     {
       id: 'key-3',
-      operator_id: 'op-1',
+      user_id: 'op-1',
       name: 'Old Key',
       key_prefix: 'vxyz_ijkl',
       scope: 'write',
@@ -151,7 +151,7 @@ export function createApiKeysHandlers() {
       const fullKey = `vxyz_secret_${id}`;
       const newKey: MockKey = {
         id,
-        operator_id: 'op-1',
+        user_id: 'op-1',
         name: body.name,
         key_prefix: fullKey.slice(0, 9),
         api_key: fullKey,

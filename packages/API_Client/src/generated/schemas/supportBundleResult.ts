@@ -14,7 +14,7 @@ export interface SupportBundleResult {
   go_version?: string;
   goroutines?: number;
   hostname?: string;
-  operator_count?: number;
   org_count?: number;
   schema_version?: number;
+  user_count?: number;
 }

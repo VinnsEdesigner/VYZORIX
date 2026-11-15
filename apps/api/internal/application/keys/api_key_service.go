@@ -19,7 +19,7 @@ import (
 // Config holds the API key service configuration.
 type Config struct {
 	Prefix            string // e.g., "vxyz".
-	MaxPerMonth       int    // Max keys per operator per month.
+	MaxPerMonth       int    // Max keys per user per month.
 	MaxNameLength     int    // Max key name length.
 	DefaultExpiryDays int    // Default expiry (0 = never).
 	MaxExpiryDays     int    // Max expiry days.
@@ -53,7 +53,7 @@ func NewAPIKeyService(repo infraStorage.APIKeyRepository, config Config) *APIKey
 }
 
 // GenerateKey generates a new API key and returns the full key (only time it's available).
-func (s *APIKeyService) GenerateKey(ctx context.Context, operatorID, orgID string, req *domain.CreateAPIKeyRequest) (*domain.APIKeyWithFullKey, error) {
+func (s *APIKeyService) GenerateKey(ctx context.Context, userID, orgID string, req *domain.CreateAPIKeyRequest) (*domain.APIKeyWithFullKey, error) {
 	// Validate name.
 	if len(req.Name) > s.config.MaxNameLength {
 		return nil, domain.ErrKeyNameTooLong
@@ -64,8 +64,8 @@ func (s *APIKeyService) GenerateKey(ctx context.Context, operatorID, orgID strin
 		return nil, domain.ErrInvalidScope
 	}
 
-	// Check for duplicate name per operator.
-	exists, err := s.repo.ExistsByOperatorAndName(ctx, operatorID, req.Name)
+	// Check for duplicate name per user.
+	exists, err := s.repo.ExistsByUserAndName(ctx, userID, req.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check key name: %w", err)
 	}
@@ -74,7 +74,7 @@ func (s *APIKeyService) GenerateKey(ctx context.Context, operatorID, orgID strin
 	}
 
 	// Check monthly limit.
-	count, err := s.repo.CountByOperatorThisMonth(ctx, operatorID)
+	count, err := s.repo.CountByUserThisMonth(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count keys: %w", err)
 	}
@@ -110,7 +110,7 @@ func (s *APIKeyService) GenerateKey(ctx context.Context, operatorID, orgID strin
 	now := time.Now()
 	key := &infraStorage.APIKey{
 		ID:             uuid.Must(uuid.NewV7()).String(),
-		OperatorID:     operatorID,
+		UserID:     userID,
 		OrganizationID: orgID,
 		Name:           req.Name,
 		KeyPrefix:      prefix,
@@ -130,7 +130,7 @@ func (s *APIKeyService) GenerateKey(ctx context.Context, operatorID, orgID strin
 	return &domain.APIKeyWithFullKey{
 		APIKey: domain.APIKey{
 			ID:         key.ID,
-			OperatorID: key.OperatorID,
+			UserID: key.UserID,
 			Name:       key.Name,
 			KeyPrefix:  key.KeyPrefix,
 			Scope:      domain.Scope(key.Scope),
@@ -179,8 +179,8 @@ func (s *APIKeyService) IncrementUsage(ctx context.Context, keyID string) error 
 	return s.repo.IncrementRequestCount(ctx, keyID)
 }
 
-// ListKeys lists all API keys for an operator.
-func (s *APIKeyService) ListKeys(ctx context.Context, operatorID string, page, limit int) (*domain.ListAPIKeysResponse, error) {
+// ListKeys lists all API keys for a user.
+func (s *APIKeyService) ListKeys(ctx context.Context, userID string, page, limit int) (*domain.ListAPIKeysResponse, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -190,13 +190,13 @@ func (s *APIKeyService) ListKeys(ctx context.Context, operatorID string, page, l
 
 	offset := (page - 1) * limit
 
-	keys, total, err := s.repo.ListByOperator(ctx, operatorID, limit, offset)
+	keys, total, err := s.repo.ListByUser(ctx, userID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list keys: %w", err)
 	}
 
 	// Count keys created this month.
-	monthlyCount, err := s.repo.CountByOperatorThisMonth(ctx, operatorID)
+	monthlyCount, err := s.repo.CountByUserThisMonth(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count monthly keys: %w", err)
 	}
@@ -222,14 +222,14 @@ func (s *APIKeyService) ListKeys(ctx context.Context, operatorID string, page, l
 }
 
 // GetKey gets a single API key by ID.
-func (s *APIKeyService) GetKey(ctx context.Context, operatorID, keyID string) (*domain.APIKey, error) {
+func (s *APIKeyService) GetKey(ctx context.Context, userID, keyID string) (*domain.APIKey, error) {
 	key, err := s.repo.GetByID(ctx, keyID)
 	if err != nil {
 		return nil, domain.ErrAPIKeyNotFound
 	}
 
-	// Ensure the key belongs to the operator.
-	if key.OperatorID != operatorID {
+	// Ensure the key belongs to the user.
+	if key.UserID != userID {
 		return nil, domain.ErrAPIKeyNotFound
 	}
 
@@ -237,14 +237,14 @@ func (s *APIKeyService) GetKey(ctx context.Context, operatorID, keyID string) (*
 }
 
 // UpdateKey updates an API key (name and/or scope).
-func (s *APIKeyService) UpdateKey(ctx context.Context, operatorID, keyID string, req *domain.UpdateAPIKeyRequest) (*domain.APIKey, error) {
+func (s *APIKeyService) UpdateKey(ctx context.Context, userID, keyID string, req *domain.UpdateAPIKeyRequest) (*domain.APIKey, error) {
 	key, err := s.repo.GetByID(ctx, keyID)
 	if err != nil {
 		return nil, domain.ErrAPIKeyNotFound
 	}
 
-	// Ensure the key belongs to the operator.
-	if key.OperatorID != operatorID {
+	// Ensure the key belongs to the user.
+	if key.UserID != userID {
 		return nil, domain.ErrAPIKeyNotFound
 	}
 
@@ -254,7 +254,7 @@ func (s *APIKeyService) UpdateKey(ctx context.Context, operatorID, keyID string,
 			return nil, domain.ErrKeyNameTooLong
 		}
 		// Check for duplicate name (excluding current key).
-		exists, err := s.repo.ExistsByOperatorAndNameExcluding(ctx, operatorID, *req.Name, keyID)
+		exists, err := s.repo.ExistsByUserAndNameExcluding(ctx, userID, *req.Name, keyID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to check key name: %w", err)
 		}
@@ -282,14 +282,14 @@ func (s *APIKeyService) UpdateKey(ctx context.Context, operatorID, keyID string,
 }
 
 // RevokeKey revokes an API key.
-func (s *APIKeyService) RevokeKey(ctx context.Context, operatorID, keyID string) error {
+func (s *APIKeyService) RevokeKey(ctx context.Context, userID, keyID string) error {
 	key, err := s.repo.GetByID(ctx, keyID)
 	if err != nil {
 		return domain.ErrAPIKeyNotFound
 	}
 
-	// Ensure the key belongs to the operator.
-	if key.OperatorID != operatorID {
+	// Ensure the key belongs to the user.
+	if key.UserID != userID {
 		return domain.ErrAPIKeyNotFound
 	}
 
@@ -302,14 +302,14 @@ func (s *APIKeyService) ForceRevokeKey(ctx context.Context, keyID string) error 
 }
 
 // RotateKey rotates an API key, generating a new key and invalidating the old one.
-func (s *APIKeyService) RotateKey(ctx context.Context, operatorID, keyID string) (*domain.APIKeyWithFullKey, error) {
+func (s *APIKeyService) RotateKey(ctx context.Context, userID, keyID string) (*domain.APIKeyWithFullKey, error) {
 	key, err := s.repo.GetByID(ctx, keyID)
 	if err != nil {
 		return nil, domain.ErrAPIKeyNotFound
 	}
 
-	// Ensure the key belongs to the operator.
-	if key.OperatorID != operatorID {
+	// Ensure the key belongs to the user.
+	if key.UserID != userID {
 		return nil, domain.ErrAPIKeyNotFound
 	}
 
@@ -326,7 +326,7 @@ func (s *APIKeyService) RotateKey(ctx context.Context, operatorID, keyID string)
 	}
 
 	// Re-check monthly limit (we're creating a new key).
-	count, err := s.repo.CountByOperatorThisMonth(ctx, operatorID)
+	count, err := s.repo.CountByUserThisMonth(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count keys: %w", err)
 	}
@@ -348,7 +348,7 @@ func (s *APIKeyService) RotateKey(ctx context.Context, operatorID, keyID string)
 
 	newKey := &infraStorage.APIKey{
 		ID:             uuid.Must(uuid.NewV7()).String(),
-		OperatorID:     operatorID,
+		UserID:     userID,
 		OrganizationID: key.OrganizationID,
 		Name:           key.Name,
 		KeyPrefix:      prefix,
@@ -368,7 +368,7 @@ func (s *APIKeyService) RotateKey(ctx context.Context, operatorID, keyID string)
 	return &domain.APIKeyWithFullKey{
 		APIKey: domain.APIKey{
 			ID:         newKey.ID,
-			OperatorID: newKey.OperatorID,
+			UserID: newKey.UserID,
 			Name:       newKey.Name,
 			KeyPrefix:  newKey.KeyPrefix,
 			Scope:      domain.Scope(newKey.Scope),
@@ -420,7 +420,7 @@ func deriveAPIKeySigningSecret(fullKey string) string {
 func toDomainAPIKey(key *infraStorage.APIKey) *domain.APIKey {
 	domain := &domain.APIKey{
 		ID:             key.ID,
-		OperatorID:     key.OperatorID,
+		UserID:     key.UserID,
 		OrganizationID: key.OrganizationID,
 		Name:           key.Name,
 		KeyPrefix:      key.KeyPrefix,
@@ -478,10 +478,10 @@ func IsValidScope(s string) bool {
 	return domain.Scope(strings.ToLower(s)).IsValid()
 }
 
-// ListAllKeys lists all API keys across all operators (super admin only).
-// operatorID (non-empty) filters to a single operator; search (non-empty) does.
-// a case-insensitive LIKE match on key name, prefix, and operator name/email.
-func (s *APIKeyService) ListAllKeys(ctx context.Context, page, limit int, operatorID, search string) (*domain.ListAllAPIKeysResponse, error) {
+// ListAllKeys lists all API keys across all users (super admin only).
+// userID (non-empty) filters to a single user; search (non-empty) does.
+// a case-insensitive LIKE match on key name, prefix, and user name/email.
+func (s *APIKeyService) ListAllKeys(ctx context.Context, page, limit int, userID, search string) (*domain.ListAllAPIKeysResponse, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -491,7 +491,7 @@ func (s *APIKeyService) ListAllKeys(ctx context.Context, page, limit int, operat
 
 	offset := (page - 1) * limit
 
-	rows, total, err := s.repo.ListAllWithOperator(ctx, limit, offset, operatorID, search)
+	rows, total, err := s.repo.ListAllWithUser(ctx, limit, offset, userID, search)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list all keys: %w", err)
 	}
@@ -501,8 +501,8 @@ func (s *APIKeyService) ListAllKeys(ctx context.Context, page, limit int, operat
 		k := toDomainAPIKey(&row.APIKey)
 		responses[i] = domain.AdminAPIKeyResponse{
 			APIKeyResponse: k.ToResponse(),
-			OperatorID:     k.OperatorID,
-			OperatorName:   row.OperatorName,
+			UserID:     k.UserID,
+			UserName:   row.UserName,
 		}
 	}
 
@@ -521,7 +521,7 @@ func (s *APIKeyService) ListAllKeys(ctx context.Context, page, limit int, operat
 
 // GetGlobalStats returns global API key statistics (super admin only).
 // Builds aggregates from the storage layer: total/active/revoked counts,
-// cumulative request totals by scope, and top operators by request volume.
+// cumulative request totals by scope, and top users by request volume.
 func (s *APIKeyService) GetGlobalStats(ctx context.Context) (*domain.GlobalAPIKeyStats, error) {
 	totalKeys, err := s.repo.CountAllIncludingRevoked(ctx)
 	if err != nil {
@@ -539,9 +539,9 @@ func (s *APIKeyService) GetGlobalStats(ctx context.Context) (*domain.GlobalAPIKe
 	if err != nil {
 		return nil, fmt.Errorf("failed to sum requests by scope: %w", err)
 	}
-	topOps, totalOperators, err := s.repo.TopOperatorsByRequests(ctx, 5)
+	topOps, totalUsers, err := s.repo.TopUsersByRequests(ctx, 5)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query top operators: %w", err)
+		return nil, fmt.Errorf("failed to query top users: %w", err)
 	}
 
 	var totalRequests int64
@@ -549,15 +549,15 @@ func (s *APIKeyService) GetGlobalStats(ctx context.Context) (*domain.GlobalAPIKe
 		totalRequests += sum
 	}
 
-	topStats := make([]domain.TopOperatorStat, 0, len(topOps))
+	topStats := make([]domain.TopUserStat, 0, len(topOps))
 	for _, op := range topOps {
-		activeCount, cErr := s.repo.CountByOperatorThisMonth(ctx, op.OperatorID)
+		activeCount, cErr := s.repo.CountByUserThisMonth(ctx, op.UserID)
 		if cErr != nil {
 			return nil, fmt.Errorf("failed to count operator keys: %w", cErr)
 		}
-		topStats = append(topStats, domain.TopOperatorStat{
-			OperatorID:     op.OperatorID,
-			OperatorName:   op.OperatorName,
+		topStats = append(topStats, domain.TopUserStat{
+			UserID:     op.UserID,
+			UserName:   op.UserName,
 			TotalRequests:  op.TotalRequests,
 			ActiveKeyCount: activeCount,
 		})
@@ -569,8 +569,8 @@ func (s *APIKeyService) GetGlobalStats(ctx context.Context) (*domain.GlobalAPIKe
 		RevokedKeys:     revokedKeys,
 		TotalRequests:   totalRequests,
 		RequestsByScope: requestsByScope,
-		TopOperators:    topStats,
-		TotalOperators:  totalOperators,
+		TopUsers:    topStats,
+		TotalUsers:  totalUsers,
 		MaxPerMonth:     s.config.MaxPerMonth,
 	}, nil
 }

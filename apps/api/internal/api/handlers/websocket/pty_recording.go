@@ -17,7 +17,7 @@ import (
 // RecordingHandler serves terminal session recordings (asciinema casts).
 //
 // Without this, "recording" produced files nobody could retrieve. Access is
-// deliberately narrow: the operator must be a member of the device's
+// deliberately narrow: the user must be a member of the device's
 // organization, and the session ID must be a well-formed UUID, so a crafted ID
 // cannot reach outside the recording directory.
 type RecordingHandler struct {
@@ -44,7 +44,7 @@ func (h *RecordingHandler) Enabled() bool {
 // Handle serves GET /v1/dashboard/device/:imei/recordings/:sessionId.
 //
 // The device is in the path so the org check is the same one the terminal uses:
-// an operator may only read recordings for devices in their own organization.
+// a user may only read recordings for devices in their own organization.
 func (h *RecordingHandler) Handle(c *gin.Context) {
 	deviceID := c.Param("imei")
 	sessionID := c.Param("sessionId")

@@ -15,10 +15,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func dtoOperatorsToOpenAPI(in []dto.OperatorListResponse) []openapi.AdminOperator {
-	out := make([]openapi.AdminOperator, len(in))
+func dtoUsersToOpenAPI(in []dto.UserListResponse) []openapi.AdminUser {
+	out := make([]openapi.AdminUser, len(in))
 	for i, o := range in {
-		out[i] = openapi.AdminOperator{
+		out[i] = openapi.AdminUser{
 			ID: o.ID, Email: o.Email, Name: o.Name, Role: o.Role,
 			MFAEnabled: o.MFAEnabled, EmailVerified: o.EmailVerified, CreatedAt: o.CreatedAt,
 		}
@@ -28,16 +28,16 @@ func dtoOperatorsToOpenAPI(in []dto.OperatorListResponse) []openapi.AdminOperato
 
 // Compile-time references for swaggo-annotated openapi DTO types.
 var (
-	_ openapi.AdminOperatorListResult
-	_ openapi.AdminOperator
-	_ openapi.CreateOperatorRequest
-	_ openapi.UpdateOperatorRequest
+	_ openapi.AdminUserListResult
+	_ openapi.AdminUser
+	_ openapi.CreateUserRequest
+	_ openapi.UpdateUserRequest
 	_ openapi.SuccessResult
 	_ openapi.ErrorResponse
 )
 
 // AdminHandler handles admin endpoints with organization-scoped access control.
-// All endpoints require the operator to be a super_admin in the current organization.
+// All endpoints require the user to be a super_admin in the current organization.
 type AdminHandler struct {
 	authService *auth.AuthService
 	presenter   *response.Presenter
@@ -48,61 +48,61 @@ func NewAdminHandler(authService *auth.AuthService, presenter *response.Presente
 	return &AdminHandler{authService: authService, presenter: presenter}
 }
 
-// ListOperators handles GET /v1/auth/admin/operators.
-// @Summary      List operators
-// @Description  Lists all operators in the system (super_admin only)
+// ListUsers handles GET /v1/auth/admin/users.
+// @Summary      List users
+// @Description  Lists all users in the system (super_admin only)
 // @Tags         admin
 // @Accept       json
 // @Produce      json
 // @Param        X-Organization-ID  header  string  true  "Organization ID"
-// @Success      200  {object}  openapi.AdminOperatorListResult  "operators"
+// @Success      200  {object}  openapi.AdminUserListResult  "users"
 // @Failure      401  {object}  openapi.ErrorResponse  "not authenticated"
 // @Failure      403  {object}  openapi.ErrorResponse  "super_admin required"
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
-// @Router       /auth/admin/operators [get]
-func (h *AdminHandler) ListOperators(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+// @Router       /auth/admin/users [get]
+func (h *AdminHandler) ListUsers(c *gin.Context) {
+	op := middleware.GetUserFromContext(c)
 	orgID := middleware.GetOrganizationID(c)
 	if op == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "not authenticated"))
 		return
 	}
 
-	// Org-scoped check - operator must be super_admin in this organization.
+	// Org-scoped check - user must be super_admin in this organization.
 	if !op.IsSuperAdminIn(orgID) {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthzInsufficientPermissions, "insufficient privileges"))
 		return
 	}
 
-	operators, total, err := h.authService.ListAllOperators(c.Request.Context(), 20, 0)
+	users, total, err := h.authService.ListAllUsers(c.Request.Context(), 20, 0)
 	if err != nil {
-		_ = c.Error(apperrors.NewServerError(apperrors.CodeInternalServerError, "failed to list operators"))
+		_ = c.Error(apperrors.NewServerError(apperrors.CodeInternalServerError, "failed to list users"))
 		return
 	}
 
-	c.JSON(http.StatusOK, openapi.AdminOperatorListResult{
-		Operators: dtoOperatorsToOpenAPI(operators),
+	c.JSON(http.StatusOK, openapi.AdminUserListResult{
+		Users: dtoUsersToOpenAPI(users),
 		Total:     total,
 	})
 }
 
-// CreateOperator handles POST /v1/auth/admin/operators.
-// @Summary      Create operator
-// @Description  Creates a new operator (super_admin only)
+// CreateUser handles POST /v1/auth/admin/users.
+// @Summary      Create user
+// @Description  Creates a new user (super_admin only)
 // @Tags         admin
 // @Accept       json
 // @Produce      json
 // @Param        X-Organization-ID  header  string  true  "Organization ID"
-// @Param        body  body  openapi.CreateOperatorRequest  true  "operator credentials"
-// @Success      201  {object}  openapi.AdminOperator  "created operator"
+// @Param        body  body  openapi.CreateUserRequest  true  "user credentials"
+// @Success      201  {object}  openapi.AdminUser  "created user"
 // @Failure      400  {object}  openapi.ErrorResponse  "invalid input"
 // @Failure      401  {object}  openapi.ErrorResponse  "not authenticated"
 // @Failure      403  {object}  openapi.ErrorResponse  "super_admin required"
 // @Failure      409  {object}  openapi.ErrorResponse  "email already in use"
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
-// @Router       /auth/admin/operators [post]
-func (h *AdminHandler) CreateOperator(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+// @Router       /auth/admin/users [post]
+func (h *AdminHandler) CreateUser(c *gin.Context) {
+	op := middleware.GetUserFromContext(c)
 	orgID := middleware.GetOrganizationID(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "not authenticated")
@@ -131,7 +131,7 @@ func (h *AdminHandler) CreateOperator(c *gin.Context) {
 		return
 	}
 
-	newOp, err := h.authService.CreateOperator(c.Request.Context(), &req)
+	newOp, err := h.authService.CreateUser(c.Request.Context(), &req)
 	if err != nil {
 		if errors.Is(err, application.ErrEmailExists) {
 			h.presenter.Conflict(c, "email already in use")
@@ -145,8 +145,8 @@ func (h *AdminHandler) CreateOperator(c *gin.Context) {
 		return
 	}
 
-	h.presenter.AdminAction(c, op.ID, "create_operator", "operator", newOp.ID, nil)
-	h.presenter.Created(c, openapi.AdminOperator{
+	h.presenter.AdminAction(c, op.ID, "create_user", "user", newOp.ID, nil)
+	h.presenter.Created(c, openapi.AdminUser{
 		ID:        newOp.ID,
 		Email:     newOp.Email,
 		Name:      newOp.Name,
@@ -154,22 +154,22 @@ func (h *AdminHandler) CreateOperator(c *gin.Context) {
 	})
 }
 
-// GetOperator handles GET /v1/auth/admin/operators/:id.
-// @Summary      Get operator
-// @Description  Returns a single operator by ID (super_admin only)
+// GetUser handles GET /v1/auth/admin/users/:id.
+// @Summary      Get user
+// @Description  Returns a single user by ID (super_admin only)
 // @Tags         admin
 // @Accept       json
 // @Produce      json
 // @Param        X-Organization-ID  header  string  true  "Organization ID"
-// @Param        id  path  string  true  "operator ID"
-// @Success      200  {object}  openapi.AdminOperator  "operator"
+// @Param        id  path  string  true  "user ID"
+// @Success      200  {object}  openapi.AdminUser  "created user"
 // @Failure      401  {object}  openapi.ErrorResponse  "not authenticated"
 // @Failure      403  {object}  openapi.ErrorResponse  "super_admin required"
 // @Failure      404  {object}  openapi.ErrorResponse  "not found"
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
-// @Router       /auth/admin/operators/{id} [get]
-func (h *AdminHandler) GetOperator(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+// @Router       /auth/admin/users/{id} [get]
+func (h *AdminHandler) GetUser(c *gin.Context) {
+	op := middleware.GetUserFromContext(c)
 	orgID := middleware.GetOrganizationID(c)
 	if op == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "not authenticated"))
@@ -182,19 +182,19 @@ func (h *AdminHandler) GetOperator(c *gin.Context) {
 		return
 	}
 
-	operatorID := c.Param("id")
-	if operatorID == "" {
+	userID := c.Param("id")
+	if userID == "" {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeValidationFailed, "operator id is required"))
 		return
 	}
 
-	targetOp, err := h.authService.GetOperatorByID(c.Request.Context(), operatorID)
+	targetOp, err := h.authService.GetUserByID(c.Request.Context(), userID)
 	if err != nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeResourceNotFound, "not_found"))
 		return
 	}
 
-	c.JSON(http.StatusOK, openapi.AdminOperator{
+	c.JSON(http.StatusOK, openapi.AdminUser{
 		ID:            targetOp.ID,
 		Email:         targetOp.Email,
 		Name:          targetOp.Name,
@@ -205,25 +205,25 @@ func (h *AdminHandler) GetOperator(c *gin.Context) {
 	})
 }
 
-// UpdateOperator handles PATCH /v1/auth/admin/operators/:id.
-// @Summary      Update operator
-// @Description  Updates mutable operator fields (super_admin only)
+// UpdateUser handles PATCH /v1/auth/admin/users/:id.
+// @Summary      Update user
+// @Description  Updates mutable user fields (super_admin only)
 // @Tags         admin
 // @Accept       json
 // @Produce      json
 // @Param        X-Organization-ID  header  string  true  "Organization ID"
-// @Param        id    path  string  true  "operator ID"
-// @Param        body  body  openapi.UpdateOperatorRequest  true  "operator update"
-// @Success      200  {object}  openapi.AdminOperator  "updated operator"
+// @Param        id    path  string  true  "user ID"
+// @Param        body  body  openapi.UpdateUserRequest  true  "user update"
+// @Success      200  {object}  openapi.AdminUser  "updated user"
 // @Failure      400  {object}  openapi.ErrorResponse  "invalid input"
 // @Failure      401  {object}  openapi.ErrorResponse  "not authenticated"
 // @Failure      403  {object}  openapi.ErrorResponse  "super_admin required"
 // @Failure      404  {object}  openapi.ErrorResponse  "not found"
 // @Failure      409  {object}  openapi.ErrorResponse  "email already in use"
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
-// @Router       /auth/admin/operators/{id} [patch]
-func (h *AdminHandler) UpdateOperator(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+// @Router       /auth/admin/users/{id} [patch]
+func (h *AdminHandler) UpdateUser(c *gin.Context) {
+	op := middleware.GetUserFromContext(c)
 	orgID := middleware.GetOrganizationID(c)
 	if op == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "not authenticated"))
@@ -236,21 +236,21 @@ func (h *AdminHandler) UpdateOperator(c *gin.Context) {
 		return
 	}
 
-	operatorID := c.Param("id")
-	if operatorID == "" {
+	userID := c.Param("id")
+	if userID == "" {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeValidationFailed, "operator id is required"))
 		return
 	}
 
-	var req auth.UpdateOperatorRequest
+	var req auth.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeValidationFailed, "invalid request body"))
 		return
 	}
 
-	updatedOp, err := h.authService.UpdateOperator(c.Request.Context(), operatorID, &req)
+	updatedOp, err := h.authService.UpdateUser(c.Request.Context(), userID, &req)
 	if err != nil {
-		if errors.Is(err, application.ErrOperatorNotFound) {
+		if errors.Is(err, application.ErrUserNotFound) {
 			h.presenter.NotFound(c, "operator not found")
 			return
 		}
@@ -266,7 +266,7 @@ func (h *AdminHandler) UpdateOperator(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, openapi.AdminOperator{
+	c.JSON(http.StatusOK, openapi.AdminUser{
 		ID:        updatedOp.ID,
 		Email:     updatedOp.Email,
 		Name:      updatedOp.Name,
@@ -274,24 +274,24 @@ func (h *AdminHandler) UpdateOperator(c *gin.Context) {
 	})
 }
 
-// DeleteOperator handles DELETE /v1/auth/admin/operators/:id.
-// @Summary      Delete operator
-// @Description  Deletes an operator. Cannot delete yourself or the last super_admin
+// DeleteUser handles DELETE /v1/auth/admin/users/:id.
+// @Summary      Delete user
+// @Description  Deletes a user. Cannot delete yourself or the last super_admin
 // @Tags         admin
 // @Accept       json
 // @Produce      json
 // @Param        X-Organization-ID  header  string  true  "Organization ID"
-// @Param        id  path  string  true  "operator ID"
-// @Success      200  {object}  openapi.SuccessResult  "operator deleted"
-// @Failure      400  {object}  openapi.ErrorResponse  "operator id required / cannot delete self"
+// @Param        id  path  string  true  "user ID"
+// @Success      200  {object}  openapi.SuccessResult  "user deleted"
+// @Failure      400  {object}  openapi.ErrorResponse  "user id required / cannot delete self"
 // @Failure      401  {object}  openapi.ErrorResponse  "not authenticated"
 // @Failure      403  {object}  openapi.ErrorResponse  "super_admin required"
 // @Failure      404  {object}  openapi.ErrorResponse  "not found"
 // @Failure      409  {object}  openapi.ErrorResponse  "cannot delete last super_admin"
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
-// @Router       /auth/admin/operators/{id} [delete]
-func (h *AdminHandler) DeleteOperator(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+// @Router       /auth/admin/users/{id} [delete]
+func (h *AdminHandler) DeleteUser(c *gin.Context) {
+	op := middleware.GetUserFromContext(c)
 	orgID := middleware.GetOrganizationID(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "not authenticated")
@@ -304,19 +304,19 @@ func (h *AdminHandler) DeleteOperator(c *gin.Context) {
 		return
 	}
 
-	operatorID := c.Param("id")
-	if operatorID == "" {
+	userID := c.Param("id")
+	if userID == "" {
 		h.presenter.BadRequest(c, "operator id is required")
 		return
 	}
 
-	if operatorID == op.ID {
+	if userID == op.ID {
 		h.presenter.BadRequest(c, "cannot delete your own account")
 		return
 	}
 
-	if err := h.authService.DeleteOperator(c.Request.Context(), operatorID); err != nil {
-		if errors.Is(err, application.ErrOperatorNotFound) {
+	if err := h.authService.DeleteUser(c.Request.Context(), userID); err != nil {
+		if errors.Is(err, application.ErrUserNotFound) {
 			h.presenter.NotFound(c, "operator not found")
 			return
 		}
@@ -328,6 +328,6 @@ func (h *AdminHandler) DeleteOperator(c *gin.Context) {
 		return
 	}
 
-	h.presenter.AdminAction(c, op.ID, "delete_operator", "operator", operatorID, nil)
+	h.presenter.AdminAction(c, op.ID, "delete_user", "user", userID, nil)
 	h.presenter.OK(c, openapi.SuccessResult{Success: true, Message: "operator deleted"})
 }

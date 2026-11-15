@@ -20,7 +20,7 @@ func clientRespToOpenAPI(in *dto.ClientResponse) *openapi.ClientCredential {
 	}
 	return &openapi.ClientCredential{
 		ID:             in.ID,
-		OperatorID:     in.OperatorID,
+		UserID:     in.UserID,
 		Name:           in.Name,
 		Platform:       in.Platform,
 		AllowedOrigins: in.AllowedOrigins,
@@ -64,7 +64,7 @@ func NewClientCredentialsHandler(authService *auth.AuthService, clientService *c
 func clientCredToSchema(r *dto.ClientResponse) openapi.ClientCredential {
 	return openapi.ClientCredential{
 		ID:             r.ID,
-		OperatorID:     r.OperatorID,
+		UserID:     r.UserID,
 		Name:           r.Name,
 		Platform:       r.Platform,
 		AllowedOrigins: r.AllowedOrigins,
@@ -78,12 +78,12 @@ func clientCredToSchema(r *dto.ClientResponse) openapi.ClientCredential {
 	}
 }
 
-// getOperatorFromSession extracts operator from the authenticated session.
-// See SettingsHandler.getOperatorFromSession: the cookieAuth middleware already.
-// validated the (encrypted) session cookie and stored the operator in context,
+// getUserFromSession extracts user from the authenticated session.
+// See SettingsHandler.getUserFromSession: the cookieAuth middleware already.
+// validated the (encrypted) session cookie and stored the user in context,
 // so we reuse that instead of passing the raw cookie ciphertext to ValidateSession.
-func (h *ClientCredentialsHandler) getOperatorFromSession(c *gin.Context) (string, error) {
-	op := middleware.GetOperatorFromContext(c)
+func (h *ClientCredentialsHandler) getUserFromSession(c *gin.Context) (string, error) {
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		return "", application.ErrUnauthorized
 	}
@@ -104,7 +104,7 @@ func (h *ClientCredentialsHandler) getOperatorFromSession(c *gin.Context) (strin
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/client-credentials [post]
 func (h *ClientCredentialsHandler) Create(c *gin.Context) {
-	operatorID, err := h.getOperatorFromSession(c)
+	userID, err := h.getUserFromSession(c)
 	if err != nil {
 		if errors.Is(err, application.ErrUnauthorized) || errors.Is(err, application.ErrTokenExpired) {
 			h.presenter.Unauthorized(c, "not authenticated")
@@ -135,7 +135,7 @@ func (h *ClientCredentialsHandler) Create(c *gin.Context) {
 	}
 
 	clientResp, secret, err := h.clientService.Create(c.Request.Context(), &client.CreateClientRequest{
-		OperatorID:     operatorID,
+		UserID:     userID,
 		Name:           req.Name,
 		Platform:       req.Platform,
 		AllowedOrigins: req.AllowedOrigins,
@@ -147,7 +147,7 @@ func (h *ClientCredentialsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	h.presenter.APIClientCreated(c, operatorID, clientResp.ID)
+	h.presenter.APIClientCreated(c, userID, clientResp.ID)
 	h.presenter.OK(c, openapi.ClientCredential{
 		ClientID:     clientResp.ID,
 		ClientSecret: secret,
@@ -160,7 +160,7 @@ func (h *ClientCredentialsHandler) Create(c *gin.Context) {
 
 // List handles GET /v1/auth/client-credentials.
 // @Summary      List client credentials
-// @Description  Returns all client credentials for the authenticated operator
+// @Description  Returns all client credentials for the authenticated user
 // @Tags         client-credentials
 // @Accept       json
 // @Produce      json
@@ -169,7 +169,7 @@ func (h *ClientCredentialsHandler) Create(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/client-credentials [get]
 func (h *ClientCredentialsHandler) List(c *gin.Context) {
-	operatorID, err := h.getOperatorFromSession(c)
+	userID, err := h.getUserFromSession(c)
 	if err != nil {
 		if errors.Is(err, application.ErrUnauthorized) || errors.Is(err, application.ErrTokenExpired) {
 			h.presenter.Unauthorized(c, "not authenticated")
@@ -181,7 +181,7 @@ func (h *ClientCredentialsHandler) List(c *gin.Context) {
 		return
 	}
 
-	clients, err := h.clientService.ListByOperatorID(c.Request.Context(), operatorID)
+	clients, err := h.clientService.ListByUserID(c.Request.Context(), userID)
 	if err != nil {
 		h.presenter.InternalError(c, "Failed to list clients")
 		return
@@ -208,7 +208,7 @@ func (h *ClientCredentialsHandler) List(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/client-credentials/{clientId} [get]
 func (h *ClientCredentialsHandler) Get(c *gin.Context) {
-	operatorID, err := h.getOperatorFromSession(c)
+	userID, err := h.getUserFromSession(c)
 	if err != nil {
 		if errors.Is(err, application.ErrUnauthorized) || errors.Is(err, application.ErrTokenExpired) {
 			h.presenter.Unauthorized(c, "not authenticated")
@@ -226,7 +226,7 @@ func (h *ClientCredentialsHandler) Get(c *gin.Context) {
 		return
 	}
 
-	clientResp, err := h.clientService.GetByOperatorID(c.Request.Context(), clientID, operatorID)
+	clientResp, err := h.clientService.GetByUserID(c.Request.Context(), clientID, userID)
 	if err != nil {
 		h.presenter.NotFound(c, "Client not found")
 		return
@@ -249,7 +249,7 @@ func (h *ClientCredentialsHandler) Get(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/client-credentials/{clientId} [delete]
 func (h *ClientCredentialsHandler) Delete(c *gin.Context) {
-	operatorID, err := h.getOperatorFromSession(c)
+	userID, err := h.getUserFromSession(c)
 	if err != nil {
 		if errors.Is(err, application.ErrUnauthorized) || errors.Is(err, application.ErrTokenExpired) {
 			h.presenter.Unauthorized(c, "not authenticated")
@@ -268,7 +268,7 @@ func (h *ClientCredentialsHandler) Delete(c *gin.Context) {
 	}
 
 	// Verify ownership first.
-	_, err = h.clientService.GetByOperatorID(c.Request.Context(), clientID, operatorID)
+	_, err = h.clientService.GetByUserID(c.Request.Context(), clientID, userID)
 	if err != nil {
 		h.presenter.NotFound(c, "Client not found")
 		return
@@ -279,7 +279,7 @@ func (h *ClientCredentialsHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	h.presenter.APIClientRevoked(c, operatorID, clientID)
+	h.presenter.APIClientRevoked(c, userID, clientID)
 	h.presenter.OK(c, openapi.AdminClientActionResult{Success: true, ClientID: clientID})
 }
 
@@ -298,7 +298,7 @@ func (h *ClientCredentialsHandler) Delete(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/client-credentials/{clientId} [patch]
 func (h *ClientCredentialsHandler) Update(c *gin.Context) {
-	operatorID, err := h.getOperatorFromSession(c)
+	userID, err := h.getUserFromSession(c)
 	if err != nil {
 		if errors.Is(err, application.ErrUnauthorized) || errors.Is(err, application.ErrTokenExpired) {
 			h.presenter.Unauthorized(c, "not authenticated")
@@ -329,7 +329,7 @@ func (h *ClientCredentialsHandler) Update(c *gin.Context) {
 	}
 
 	// Verify ownership.
-	clientResp, err := h.clientService.GetByOperatorID(c.Request.Context(), clientID, operatorID)
+	clientResp, err := h.clientService.GetByUserID(c.Request.Context(), clientID, userID)
 	if err != nil {
 		h.presenter.NotFound(c, "Client not found")
 		return
@@ -373,7 +373,7 @@ func (h *ClientCredentialsHandler) Update(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/client-credentials/{clientId}/rotate-secret [post]
 func (h *ClientCredentialsHandler) RotateSecret(c *gin.Context) {
-	operatorID, err := h.getOperatorFromSession(c)
+	userID, err := h.getUserFromSession(c)
 	if err != nil {
 		if errors.Is(err, application.ErrUnauthorized) || errors.Is(err, application.ErrTokenExpired) {
 			h.presenter.Unauthorized(c, "not authenticated")
@@ -391,14 +391,14 @@ func (h *ClientCredentialsHandler) RotateSecret(c *gin.Context) {
 	}
 
 	// Rotate the client secret.
-	newSecret, err := h.clientService.RotateSecret(c.Request.Context(), clientID, operatorID)
+	newSecret, err := h.clientService.RotateSecret(c.Request.Context(), clientID, userID)
 	if err != nil {
 		h.presenter.NotFound(c, "Client not found")
 		return
 	}
 
 	// Audit log the secret rotation.
-	h.presenter.APIClientSecretRotated(c, operatorID, clientID)
+	h.presenter.APIClientSecretRotated(c, userID, clientID)
 
 	h.presenter.OK(c, openapi.ClientSecretRotateResult{
 		ClientID:     clientID,

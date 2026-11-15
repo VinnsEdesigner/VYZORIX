@@ -16,7 +16,7 @@ Each API key has:
 
 ## Creating a key
 
-`POST /v1/api-keys` (requires operator auth + CSRF):
+`POST /v1/api-keys` (requires user auth + CSRF):
 
 ```json
 {
@@ -57,7 +57,7 @@ The `TenantAPIKeyAuth` middleware in `internal/api/middleware/tenant_api_key.go`
 3. Looks up keys by prefix in the database
 4. For each match, verifies the full key against the stored argon2id hash
 5. Checks expiry and monthly usage limit
-6. Sets `operator_id` and `organization_id` in the gin context
+6. Sets `user_id` and `organization_id` in the gin context
 7. Enforces scope (read keys can't POST, write keys can't DELETE, etc.)
 
 ## Scope enforcement
@@ -80,17 +80,17 @@ The `APIKeyRateLimitMiddleware` in `internal/api/middleware/api_key_rate_limiter
 
 ## Key management
 
-- `GET /v1/api-keys` — list keys for the current operator (shows prefix, not full key)
+- `GET /v1/api-keys` — list keys for the current user (shows prefix, not full key)
 - `PATCH /v1/api-keys/:id` — update name or scope
 - `DELETE /v1/api-keys/:id` — revoke (soft delete, key stops working immediately)
 - `POST /v1/api-keys/:id/rotate` — generate a new secret, invalidate the old one
 
 ## SuperAdmin key management
 
-SuperAdmins can manage keys across all operators:
+SuperAdmins can manage keys across all users:
 
 - `GET /v1/admin/api-keys` — list all keys globally
-- `GET /v1/admin/api-keys/operator/:operatorId` — list keys for a specific operator
+- `GET /v1/admin/api-keys/operator/:operatorId` — list keys for a specific user
 - `DELETE /v1/admin/api-keys/:keyId` — force-revoke any key
 - `GET /v1/admin/api-keys/stats` — global key usage statistics
 

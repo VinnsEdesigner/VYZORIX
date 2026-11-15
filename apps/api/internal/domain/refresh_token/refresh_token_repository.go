@@ -22,8 +22,8 @@ type Repository interface {
 	// RevokeByTokenHash revokes a refresh token by its hash.
 	RevokeByTokenHash(ctx context.Context, tokenHash string) error
 
-	// RevokeAllForOperator revokes all refresh tokens for an operator.
-	RevokeAllForOperator(ctx context.Context, operatorID string) error
+	// RevokeAllForUser revokes all refresh tokens for a user.
+	RevokeAllForUser(ctx context.Context, userID string) error
 
 	// CleanupExpired removes expired refresh tokens older than the specified duration.
 	CleanupExpired(ctx context.Context, olderThan time.Duration) (int, error)

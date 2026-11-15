@@ -37,7 +37,7 @@ type Repository interface {
 	// Get returns one secret, or ErrNotFound.
 	Get(ctx context.Context, name Name) (*Record, error)
 	// List returns the names and generations for an app on a device, without
-	// ciphertext: the operator needs to confirm what is set, never to read it.
+	// ciphertext: the user needs to confirm what is set, never to read it.
 	List(ctx context.Context, deviceID, app string) ([]*Record, error)
 	// Put stores or replaces a secret and returns the new generation.
 	Put(ctx context.Context, record *Record) (int64, error)

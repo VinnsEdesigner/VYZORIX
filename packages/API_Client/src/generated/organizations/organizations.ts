@@ -25,7 +25,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
   export const getOrganizations = () => {
 /**
- * Returns all organizations the operator is a member of
+ * Returns all organizations the user is a member of
  * @summary List organizations
  */
 const getOrganizations = (

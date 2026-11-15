@@ -132,8 +132,8 @@ func (w *PTYExpiryWorker) sweep() {
 		defer func() { _ = w.lockSvc.Release(ctx, "pty-expiry-worker", "primary") }()
 	}
 
-	// CloseSession notifies the operator through the session's own endpoint, so
-	// a nil operator here is correct: the relay already knows how to reach it.
+	// CloseSession notifies the user through the session's own endpoint, so
+	// a nil user here is correct: the relay already knows how to reach it.
 	expired := w.relay.ExpireSessions(nil)
 	if expired > 0 && w.logger != nil {
 		w.logger.Info("expired idle pty sessions", "count", expired)

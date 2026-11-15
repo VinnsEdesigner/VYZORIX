@@ -40,7 +40,7 @@ interface RawInboxEntryFields {
   approvedAt?: number | null;
   rejectedAt?: number | null;
   notes?: string | null;
-  operatorId?: string | null;
+  userId?: string | null;
   createdAt?: number;
 }
 
@@ -75,7 +75,7 @@ function normalizeInboxEntry(raw: RawInboxEntryFields): InboxEntry {
     approvedAt: toDate(raw.approvedAt),
     rejectedAt: toDate(raw.rejectedAt),
     notes: raw.notes ?? null,
-    operatorId: raw.operatorId ?? null,
+    userId: raw.userId ?? null,
     createdAt: toDate(raw.createdAt) ?? new Date(),
   };
 }

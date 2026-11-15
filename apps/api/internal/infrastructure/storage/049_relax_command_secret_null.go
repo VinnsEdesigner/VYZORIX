@@ -95,7 +95,7 @@ func migrateRelaxDeviceCommandSecretNull(tx *sql.Tx) error {
 	// Re-create the standard devices indexes (idempotent). These mirror the.
 	// index definitions from earlier migrations so query plans remain optimal.
 	indexStmts := []string{
-		"CREATE INDEX IF NOT EXISTS idx_devices_operator_id ON devices(operator_id)",
+		"CREATE INDEX IF NOT EXISTS idx_devices_user_id ON devices(user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_devices_organization_id ON devices(organization_id)",
 		"CREATE INDEX IF NOT EXISTS idx_devices_firebase_install_id ON devices(firebase_install_id)",
 	}

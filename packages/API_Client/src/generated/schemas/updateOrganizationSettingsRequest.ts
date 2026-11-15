@@ -5,11 +5,11 @@
  * Go-generated OpenAPI contract from handler annotations
  * OpenAPI spec version: 0.0.01
  */
-import type { OperatorThresholds } from './operatorThresholds';
+import type { UserThresholds } from './userThresholds';
 
 export interface UpdateOrganizationSettingsRequest {
   alertCooldownMinutes?: number;
   dateFormat?: string;
-  defaultThresholds?: OperatorThresholds;
+  defaultThresholds?: UserThresholds;
   timezone?: string;
 }

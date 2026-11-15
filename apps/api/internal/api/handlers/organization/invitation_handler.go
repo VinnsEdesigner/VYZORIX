@@ -46,7 +46,7 @@ func NewInvitationHandler(
 
 // Create handles POST /v1/invitations.
 // @Summary      Create invitation
-// @Description  Invites an operator to an organization by email
+// @Description  Invites a user to an organization by email
 // @Tags         invitations
 // @Accept       json
 // @Produce      json
@@ -61,7 +61,7 @@ func NewInvitationHandler(
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /invitations [post]
 func (h *InvitationHandler) Create(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -153,7 +153,7 @@ func (h *InvitationHandler) Create(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /organizations/{id}/invitations [get]
 func (h *InvitationHandler) ListByOrganization(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -221,7 +221,7 @@ func (h *InvitationHandler) ListByOrganization(c *gin.Context) {
 
 // ListByInviter handles GET /v1/invitations (as inviter).
 // @Summary      List sent invitations
-// @Description  Returns invitations sent by the authenticated operator
+// @Description  Returns invitations sent by the authenticated user
 // @Tags         invitations
 // @Accept       json
 // @Produce      json
@@ -230,7 +230,7 @@ func (h *InvitationHandler) ListByOrganization(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /invitations [get]
 func (h *InvitationHandler) ListByInviter(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -313,7 +313,7 @@ func (h *InvitationHandler) GetByToken(c *gin.Context) {
 
 // Accept handles POST /v1/invite/:token/accept.
 // @Summary      Accept invitation
-// @Description  Accepts an invitation and adds the operator to the organization
+// @Description  Accepts an invitation and adds the user to the organization
 // @Tags         invitations
 // @Accept       json
 // @Produce      json
@@ -325,7 +325,7 @@ func (h *InvitationHandler) GetByToken(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /invite/{token}/accept [post]
 func (h *InvitationHandler) Accept(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -401,7 +401,7 @@ func (h *InvitationHandler) Accept(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /invite/{token}/reject [post]
 func (h *InvitationHandler) Reject(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -451,8 +451,8 @@ func (h *InvitationHandler) Reject(c *gin.Context) {
 }
 
 // ListPendingForEmail handles GET /v1/me/invitations.
-// @Summary      List pending invitations for current operator
-// @Description  Returns pending invitations addressed to the authenticated operator's email
+// @Summary      List pending invitations for current user
+// @Description  Returns pending invitations addressed to the authenticated user's email
 // @Tags         invitations
 // @Accept       json
 // @Produce      json
@@ -461,7 +461,7 @@ func (h *InvitationHandler) Reject(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /me/invitations [get]
 func (h *InvitationHandler) ListPendingForEmail(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -512,7 +512,7 @@ func (h *InvitationHandler) ListPendingForEmail(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /invitations/{id} [delete]
 func (h *InvitationHandler) Delete(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return

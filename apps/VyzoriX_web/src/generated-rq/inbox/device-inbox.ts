@@ -78,7 +78,7 @@ export const getGetDeviceInboxUrl = (params?: GetDeviceInboxParams,) => {
 }
 
 /**
- * Returns paginated inbox entries for the authenticated operator within the organization
+ * Returns paginated inbox entries for the authenticated user within the organization
  * @summary List inbox entries
  */
 export const getDeviceInbox = async (params?: GetDeviceInboxParams, options?: Parameters<typeof customAxios>[1]): Promise<InboxListResult> => {
@@ -187,7 +187,7 @@ export const getPostDeviceInboxUrl = () => {
 }
 
 /**
- * Submits a device registration request to the operator inbox. Requires device attestation when configured
+ * Submits a device registration request to the user inbox. Requires device attestation when configured
  * @summary Create inbox request
  */
 export const postDeviceInbox = async (inboxRequest: InboxRequest, options?: Parameters<typeof customAxios>[1]): Promise<InboxEntryResponse> => {
@@ -379,7 +379,7 @@ export const getPatchDeviceInboxImeiUrl = (imei: string,) => {
 }
 
 /**
- * Updates an inbox entry (e.g., add operator notes) within the organization
+ * Updates an inbox entry (e.g., add user notes) within the organization
  * @summary Update inbox entry
  */
 export const patchDeviceInboxImei = async (imei: string,

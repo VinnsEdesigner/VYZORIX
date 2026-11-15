@@ -36,7 +36,7 @@ func (r *EventRepository) Store(ctx context.Context, evt *event.Event) error {
 	}
 
 	query := `
-		INSERT INTO device_events (id, device_id, event_type, timestamp, data, severity, source, operator_id)
+		INSERT INTO device_events (id, device_id, event_type, timestamp, data, severity, source, user_id)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err = r.db.ExecContext(ctx, query,
@@ -47,7 +47,7 @@ func (r *EventRepository) Store(ctx context.Context, evt *event.Event) error {
 		dataBytes,
 		string(evt.Severity),
 		evt.Source,
-		evt.OperatorID,
+		evt.UserID,
 	)
 	return err
 }
@@ -61,7 +61,7 @@ func (r *EventRepository) StoreBatch(ctx context.Context, events []*event.Event)
 	defer SafeRollbackNoLog(tx)
 
 	stmt, err := tx.PrepareContext(ctx, `
-		INSERT INTO device_events (id, device_id, event_type, timestamp, data, severity, source, operator_id)
+		INSERT INTO device_events (id, device_id, event_type, timestamp, data, severity, source, user_id)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return err
@@ -84,7 +84,7 @@ func (r *EventRepository) StoreBatch(ctx context.Context, events []*event.Event)
 			dataBytes,
 			string(evt.Severity),
 			evt.Source,
-			evt.OperatorID,
+			evt.UserID,
 		)
 		if err != nil {
 			return err
@@ -97,7 +97,7 @@ func (r *EventRepository) StoreBatch(ctx context.Context, events []*event.Event)
 // GetByID retrieves an event by its ID.
 func (r *EventRepository) GetByID(ctx context.Context, id string) (*event.Event, error) {
 	query := `
-		SELECT id, device_id, event_type, timestamp, data, severity, source, operator_id
+		SELECT id, device_id, event_type, timestamp, data, severity, source, user_id
 		FROM device_events
 		WHERE id = ?`
 
@@ -113,7 +113,7 @@ func (r *EventRepository) GetByID(ctx context.Context, id string) (*event.Event,
 		&dataBytes,
 		&evt.Severity,
 		&evt.Source,
-		&evt.OperatorID,
+		&evt.UserID,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, errEventNotFound
@@ -140,7 +140,7 @@ func (r *EventRepository) GetByDevice(ctx context.Context, deviceID string, filt
 	}
 
 	query := `
-		SELECT id, device_id, event_type, timestamp, data, severity, source, operator_id
+		SELECT id, device_id, event_type, timestamp, data, severity, source, user_id
 		FROM device_events
 		WHERE device_id = ?`
 	args := make([]interface{}, 0, 1)
@@ -191,7 +191,7 @@ func (r *EventRepository) GetByDevices(ctx context.Context, deviceIDs []string, 
 	}
 
 	query := `
-		SELECT id, device_id, event_type, timestamp, data, severity, source, operator_id
+		SELECT id, device_id, event_type, timestamp, data, severity, source, user_id
 		FROM device_events
 		WHERE device_id IN (` + strings.Join(placeholders, ",") + ")"
 
@@ -230,7 +230,7 @@ func (r *EventRepository) GetByType(ctx context.Context, eventType event.EventTy
 	}
 
 	query := `
-		SELECT id, device_id, event_type, timestamp, data, severity, source, operator_id
+		SELECT id, device_id, event_type, timestamp, data, severity, source, user_id
 		FROM device_events
 		WHERE event_type = ?`
 	args := make([]interface{}, 0, 1)
@@ -264,15 +264,15 @@ func (r *EventRepository) GetByType(ctx context.Context, eventType event.EventTy
 	}, nil
 }
 
-// GetByOperator retrieves events for devices owned by an operator.
-func (r *EventRepository) GetByOperator(ctx context.Context, operatorID string, filter *event.EventFilter) (*event.EventResult, error) {
+// GetByUser retrieves events for devices owned by a user.
+func (r *EventRepository) GetByUser(ctx context.Context, userID string, filter *event.EventFilter) (*event.EventResult, error) {
 	if filter == nil {
 		filter = &event.EventFilter{Limit: 50}
 	}
 
-	// First get device IDs for this operator.
-	devicesQuery := `SELECT id FROM devices WHERE operator_id = ?`
-	rows, err := r.db.QueryContext(ctx, devicesQuery, operatorID)
+	// First get device IDs for this user.
+	devicesQuery := `SELECT id FROM devices WHERE user_id = ?`
+	rows, err := r.db.QueryContext(ctx, devicesQuery, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -305,7 +305,7 @@ func (r *EventRepository) GetRecent(ctx context.Context, limit int) ([]event.Eve
 	}
 
 	query := `
-		SELECT id, device_id, event_type, timestamp, data, severity, source, operator_id
+		SELECT id, device_id, event_type, timestamp, data, severity, source, user_id
 		FROM device_events
 		ORDER BY timestamp DESC
 		LIMIT ?`
@@ -326,7 +326,7 @@ func (r *EventRepository) GetRecentByDevice(ctx context.Context, deviceID string
 	}
 
 	query := `
-		SELECT id, device_id, event_type, timestamp, data, severity, source, operator_id
+		SELECT id, device_id, event_type, timestamp, data, severity, source, user_id
 		FROM device_events
 		WHERE device_id = ?
 		ORDER BY timestamp DESC
@@ -409,7 +409,7 @@ func (r *EventRepository) scanEvents(rows *sql.Rows) ([]event.Event, error) {
 			&dataBytes,
 			&evt.Severity,
 			&evt.Source,
-			&evt.OperatorID,
+			&evt.UserID,
 		)
 		if err != nil {
 			return nil, err

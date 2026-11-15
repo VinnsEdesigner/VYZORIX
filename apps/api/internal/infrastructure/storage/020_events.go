@@ -12,7 +12,7 @@ func migrateCreateEvents(tx *sql.Tx) error {
 			id              TEXT PRIMARY KEY,
 			event_type      TEXT NOT NULL,
 			device_id       TEXT,
-			operator_id     TEXT,
+			user_id     TEXT,
 			payload         TEXT,
 			created_at      INTEGER NOT NULL
 		)
@@ -30,10 +30,10 @@ func migrateCreateEvents(tx *sql.Tx) error {
 		return err
 	}
 
-	// Index for querying events by operator.
+	// Index for querying events by user.
 	_, err = tx.ExecContext(context.Background(), `
-		CREATE INDEX IF NOT EXISTS idx_events_operator_id 
-		ON events(operator_id, created_at DESC)
+		CREATE INDEX IF NOT EXISTS idx_events_user_id 
+		ON events(user_id, created_at DESC)
 	`)
 	if err != nil {
 		return err

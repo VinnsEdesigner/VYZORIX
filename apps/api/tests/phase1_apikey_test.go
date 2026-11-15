@@ -14,7 +14,7 @@ import (
 // TestPhase1APIKey tests API key creation, endpoint access, scope enforcement,
 // and key management. 45 subtests.
 //
-// Flow: register operator → verify email → login → create org → create API keys.
+// Flow: register user → verify email → login → create org → create API keys.
 // (read/write/admin) → test GET endpoints per scope → auth rejection → scope.
 // enforcement → key list/rotate/revoke.
 func TestPhase1APIKey(t *testing.T) {
@@ -48,11 +48,11 @@ func TestPhase1APIKey(t *testing.T) {
 			t.Fatalf("register -> %d: %s", status, string(body))
 		}
 		data := parseJSON(t, body)
-		opID, _ := data["operator_id"].(string)
+		opID, _ := data["user_id"].(string)
 		if opID == "" {
-			t.Fatal("missing operator_id in register response")
+			t.Fatal("missing user_id in register response")
 		}
-		t.Logf("registered operator_id=%s", opID[:12])
+		t.Logf("registered user_id=%s", opID[:12])
 	})
 
 	t.Run("verification_email_captured", func(t *testing.T) {
@@ -348,7 +348,7 @@ func TestPhase1APIKey(t *testing.T) {
 		data := parseJSON(t, body)
 		opID, _ = data["id"].(string)
 		if opID == "" {
-			opID, _ = data["operator_id"].(string)
+			opID, _ = data["user_id"].(string)
 		}
 	}
 	state := &TestState{
@@ -356,7 +356,7 @@ func TestPhase1APIKey(t *testing.T) {
 		Password:   testPassword,
 		Name:       name,
 		OrgID:      orgID,
-		OperatorID: opID,
+		UserID: opID,
 		APIKeys:    apiKeys,
 		CSRF:       csrf,
 	}

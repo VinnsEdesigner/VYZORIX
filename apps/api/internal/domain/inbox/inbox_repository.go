@@ -19,8 +19,8 @@ type Repository interface {
 	// GetByIMEI retrieves an inbox entry by IMEI.
 	GetByIMEI(ctx context.Context, imei string) (*InboxEntry, error)
 
-	// ListByOperator retrieves paginated inbox entries for a specific operator within an organization with optional status filter.
-	ListByOperator(ctx context.Context, operatorID, orgID, status string, limit, offset int) ([]*InboxEntry, int, error)
+	// ListByUser retrieves paginated inbox entries for a specific user within an organization with optional status filter.
+	ListByUser(ctx context.Context, userID, orgID, status string, limit, offset int) ([]*InboxEntry, int, error)
 
 	// Update updates an existing inbox entry.
 	Update(ctx context.Context, e *InboxEntry) error
@@ -53,9 +53,9 @@ type RegistrationLogRepository interface {
 	// ListByIMEI retrieves all registration logs for an IMEI.
 	ListByIMEI(ctx context.Context, imei string, limit, offset int) ([]*RegistrationLog, int, error)
 
-	// ListByOperator retrieves all registration logs for an operator.
-	ListByOperator(ctx context.Context, operatorID string, limit, offset int) ([]*RegistrationLog, int, error)
+	// ListByUser retrieves all registration logs for a user.
+	ListByUser(ctx context.Context, userID string, limit, offset int) ([]*RegistrationLog, int, error)
 
-	// CountByOperator returns the number of registration logs for an operator.
-	CountByOperator(ctx context.Context, operatorID string) (int, error)
+	// CountByUser returns the number of registration logs for a user.
+	CountByUser(ctx context.Context, userID string) (int, error)
 }

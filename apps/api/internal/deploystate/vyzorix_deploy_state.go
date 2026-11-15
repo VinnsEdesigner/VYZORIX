@@ -11,7 +11,7 @@
 // The device now reports what it installed on every telemetry heartbeat
 // (`configVersion` and a per-app digest). This package compares that to the config
 // the server has stored, so drift is visible on every heartbeat rather than only
-// when an operator happens to deploy.
+// when a user happens to deploy.
 //
 // ## The comparison is one pure function
 //
@@ -195,7 +195,7 @@ func AppStateDigest(artifacts map[string]string) string {
 // It parses with the format's own parser, so it sees the same nodes the device
 // does. A document that will not parse yields no expectation rather than an error:
 // a stored config the server cannot read is a problem, but it is not *drift*, and
-// reporting it as drift would send an operator looking at the wrong thing.
+// reporting it as drift would send a user looking at the wrong thing.
 //
 // ## Why the apps are read by walking, not by path
 //

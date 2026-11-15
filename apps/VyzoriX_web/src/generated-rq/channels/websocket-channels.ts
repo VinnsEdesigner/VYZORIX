@@ -177,7 +177,7 @@ export const getPostChannelsSubscribeUrl = () => {
 }
 
 /**
- * Registers a logical subscription to a channel scope for the operator
+ * Registers a logical subscription to a channel scope for the user
  * @summary Subscribe to channel
  */
 export const postChannelsSubscribe = async (channelSubscribeRequest: ChannelSubscribeRequest, options?: Parameters<typeof customAxios>[1]): Promise<ChannelSubscribeResult> => {

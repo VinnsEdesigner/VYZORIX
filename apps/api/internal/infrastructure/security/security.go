@@ -9,7 +9,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security/jwt"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security/lockout"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security/oauth"
@@ -27,8 +27,8 @@ import (
 // JWTManager is the type alias for jwt.Manager.
 type JWTManager = jwt.Manager
 
-// OperatorClaims represents the JWT claims for an authenticated operator.
-type OperatorClaims = jwt.OperatorClaims
+// UserClaims represents the JWT claims for an authenticated user.
+type UserClaims = jwt.UserClaims
 
 // ErrInvalidToken is returned when a JWT token is invalid.
 var ErrInvalidToken = jwt.ErrInvalidToken
@@ -95,9 +95,9 @@ func NewSessionManager(secret string) *session.Manager {
 	return session.NewManager(secret)
 }
 
-// HashOperatorID creates a hash of an operator ID.
-func HashOperatorID(id string) string {
-	return session.HashOperatorID(id)
+// HashUserID creates a hash of a user ID.
+func HashUserID(id string) string {
+	return session.HashUserID(id)
 }
 
 // TOTPConfig holds TOTP configuration.
@@ -131,21 +131,21 @@ func GenerateBackupCodes(count int) ([]string, error) {
 // MFASecretBinding contains the TOTP secret and its cryptographic binding.
 type MFASecretBinding = totp.MFASecretBinding
 
-// CreateMFASecretBinding creates a cryptographically bound MFA secret for an operator.
-// 7: The MAC binds the secret to the operator ID, preventing token theft attacks.
-func CreateMFASecretBinding(operatorID, secret string) MFASecretBinding {
-	return totp.CreateMFASecretBinding(operatorID, secret)
+// CreateMFASecretBinding creates a cryptographically bound MFA secret for a user.
+// 7: The MAC binds the secret to the user ID, preventing token theft attacks.
+func CreateMFASecretBinding(userID, secret string) MFASecretBinding {
+	return totp.CreateMFASecretBinding(userID, secret)
 }
 
 // VerifyMFASecretBinding verifies that a TOTP code was generated using the bound secret.
-// 7: Rejects codes if the operator ID doesn't match the binding.
-func VerifyMFASecretBinding(operatorID string, binding MFASecretBinding) bool {
-	return totp.VerifyMFASecretBinding(operatorID, binding)
+// 7: Rejects codes if the user ID doesn't match the binding.
+func VerifyMFASecretBinding(userID string, binding MFASecretBinding) bool {
+	return totp.VerifyMFASecretBinding(userID, binding)
 }
 
-// GenerateBoundSecret generates a new MFA secret bound to an operator.
-func GenerateBoundSecret(operatorID string) (MFASecretBinding, error) {
-	return totp.GenerateBoundSecret(operatorID)
+// GenerateBoundSecret generates a new MFA secret bound to a user.
+func GenerateBoundSecret(userID string) (MFASecretBinding, error) {
+	return totp.GenerateBoundSecret(userID)
 }
 
 // ValidateBackupCode validates a backup code.
@@ -224,20 +224,20 @@ func GenerateFakeToken() (string, error) {
 }
 
 // EmailValidator provides configurable email validation.
-type EmailValidator = operator.EmailValidator
+type EmailValidator = user.EmailValidator
 
 // ValidationError represents a validation error.
-type ValidationError = operator.EmailError
+type ValidationError = user.EmailError
 
 // EmailValidationResult contains detailed validation results.
-type EmailValidationResult = operator.EmailValidationResult
+type EmailValidationResult = user.EmailValidationResult
 
 // EmailValidationError represents a specific email validation error.
-type EmailValidationError = operator.EmailValidationError
+type EmailValidationError = user.EmailValidationError
 
 const (
-	MaxEmailLength    = operator.MaxEmailLength
-	MaxNameLength     = operator.MaxNameLength
+	MaxEmailLength    = user.MaxEmailLength
+	MaxNameLength     = user.MaxNameLength
 	MaxPasswordLength = validate.MaxPasswordLength
 	MinPasswordLength = validate.MinPasswordLength
 	MaxDeviceIDLength = validate.MaxDeviceIDLength
@@ -246,24 +246,24 @@ const (
 )
 
 // DefaultEmailValidator returns a validator for typical user registration.
-var DefaultEmailValidator = operator.DefaultEmailValidator()
+var DefaultEmailValidator = user.DefaultEmailValidator()
 
 // StrictEmailValidator returns a validator for high-security requirements.
-var StrictEmailValidator = operator.StrictEmailValidator()
+var StrictEmailValidator = user.StrictEmailValidator()
 
 // ValidateEmail validates an email address.
 func ValidateEmail(email string) (string, error) {
-	return operator.ValidateEmail(email)
+	return user.ValidateEmail(email)
 }
 
 // ValidateEmailFull performs comprehensive email validation.
-func ValidateEmailFull(email string, validator *operator.EmailValidator) *operator.EmailValidationResult {
-	return operator.ValidateEmailFull(email, validator)
+func ValidateEmailFull(email string, validator *user.EmailValidator) *user.EmailValidationResult {
+	return user.ValidateEmailFull(email, validator)
 }
 
 // ValidateName validates a name.
 func ValidateName(name string) (string, error) {
-	return operator.ValidateName(name)
+	return user.ValidateName(name)
 }
 
 // ValidatePasswordLength validates password length constraints.
@@ -293,37 +293,37 @@ func SanitizeString(s string, maxLen int) string {
 
 // ContainsInvalidUTF8 checks for invalid UTF-8.
 func ContainsInvalidUTF8(s string) bool {
-	return operator.ContainsInvalidUTF8(s)
+	return user.ContainsInvalidUTF8(s)
 }
 
 // ContainsControlCharacters checks for Unicode control characters.
 func ContainsControlCharacters(s string) bool {
-	return operator.ContainsControlCharacters(s)
+	return user.ContainsControlCharacters(s)
 }
 
 // ExtractDomain extracts the domain from an email.
 func ExtractDomain(email string) string {
-	return operator.ExtractDomain(email)
+	return user.ExtractDomain(email)
 }
 
 // IsEmailDomainDisposable checks if email domain is disposable.
 func IsEmailDomainDisposable(email string) bool {
-	return operator.IsDisposableDomain(email)
+	return user.IsDisposableDomain(email)
 }
 
 // ClearMXCache clears the DNS MX record cache.
 func ClearMXCache() {
-	operator.ClearMXCache()
+	user.ClearMXCache()
 }
 
 // NormalizeEmailForComparison normalizes an email.
 func NormalizeEmailForComparison(email string) string {
-	return operator.NormalizeEmail(email)
+	return user.NormalizeEmail(email)
 }
 
 // ValidateEmailURI validates a mailto: URI.
 func ValidateEmailURI(uri string) error {
-	return operator.ValidateEmailURI(uri)
+	return user.ValidateEmailURI(uri)
 }
 
 // GitHubTokenResponse represents the token response from GitHub.

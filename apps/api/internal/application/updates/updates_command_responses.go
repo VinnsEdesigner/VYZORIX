@@ -112,7 +112,7 @@ type FailedDevice struct {
 	DeviceID string `json:"deviceId"`
 	Reason   string `json:"reason"`
 	// Disposition distinguishes a device that provably received nothing from
-	// one whose outcome is unknown. An operator must reconcile the latter
+	// one whose outcome is unknown. A user must reconcile the latter
 	// before re-pushing, or a device may install the update twice.
 	Disposition string `json:"disposition,omitempty"`
 	// NeedsReconciliation is true when the outcome is uncertain or partial;

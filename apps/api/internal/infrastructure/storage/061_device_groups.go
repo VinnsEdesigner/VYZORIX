@@ -20,9 +20,9 @@ func migrateDeviceGroups(tx *sql.Tx) error {
 		)`,
 		`CREATE TABLE IF NOT EXISTS device_group_members (
 			group_id     TEXT NOT NULL,
-			operator_id  TEXT NOT NULL,
+			user_id  TEXT NOT NULL,
 			created_at   DATETIME NOT NULL,
-			PRIMARY KEY (group_id, operator_id)
+			PRIMARY KEY (group_id, user_id)
 		)`,
 		`CREATE TABLE IF NOT EXISTS device_group_devices (
 			group_id   TEXT NOT NULL,
@@ -40,7 +40,7 @@ func migrateDeviceGroups(tx *sql.Tx) error {
 	ndx := []string{
 		`CREATE INDEX IF NOT EXISTS idx_device_groups_org ON device_groups(org_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_dgm_group ON device_group_members(group_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_dgm_operator ON device_group_members(operator_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_dgm_operator ON device_group_members(user_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_dgd_group ON device_group_devices(group_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_dgd_device ON device_group_devices(device_id)`,
 	}

@@ -41,7 +41,7 @@
 > now **organization-scoped**:
 >
 > - Every device inspection and timeline event belongs to an **organization**. Devices
->   carry an `organization_id`; an operator can only inspect devices in organizations
+>   carry an `organization_id`; a user can only inspect devices in organizations
 >   they are a member of.
 > - The API Client injects the active organization on every call via the
 >   `organization_id` query param (REST) **and** the `X-Organization-ID` header, sourced
@@ -83,7 +83,7 @@
 
 ### 1.1 Purpose
 
-The Diagnostics page provides operators with deep visibility into a single device:
+The Diagnostics page provides users with deep visibility into a single device:
 1. **Inspector** — Current State: a full snapshot of what the server knows about the device right now (identity, software, registration, connection, telemetry stats).
 2. **Timeline** — Audit Trail: a chronological, cursor-paginated event stream for the device (telemetry, command, connection, error events).
 
@@ -91,7 +91,7 @@ The Diagnostics page provides operators with deep visibility into a single devic
 
 - **No fake data** — every field is backed by a real server source (devices table, ws hub, telemetry table, device_events table).
 - **No filler content** — every data point is actionable.
-- **Org-scoped by default** — an operator never sees devices outside their active organization.
+- **Org-scoped by default** — a user never sees devices outside their active organization.
 - **Two focused views** — Inspector for now, Timeline for history.
 - **Premium aesthetic** — clean, dense, command-center feel.
 

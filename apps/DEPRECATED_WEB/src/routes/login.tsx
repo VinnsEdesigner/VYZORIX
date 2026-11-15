@@ -1,5 +1,5 @@
 /**
- * login.tsx - Operator login page.
+ * login.tsx - User login page.
  *
  * Uses the wolf background layout and LoginForm component.
  * After successful login, fetches client credentials for request signing.

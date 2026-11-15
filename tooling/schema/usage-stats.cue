@@ -10,7 +10,7 @@ package vyzorix
 // UsageStatsCounts.
 #UsageStatsCounts: {
         devices: int
-        operators: int
+        users: int
         organizations: int
         service_accounts: int
         alert_rules: int

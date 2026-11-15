@@ -13,7 +13,7 @@ import (
 	appconfirmation "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/confirmation"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/confirmation"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/gin-gonic/gin"
 )
 
@@ -43,7 +43,7 @@ func newConfirmHandler(t *testing.T) (*Handler, *fakeRepo) {
 	return NewHandler(svc, nil, command.NewRiskEvaluator()), repo
 }
 
-func newRequestContext(op *operator.Operator, body string) (*gin.Context, *httptest.ResponseRecorder) {
+func newRequestContext(op *user.User, body string) (*gin.Context, *httptest.ResponseRecorder) {
 	const imei = "imei-1"
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -53,14 +53,14 @@ func newRequestContext(op *operator.Operator, body string) (*gin.Context, *httpt
 	c.Set(middleware.ContextKeyOrganizationID, "org-1")
 	c.Params = gin.Params{{Key: "imei", Value: imei}}
 	if op != nil {
-		c.Set(middleware.ContextKeyOperator, op)
+		c.Set(middleware.ContextKeyUser, op)
 	}
 	return c, w
 }
 
 func TestRequestConfirmation_IssuesTokenForRiskyCommand(t *testing.T) {
 	h, repo := newConfirmHandler(t)
-	c, w := newRequestContext(&operator.Operator{ID: "op-1"}, `{"command":"device.reboot"}`)
+	c, w := newRequestContext(&user.User{ID: "op-1"}, `{"command":"device.reboot"}`)
 
 	h.RequestConfirmation(c)
 
@@ -71,7 +71,7 @@ func TestRequestConfirmation_IssuesTokenForRiskyCommand(t *testing.T) {
 		t.Fatalf("expected 1 confirmation created, got %d", len(repo.created))
 	}
 	pc := repo.created[0]
-	if pc.OperatorID != "op-1" || pc.Command != "device.reboot" || pc.DeviceID != "imei-1" {
+	if pc.UserID != "op-1" || pc.Command != "device.reboot" || pc.DeviceID != "imei-1" {
 		t.Errorf("unexpected confirmation: %+v", pc)
 	}
 	var resp map[string]any
@@ -85,7 +85,7 @@ func TestRequestConfirmation_IssuesTokenForRiskyCommand(t *testing.T) {
 
 func TestRequestConfirmation_NotRequiredForLowRisk(t *testing.T) {
 	h, repo := newConfirmHandler(t)
-	c, w := newRequestContext(&operator.Operator{ID: "op-1"}, `{"command":"CHECK_UPDATE"}`)
+	c, w := newRequestContext(&user.User{ID: "op-1"}, `{"command":"CHECK_UPDATE"}`)
 
 	h.RequestConfirmation(c)
 
@@ -106,7 +106,7 @@ func TestRequestConfirmation_NotRequiredForLowRisk(t *testing.T) {
 
 func TestRequestConfirmation_RejectsMissingCommand(t *testing.T) {
 	h, _ := newConfirmHandler(t)
-	c, w := newRequestContext(&operator.Operator{ID: "op-1"}, `{}`)
+	c, w := newRequestContext(&user.User{ID: "op-1"}, `{}`)
 
 	h.RequestConfirmation(c)
 
@@ -115,7 +115,7 @@ func TestRequestConfirmation_RejectsMissingCommand(t *testing.T) {
 	}
 }
 
-func TestRequestConfirmation_RejectsMissingOperator(t *testing.T) {
+func TestRequestConfirmation_RejectsMissingUser(t *testing.T) {
 	h, _ := newConfirmHandler(t)
 	c, w := newRequestContext(nil, `{"command":"device.reboot"}`)
 

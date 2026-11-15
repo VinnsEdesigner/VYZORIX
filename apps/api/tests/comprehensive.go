@@ -324,14 +324,14 @@ func testAuthEndpoints() []EndpointResult {
 	// Lockout.
 	results = append(results, testRequest("GET", BaseURL+base+"/lockout/status", nil))
 
-	// Admin operators.
-	results = append(results, testRequest("GET", BaseURL+base+"/admin/operators", nil))
-	results = append(results, testRequest("POST", BaseURL+base+"/admin/operators",
+	// Admin users.
+	results = append(results, testRequest("GET", BaseURL+base+"/admin/users", nil))
+	results = append(results, testRequest("POST", BaseURL+base+"/admin/users",
 		map[string]interface{}{"email": fmt.Sprintf("admin-%d@test.com", time.Now().Unix()), "password": "AdminPass123!", "name": "Test Admin", "role": "admin"}))
-	results = append(results, testRequest("GET", BaseURL+base+"/admin/operators/1", nil))
-	results = append(results, testRequest("PATCH", BaseURL+base+"/admin/operators/1",
+	results = append(results, testRequest("GET", BaseURL+base+"/admin/users/1", nil))
+	results = append(results, testRequest("PATCH", BaseURL+base+"/admin/users/1",
 		map[string]string{"name": "Updated Admin"}))
-	results = append(results, testRequest("DELETE", BaseURL+base+"/admin/operators/1", nil))
+	results = append(results, testRequest("DELETE", BaseURL+base+"/admin/users/1", nil))
 	results = append(results, testRequest("POST", BaseURL+base+"/admin/lockout/unlock/1", nil))
 
 	// Client credentials.
@@ -413,7 +413,7 @@ func testDashboardEndpoints() []EndpointResult {
 		testRequest("GET", BaseURL+"/v1/dashboard/devices", nil),
 		testRequest("GET", BaseURL+"/v1/dashboard/devices?page=1&limit=10", nil),
 		testRequest("GET", BaseURL+"/v1/dashboard/devices?page=999&limit=10", nil),
-		testRequest("GET", BaseURL+"/v1/dashboard/devices/operator", nil),
+		testRequest("GET", BaseURL+"/v1/dashboard/devices/user", nil),
 		testRequest("GET", BaseURL+"/v1/device/count", nil),
 	}
 }
@@ -487,9 +487,9 @@ func testDatabaseOperations() []EndpointResult {
 		return results
 	}
 
-	// Create operator.
+	// Create user.
 	email := fmt.Sprintf("dbtest-%d@example.com", time.Now().Unix())
-	res := testRequest("POST", BaseURL+"/v1/auth/admin/operators",
+	res := testRequest("POST", BaseURL+"/v1/auth/admin/users",
 		map[string]interface{}{"email": email, "password": "TestPass123!", "name": "DB Test", "role": "user"})
 	res.DBTested = true
 
@@ -501,8 +501,8 @@ func testDatabaseOperations() []EndpointResult {
 
 	results = append(results, res)
 
-	// List operators (verify read).
-	res = testRequest("GET", BaseURL+"/v1/auth/admin/operators", nil)
+	// List users (verify read).
+	res = testRequest("GET", BaseURL+"/v1/auth/admin/users", nil)
 	res.DBTested = true
 
 	if res.StatusCode == 200 {

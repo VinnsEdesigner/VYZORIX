@@ -183,9 +183,9 @@ func (m *DashboardRateLimiterMiddleware) Stats() map[string]RateLimiterStats {
 // dashboardRateLimitMiddleware creates a Gin middleware for rate limiting.
 func dashboardRateLimitMiddleware(limiter *RateLimiter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Use operator ID if available, otherwise use IP.
+		// Use user ID if available, otherwise use IP.
 		key := c.ClientIP()
-		if op, exists := c.Get("operator_id"); exists {
+		if op, exists := c.Get("user_id"); exists {
 			if opID, ok := op.(string); ok && opID != "" {
 				key = "op:" + opID
 			}

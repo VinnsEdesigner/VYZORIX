@@ -20,15 +20,15 @@ type DashboardClient struct {
 	Send       chan []byte
 	Subscribed map[string]bool
 	ID         string
-	OperatorID string
+	UserID string
 	mu         sync.RWMutex
 }
 
 // NewDashboardClient creates a new dashboard client.
-func NewDashboardClient(id, operatorID string) *DashboardClient {
+func NewDashboardClient(id, userID string) *DashboardClient {
 	return &DashboardClient{
 		ID:         id,
-		OperatorID: operatorID,
+		UserID: userID,
 		Send:       make(chan []byte, 256),
 		Subscribed: make(map[string]bool),
 	}
@@ -69,7 +69,7 @@ func (c *DashboardClient) GetSubscriptions() []string {
 // Broadcaster manages dashboard client connections and broadcasts events.
 type Broadcaster struct {
 	clients         map[string]*DashboardClient // clientID -> client.
-	operatorClients map[string][]string         // operatorID -> []clientID.
+	userClients map[string][]string         // userID -> []clientID.
 	log             *slog.Logger
 	mu              sync.RWMutex
 }
@@ -78,7 +78,7 @@ type Broadcaster struct {
 func NewBroadcaster(log *slog.Logger) *Broadcaster {
 	return &Broadcaster{
 		clients:         make(map[string]*DashboardClient),
-		operatorClients: make(map[string][]string),
+		userClients: make(map[string][]string),
 		log:             log,
 	}
 }
@@ -90,10 +90,10 @@ func (b *Broadcaster) Register(client *DashboardClient) {
 
 	b.clients[client.ID] = client
 
-	// Track by operator.
-	b.operatorClients[client.OperatorID] = append(b.operatorClients[client.OperatorID], client.ID)
+	// Track by user.
+	b.userClients[client.UserID] = append(b.userClients[client.UserID], client.ID)
 
-	b.log.Info("dashboard client registered", "clientId", client.ID, "operatorId", client.OperatorID)
+	b.log.Info("dashboard client registered", "clientId", client.ID, "userId", client.UserID)
 }
 
 // Unregister removes a dashboard client.
@@ -106,8 +106,8 @@ func (b *Broadcaster) Unregister(clientID string) {
 		return
 	}
 
-	// Remove from operator tracking.
-	if clientIDs, exists := b.operatorClients[client.OperatorID]; exists {
+	// Remove from user tracking.
+	if clientIDs, exists := b.userClients[client.UserID]; exists {
 		newIDs := make([]string, 0, len(clientIDs))
 		for _, id := range clientIDs {
 			if id != clientID {
@@ -115,9 +115,9 @@ func (b *Broadcaster) Unregister(clientID string) {
 			}
 		}
 		if len(newIDs) == 0 {
-			delete(b.operatorClients, client.OperatorID)
+			delete(b.userClients, client.UserID)
 		} else {
-			b.operatorClients[client.OperatorID] = newIDs
+			b.userClients[client.UserID] = newIDs
 		}
 	}
 
@@ -126,7 +126,7 @@ func (b *Broadcaster) Unregister(clientID string) {
 }
 
 // BroadcastToDashboard sends an event to all dashboard clients subscribed to the device.
-func (b *Broadcaster) BroadcastToDashboard(deviceID, operatorID, eventType string, data []byte) error {
+func (b *Broadcaster) BroadcastToDashboard(deviceID, userID, eventType string, data []byte) error {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 
@@ -164,12 +164,12 @@ func (b *Broadcaster) BroadcastToDashboard(deviceID, operatorID, eventType strin
 	return nil
 }
 
-// BroadcastToOperator sends an event to all dashboard clients for an operator.
-func (b *Broadcaster) BroadcastToOperator(operatorID string, eventType string, evt *event.Event) error {
+// BroadcastToUser sends an event to all dashboard clients for a user.
+func (b *Broadcaster) BroadcastToUser(userID string, eventType string, evt *event.Event) error {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 
-	clientIDs, ok := b.operatorClients[operatorID]
+	clientIDs, ok := b.userClients[userID]
 	if !ok {
 		return nil
 	}
@@ -200,7 +200,7 @@ func (b *Broadcaster) BroadcastToOperator(operatorID string, eventType string, e
 	}
 
 	if sent > 0 {
-		b.log.Debug("broadcast event to operator", "operatorId", operatorID, "sentTo", sent)
+		b.log.Debug("broadcast event to operator", "userId", userID, "sentTo", sent)
 	}
 
 	return nil
@@ -239,19 +239,19 @@ func (b *Broadcaster) GetClientCount() int {
 	return len(b.clients)
 }
 
-// GetOperatorCount returns the number of connected operators.
-func (b *Broadcaster) GetOperatorCount() int {
+// GetUserCount returns the number of connected users.
+func (b *Broadcaster) GetUserCount() int {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
-	return len(b.operatorClients)
+	return len(b.userClients)
 }
 
 // BroadcastDeviceEvent implements the hub.DashboardBroadcaster interface.
 func (b *Broadcaster) BroadcastDeviceEvent(deviceID string, evt *event.Event) error {
-	return b.BroadcastToDashboard(deviceID, evt.OperatorID, string(evt.Type), nil)
+	return b.BroadcastToDashboard(deviceID, evt.UserID, string(evt.Type), nil)
 }
 
-// BroadcastOperatorEvent implements the hub.DashboardBroadcaster interface.
-func (b *Broadcaster) BroadcastOperatorEvent(deviceID string, operatorID string, evt *event.Event) error {
-	return b.BroadcastToOperator(operatorID, string(evt.Type), evt)
+// BroadcastUserEvent implements the hub.DashboardBroadcaster interface.
+func (b *Broadcaster) BroadcastUserEvent(deviceID string, userID string, evt *event.Event) error {
+	return b.BroadcastToUser(userID, string(evt.Type), evt)
 }

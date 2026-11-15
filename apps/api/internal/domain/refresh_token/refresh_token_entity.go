@@ -18,7 +18,7 @@ var ErrRevoked = errors.New("refresh token revoked")
 type RefreshToken struct {
 	ID           string    // Unique identifier (UUIDv7).
 	TokenHash    string    // SHA-256 hash of the actual token.
-	OperatorID   string    // The operator this token belongs to.
+	UserID   string    // The user this token belongs to.
 	SessionID    string    // The session this token is associated with.
 	ExpiresAt    time.Time // When this token expires.
 	CreatedAt    time.Time // When this token was created.
@@ -45,5 +45,5 @@ type TokenFamily struct {
 	ExpiresAt  time.Time
 	FamilyID   string
 	TokenID    string
-	OperatorID string
+	UserID string
 }

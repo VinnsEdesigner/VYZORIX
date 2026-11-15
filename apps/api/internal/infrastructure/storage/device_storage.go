@@ -57,7 +57,7 @@ func NewDeviceRepository(db *sql.DB) *DeviceRepository {
 // deviceColumns returns the list of columns to select.
 const deviceColumns = `
 	id, firebase_install_id, fcm_token, app_version, device_class,
-	online, registered_at, last_seen, operator_id,
+	online, registered_at, last_seen, user_id,
 	organization_id,
 	created_at, updated_at, device_name, manufacturer, model, os_version, security_patch,
 	build_id, api_level, supported_abis, ram_bytes, storage_bytes,
@@ -90,7 +90,7 @@ func applyReportedState(
 // scanDevice scans a device from a row.
 func scanDevice(row *sql.Row) (*device.Device, error) {
 	var d device.Device
-	var fcmToken, appVersion, deviceClass, operatorID, organizationID, deviceName, manufacturer, model, osVersion, securityPatch, tagsJSON sql.NullString
+	var fcmToken, appVersion, deviceClass, userID, organizationID, deviceName, manufacturer, model, osVersion, securityPatch, tagsJSON sql.NullString
 	var buildID, supportedABIs sql.NullString
 	var publicKey, secretPublicKey, pairingCode sql.NullString
 	var deregisteredAt, deletionScheduledAt, fcmTokenRefreshedAt, tier, pairingExpiresAt sql.NullInt64
@@ -103,12 +103,12 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 	// was written, which is an ISO8601 string. Scanning them straight into time.Time
 	// fails at runtime with "unsupported Scan, storing driver.Value type string into
 	// type *time.Time", so they are read as a raw value and converted, the way
-	// operator_storage already does.
+	// user_storage already does.
 	var createdAt, updatedAt any
 
 	err := row.Scan(
 		&d.ID, &d.FirebaseInstallID, &fcmToken, &appVersion, &deviceClass,
-		&d.Online, &d.RegisteredAt, &d.LastSeen, &operatorID,
+		&d.Online, &d.RegisteredAt, &d.LastSeen, &userID,
 		&organizationID,
 		&createdAt, &updatedAt, &deviceName, &manufacturer, &model, &osVersion, &securityPatch,
 		&buildID, &apiLevel, &supportedABIs, &ramBytes, &storageBytes,
@@ -137,7 +137,7 @@ func scanDevice(row *sql.Row) (*device.Device, error) {
 		d.PairingExpiresAt = &pairingExpiresAt.Int64
 	}
 	d.FCMToken = fcmToken.String
-	d.OperatorID = operatorID.String
+	d.UserID = userID.String
 	d.OrganizationID = organizationID.String
 	d.DeviceName = deviceName.String
 	d.Manufacturer = manufacturer.String
@@ -179,7 +179,7 @@ func scanDevices(rows *sql.Rows) ([]*device.Device, error) {
 
 	for rows.Next() {
 		var d device.Device
-		var fcmToken, appVersion, deviceClass, operatorID, organizationID, deviceName, manufacturer, model, osVersion, securityPatch, tagsJSON sql.NullString
+		var fcmToken, appVersion, deviceClass, userID, organizationID, deviceName, manufacturer, model, osVersion, securityPatch, tagsJSON sql.NullString
 		var buildID, supportedABIs sql.NullString
 		var publicKey, secretPublicKey, pairingCode sql.NullString
 		var deregisteredAt, deletionScheduledAt, fcmTokenRefreshedAt, tier, pairingExpiresAt sql.NullInt64
@@ -190,7 +190,7 @@ func scanDevices(rows *sql.Rows) ([]*device.Device, error) {
 
 		if err := rows.Scan(
 			&d.ID, &d.FirebaseInstallID, &fcmToken, &appVersion, &deviceClass,
-			&d.Online, &d.RegisteredAt, &d.LastSeen, &operatorID,
+			&d.Online, &d.RegisteredAt, &d.LastSeen, &userID,
 			&organizationID,
 			&createdAt, &updatedAt, &deviceName, &manufacturer, &model, &osVersion, &securityPatch,
 			&buildID, &apiLevel, &supportedABIs, &ramBytes, &storageBytes,
@@ -218,7 +218,7 @@ func scanDevices(rows *sql.Rows) ([]*device.Device, error) {
 			d.PairingExpiresAt = &pairingExpiresAt.Int64
 		}
 		d.FCMToken = fcmToken.String
-		d.OperatorID = operatorID.String
+		d.UserID = userID.String
 		d.OrganizationID = organizationID.String
 		d.DeviceName = deviceName.String
 		d.Manufacturer = manufacturer.String
@@ -270,20 +270,20 @@ func (r *DeviceRepository) FindByFirebaseInstallID(ctx context.Context, fid stri
 	return scanDevice(r.queryRow(ctx, query, fid))
 }
 
-// FindByIDAndOperator retrieves a device by ID and verifies it belongs to the operator.
+// FindByIDAndUser retrieves a device by ID and verifies it belongs to the user.
 // This implements DOA (Data Ownership Attribution) checks for infraauth.
-// Returns ErrNotFound if device doesn't exist OR doesn't belong to the operator.
-func (r *DeviceRepository) FindByIDAndOperator(ctx context.Context, id, operatorID string) (*device.Device, error) {
-	query := `SELECT ` + deviceColumns + ` FROM devices WHERE id = ? AND operator_id = ?`
-	return scanDevice(r.queryRow(ctx, query, id, operatorID))
+// Returns ErrNotFound if device doesn't exist OR doesn't belong to the user.
+func (r *DeviceRepository) FindByIDAndUser(ctx context.Context, id, userID string) (*device.Device, error) {
+	query := `SELECT ` + deviceColumns + ` FROM devices WHERE id = ? AND user_id = ?`
+	return scanDevice(r.queryRow(ctx, query, id, userID))
 }
 
-// FindByIMEIAndOperator retrieves a device by IMEI and verifies it belongs to the operator.
+// FindByIMEIAndUser retrieves a device by IMEI and verifies it belongs to the user.
 // This implements DOA (Data Ownership Attribution) checks for deregistration.
-// Returns ErrNotFound if device doesn't exist OR doesn't belong to the operator.
-func (r *DeviceRepository) FindByIMEIAndOperator(ctx context.Context, imei, operatorID string) (*device.Device, error) {
-	query := `SELECT ` + deviceColumns + ` FROM devices WHERE id = ? AND operator_id = ?`
-	return scanDevice(r.queryRow(ctx, query, imei, operatorID))
+// Returns ErrNotFound if device doesn't exist OR doesn't belong to the user.
+func (r *DeviceRepository) FindByIMEIAndUser(ctx context.Context, imei, userID string) (*device.Device, error) {
+	query := `SELECT ` + deviceColumns + ` FROM devices WHERE id = ? AND user_id = ?`
+	return scanDevice(r.queryRow(ctx, query, imei, userID))
 }
 
 // FindByIMEIAndOrganization retrieves a device by IMEI within an organization.
@@ -308,9 +308,9 @@ func (r *DeviceRepository) FindForOrg(ctx context.Context, id, orgID string) (*d
 	return r.FindByIDAndOrganization(ctx, id, orgID)
 }
 
-// FindByPairingCode looks a device up by the code an operator types to claim it.
+// FindByPairingCode looks a device up by the code a user types to claim it.
 //
-// It matches only a live code: an expired one is not returned, so an operator
+// It matches only a live code: an expired one is not returned, so a user
 // cannot claim a device whose notification went stale. The caller still checks
 // expiry, but refusing here means the common case fails before any state change.
 func (r *DeviceRepository) FindByPairingCode(ctx context.Context, code string) (*device.Device, error) {
@@ -345,7 +345,7 @@ func (r *DeviceRepository) ClearPairingCode(ctx context.Context, id string) erro
 func (r *DeviceRepository) Create(ctx context.Context, d *device.Device) error {
 	query := `
 		INSERT INTO devices (id, firebase_install_id, fcm_token, app_version, device_class,
-		                    online, registered_at, last_seen, operator_id,
+		                    online, registered_at, last_seen, user_id,
 		                    organization_id,
 		                    created_at, updated_at, device_name, manufacturer, model, os_version,
 		                    security_patch, build_id, api_level, supported_abis, ram_bytes, storage_bytes,
@@ -355,7 +355,7 @@ func (r *DeviceRepository) Create(ctx context.Context, d *device.Device) error {
 
 	_, err := r.exec(ctx, query,
 		d.ID, d.FirebaseInstallID, nullString(d.FCMToken), d.AppVersion, d.DeviceClass,
-		d.Online, d.RegisteredAt, d.LastSeen, nullString(d.OperatorID),
+		d.Online, d.RegisteredAt, d.LastSeen, nullString(d.UserID),
 		nullString(d.OrganizationID),
 		d.CreatedAt, d.UpdatedAt, nullString(d.DeviceName), nullString(d.Manufacturer),
 		nullString(d.Model), nullString(d.OSVersion),
@@ -378,7 +378,7 @@ func (r *DeviceRepository) Update(ctx context.Context, d *device.Device) error {
 		UPDATE devices 
 		SET firebase_install_id = ?, fcm_token = ?, app_version = ?, device_class = ?,
 		    online = ?, registered_at = ?, last_seen = ?,
-		    operator_id = ?, organization_id = ?, updated_at = ?, device_name = ?, manufacturer = ?,
+		    user_id = ?, organization_id = ?, updated_at = ?, device_name = ?, manufacturer = ?,
 		    model = ?, os_version = ?, security_patch = ?, build_id = ?, api_level = ?,
 		    supported_abis = ?, ram_bytes = ?, storage_bytes = ?,
 		    tags = ?, tier = ?,
@@ -387,7 +387,7 @@ func (r *DeviceRepository) Update(ctx context.Context, d *device.Device) error {
 
 	result, err := r.exec(ctx, query,
 		d.FirebaseInstallID, nullString(d.FCMToken), d.AppVersion, d.DeviceClass,
-		d.Online, d.RegisteredAt, d.LastSeen, nullString(d.OperatorID),
+		d.Online, d.RegisteredAt, d.LastSeen, nullString(d.UserID),
 		nullString(d.OrganizationID), time.Now(), nullString(d.DeviceName), nullString(d.Manufacturer),
 		nullString(d.Model), nullString(d.OSVersion),
 		nullString(d.SecurityPatch), nullString(d.BuildID), d.APIVersion,
@@ -596,11 +596,11 @@ func (r *DeviceRepository) List(ctx context.Context, orgID string, limit, offset
 	return devices, total, rows.Err()
 }
 
-// ListByOperator returns all devices for an operator.
-func (r *DeviceRepository) ListByOperator(ctx context.Context, operatorID string) ([]*device.Device, error) {
-	query := `SELECT ` + deviceColumns + ` FROM devices WHERE operator_id = ? ORDER BY created_at DESC`
+// ListByUser returns all devices for a user.
+func (r *DeviceRepository) ListByUser(ctx context.Context, userID string) ([]*device.Device, error) {
+	query := `SELECT ` + deviceColumns + ` FROM devices WHERE user_id = ? ORDER BY created_at DESC`
 
-	rows, err := r.queryRows(ctx, query, operatorID)
+	rows, err := r.queryRows(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -624,11 +624,11 @@ func (r *DeviceRepository) Count(ctx context.Context, orgID string) (int, error)
 	return count, err
 }
 
-// CountByOperator returns the number of devices for an operator.
-func (r *DeviceRepository) CountByOperator(ctx context.Context, operatorID string) (int, error) {
+// CountByUser returns the number of devices for a user.
+func (r *DeviceRepository) CountByUser(ctx context.Context, userID string) (int, error) {
 	var count int
 	err := r.queryRow(ctx,
-		"SELECT COUNT(*) FROM devices WHERE operator_id = ?", operatorID,
+		"SELECT COUNT(*) FROM devices WHERE user_id = ?", userID,
 	).Scan(&count)
 
 	return count, err
@@ -701,11 +701,11 @@ func (r *DeviceRepository) ListActive(ctx context.Context, limit, offset int) ([
 	return devices, total, nil
 }
 
-// ListActiveByOperator returns all non-deregistered devices for an operator.
-func (r *DeviceRepository) ListActiveByOperator(ctx context.Context, operatorID string) ([]*device.Device, error) {
-	query := `SELECT ` + deviceColumns + ` FROM devices WHERE operator_id = ? AND deregistered_at IS NULL ORDER BY created_at DESC`
+// ListActiveByUser returns all non-deregistered devices for a user.
+func (r *DeviceRepository) ListActiveByUser(ctx context.Context, userID string) ([]*device.Device, error) {
+	query := `SELECT ` + deviceColumns + ` FROM devices WHERE user_id = ? AND deregistered_at IS NULL ORDER BY created_at DESC`
 
-	rows, err := r.queryRows(ctx, query, operatorID)
+	rows, err := r.queryRows(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -720,9 +720,9 @@ func (r *DeviceRepository) FindByDeviceID(ctx context.Context, id device.DeviceI
 	return r.FindByID(ctx, id.String())
 }
 
-// FindByIDAndOperatorID retrieves a device by DeviceID and OperatorID value objects.
-func (r *DeviceRepository) FindByIDAndOperatorID(ctx context.Context, id device.DeviceID, operatorID device.OperatorID) (*device.Device, error) {
-	return r.FindByIDAndOperator(ctx, id.String(), operatorID.String())
+// FindByIDAndUserID retrieves a device by DeviceID and UserID value objects.
+func (r *DeviceRepository) FindByIDAndUserID(ctx context.Context, id device.DeviceID, userID device.UserID) (*device.Device, error) {
+	return r.FindByIDAndUser(ctx, id.String(), userID.String())
 }
 
 // DeleteByDeviceID deletes a device by DeviceID.
@@ -735,9 +735,9 @@ func (r *DeviceRepository) SetOnlineByDeviceID(ctx context.Context, id device.De
 	return r.SetOnline(ctx, id.String(), online)
 }
 
-// ListByOperatorID returns all devices for an OperatorID.
-func (r *DeviceRepository) ListByOperatorID(ctx context.Context, operatorID device.OperatorID) ([]*device.Device, error) {
-	return r.ListByOperator(ctx, operatorID.String())
+// ListByUserID returns all devices for an UserID.
+func (r *DeviceRepository) ListByUserID(ctx context.Context, userID device.UserID) ([]*device.Device, error) {
+	return r.ListByUser(ctx, userID.String())
 }
 
 // ListByOrganization returns all devices for an organization.
@@ -793,11 +793,11 @@ func (r *DeviceRepository) ListPending(ctx context.Context) ([]*device.Device, e
 	return scanDevices(rows)
 }
 
-// ListPendingByOperator returns all pending devices for an operator.
-func (r *DeviceRepository) ListPendingByOperator(ctx context.Context, operatorID device.OperatorID) ([]*device.Device, error) {
-	query := `SELECT ` + deviceColumns + ` FROM devices WHERE operator_id = ? AND registered_at = 0 AND deregistered_at IS NULL ORDER BY created_at DESC`
+// ListPendingByUser returns all pending devices for a user.
+func (r *DeviceRepository) ListPendingByUser(ctx context.Context, userID device.UserID) ([]*device.Device, error) {
+	query := `SELECT ` + deviceColumns + ` FROM devices WHERE user_id = ? AND registered_at = 0 AND deregistered_at IS NULL ORDER BY created_at DESC`
 
-	rows, err := r.queryRows(ctx, query, operatorID.String())
+	rows, err := r.queryRows(ctx, query, userID.String())
 	if err != nil {
 		return nil, err
 	}

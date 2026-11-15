@@ -69,7 +69,7 @@ func (s *InvitationStorage) FindByID(ctx context.Context, id string) (*organizat
 			   COALESCE(o.name, '') as organization_name, COALESCE(op.name, '') as inviter_name, COALESCE(op.email, '') as inviter_email
 		FROM invitations i
 		LEFT JOIN organizations o ON i.organization_id = o.id
-		LEFT JOIN operators op ON i.invited_by = op.id
+		LEFT JOIN users op ON i.invited_by = op.id
 		WHERE i.id = ?`
 
 	return s.scanInvitation(s.getQuerier(ctx).QueryRowContext(ctx, query, id))
@@ -83,7 +83,7 @@ func (s *InvitationStorage) FindByToken(ctx context.Context, token string) (*org
 			   COALESCE(o.name, '') as organization_name, COALESCE(op.name, '') as inviter_name, COALESCE(op.email, '') as inviter_email
 		FROM invitations i
 		LEFT JOIN organizations o ON i.organization_id = o.id
-		LEFT JOIN operators op ON i.invited_by = op.id
+		LEFT JOIN users op ON i.invited_by = op.id
 		WHERE i.token = ?`
 
 	return s.scanInvitation(s.getQuerier(ctx).QueryRowContext(ctx, query, token))
@@ -97,7 +97,7 @@ func (s *InvitationStorage) FindByEmail(ctx context.Context, email string) ([]*o
 			   COALESCE(o.name, '') as organization_name, COALESCE(op.name, '') as inviter_name, COALESCE(op.email, '') as inviter_email
 		FROM invitations i
 		LEFT JOIN organizations o ON i.organization_id = o.id
-		LEFT JOIN operators op ON i.invited_by = op.id
+		LEFT JOIN users op ON i.invited_by = op.id
 		WHERE i.email = ?
 		ORDER BY i.invited_at DESC`
 
@@ -118,7 +118,7 @@ func (s *InvitationStorage) FindPendingByEmail(ctx context.Context, email string
 			   COALESCE(o.name, '') as organization_name, COALESCE(op.name, '') as inviter_name, COALESCE(op.email, '') as inviter_email
 		FROM invitations i
 		LEFT JOIN organizations o ON i.organization_id = o.id
-		LEFT JOIN operators op ON i.invited_by = op.id
+		LEFT JOIN users op ON i.invited_by = op.id
 		WHERE i.email = ? AND i.status = 'pending' AND i.expires_at > ?
 		ORDER BY i.invited_at DESC`
 
@@ -139,7 +139,7 @@ func (s *InvitationStorage) FindByOrganization(ctx context.Context, orgID string
 			   COALESCE(o.name, '') as organization_name, COALESCE(op.name, '') as inviter_name, COALESCE(op.email, '') as inviter_email
 		FROM invitations i
 		LEFT JOIN organizations o ON i.organization_id = o.id
-		LEFT JOIN operators op ON i.invited_by = op.id
+		LEFT JOIN users op ON i.invited_by = op.id
 		WHERE i.organization_id = ?
 		ORDER BY i.invited_at DESC`
 
@@ -160,7 +160,7 @@ func (s *InvitationStorage) FindPendingByOrganization(ctx context.Context, orgID
 			   COALESCE(o.name, '') as organization_name, COALESCE(op.name, '') as inviter_name, COALESCE(op.email, '') as inviter_email
 		FROM invitations i
 		LEFT JOIN organizations o ON i.organization_id = o.id
-		LEFT JOIN operators op ON i.invited_by = op.id
+		LEFT JOIN users op ON i.invited_by = op.id
 		WHERE i.organization_id = ? AND i.status = 'pending' AND i.expires_at > ?
 		ORDER BY i.invited_at DESC`
 
@@ -181,7 +181,7 @@ func (s *InvitationStorage) FindByOrganizationAndEmail(ctx context.Context, orgI
 			   COALESCE(o.name, '') as organization_name, COALESCE(op.name, '') as inviter_name, COALESCE(op.email, '') as inviter_email
 		FROM invitations i
 		LEFT JOIN organizations o ON i.organization_id = o.id
-		LEFT JOIN operators op ON i.invited_by = op.id
+		LEFT JOIN users op ON i.invited_by = op.id
 		WHERE i.organization_id = ? AND i.email = ?
 		ORDER BY i.invited_at DESC`
 
@@ -202,7 +202,7 @@ func (s *InvitationStorage) FindPendingByOrganizationAndEmail(ctx context.Contex
 			   COALESCE(o.name, '') as organization_name, COALESCE(op.name, '') as inviter_name, COALESCE(op.email, '') as inviter_email
 		FROM invitations i
 		LEFT JOIN organizations o ON i.organization_id = o.id
-		LEFT JOIN operators op ON i.invited_by = op.id
+		LEFT JOIN users op ON i.invited_by = op.id
 		WHERE i.organization_id = ? AND i.email = ? AND i.status = 'pending' AND i.expires_at > ?`
 
 	rows, err := s.getQuerier(ctx).QueryContext(ctx, query, orgID, email, time.Now().UnixMilli())
@@ -238,7 +238,7 @@ func (s *InvitationStorage) FindByOrganizationPaginated(ctx context.Context, org
 			   COALESCE(o.name, '') as organization_name, COALESCE(op.name, '') as inviter_name, COALESCE(op.email, '') as inviter_email
 		FROM invitations i
 		LEFT JOIN organizations o ON i.organization_id = o.id
-		LEFT JOIN operators op ON i.invited_by = op.id
+		LEFT JOIN users op ON i.invited_by = op.id
 		WHERE i.organization_id = ?`
 
 	scanArgs := []interface{}{orgID}
@@ -265,7 +265,7 @@ func (s *InvitationStorage) FindByOrganizationPaginated(ctx context.Context, org
 	return invitations, total, nil
 }
 
-// ListByInviter lists all invitations sent by an operator.
+// ListByInviter lists all invitations sent by a user.
 func (s *InvitationStorage) ListByInviter(ctx context.Context, inviterID string) ([]*organization.Invitation, error) {
 	query := `
 		SELECT i.id, i.organization_id, i.email, i.role, i.status, i.token, i.inviter_notes, i.invitee_notes, 
@@ -273,7 +273,7 @@ func (s *InvitationStorage) ListByInviter(ctx context.Context, inviterID string)
 			   COALESCE(o.name, '') as organization_name, COALESCE(op.name, '') as inviter_name, COALESCE(op.email, '') as inviter_email
 		FROM invitations i
 		LEFT JOIN organizations o ON i.organization_id = o.id
-		LEFT JOIN operators op ON i.invited_by = op.id
+		LEFT JOIN users op ON i.invited_by = op.id
 		WHERE i.invited_by = ?
 		ORDER BY i.invited_at DESC`
 
@@ -378,11 +378,11 @@ func (s *InvitationStorage) SoftDeleteByOrganization(ctx context.Context, orgID 
 	return err
 }
 
-// SoftDeleteByInvitedBy soft-deletes all invitations sent by an operator.
-func (s *InvitationStorage) SoftDeleteByInvitedBy(ctx context.Context, operatorID string) error {
+// SoftDeleteByInvitedBy soft-deletes all invitations sent by a user.
+func (s *InvitationStorage) SoftDeleteByInvitedBy(ctx context.Context, userID string) error {
 	query := `DELETE FROM invitations WHERE invited_by = ?`
 
-	_, err := s.getQuerier(ctx).ExecContext(ctx, query, operatorID)
+	_, err := s.getQuerier(ctx).ExecContext(ctx, query, userID)
 	return err
 }
 

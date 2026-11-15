@@ -39,9 +39,9 @@ beforeEach(() => {
 function rawLoginTokensMfaRequired() {
   return HttpResponse.json({
     requires_mfa: true,
-    operator_id: 'operator-1',
+    user_id: 'operator-1',
     email: 'test@vyzorix.com',
-    name: 'Test Operator',
+    name: 'Test User',
     mfa_enabled: true,
   });
 }
@@ -58,7 +58,7 @@ describe('useLogin', () => {
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(true);
     expect(state.accessToken).toBe('mock-access-token');
-    expect(state.operator?.id).toBe('operator-test-1');
+    expect(state.user?.id).toBe('operator-test-1');
     expect(state.mfaChallenge).toBeNull();
     expect(state.status).toBe('authenticated');
   });
@@ -75,7 +75,7 @@ describe('useLogin', () => {
 
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(false);
-    expect(state.mfaChallenge?.operatorId).toBe('operator-1');
+    expect(state.mfaChallenge?.userId).toBe('operator-1');
     expect(state.mfaChallenge?.mfaEnabled).toBe(true);
     expect(state.status).toBe('mfa_required');
   });
@@ -101,33 +101,33 @@ describe('useLogin', () => {
 });
 
 describe('useMfaVerify', () => {
-  it('verifies MFA, ingests tokens, and fetches /me to reconcile operator', async () => {
-    // Login first to stage the challenge (operatorId).
+  it('verifies MFA, ingests tokens, and fetches /me to reconcile user', async () => {
+    // Login first to stage the challenge (userId).
     server.use(http.post(`${API_BASE}/login/tokens`, () => rawLoginTokensMfaRequired()));
     const login = renderHookWithQueryClient(() => useLogin());
     await act(async () => {
       login.result.current.mutate({ data: { email: 'test@vyzorix.com', password: 'password123' } });
     });
     await waitFor(() => expect(login.result.current.isSuccess).toBe(true));
-    expect(useAuthStore.getState().mfaChallenge?.operatorId).toBe('operator-1');
+    expect(useAuthStore.getState().mfaChallenge?.userId).toBe('operator-1');
 
     const { result } = renderHookWithQueryClient(() => useMfaVerify());
 
     await act(async () => {
-      result.current.mutate({ data: { operator_id: 'operator-1', code: '123456' } });
+      result.current.mutate({ data: { user_id: 'operator-1', code: '123456' } });
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    // onSuccess hydrates asynchronously: it ingests tokens (partial operator)
+    // onSuccess hydrates asynchronously: it ingests tokens (partial user)
     // and then fetches /me to reconcile organizations. Wait for the reconciled
     // state so the assertion below and the next test both see a settled store.
-    await waitFor(() => expect(useAuthStore.getState().operator?.organizations).toHaveLength(1));
+    await waitFor(() => expect(useAuthStore.getState().user?.organizations).toHaveLength(1));
 
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(true);
     expect(state.accessToken).toBe('mock-access-token-mfa');
     // /me reconciliation populated organizations + selected org.
-    expect(state.operator?.selected_organization?.id).toBe('org-test-1');
+    expect(state.user?.selected_organization?.id).toBe('org-test-1');
     expect(state.mfaChallenge).toBeNull();
     expect(state.status).toBe('authenticated');
   });
@@ -142,7 +142,7 @@ describe('useMfaVerify', () => {
     const { result } = renderHookWithQueryClient(() => useMfaVerify());
 
     await act(async () => {
-      result.current.mutate({ data: { operator_id: 'operator-1', code: '000000' } });
+      result.current.mutate({ data: { user_id: 'operator-1', code: '000000' } });
     });
     await waitFor(() => expect(result.current.isError).toBe(true));
 
@@ -151,7 +151,7 @@ describe('useMfaVerify', () => {
 });
 
 describe('useRegister', () => {
-  it('registers and returns the operator id (no auto-login)', async () => {
+  it('registers and returns the user id (no auto-login)', async () => {
     const { result } = renderHookWithQueryClient(() => useRegister());
 
     await act(async () => {
@@ -159,7 +159,7 @@ describe('useRegister', () => {
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(result.current.data?.operator_id).toBe('operator-test-2');
+    expect(result.current.data?.user_id).toBe('operator-test-2');
     expect(result.current.data?.email).toBe('new@vyzorix.com');
     // Registration must not establish a session.
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
@@ -199,7 +199,7 @@ describe('useLogout', () => {
 
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(false);
-    expect(state.operator).toBeNull();
+    expect(state.user).toBeNull();
     expect(state.accessToken).toBeNull();
   });
 
@@ -283,7 +283,7 @@ describe('useAuthCallback', () => {
 
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(true);
-    expect(state.operator?.id).toBe('operator-test-1');
+    expect(state.user?.id).toBe('operator-test-1');
   });
 
   it('surfaces an error for a failed callback URL', async () => {

@@ -19,7 +19,7 @@ type InboxEntry struct {
 	DeviceClass       string      `json:"deviceClass,omitempty"`
 	Status            InboxStatus `json:"status"`
 	Notes             string      `json:"notes,omitempty"`
-	OperatorID        string      `json:"operatorId,omitempty"`
+	UserID        string      `json:"userId,omitempty"`
 	OrganizationID    string      `json:"organizationId,omitempty"`
 	IMEI              string      `json:"imei"`
 	DeviceName        string      `json:"deviceName,omitempty"`
@@ -86,7 +86,7 @@ type RegistrationLog struct {
 	DeviceID   string `json:"deviceId"`
 	IMEI       string `json:"imei"`
 	Action     string `json:"action"` // registered, approved, rejected, deregistered.
-	OperatorID string `json:"operatorId"`
+	UserID string `json:"userId"`
 	ClientIP   string `json:"clientIp"`
 	UserAgent  string `json:"userAgent"`
 	Details    string `json:"details,omitempty"`

@@ -24,7 +24,7 @@ const (
 // MFASecretBinding contains the TOTP secret and its cryptographic binding.
 type MFASecretBinding struct {
 	Secret string // The base32-encoded TOTP secret.
-	MAC    string // HMAC-SHA256 of the secret, keyed by operator ID.
+	MAC    string // HMAC-SHA256 of the secret, keyed by user ID.
 }
 
 // Config holds TOTP configuration.
@@ -184,10 +184,10 @@ func RemoveBackupCode(codes []string, index int) []string {
 	return append(codes[:index], codes[index+1:]...)
 }
 
-// CreateMFASecretBinding creates a cryptographically bound MFA secret for an operator.
-// 7: The MAC binds the secret to the operator ID, preventing token theft attacks.
-func CreateMFASecretBinding(operatorID, secret string) MFASecretBinding {
-	mac := hmac.New(sha512.New, []byte(operatorID))
+// CreateMFASecretBinding creates a cryptographically bound MFA secret for a user.
+// 7: The MAC binds the secret to the user ID, preventing token theft attacks.
+func CreateMFASecretBinding(userID, secret string) MFASecretBinding {
+	mac := hmac.New(sha512.New, []byte(userID))
 	mac.Write([]byte(secret))
 	return MFASecretBinding{
 		Secret: secret,
@@ -196,17 +196,17 @@ func CreateMFASecretBinding(operatorID, secret string) MFASecretBinding {
 }
 
 // VerifyMFASecretBinding verifies that a TOTP code was generated using the bound secret.
-// 7: Rejects codes if the operator ID doesn't match the binding.
-func VerifyMFASecretBinding(operatorID string, binding MFASecretBinding) bool {
-	expectedMAC := CreateMFASecretBinding(operatorID, binding.Secret)
+// 7: Rejects codes if the user ID doesn't match the binding.
+func VerifyMFASecretBinding(userID string, binding MFASecretBinding) bool {
+	expectedMAC := CreateMFASecretBinding(userID, binding.Secret)
 	return hmac.Equal([]byte(binding.MAC), []byte(expectedMAC.MAC))
 }
 
-// GenerateBoundSecret generates a new MFA secret bound to an operator.
-func GenerateBoundSecret(operatorID string) (MFASecretBinding, error) {
+// GenerateBoundSecret generates a new MFA secret bound to a user.
+func GenerateBoundSecret(userID string) (MFASecretBinding, error) {
 	secret, err := GenerateSecret()
 	if err != nil {
 		return MFASecretBinding{}, err
 	}
-	return CreateMFASecretBinding(operatorID, secret), nil
+	return CreateMFASecretBinding(userID, secret), nil
 }

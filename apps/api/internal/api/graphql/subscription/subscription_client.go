@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/gorilla/websocket"
 )
 
@@ -15,7 +15,7 @@ import (
 type Client struct {
 	ctx       context.Context
 	conn      *websocket.Conn
-	operator  *operator.Operator
+	user  *user.User
 	subs      map[string]func()
 	done      chan struct{}
 	handler   *Handler
@@ -25,10 +25,10 @@ type Client struct {
 }
 
 // NewClient creates a new subscription client.
-func NewClient(conn *websocket.Conn, op *operator.Operator, orgID string, handler *Handler, presenter *Presenter) *Client {
+func NewClient(conn *websocket.Conn, op *user.User, orgID string, handler *Handler, presenter *Presenter) *Client {
 	return &Client{
 		conn:      conn,
-		operator:  op,
+		user:  op,
 		orgID:     orgID,
 		subs:      make(map[string]func()),
 		done:      make(chan struct{}),
@@ -214,7 +214,7 @@ func (c *Client) subscribeDeviceUpdates(id string, sub SubscribePayload) {
 		return
 	}
 
-	// A specific device may only be subscribed to by an operator in the org that
+	// A specific device may only be subscribed to by a user in the org that
 	// owns it; otherwise the device ID would leak another tenant's activity.
 	if deviceID != "" && !c.deviceInOrg(deviceID) {
 		c.sendError(id, "device not found in this organization")
@@ -235,7 +235,7 @@ func (c *Client) subscribeDeviceUpdates(id string, sub SubscribePayload) {
 	c.subs[id] = unsubscribe
 	c.mu.Unlock()
 
-	c.presenter.AuditSubscribe(c.ctx, c.operator, "device_updates", deviceID)
+	c.presenter.AuditSubscribe(c.ctx, c.user, "device_updates", deviceID)
 
 	// Send initial confirmation.
 	c.sendMessage(wsMessage{Type: "next", ID: id, Payload: json.RawMessage(`{"data":{"deviceUpdated":null}}`)})
@@ -270,7 +270,7 @@ func (c *Client) subscribeTelemetry(id string, sub SubscribePayload) {
 	c.subs[id] = unsubscribe
 	c.mu.Unlock()
 
-	c.presenter.AuditSubscribe(c.ctx, c.operator, "telemetry", deviceID)
+	c.presenter.AuditSubscribe(c.ctx, c.user, "telemetry", deviceID)
 
 	c.sendMessage(wsMessage{Type: "next", ID: id, Payload: json.RawMessage(`{"data":{"telemetryReceived":null}}`)})
 }
@@ -305,7 +305,7 @@ func (c *Client) subscribeCommandStatus(id string, sub SubscribePayload) {
 	c.subs[id] = unsubscribe
 	c.mu.Unlock()
 
-	c.presenter.AuditSubscribe(c.ctx, c.operator, "command_status", dispatchID)
+	c.presenter.AuditSubscribe(c.ctx, c.user, "command_status", dispatchID)
 
 	c.sendMessage(wsMessage{Type: "next", ID: id, Payload: json.RawMessage(`{"data":{"commandStatusChanged":null}}`)})
 }
@@ -331,7 +331,7 @@ func (c *Client) subscribeOrganizationEvent(id string, sub SubscribePayload) {
 		return
 	}
 
-	unsubscribe := c.handler.hub.SubscribeOrganizationEvents(c.operator.ID, orgID, func(data interface{}) error {
+	unsubscribe := c.handler.hub.SubscribeOrganizationEvents(c.user.ID, orgID, func(data interface{}) error {
 		c.sendMessage(wsMessage{
 			Type:    "next",
 			ID:      id,
@@ -344,7 +344,7 @@ func (c *Client) subscribeOrganizationEvent(id string, sub SubscribePayload) {
 	c.subs[id] = unsubscribe
 	c.mu.Unlock()
 
-	c.presenter.AuditSubscribe(c.ctx, c.operator, "organization_event", orgID)
+	c.presenter.AuditSubscribe(c.ctx, c.user, "organization_event", orgID)
 
 	c.sendMessage(wsMessage{Type: "next", ID: id, Payload: json.RawMessage(`{"data":{"organizationEvent":null}}`)})
 }
@@ -369,7 +369,7 @@ func (c *Client) subscribeMemberEvent(id string, sub SubscribePayload) {
 		return
 	}
 
-	unsubscribe := c.handler.hub.SubscribeMemberEvents(c.operator.ID, orgID, func(data interface{}) error {
+	unsubscribe := c.handler.hub.SubscribeMemberEvents(c.user.ID, orgID, func(data interface{}) error {
 		c.sendMessage(wsMessage{
 			Type:    "next",
 			ID:      id,
@@ -382,7 +382,7 @@ func (c *Client) subscribeMemberEvent(id string, sub SubscribePayload) {
 	c.subs[id] = unsubscribe
 	c.mu.Unlock()
 
-	c.presenter.AuditSubscribe(c.ctx, c.operator, "member_event", orgID)
+	c.presenter.AuditSubscribe(c.ctx, c.user, "member_event", orgID)
 
 	c.sendMessage(wsMessage{Type: "next", ID: id, Payload: json.RawMessage(`{"data":{"memberEvent":null}}`)})
 }
@@ -399,7 +399,7 @@ func (c *Client) cleanup() {
 	c.handler.removeClient(c.conn)
 
 	_ = c.conn.Close()
-	c.presenter.LogDisconnect(c.ctx, c.operator)
+	c.presenter.LogDisconnect(c.ctx, c.user)
 }
 
 // sendMessage sends a message to the WebSocket client.

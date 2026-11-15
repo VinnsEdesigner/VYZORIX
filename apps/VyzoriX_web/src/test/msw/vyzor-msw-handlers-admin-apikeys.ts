@@ -4,13 +4,13 @@
  * Mirrors the Go server contract in
  * apps/api/internal/api/handlers/admin/key_admin_handler.go:
  *   GET    /v1/admin/api-keys                       -> 200, { keys, pagination }
- *   GET    /v1/admin/api-keys/operator/:operatorId  -> 200, { keys, pagination }
+ *   GET    /v1/admin/api-keys/user/:userId  -> 200, { keys, pagination }
  *   DELETE /v1/admin/api-keys/:keyId                -> 204 No Content
  *   GET    /v1/admin/api-keys/stats                 -> 200, GlobalAPIKeyStats
- *   GET    /v1/admin/api-keys/stats/operator/:operatorId -> 200, operator stats
+ *   GET    /v1/admin/api-keys/stats/user/:userId -> 200, user stats
  *
- * Query params on list-all: page, limit, operator_id, search.
- * Query params on operator-keys: page, limit.
+ * Query params on list-all: page, limit, user_id, search.
+ * Query params on user-keys: page, limit.
  * Timestamps are RFC3339 ISO strings (Go time.Time serialization).
  */
 import { http, HttpResponse, delay } from 'msw';
@@ -21,8 +21,8 @@ const NOW = '2025-01-15T10:00:00.000Z';
 
 interface MockAdminKey {
   id: string;
-  operator_id: string;
-  operator_name: string;
+  user_id: string;
+  user_name: string;
   name: string;
   key_prefix: string;
   scope: string;
@@ -37,8 +37,8 @@ interface MockAdminKey {
 
 function makeKey(
   id: string,
-  operatorId: string,
-  operatorName: string,
+  userId: string,
+  userName: string,
   name: string,
   scope: string,
   isActive = true,
@@ -46,8 +46,8 @@ function makeKey(
 ): MockAdminKey {
   return {
     id,
-    operator_id: operatorId,
-    operator_name: operatorName,
+    user_id: userId,
+    user_name: userName,
     name,
     key_prefix: `vxyz_${id.slice(-4)}`,
     scope,
@@ -87,17 +87,17 @@ export function createAdminApiKeysHandlers() {
       const url = new URL(request.url);
       const page = Number(url.searchParams.get('page') ?? '1');
       const limit = Number(url.searchParams.get('limit') ?? '20');
-      const operatorId = url.searchParams.get('operator_id') ?? '';
+      const userId = url.searchParams.get('user_id') ?? '';
       const search = url.searchParams.get('search') ?? '';
 
       let filtered = keys;
-      if (operatorId) filtered = filtered.filter((k) => k.operator_id === operatorId);
+      if (userId) filtered = filtered.filter((k) => k.user_id === userId);
       if (search) {
         const lower = search.toLowerCase();
         filtered = filtered.filter(
           (k) =>
             k.name.toLowerCase().includes(lower) ||
-            k.operator_name.toLowerCase().includes(lower),
+            k.user_name.toLowerCase().includes(lower),
         );
       }
 
@@ -117,14 +117,14 @@ export function createAdminApiKeysHandlers() {
       });
     }),
 
-    http.get(`${API_BASE}/operator/:operatorId`, async ({ request, params }) => {
+    http.get(`${API_BASE}/user/:userId`, async ({ request, params }) => {
       await delay(30);
       const url = new URL(request.url);
       const page = Number(url.searchParams.get('page') ?? '1');
       const limit = Number(url.searchParams.get('limit') ?? '20');
-      const operatorId = String(params.operatorId);
+      const userId = String(params.userId);
 
-      const filtered = keys.filter((k) => k.operator_id === operatorId);
+      const filtered = keys.filter((k) => k.user_id === userId);
       const total = filtered.length;
       const totalPages = Math.max(1, Math.ceil(total / limit));
       const start = (page - 1) * limit;
@@ -168,15 +168,15 @@ export function createAdminApiKeysHandlers() {
 
       const opMap = new Map<string, { name: string; requests: number; active: number }>();
       for (const k of keys) {
-        const entry = opMap.get(k.operator_id) ?? { name: k.operator_name, requests: 0, active: 0 };
+        const entry = opMap.get(k.user_id) ?? { name: k.user_name, requests: 0, active: 0 };
         entry.requests += k.request_count;
         if (k.is_active) entry.active += 1;
-        opMap.set(k.operator_id, entry);
+        opMap.set(k.user_id, entry);
       }
       const topOperators = Array.from(opMap.entries())
         .map(([id, v]) => ({
-          operator_id: id,
-          operator_name: v.name,
+          user_id: id,
+          user_name: v.name,
           total_requests: v.requests,
           active_key_count: v.active,
         }))
@@ -188,21 +188,21 @@ export function createAdminApiKeysHandlers() {
         revoked_keys: revoked.length,
         total_requests: totalRequests,
         requests_by_scope: byScope,
-        top_operators: topOperators,
-        total_operators: opMap.size,
+        top_users: topOperators,
+        total_users: opMap.size,
         max_per_month: 20,
       });
     }),
 
-    http.get(`${API_BASE}/stats/operator/:operatorId`, async ({ params }) => {
+    http.get(`${API_BASE}/stats/user/:userId`, async ({ params }) => {
       await delay(30);
-      const operatorId = String(params.operatorId);
-      const opKeys = keys.filter((k) => k.operator_id === operatorId);
+      const userId = String(params.userId);
+      const opKeys = keys.filter((k) => k.user_id === userId);
       const active = opKeys.filter((k) => k.is_active);
       const revoked = opKeys.filter((k) => !k.is_active);
 
       return HttpResponse.json({
-        operator_id: operatorId,
+        user_id: userId,
         total_keys: opKeys.length,
         active_keys: active.length,
         revoked_keys: revoked.length,

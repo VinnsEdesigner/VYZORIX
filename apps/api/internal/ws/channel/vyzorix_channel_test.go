@@ -10,7 +10,7 @@ import (
 
 type fakeMembers struct{ ok bool }
 
-func (f fakeMembers) FindByOperatorAndOrg(_ context.Context, operatorID, orgID string) (*organization.OrganizationMember, error) {
+func (f fakeMembers) FindByUserAndOrg(_ context.Context, userID, orgID string) (*organization.OrganizationMember, error) {
 	if !f.ok {
 		return nil, errors.New("not a member")
 	}

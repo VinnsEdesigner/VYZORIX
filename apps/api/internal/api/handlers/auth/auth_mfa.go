@@ -6,7 +6,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application"
 	appauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/auth"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 
@@ -33,14 +33,14 @@ var (
 // MFAHandler handles MFA endpoints.
 type MFAHandler struct {
 	authService  *appauth.AuthService
-	operatorRepo operator.Repository
+	userRepo user.Repository
 	presenter    *response.Presenter
 	auditLogger  *audit.Logger
 }
 
 // NewMFAHandler creates a new MFAHandler.
-func NewMFAHandler(authService *appauth.AuthService, operatorRepo operator.Repository, presenter *response.Presenter) *MFAHandler {
-	return &MFAHandler{authService: authService, operatorRepo: operatorRepo, presenter: presenter}
+func NewMFAHandler(authService *appauth.AuthService, userRepo user.Repository, presenter *response.Presenter) *MFAHandler {
+	return &MFAHandler{authService: authService, userRepo: userRepo, presenter: presenter}
 }
 
 // SetAuditLogger sets the audit logger for MFA operations.
@@ -48,12 +48,12 @@ func (h *MFAHandler) SetAuditLogger(logger *audit.Logger) {
 	h.auditLogger = logger
 }
 
-// getOperatorFromSession extracts operator ID from the authenticated session.
-// See SettingsHandler.getOperatorFromSession: the cookieAuth middleware already.
-// validated the (encrypted) session cookie and stored the operator in context,
+// getUserFromSession extracts user ID from the authenticated session.
+// See SettingsHandler.getUserFromSession: the cookieAuth middleware already.
+// validated the (encrypted) session cookie and stored the user in context,
 // so we reuse that instead of passing the raw cookie ciphertext to ValidateSession.
-func (h *MFAHandler) getOperatorFromSession(c *gin.Context) (string, error) {
-	op := middleware.GetOperatorFromContext(c)
+func (h *MFAHandler) getUserFromSession(c *gin.Context) (string, error) {
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		return "", application.ErrUnauthorized
 	}
@@ -63,7 +63,7 @@ func (h *MFAHandler) getOperatorFromSession(c *gin.Context) (string, error) {
 
 // GetMFAStatus handles GET /v1/auth/mfa/status.
 // @Summary      Get MFA status
-// @Description  Returns whether MFA is enabled for the current operator
+// @Description  Returns whether MFA is enabled for the current user
 // @Tags         mfa
 // @Accept       json
 // @Produce      json
@@ -72,7 +72,7 @@ func (h *MFAHandler) getOperatorFromSession(c *gin.Context) (string, error) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/mfa/status [get]
 func (h *MFAHandler) GetMFAStatus(c *gin.Context) {
-	opID, err := h.getOperatorFromSession(c)
+	opID, err := h.getUserFromSession(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "")
 		return
@@ -98,14 +98,14 @@ func (h *MFAHandler) GetMFAStatus(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/mfa/enroll [post]
 func (h *MFAHandler) EnrollMFA(c *gin.Context) {
-	opID, err := h.getOperatorFromSession(c)
+	opID, err := h.getUserFromSession(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "")
 		return
 	}
 
-	// Get operator for email.
-	op, err := h.operatorRepo.FindByID(c.Request.Context(), opID)
+	// Get user for email.
+	op, err := h.userRepo.FindByID(c.Request.Context(), opID)
 	if err != nil {
 		h.presenter.InternalError(c, "")
 		return
@@ -142,7 +142,7 @@ func (h *MFAHandler) VerifySetupMFA(c *gin.Context) {
 		return
 	}
 
-	opID, err := h.getOperatorFromSession(c)
+	opID, err := h.getUserFromSession(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "")
 		return
@@ -181,7 +181,7 @@ func (h *MFAHandler) EnableMFA(c *gin.Context) {
 		return
 	}
 
-	opID, err := h.getOperatorFromSession(c)
+	opID, err := h.getUserFromSession(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "")
 		return
@@ -203,8 +203,8 @@ func (h *MFAHandler) EnableMFA(c *gin.Context) {
 
 	binding := infraauth.CreateMFASecretBinding(opID, req.Token)
 
-	// Enable MFA and save backup codes using UpdateOperatorMFA.
-	err = h.operatorRepo.UpdateOperatorMFA(c.Request.Context(), opID, req.Token, binding.MAC, backupCodes)
+	// Enable MFA and save backup codes using UpdateUserMFA.
+	err = h.userRepo.UpdateUserMFA(c.Request.Context(), opID, req.Token, binding.MAC, backupCodes)
 	if err != nil {
 		h.presenter.InternalError(c, "")
 		return
@@ -240,7 +240,7 @@ func (h *MFAHandler) DisableMFA(c *gin.Context) {
 		return
 	}
 
-	opID, err := h.getOperatorFromSession(c)
+	opID, err := h.getUserFromSession(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "")
 		return
@@ -264,7 +264,7 @@ func (h *MFAHandler) DisableMFA(c *gin.Context) {
 
 // VerifyBackupCode handles POST /v1/auth/mfa/verify-backup.
 // @Summary      Verify MFA backup code
-// @Description  Verifies a backup code for an operator with MFA enabled
+// @Description  Verifies a backup code for a user with MFA enabled
 // @Tags         mfa
 // @Accept       json
 // @Produce      json
@@ -284,13 +284,13 @@ func (h *MFAHandler) VerifyBackupCode(c *gin.Context) {
 		return
 	}
 
-	opID, err := h.getOperatorFromSession(c)
+	opID, err := h.getUserFromSession(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "")
 		return
 	}
 
-	// Verify the operator has MFA enabled.
+	// Verify the user has MFA enabled.
 	mfaEnabled, err := h.authService.GetMFAStatus(c.Request.Context(), opID)
 	if err != nil || !mfaEnabled {
 		h.presenter.Forbidden(c, "")
@@ -318,7 +318,7 @@ func (h *MFAHandler) VerifyBackupCode(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/mfa/regenerate-backup-codes [post]
 func (h *MFAHandler) RegenerateBackupCodes(c *gin.Context) {
-	opID, err := h.getOperatorFromSession(c)
+	opID, err := h.getUserFromSession(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "")
 		return
@@ -340,15 +340,15 @@ func (h *MFAHandler) RegenerateBackupCodes(c *gin.Context) {
 // @Tags         mfa
 // @Accept       json
 // @Produce      json
-// @Param        body  body  openapi.MFAVerifyRequest  true  "operator_id + MFA code"
+// @Param        body  body  openapi.MFAVerifyRequest  true  "user_id + MFA code"
 // @Success      200  {object}  openapi.MFAVerifyResult  "session with tokens"
-// @Failure      400  {object}  openapi.ErrorResponse  "operator_id and code required"
-// @Failure      401  {object}  openapi.ErrorResponse  "invalid MFA code / operator invalid"
+// @Failure      400  {object}  openapi.ErrorResponse  "user_id and code required"
+// @Failure      401  {object}  openapi.ErrorResponse  "invalid MFA code / user invalid"
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/mfa/verify [post]
 func (h *MFAHandler) VerifyMFA(c *gin.Context) {
 	var req struct {
-		OperatorID string `json:"operator_id" binding:"required"`
+		UserID string `json:"user_id" binding:"required"`
 		Code       string `json:"code" binding:"required"`
 	}
 
@@ -359,38 +359,38 @@ func (h *MFAHandler) VerifyMFA(c *gin.Context) {
 
 	// 2: Log MFA verify attempt.
 	if h.auditLogger != nil {
-		h.auditLogger.MFAVerifyAttempt(c.Request.Context(), req.OperatorID, c.ClientIP(), c.GetHeader("User-Agent"))
+		h.auditLogger.MFAVerifyAttempt(c.Request.Context(), req.UserID, c.ClientIP(), c.GetHeader("User-Agent"))
 	}
 
 	// Verify the MFA code first.
-	session, err := h.authService.VerifyMFACode(c.Request.Context(), req.OperatorID, req.Code)
+	session, err := h.authService.VerifyMFACode(c.Request.Context(), req.UserID, req.Code)
 	if err != nil {
 		// 2: Log failed MFA attempt.
 		if h.auditLogger != nil {
-			h.auditLogger.MFAVerifyFailed(c.Request.Context(), req.OperatorID, c.ClientIP())
+			h.auditLogger.MFAVerifyFailed(c.Request.Context(), req.UserID, c.ClientIP())
 		}
 		h.presenter.Unauthorized(c, "Invalid MFA code")
 		return
 	}
 
-	// 2: Re-validate operator state before session creation.
-	// This prevents race conditions where operator could be:.
+	// 2: Re-validate user state before session creation.
+	// This prevents race conditions where user could be:.
 	// - Deleted between MFA verify and session creation.
 	// - MFA disabled.
 	// - Role changed.
-	op, err := h.operatorRepo.FindByID(c.Request.Context(), req.OperatorID)
+	op, err := h.userRepo.FindByID(c.Request.Context(), req.UserID)
 	if err != nil {
 		h.presenter.Unauthorized(c, "Operator not found or invalid")
 		return
 	}
 
-	// Verify operator is still valid (not deleted, has required fields).
+	// Verify user is still valid (not deleted, has required fields).
 	if !op.IsValid() {
 		h.presenter.Unauthorized(c, "Operator is invalid")
 		return
 	}
 
-	// 2 END: Operator state validated, safe to create session.
+	// 2 END: User state validated, safe to create session.
 
 	// Create session cookie with session ID (critical - must not fail silently).
 	if h.authService.GetSessionManager() != nil {
@@ -406,13 +406,13 @@ func (h *MFAHandler) VerifyMFA(c *gin.Context) {
 	var refreshToken string
 	var accessToken string
 	var expiresAt int64
-	// Get role from operator's membership in their last organization.
+	// Get role from user's membership in their last organization.
 	role := ""
 	if m := op.GetMembership(op.LastOrganizationID); m != nil {
 		role = string(m.Role)
 	}
 	if h.authService != nil {
-		refreshToken, err = h.authService.IssueRefreshToken(c.Request.Context(), req.OperatorID, session.ID)
+		refreshToken, err = h.authService.IssueRefreshToken(c.Request.Context(), req.UserID, session.ID)
 		if err != nil {
 			h.presenter.InternalError(c, "Failed to issue refresh token")
 			return
@@ -431,7 +431,7 @@ func (h *MFAHandler) VerifyMFA(c *gin.Context) {
 	// Return success with session info and tokens.
 	// 2: Log MFA verify success.
 	if h.auditLogger != nil {
-		h.auditLogger.MFAVerifySuccess(c.Request.Context(), req.OperatorID, session.ID, c.ClientIP())
+		h.auditLogger.MFAVerifySuccess(c.Request.Context(), req.UserID, session.ID, c.ClientIP())
 	}
 
 	h.presenter.OK(c, openapi.MFAVerifyResult{
@@ -441,7 +441,7 @@ func (h *MFAHandler) VerifyMFA(c *gin.Context) {
 		RefreshToken: refreshToken,
 		ExpiresAt:    expiresAt,
 		SigningKey:   session.SigningKey,
-		Operator: openapi.MFAOperator{
+		User: openapi.MFAUser{
 			ID:         op.ID,
 			Email:      op.Email,
 			Name:       op.Name,

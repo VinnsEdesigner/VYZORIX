@@ -12,7 +12,7 @@ import (
 )
 
 // Errors the enroll/claim flow distinguishes. A caller that cannot tell "code
-// expired" from "code already used" cannot give the operator a useful message.
+// expired" from "code already used" cannot give the user a useful message.
 var (
 	ErrPairingCodeExpired = errors.New("pairing code has expired")
 	ErrPairingCodeUnknown = errors.New("pairing code is not recognised")
@@ -143,7 +143,7 @@ func (s *Service) Enroll(ctx context.Context, req EnrollRequest) (*EnrollResult,
 // ClaimRequest binds a pending device to an owner and organization.
 type ClaimRequest struct {
 	PairingCode    string
-	OperatorID     string
+	UserID     string
 	OrganizationID string
 	Name           string
 	TierCap        int
@@ -151,7 +151,7 @@ type ClaimRequest struct {
 
 // Claim consumes a pairing code and registers the device.
 //
-// This is the operator's action: they type the code the device is showing, see
+// This is the user's action: they type the code the device is showing, see
 // the device's facts, and confirm it is theirs. Consuming the code is what makes
 // it single-use, so a second claim with the same code fails.
 func (s *Service) Claim(ctx context.Context, req ClaimRequest) (*device.Device, error) {
@@ -184,7 +184,7 @@ func (s *Service) Claim(ctx context.Context, req ClaimRequest) (*device.Device, 
 
 	// Bind ownership before the transition, so a failure leaves the device
 	// pending with its code intact rather than half-claimed.
-	d.OperatorID = req.OperatorID
+	d.UserID = req.UserID
 	d.OrganizationID = req.OrganizationID
 	if req.Name != "" {
 		d.DeviceName = req.Name
@@ -209,7 +209,7 @@ func (s *Service) Claim(ctx context.Context, req ClaimRequest) (*device.Device, 
 	}
 
 	s.logger.Info("device claimed",
-		"deviceId", d.ID, "operatorId", req.OperatorID, "organizationId", req.OrganizationID)
+		"deviceId", d.ID, "userId", req.UserID, "organizationId", req.OrganizationID)
 
 	if s.statusUpdater != nil {
 		s.statusUpdater.SetDeviceOnline(d.ID, true)

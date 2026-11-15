@@ -68,7 +68,7 @@ func TestService_RequestConfirmation_IssuesTokenWithTTL(t *testing.T) {
 	if c.Token == "" {
 		t.Error("token must be set")
 	}
-	if c.OperatorID != "op-1" || c.Command != "device.reboot" || c.DeviceID != "imei-1" {
+	if c.UserID != "op-1" || c.Command != "device.reboot" || c.DeviceID != "imei-1" {
 		t.Errorf("unexpected confirmation: %+v", c)
 	}
 	if c.RiskTier != "high" {
@@ -129,7 +129,7 @@ func TestService_ConsumeForCommand_RejectsExpired(t *testing.T) {
 	svc := NewService(repo)
 	// Manually insert an already-expired confirmation.
 	c := &domainconfirmation.PendingConfirmation{
-		Token: "expired", OperatorID: "op-1", Command: "device.reboot", DeviceID: "imei-1",
+		Token: "expired", UserID: "op-1", Command: "device.reboot", DeviceID: "imei-1",
 		CreatedAt: time.Now().Add(-time.Hour), ExpiresAt: time.Now().Add(-time.Minute),
 	}
 	_ = repo.Create(context.Background(), c)

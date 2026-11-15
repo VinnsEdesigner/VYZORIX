@@ -6,7 +6,7 @@ import (
 
 // RegisterRoutes registers all inbox routes (authenticated).
 func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
-	// Inbox endpoints - authenticated operators.
+	// Inbox endpoints - authenticated users.
 	rg.GET("/inbox", h.GetInbox)
 	rg.GET("/inbox/:imei", h.GetInboxEntry)
 	rg.PATCH("/inbox/:imei", h.UpdateInboxEntry) // notes/annotations update (implemented).

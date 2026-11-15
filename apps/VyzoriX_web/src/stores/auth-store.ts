@@ -10,7 +10,7 @@ import {
 import { getAuthMe } from '@/generated-rq/auth/auth-session';
 
 export interface MfaChallenge {
-  operatorId: string;
+  userId: string;
   email: string;
   name: string;
   mfaEnabled: boolean;
@@ -44,8 +44,8 @@ function deriveStatus(
 ): AuthStatus {
   if (lockout.isLocked) return 'locked';
   if (mfaChallenge) return 'mfa_required';
-  if (!auth.isAuthenticated || !auth.operator) return 'unauthenticated';
-  if (auth.operator.needs_organization) return 'needs_organization';
+  if (!auth.isAuthenticated || !auth.user) return 'unauthenticated';
+  if (auth.user.needs_organization) return 'needs_organization';
   return 'authenticated';
 }
 
@@ -54,7 +54,7 @@ function buildSnapshot(overrides?: Partial<AuthStoreState>): Partial<AuthStoreSt
   const lockout = authContext.getLockoutState();
   const base: Partial<AuthStoreState> = {
     isAuthenticated: auth.isAuthenticated,
-    operator: auth.operator,
+    user: auth.user,
     organizationId: auth.organizationId,
     accessToken: auth.accessToken,
     refreshToken: auth.refreshToken,

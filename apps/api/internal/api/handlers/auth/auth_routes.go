@@ -10,7 +10,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/auth"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/client"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/config"
 	emailService "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/email"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
@@ -22,7 +22,7 @@ import (
 
 // Dependencies holds all auth handler dependencies.
 type Dependencies struct {
-	OperatorRepo        operator.Repository
+	UserRepo            user.Repository
 	OAuthStateRepo      OAuthStateProvider
 	Lockout             *middleware.Lockout
 	GoogleVerifier      *infraauth.GoogleTokenVerifier
@@ -75,9 +75,9 @@ func NewAllHandlers(deps *Dependencies) *AllHandlers {
 		EmailVerify:   NewEmailVerifyHandler(deps.AuthService, deps.EmailService, deps.Presenter),
 		PasswordReset: NewPasswordResetHandler(deps.AuthService, deps.EmailService, deps.Presenter),
 		Refresh:       NewRefreshHandler(deps.AuthService, deps.Presenter),
-		MFA:           NewMFAHandler(deps.AuthService, deps.OperatorRepo, deps.Presenter),
+		MFA:           NewMFAHandler(deps.AuthService, deps.UserRepo, deps.Presenter),
 		OAuth:         NewOAuthHandler(deps.AuthService, deps.SessionManager, deps.Config, deps.GoogleVerifier, deps.Presenter).WithOAuthStateRepo(deps.OAuthStateRepo),
-		Settings:      NewSettingsHandler(deps.AuthService, deps.OperatorRepo, deps.Presenter, settingsRateLimiter),
+		Settings:      NewSettingsHandler(deps.AuthService, deps.UserRepo, deps.Presenter, settingsRateLimiter),
 		Admin:         NewAdminHandler(deps.AuthService, deps.Presenter),
 		ClientCreds:   NewClientCredentialsHandler(deps.AuthService, deps.ClientService, deps.Presenter),
 		Lockout:       NewLockoutHandler(deps.AuthService, deps.Lockout, deps.Presenter),
@@ -165,33 +165,28 @@ func (h *AllHandlers) RegisterRoutes(rg *gin.RouterGroup, cookieAuth *middleware
 		authenticated.POST("/organizations/select", h.Organization.SelectOrganization)
 	}
 
-	// SuperAdmin-only operator management routes.
-	adminOperators := rg.Group("/admin")
-	adminOperators.Use(cookieAuth.Middleware())
+	// SuperAdmin-only user management routes.
+	adminUsers := rg.Group("/admin")
+	adminUsers.Use(cookieAuth.Middleware())
 	// Populate organization context (header/query/session) before.
 	// RequireSuperAdmin checks IsSuperAdminIn(orgID). Without this the org.
-	// context was empty and every /v1/auth/admin/operators request returned.
+	// context was empty and every /v1/auth/admin/users request returned.
 	// 400 "Organization ID is required for admin access".
-	adminOperators.Use(middleware.NewOrganizationContext(nil).Middleware())
-	adminOperators.Use(middleware.RequireSuperAdmin())
-	adminOperators.Use(middleware.NoCache())
+	adminUsers.Use(middleware.NewOrganizationContext(nil).Middleware())
+	adminUsers.Use(middleware.RequireSuperAdmin())
+	adminUsers.Use(middleware.NoCache())
 	{
-		adminOperators.GET("/operators", h.Admin.ListOperators)
-		adminOperators.POST("/operators", h.Admin.CreateOperator)
-		adminOperators.GET("/operators/:id", h.Admin.GetOperator)
-		adminOperators.PATCH("/operators/:id", h.Admin.UpdateOperator)
-		adminOperators.DELETE("/operators/:id", h.Admin.DeleteOperator)
+		adminUsers.GET("/users", h.Admin.ListUsers)
+		adminUsers.POST("/users", h.Admin.CreateUser)
+		adminUsers.GET("/users/:id", h.Admin.GetUser)
+		adminUsers.PATCH("/users/:id", h.Admin.UpdateUser)
+		adminUsers.DELETE("/users/:id", h.Admin.DeleteUser)
 	}
 
-	// Admin lockout management (SuperAdmin only).
-	adminLockout := rg.Group("/admin/lockout")
-	adminLockout.Use(cookieAuth.Middleware())
-	adminLockout.Use(middleware.NewOrganizationContext(nil).Middleware())
-	adminLockout.Use(middleware.RequireSuperAdmin())
-	adminLockout.Use(middleware.NoCache())
-	{
-		adminLockout.POST("/unlock/:operator_id", h.Lockout.UnlockAccount)
-	}
+	// Admin lockout management moved to the instance group (/v1/instance),
+	// guarded by admin.lockout on the deployment. Locking a user out of the
+	// deployment is not contained by any single organisation, so an org role
+	// must not be able to perform it; the org-local sibling is members.write.
 
 	// MFA endpoints (require authentication).
 	mfa := rg.Group("/mfa")
@@ -216,12 +211,12 @@ func mfaRateLimitMiddleware() gin.HandlerFunc {
 			c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 			var req struct {
-				OperatorID string `json:"operator_id"`
+				UserID string `json:"user_id"`
 			}
-			if err := json.Unmarshal(bodyBytes, &req); err == nil && req.OperatorID != "" {
-				return "mfa_verify:" + req.OperatorID
+			if err := json.Unmarshal(bodyBytes, &req); err == nil && req.UserID != "" {
+				return "mfa_verify:" + req.UserID
 			}
-			// Fallback to IP if operator_id not available.
+			// Fallback to IP if user_id not available.
 			return "mfa_verify:ip:" + c.ClientIP()
 		},
 	})

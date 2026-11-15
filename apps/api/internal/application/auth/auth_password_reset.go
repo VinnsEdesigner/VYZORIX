@@ -10,7 +10,7 @@ import (
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/shared"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/password_reset"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
 )
@@ -41,10 +41,10 @@ func (s *AuthService) GeneratePasswordResetToken(ctx context.Context, email stri
 	// Normalize email.
 	email = strings.ToLower(strings.TrimSpace(email))
 
-	// Check if operator exists.
-	op, err := s.operatorRepo.FindByEmail(ctx, email)
+	// Check if user exists.
+	op, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
-		if errors.Is(err, operator.ErrNotFound) {
+		if errors.Is(err, user.ErrNotFound) {
 			// Return success anyway to prevent email enumeration.
 			return "", nil
 		}
@@ -52,8 +52,8 @@ func (s *AuthService) GeneratePasswordResetToken(ctx context.Context, email stri
 		return "", err
 	}
 
-	// Delete old tokens for this operator.
-	_ = s.passwordResetRepo.DeleteByOperator(ctx, op.ID)
+	// Delete old tokens for this user.
+	_ = s.passwordResetRepo.DeleteByUser(ctx, op.ID)
 
 	// Generate token.
 	tokenBytes := make([]byte, 32)
@@ -70,7 +70,7 @@ func (s *AuthService) GeneratePasswordResetToken(ctx context.Context, email stri
 	// Create reset token record.
 	prt := &password_reset.PasswordResetToken{
 		ID:         id,
-		OperatorID: op.ID,
+		UserID: op.ID,
 		TokenHash:  tokenHash,
 		ExpiresAt:  time.Now().UTC().Add(15 * time.Minute),
 		CreatedAt:  time.Now().UTC(),
@@ -111,8 +111,8 @@ func (s *AuthService) ValidatePasswordResetToken(ctx context.Context, token, ema
 		return password_reset.ErrUsed
 	}
 
-	// Verify operator email matches.
-	op, err := s.operatorRepo.FindByID(ctx, prt.OperatorID)
+	// Verify user email matches.
+	op, err := s.userRepo.FindByID(ctx, prt.UserID)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func (s *AuthService) ValidatePasswordResetToken(ctx context.Context, token, ema
 
 // ResetPassword resets a password using a token.
 func (s *AuthService) ResetPassword(ctx context.Context, token, _email string, newPassword string) error {
-	// Note: email parameter kept for API compatibility but operator is derived from token.
+	// Note: email parameter kept for API compatibility but user is derived from token.
 	// Validate password.
 	if err := ValidatePassword(newPassword, DefaultPasswordPolicy); err != nil {
 		return application.ErrInvalidInput
@@ -159,8 +159,8 @@ func (s *AuthService) ResetPassword(ctx context.Context, token, _email string, n
 		return password_reset.ErrUsed
 	}
 
-	// Get operator.
-	op, err := s.operatorRepo.FindByID(ctx, prt.OperatorID)
+	// Get user.
+	op, err := s.userRepo.FindByID(ctx, prt.UserID)
 	if err != nil {
 		return err
 	}
@@ -171,11 +171,11 @@ func (s *AuthService) ResetPassword(ctx context.Context, token, _email string, n
 		return err
 	}
 
-	// Update operator password.
+	// Update user password.
 	op.PasswordHash = hash
 	op.UpdatedAt = time.Now()
 
-	if err := s.operatorRepo.Update(ctx, op); err != nil {
+	if err := s.userRepo.Update(ctx, op); err != nil {
 		return err
 	}
 

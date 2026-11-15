@@ -14,11 +14,11 @@ import (
 )
 
 // thresholdsToOpenAPI maps the domain thresholds onto the generated wire DTO.
-func thresholdsToOpenAPI(t *devicedomain.Thresholds) *openapi.OperatorThresholds {
+func thresholdsToOpenAPI(t *devicedomain.Thresholds) *openapi.UserThresholds {
 	if t == nil {
 		return nil
 	}
-	return &openapi.OperatorThresholds{
+	return &openapi.UserThresholds{
 		RiskWarn:    t.RiskWarn,
 		RiskCrit:    t.RiskCrit,
 		ThermalWarn: t.ThermalWarn,
@@ -39,14 +39,14 @@ var (
 // SettingsHandler handles device settings HTTP requests.
 type SettingsHandler struct {
 	settingsService   *appdevice.DeviceSettingsService
-	membershipChecker func(ctx context.Context, operatorID, orgID string) error
+	membershipChecker func(ctx context.Context, userID, orgID string) error
 	presenter         *response.Presenter
 }
 
 // NewDeviceSettingsHandler creates a new SettingsHandler.
 func NewDeviceSettingsHandler(
 	settingsService *appdevice.DeviceSettingsService,
-	membershipChecker func(ctx context.Context, operatorID, orgID string) error,
+	membershipChecker func(ctx context.Context, userID, orgID string) error,
 	presenter *response.Presenter,
 ) *SettingsHandler {
 	return &SettingsHandler{
@@ -61,9 +61,9 @@ func (h *SettingsHandler) getOrganizationID(c *gin.Context) string {
 	return middleware.GetOrganizationID(c)
 }
 
-// getOperator extracts the operator from the Gin context.
-func (h *SettingsHandler) getOperator(c *gin.Context) string {
-	op := middleware.GetOperatorFromContext(c)
+// getUser extracts the user from the Gin context.
+func (h *SettingsHandler) getUser(c *gin.Context) string {
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		return ""
 	}
@@ -86,8 +86,8 @@ func (h *SettingsHandler) getOperator(c *gin.Context) string {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /devices/{imei}/settings [get]
 func (h *SettingsHandler) GetSettings(c *gin.Context) {
-	operatorID := h.getOperator(c)
-	if operatorID == "" {
+	userID := h.getUser(c)
+	if userID == "" {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
 	}
@@ -106,7 +106,7 @@ func (h *SettingsHandler) GetSettings(c *gin.Context) {
 
 	// Check membership.
 	if h.membershipChecker != nil {
-		if err := h.membershipChecker(c.Request.Context(), operatorID, orgID); err != nil {
+		if err := h.membershipChecker(c.Request.Context(), userID, orgID); err != nil {
 			h.presenter.Forbidden(c, "access denied")
 			return
 		}
@@ -142,8 +142,8 @@ func (h *SettingsHandler) GetSettings(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /devices/{imei}/settings [patch]
 func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
-	operatorID := h.getOperator(c)
-	if operatorID == "" {
+	userID := h.getUser(c)
+	if userID == "" {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
 	}
@@ -162,7 +162,7 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 
 	// Check membership.
 	if h.membershipChecker != nil {
-		if err := h.membershipChecker(c.Request.Context(), operatorID, orgID); err != nil {
+		if err := h.membershipChecker(c.Request.Context(), userID, orgID); err != nil {
 			h.presenter.Forbidden(c, "access denied")
 			return
 		}
@@ -206,8 +206,8 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /devices/{imei}/settings/thresholds [get]
 func (h *SettingsHandler) GetThresholds(c *gin.Context) {
-	operatorID := h.getOperator(c)
-	if operatorID == "" {
+	userID := h.getUser(c)
+	if userID == "" {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
 	}
@@ -226,7 +226,7 @@ func (h *SettingsHandler) GetThresholds(c *gin.Context) {
 
 	// Check membership - anyone in org can view thresholds.
 	if h.membershipChecker != nil {
-		if err := h.membershipChecker(c.Request.Context(), operatorID, orgID); err != nil {
+		if err := h.membershipChecker(c.Request.Context(), userID, orgID); err != nil {
 			h.presenter.Forbidden(c, "access denied")
 			return
 		}
@@ -263,8 +263,8 @@ func (h *SettingsHandler) GetThresholds(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /devices/{imei}/settings/thresholds [patch]
 func (h *SettingsHandler) UpdateThresholds(c *gin.Context) {
-	operatorID := h.getOperator(c)
-	if operatorID == "" {
+	userID := h.getUser(c)
+	if userID == "" {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
 	}
@@ -283,7 +283,7 @@ func (h *SettingsHandler) UpdateThresholds(c *gin.Context) {
 
 	// Check membership.
 	if h.membershipChecker != nil {
-		if err := h.membershipChecker(c.Request.Context(), operatorID, orgID); err != nil {
+		if err := h.membershipChecker(c.Request.Context(), userID, orgID); err != nil {
 			h.presenter.Forbidden(c, "access denied")
 			return
 		}

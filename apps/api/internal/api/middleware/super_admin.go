@@ -15,11 +15,11 @@ func NewSuperAdminAuth() *SuperAdminAuth {
 }
 
 // Middleware returns the Gin middleware function for super admin authorization.
-// This middleware checks if the operator is a super_admin in the organization context.
+// This middleware checks if the user is a super_admin in the organization context.
 // IMPORTANT: Requires organization ID in context - no global fallback.
 func (s *SuperAdminAuth) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		op := GetOperatorFromContext(c)
+		op := GetUserFromContext(c)
 		if op == nil {
 			responses.RespondStructuredAbort(c, http.StatusUnauthorized,
 
@@ -38,7 +38,7 @@ func (s *SuperAdminAuth) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		// Check if operator is super_admin in this specific organization.
+		// Check if user is super_admin in this specific organization.
 		if !op.IsSuperAdminIn(orgID) {
 			responses.RespondStructuredAbort(c, http.StatusForbidden,
 
@@ -53,10 +53,10 @@ func (s *SuperAdminAuth) Middleware() gin.HandlerFunc {
 
 // RequireSuperAdmin is a convenience function that returns the super admin middleware.
 // IMPORTANT: This now requires organization-scoped super_admin access (not global).
-// The operator must be a super_admin in the current organization context.
+// The user must be a super_admin in the current organization context.
 func RequireSuperAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		op := GetOperatorFromContext(c)
+		op := GetUserFromContext(c)
 		if op == nil {
 			responses.RespondStructuredAbort(c, http.StatusUnauthorized,
 
@@ -75,7 +75,7 @@ func RequireSuperAdmin() gin.HandlerFunc {
 			return
 		}
 
-		// Check if operator is super_admin in this specific organization.
+		// Check if user is super_admin in this specific organization.
 		if !op.IsSuperAdminIn(orgID) {
 			responses.RespondStructuredAbort(c, http.StatusForbidden,
 

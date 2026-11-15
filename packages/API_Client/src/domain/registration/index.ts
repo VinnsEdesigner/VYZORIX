@@ -44,7 +44,7 @@ export interface InboxEntry {
   approvedAt: Date | null;
   rejectedAt: Date | null;
   notes: string | null;
-  operatorId: string | null;
+  userId: string | null;
   createdAt: Date;
 }
 

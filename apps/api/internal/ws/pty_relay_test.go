@@ -4,20 +4,20 @@ import (
 	"testing"
 )
 
-// fakeOperator records what the relay delivered and how often it was notified.
-type fakeOperator struct {
+// fakeUser records what the relay delivered and how often it was notified.
+type fakeUser struct {
 	delivered [][]byte
 	closed    []string
 	accept    bool
 }
 
-func (f *fakeOperator) DeliverOutput(_ string, payload []byte) bool {
+func (f *fakeUser) DeliverOutput(_ string, payload []byte) bool {
 	f.delivered = append(f.delivered, payload)
 
 	return f.accept
 }
 
-func (f *fakeOperator) NotifyClosed(sessionID, reason string) {
+func (f *fakeUser) NotifyClosed(sessionID, reason string) {
 	f.closed = append(f.closed, sessionID+":"+reason)
 }
 
@@ -98,7 +98,7 @@ func TestRelayInputUnknownSession(t *testing.T) {
 // large file cannot grow server memory without bound.
 func TestRelayOutputAppliesCreditWindow(t *testing.T) {
 	relay, _ := newRelayWithSession(t, &fakeDeviceSink{accept: true}, 2)
-	op := &fakeOperator{accept: true}
+	op := &fakeUser{accept: true}
 
 	if !relay.RelayOutput("11111111-1111-4111-8111-111111111111", op, []byte("a")) {
 		t.Fatal("first frame must be delivered")
@@ -121,11 +121,11 @@ func TestRelayOutputAppliesCreditWindow(t *testing.T) {
 	}
 }
 
-// TestRelayOutputReturnsCreditWhenOperatorRefuses proves the window is not
-// consumed by a frame that never reached the operator.
-func TestRelayOutputReturnsCreditWhenOperatorRefuses(t *testing.T) {
+// TestRelayOutputReturnsCreditWhenUserRefuses proves the window is not
+// consumed by a frame that never reached the user.
+func TestRelayOutputReturnsCreditWhenUserRefuses(t *testing.T) {
 	relay, reg := newRelayWithSession(t, &fakeDeviceSink{accept: true}, 1)
-	op := &fakeOperator{accept: false}
+	op := &fakeUser{accept: false}
 
 	if relay.RelayOutput("11111111-1111-4111-8111-111111111111", op, []byte("a")) {
 		t.Fatal("a refused delivery must report false")
@@ -137,14 +137,14 @@ func TestRelayOutputReturnsCreditWhenOperatorRefuses(t *testing.T) {
 	}
 }
 
-func TestRelayCloseSessionNotifiesOperator(t *testing.T) {
+func TestRelayCloseSessionNotifiesUser(t *testing.T) {
 	relay, reg := newRelayWithSession(t, &fakeDeviceSink{accept: true}, DefaultPTYCreditWindow)
-	op := &fakeOperator{accept: true}
+	op := &fakeUser{accept: true}
 
-	relay.CloseSession("11111111-1111-4111-8111-111111111111", "operator_closed", op)
+	relay.CloseSession("11111111-1111-4111-8111-111111111111", "user_closed", op)
 
-	if len(op.closed) != 1 || op.closed[0] != "11111111-1111-4111-8111-111111111111:operator_closed" {
-		t.Fatalf("closed = %v, want [11111111-1111-4111-8111-111111111111:operator_closed]", op.closed)
+	if len(op.closed) != 1 || op.closed[0] != "11111111-1111-4111-8111-111111111111:user_closed" {
+		t.Fatalf("closed = %v, want [11111111-1111-4111-8111-111111111111:user_closed]", op.closed)
 	}
 	if reg.Count() != 0 {
 		t.Fatal("the session must be gone from the registry")
@@ -153,7 +153,7 @@ func TestRelayCloseSessionNotifiesOperator(t *testing.T) {
 
 func TestRelayCloseUnknownSessionIsSafe(t *testing.T) {
 	relay, _ := newRelayWithSession(t, &fakeDeviceSink{accept: true}, DefaultPTYCreditWindow)
-	op := &fakeOperator{accept: true}
+	op := &fakeUser{accept: true}
 
 	// Must not panic, and must not notify for a session that never existed.
 	relay.CloseSession("dddddddd-1111-4111-8111-111111111111", "whatever", op)
@@ -224,7 +224,7 @@ func TestRelaySendToDeviceUnknownSession(t *testing.T) {
 
 func TestRelayExpireSessions(t *testing.T) {
 	relay, reg := newRelayWithSession(t, &fakeDeviceSink{accept: true}, DefaultPTYCreditWindow)
-	op := &fakeOperator{accept: true}
+	op := &fakeUser{accept: true}
 
 	// Force expiry by opening with a zero TTL registry instead.
 	_ = reg

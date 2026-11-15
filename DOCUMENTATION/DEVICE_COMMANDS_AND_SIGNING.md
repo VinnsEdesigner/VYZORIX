@@ -42,7 +42,7 @@ delivered → cancelled
 | `delivered` | Sent over WebSocket (or FCM wake), awaiting a response. |
 | `completed` | The device confirmed it executed successfully. |
 | `failed` | The device reported failure, or the command timed out. |
-| `cancelled` | An operator cancelled it before completion. |
+| `cancelled` | A user cancelled it before completion. |
 
 The three terminal states cannot transition further. Commands are per-command, not
 per-device: one device can have several in flight.

@@ -96,9 +96,9 @@ func TestKnownDeviceRepo_NewIPIsNotASignal(t *testing.T) {
 	}
 }
 
-// TestKnownDeviceRepo_OperatorsAreIsolated proves one operator's device is not
+// TestKnownDeviceRepo_UsersAreIsolated proves one user's device is not
 // visible to another.
-func TestKnownDeviceRepo_OperatorsAreIsolated(t *testing.T) {
+func TestKnownDeviceRepo_UsersAreIsolated(t *testing.T) {
 	r := newKnownDeviceRepo(t)
 	ctx := context.Background()
 
@@ -115,12 +115,12 @@ func TestKnownDeviceRepo_OperatorsAreIsolated(t *testing.T) {
 	}
 }
 
-// TestKnownDeviceRepo_DevicesBounded proves the per-operator device cap holds in SQL.
+// TestKnownDeviceRepo_DevicesBounded proves the per-user device cap holds in SQL.
 func TestKnownDeviceRepo_DevicesBounded(t *testing.T) {
 	r := newKnownDeviceRepo(t)
 	ctx := context.Background()
 
-	for i := 0; i < maxKnownDevicesPerOperator*3; i++ {
+	for i := 0; i < maxKnownDevicesPerUser*3; i++ {
 		if err := r.RegisterDevice(ctx, "op-1", "fp-"+itoa(i), "203.0.113.10", "UA"); err != nil {
 			t.Fatalf("RegisterDevice(%d): %v", i, err)
 		}
@@ -128,11 +128,11 @@ func TestKnownDeviceRepo_DevicesBounded(t *testing.T) {
 
 	var count int
 	if err := r.db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM known_devices WHERE operator_id = ?`, "op-1").Scan(&count); err != nil {
+		`SELECT COUNT(*) FROM known_devices WHERE user_id = ?`, "op-1").Scan(&count); err != nil {
 		t.Fatalf("count: %v", err)
 	}
-	if count > maxKnownDevicesPerOperator {
-		t.Fatalf("device count grew past the cap: %d > %d", count, maxKnownDevicesPerOperator)
+	if count > maxKnownDevicesPerUser {
+		t.Fatalf("device count grew past the cap: %d > %d", count, maxKnownDevicesPerUser)
 	}
 }
 
@@ -155,7 +155,7 @@ func TestKnownDeviceRepo_SignalsBounded(t *testing.T) {
 	var count int
 	if err := r.db.QueryRowContext(ctx,
 		`SELECT COUNT(*) FROM known_device_signals
-		  WHERE operator_id = ? AND fingerprint = ? AND kind = ?`,
+		  WHERE user_id = ? AND fingerprint = ? AND kind = ?`,
 		op, fp, devicestore.KindIP).Scan(&count); err != nil {
 		t.Fatalf("count: %v", err)
 	}
@@ -181,7 +181,7 @@ func TestKnownDeviceRepo_TouchUpdatesLastSeen(t *testing.T) {
 
 	var before int64
 	if err := r.db.QueryRowContext(ctx,
-		`SELECT last_seen_at FROM known_devices WHERE operator_id = ? AND fingerprint = ?`,
+		`SELECT last_seen_at FROM known_devices WHERE user_id = ? AND fingerprint = ?`,
 		op, fp).Scan(&before); err != nil {
 		t.Fatalf("read last_seen: %v", err)
 	}
@@ -192,7 +192,7 @@ func TestKnownDeviceRepo_TouchUpdatesLastSeen(t *testing.T) {
 
 	var after int64
 	if err := r.db.QueryRowContext(ctx,
-		`SELECT last_seen_at FROM known_devices WHERE operator_id = ? AND fingerprint = ?`,
+		`SELECT last_seen_at FROM known_devices WHERE user_id = ? AND fingerprint = ?`,
 		op, fp).Scan(&after); err != nil {
 		t.Fatalf("read last_seen: %v", err)
 	}

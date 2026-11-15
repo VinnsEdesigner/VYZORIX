@@ -152,7 +152,7 @@ type Config struct {
 	EnforceHMAC                   bool
 	// RequireMFAForCriticalCommands gates critical-tier commands (including opening
 	// a terminal) on an MFA-verified session. Default true; a deployment whose
-	// operator has no second factor sets REQUIRE_MFA_FOR_CRITICAL=false so the
+	// user has no second factor sets REQUIRE_MFA_FOR_CRITICAL=false so the
 	// terminal and other critical commands remain reachable.
 	RequireMFAForCriticalCommands bool
 	AuditLogSeparateDB            bool
@@ -363,7 +363,7 @@ func Load() (Config, error) {
 
 	// Critical-tier commands require an MFA-verified session by default. A
 	// deployment can opt out with REQUIRE_MFA_FOR_CRITICAL=false — the case this
-	// exists for is a self-hosted operator with no second factor, for whom the
+	// exists for is a self-hosted user with no second factor, for whom the
 	// terminal (PTY_SESSION_OPEN is critical) would otherwise be unreachable.
 	c.RequireMFAForCriticalCommands = getBool("REQUIRE_MFA_FOR_CRITICAL", true)
 

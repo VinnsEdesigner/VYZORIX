@@ -52,13 +52,13 @@ func (h *SupportBundleHandler) GetBundle(c *gin.Context) {
 		_ = h.db.DB().QueryRowContext(ctx, `SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 1`).Scan(&schemaVersion)
 		bundle.SchemaVersion = schemaVersion
 
-		var deviceCount, orgCount, operatorCount int
+		var deviceCount, orgCount, userCount int
 		_ = h.db.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM devices`).Scan(&deviceCount)
 		_ = h.db.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM organizations WHERE is_active = 1`).Scan(&orgCount)
-		_ = h.db.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM operators`).Scan(&operatorCount)
+		_ = h.db.DB().QueryRowContext(ctx, `SELECT COUNT(*) FROM users`).Scan(&userCount)
 		bundle.DeviceCount = deviceCount
 		bundle.OrgCount = orgCount
-		bundle.OperatorCount = operatorCount
+		bundle.UserCount = userCount
 	}
 
 	c.Header("Content-Disposition", "attachment; filename=vyzorix-support-bundle.json")

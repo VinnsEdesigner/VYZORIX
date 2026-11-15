@@ -11,8 +11,8 @@ import type {
   CreateAPIKeyRequest,
   UpdateAPIKeyRequest,
   GlobalAPIKeyStatsResult,
-  OperatorAPIKeyStatsResult,
-  TopOperatorStat,
+  UserAPIKeyStatsResult,
+  TopUserStat,
 } from '../../generated/vyzorixUpdateServerAPI.schemas';
 
 export type {
@@ -22,8 +22,8 @@ export type {
   CreateAPIKeyRequest,
   UpdateAPIKeyRequest,
   GlobalAPIKeyStatsResult,
-  OperatorAPIKeyStatsResult,
-  TopOperatorStat,
+  UserAPIKeyStatsResult,
+  TopUserStat,
 };
 
 // ---- Constants (hand-rolled, not in OpenAPI) ----

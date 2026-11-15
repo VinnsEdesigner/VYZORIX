@@ -15,8 +15,8 @@ import (
 // 013 with a minimal schema (id, name, api_key_hash, hmac_key_hash, ...). The.
 // current code (039_api_key_storage.go APIKeyRepositoryImpl and.
 // client_storage.go ClientRepository) queries a richer schema.
-// (operator_id, key_prefix, scope, is_active, request_count, last_request_at,
-// revoked_at for api_keys; operator_id, platform, client_secret_hash, hmac_key,
+// (user_id, key_prefix, scope, is_active, request_count, last_request_at,
+// revoked_at for api_keys; user_id, platform, client_secret_hash, hmac_key,
 // allowed_origins, allowed_paths, rate_limit, is_active, request_count,
 // last_request_at for api_clients). SetupAPIKeysTable is never wired into the.
 // migration list, and CREATE TABLE IF NOT EXISTS cannot add columns to an.
@@ -40,7 +40,7 @@ func migrateRebuildAPIKeyTables(tx *sql.Tx) error {
 func rebuildAPIKeysTable(tx *sql.Tx) error {
 	// Expected rich schema columns for api_keys.
 	wantAPIKeys := []string{
-		"id", "operator_id", "name", "key_prefix", "key_hash", "scope",
+		"id", "user_id", "name", "key_prefix", "key_hash", "scope",
 		"expires_at", "is_active", "request_count", "last_request_at",
 		"created_at", "updated_at", "revoked_at", "organization_id",
 	}
@@ -66,7 +66,7 @@ func rebuildAPIKeysTable(tx *sql.Tx) error {
 		if count > 0 {
 			// Data present: add only the missing columns defensively rather than drop.
 			return addMissingColumns(tx, "api_keys", missing, map[string]string{
-				"operator_id":     "TEXT",
+				"user_id":     "TEXT",
 				"key_prefix":      "TEXT",
 				"scope":           "TEXT DEFAULT 'read'",
 				"is_active":       "INTEGER NOT NULL DEFAULT 1",
@@ -83,7 +83,7 @@ func rebuildAPIKeysTable(tx *sql.Tx) error {
 	_, err = tx.ExecContext(context.Background(), `
 		CREATE TABLE IF NOT EXISTS api_keys (
 			id TEXT PRIMARY KEY,
-			operator_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
 			name TEXT NOT NULL,
 			key_prefix TEXT NOT NULL,
 			key_hash TEXT NOT NULL,
@@ -97,7 +97,7 @@ func rebuildAPIKeysTable(tx *sql.Tx) error {
 			updated_at INTEGER NOT NULL,
 			revoked_at INTEGER,
 			organization_id TEXT,
-			FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE
+			FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 		)
 	`)
 	if err != nil {
@@ -105,7 +105,7 @@ func rebuildAPIKeysTable(tx *sql.Tx) error {
 	}
 
 	for _, idx := range []string{
-		`CREATE INDEX IF NOT EXISTS idx_api_keys_operator_id ON api_keys(operator_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys(key_hash)`,
 		`CREATE INDEX IF NOT EXISTS idx_api_keys_created_at ON api_keys(created_at)`,
 		`CREATE INDEX IF NOT EXISTS idx_api_keys_is_active ON api_keys(is_active)`,
@@ -120,7 +120,7 @@ func rebuildAPIKeysTable(tx *sql.Tx) error {
 
 func rebuildAPIClientsTable(tx *sql.Tx) error {
 	wantAPIClients := []string{
-		"id", "operator_id", "name", "platform", "client_secret_hash", "hmac_key",
+		"id", "user_id", "name", "platform", "client_secret_hash", "hmac_key",
 		"allowed_origins", "allowed_paths", "rate_limit", "is_active",
 		"request_count", "last_request_at", "created_at", "updated_at",
 	}
@@ -143,7 +143,7 @@ func rebuildAPIClientsTable(tx *sql.Tx) error {
 		}
 		if count > 0 {
 			return addMissingColumns(tx, "api_clients", missing, map[string]string{
-				"operator_id":        "TEXT",
+				"user_id":        "TEXT",
 				"platform":           "TEXT",
 				"client_secret_hash": "TEXT",
 				"hmac_key":           "TEXT",
@@ -163,7 +163,7 @@ func rebuildAPIClientsTable(tx *sql.Tx) error {
 	_, err = tx.ExecContext(context.Background(), `
 		CREATE TABLE IF NOT EXISTS api_clients (
 			id TEXT PRIMARY KEY,
-			operator_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
 			name TEXT NOT NULL,
 			platform TEXT NOT NULL DEFAULT 'web',
 			client_secret_hash TEXT NOT NULL,
@@ -176,7 +176,7 @@ func rebuildAPIClientsTable(tx *sql.Tx) error {
 			last_request_at INTEGER,
 			created_at INTEGER NOT NULL,
 			updated_at INTEGER NOT NULL,
-			FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE
+			FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 		)
 	`)
 	if err != nil {
@@ -184,7 +184,7 @@ func rebuildAPIClientsTable(tx *sql.Tx) error {
 	}
 
 	for _, idx := range []string{
-		`CREATE INDEX IF NOT EXISTS idx_api_clients_operator_id ON api_clients(operator_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_api_clients_user_id ON api_clients(user_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_api_clients_is_active ON api_clients(is_active)`,
 	} {
 		if _, err := tx.ExecContext(context.Background(), idx); err != nil {

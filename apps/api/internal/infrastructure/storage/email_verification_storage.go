@@ -44,9 +44,9 @@ func (r *EmailVerificationRepository) exec(ctx context.Context, query string, ar
 // Create creates a new email verification.
 func (r *EmailVerificationRepository) Create(ctx context.Context, ev *email_verification.EmailVerification) error {
 	_, err := r.exec(ctx,
-		`INSERT INTO email_verifications(id, operator_id, token_hash, expires_at, created_at, email_sent_at, email_error)
+		`INSERT INTO email_verifications(id, user_id, token_hash, expires_at, created_at, email_sent_at, email_error)
  VALUES(?, ?, ?, ?, ?, ?, ?)`,
-		ev.ID, ev.OperatorID, ev.TokenHash, ev.ExpiresAt.UnixMilli(), ev.CreatedAt.UnixMilli(), nil, "",
+		ev.ID, ev.UserID, ev.TokenHash, ev.ExpiresAt.UnixMilli(), ev.CreatedAt.UnixMilli(), nil, "",
 	)
 	return err
 }
@@ -59,10 +59,10 @@ func (r *EmailVerificationRepository) FindByTokenHash(ctx context.Context, token
 	var emailError sql.NullString
 
 	err := r.queryRow(ctx,
-		`SELECT id, operator_id, token_hash, expires_at, created_at, email_sent_at, email_error
+		`SELECT id, user_id, token_hash, expires_at, created_at, email_sent_at, email_error
  FROM email_verifications WHERE token_hash = ?`,
 		tokenHash,
-	).Scan(&ev.ID, &ev.OperatorID, &ev.TokenHash, &expiresAt, &createdAt, &emailSentAt, &emailError)
+	).Scan(&ev.ID, &ev.UserID, &ev.TokenHash, &expiresAt, &createdAt, &emailSentAt, &emailError)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, email_verification.ErrNotFound
@@ -90,9 +90,9 @@ func (r *EmailVerificationRepository) Delete(ctx context.Context, id string) err
 	return err
 }
 
-// DeleteByOperator removes all verifications for an operator.
-func (r *EmailVerificationRepository) DeleteByOperator(ctx context.Context, operatorID string) error {
-	_, err := r.exec(ctx, `DELETE FROM email_verifications WHERE operator_id = ?`, operatorID)
+// DeleteByUser removes all verifications for a user.
+func (r *EmailVerificationRepository) DeleteByUser(ctx context.Context, userID string) error {
+	_, err := r.exec(ctx, `DELETE FROM email_verifications WHERE user_id = ?`, userID)
 	return err
 }
 

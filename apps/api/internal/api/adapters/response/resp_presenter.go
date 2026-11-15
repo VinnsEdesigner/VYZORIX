@@ -30,7 +30,7 @@ func NewPresenter(authService *auth.AuthService, auditLogger *audit.Logger, ipIn
 }
 
 // LoginSuccess handles successful login with audit and IP tracking.
-func (p *Presenter) LoginSuccess(c *gin.Context, operatorID string) {
+func (p *Presenter) LoginSuccess(c *gin.Context, userID string) {
 	if p.ipIntelligence != nil {
 		p.ipIntelligence.RecordAuthSuccess(c)
 	}
@@ -46,18 +46,18 @@ func (p *Presenter) LoginSuccess(c *gin.Context, operatorID string) {
 		}
 		ipAddress := c.ClientIP()
 		userAgent := c.GetHeader("User-Agent")
-		operatorID := operatorID
+		userID := userID
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
 			p.auditLogger.LogEvent(ctx, &audit.Entry{
-				OperatorID: operatorID,
+				UserID: userID,
 				Action:     audit.ActionLoginSuccess,
 				IPAddress:  ipAddress,
 				UserAgent:  userAgent,
 				Result:     audit.ResultSuccess,
 				TraceID:    traceID,
-				ActorType:  "operator",
+				ActorType:  "user",
 			})
 		}()
 	}
@@ -79,100 +79,100 @@ func (p *Presenter) LoginFailure(c *gin.Context, email, reason string) {
 }
 
 // LogoutSuccess logs a successful logout.
-func (p *Presenter) LogoutSuccess(c *gin.Context, operatorID string) {
+func (p *Presenter) LogoutSuccess(c *gin.Context, userID string) {
 	if p.auditLogger != nil {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
-			p.auditLogger.Logout(ctx, operatorID, c.ClientIP(), c.GetHeader("User-Agent"))
+			p.auditLogger.Logout(ctx, userID, c.ClientIP(), c.GetHeader("User-Agent"))
 		}()
 	}
 }
 
 // LogoutFailure logs a failed logout attempt.
-func (p *Presenter) LogoutFailure(c *gin.Context, operatorID, reason string) {
+func (p *Presenter) LogoutFailure(c *gin.Context, userID, reason string) {
 	if p.auditLogger != nil {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
-			p.auditLogger.SessionRevoked(ctx, operatorID, c.ClientIP(), c.GetHeader("User-Agent"), reason)
+			p.auditLogger.SessionRevoked(ctx, userID, c.ClientIP(), c.GetHeader("User-Agent"), reason)
 		}()
 	}
 }
 
 // RegisterSuccess logs a successful registration.
-func (p *Presenter) RegisterSuccess(c *gin.Context, operatorID string) {
+func (p *Presenter) RegisterSuccess(c *gin.Context, userID string) {
 	if p.auditLogger != nil {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
-			p.auditLogger.Register(ctx, operatorID, c.ClientIP(), c.GetHeader("User-Agent"))
+			p.auditLogger.Register(ctx, userID, c.ClientIP(), c.GetHeader("User-Agent"))
 		}()
 	}
 }
 
 // PasswordChangeSuccess logs a password change.
-func (p *Presenter) PasswordChangeSuccess(c *gin.Context, operatorID string) {
+func (p *Presenter) PasswordChangeSuccess(c *gin.Context, userID string) {
 	if p.auditLogger != nil {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
-			p.auditLogger.PasswordChange(ctx, operatorID, c.ClientIP(), c.GetHeader("User-Agent"))
+			p.auditLogger.PasswordChange(ctx, userID, c.ClientIP(), c.GetHeader("User-Agent"))
 		}()
 	}
 }
 
 // AccountLocked logs an account lockout.
-func (p *Presenter) AccountLocked(c *gin.Context, operatorID string, attempts int) {
+func (p *Presenter) AccountLocked(c *gin.Context, userID string, attempts int) {
 	if p.auditLogger != nil {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
-			p.auditLogger.AccountLocked(ctx, operatorID, c.ClientIP(), attempts)
+			p.auditLogger.AccountLocked(ctx, userID, c.ClientIP(), attempts)
 		}()
 	}
 }
 
 // APIClientCreated logs API client creation.
-func (p *Presenter) APIClientCreated(c *gin.Context, operatorID, clientID string) {
+func (p *Presenter) APIClientCreated(c *gin.Context, userID, clientID string) {
 	if p.auditLogger != nil {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
-			p.auditLogger.APIClientCreated(ctx, operatorID, clientID, c.ClientIP())
+			p.auditLogger.APIClientCreated(ctx, userID, clientID, c.ClientIP())
 		}()
 	}
 }
 
 // APIClientRevoked logs API client revocation.
-func (p *Presenter) APIClientRevoked(c *gin.Context, operatorID, clientID string) {
+func (p *Presenter) APIClientRevoked(c *gin.Context, userID, clientID string) {
 	if p.auditLogger != nil {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
-			p.auditLogger.APIClientRevoked(ctx, operatorID, clientID, c.ClientIP())
+			p.auditLogger.APIClientRevoked(ctx, userID, clientID, c.ClientIP())
 		}()
 	}
 }
 
 // APIClientSecretRotated logs API client secret rotation.
-func (p *Presenter) APIClientSecretRotated(c *gin.Context, operatorID, clientID string) {
+func (p *Presenter) APIClientSecretRotated(c *gin.Context, userID, clientID string) {
 	if p.auditLogger != nil {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
-			p.auditLogger.APIClientSecretRotated(ctx, operatorID, clientID, c.ClientIP())
+			p.auditLogger.APIClientSecretRotated(ctx, userID, clientID, c.ClientIP())
 		}()
 	}
 }
 
 // AdminAction logs an admin action.
-func (p *Presenter) AdminAction(c *gin.Context, operatorID, action, resourceType, resourceID string, metadata map[string]string) {
+func (p *Presenter) AdminAction(c *gin.Context, userID, action, resourceType, resourceID string, metadata map[string]string) {
 	if p.auditLogger != nil {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
-			p.auditLogger.AdminAction(ctx, operatorID, action, resourceType, resourceID, c.ClientIP(), metadata)
+			p.auditLogger.AdminAction(ctx, userID, action, resourceType, resourceID, c.ClientIP(), metadata)
 		}()
 	}
 }

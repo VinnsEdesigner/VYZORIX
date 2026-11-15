@@ -70,7 +70,7 @@ func NewHandlerWithAppCheck(service *inbox.Service, deviceSecret string, appChec
 
 // GetInbox handles GET /v1/inbox.
 // @Summary      List inbox entries
-// @Description  Returns paginated inbox entries for the authenticated operator within the organization
+// @Description  Returns paginated inbox entries for the authenticated user within the organization
 // @Tags         inbox
 // @Accept       json
 // @Produce      json
@@ -103,13 +103,13 @@ func (h *Handler) GetInbox(c *gin.Context) {
 		limit = 100
 	}
 
-	operator := middleware.GetOperatorFromContext(c)
-	operatorID := ""
-	if operator != nil {
-		operatorID = operator.ID
+	user := middleware.GetUserFromContext(c)
+	userID := ""
+	if user != nil {
+		userID = user.ID
 	}
 
-	result, err := h.service.GetInbox(c.Request.Context(), operatorID, orgID, status, page, limit)
+	result, err := h.service.GetInbox(c.Request.Context(), userID, orgID, status, page, limit)
 	if err != nil {
 		se := inbox.ToServiceError(err)
 		_ = c.Error(apperrors.NewServerErrorFromStatus(se.Status, se.Message))
@@ -192,15 +192,15 @@ func (h *Handler) AckInbox(c *gin.Context) {
 		return
 	}
 
-	var operatorID string
+	var userID string
 	if req.Action != "acknowledge" {
-		operator := middleware.GetOperatorFromContext(c)
-		if operator != nil {
-			operatorID = operator.ID
+		user := middleware.GetUserFromContext(c)
+		if user != nil {
+			userID = user.ID
 		}
 	}
 
-	result, err := h.service.AckInbox(c.Request.Context(), imei, req.Action, operatorID, orgID, req.Notes)
+	result, err := h.service.AckInbox(c.Request.Context(), imei, req.Action, userID, orgID, req.Notes)
 	if err != nil {
 		se := inbox.ToServiceError(err)
 		_ = c.Error(apperrors.NewServerErrorFromStatus(se.Status, se.Message))
@@ -212,7 +212,7 @@ func (h *Handler) AckInbox(c *gin.Context) {
 
 // CreateInboxRequest handles POST /v1/inbox.
 // @Summary      Create inbox request
-// @Description  Submits a device registration request to the operator inbox. Requires device attestation when configured
+// @Description  Submits a device registration request to the user inbox. Requires device attestation when configured
 // @Tags         inbox
 // @Accept       json
 // @Produce      json
@@ -298,7 +298,7 @@ type UpdateInboxEntryRequest struct {
 
 // UpdateInboxEntry handles PATCH /v1/device/inbox/:imei.
 // @Summary      Update inbox entry
-// @Description  Updates an inbox entry (e.g., add operator notes) within the organization
+// @Description  Updates an inbox entry (e.g., add user notes) within the organization
 // @Tags         inbox
 // @Accept       json
 // @Produce      json
@@ -328,14 +328,14 @@ func (h *Handler) UpdateInboxEntry(c *gin.Context) {
 		return
 	}
 
-	operator := middleware.GetOperatorFromContext(c)
-	operatorID := ""
-	if operator != nil {
-		operatorID = operator.ID
+	user := middleware.GetUserFromContext(c)
+	userID := ""
+	if user != nil {
+		userID = user.ID
 	}
 
 	// A `status` in the body is a state change (only `rejected` is a valid
-	// operator transition here), not a notes edit. Route it through the same
+	// user transition here), not a notes edit. Route it through the same
 	// service path as the ack endpoint so the state machine and timestamps are
 	// handled consistently; otherwise treat the request as a notes update.
 	if req.Status != "" {
@@ -343,7 +343,7 @@ func (h *Handler) UpdateInboxEntry(c *gin.Context) {
 			_ = c.Error(apperrors.NewServerError(apperrors.CodeValidationFailed, "status must be 'rejected'"))
 			return
 		}
-		if _, err := h.service.RejectDevice(c.Request.Context(), imei, operatorID, orgID, req.Notes); err != nil {
+		if _, err := h.service.RejectDevice(c.Request.Context(), imei, userID, orgID, req.Notes); err != nil {
 			se := inbox.ToServiceError(err)
 			_ = c.Error(apperrors.NewServerErrorFromStatus(se.Status, se.Message))
 			return
@@ -358,7 +358,7 @@ func (h *Handler) UpdateInboxEntry(c *gin.Context) {
 		return
 	}
 
-	result, err := h.service.UpdateInboxEntry(c.Request.Context(), imei, operatorID, orgID, req.Notes)
+	result, err := h.service.UpdateInboxEntry(c.Request.Context(), imei, userID, orgID, req.Notes)
 	if err != nil {
 		se := inbox.ToServiceError(err)
 		_ = c.Error(apperrors.NewServerErrorFromStatus(se.Status, se.Message))
@@ -393,13 +393,13 @@ func (h *Handler) ResendApproval(c *gin.Context) {
 		return
 	}
 
-	operator := middleware.GetOperatorFromContext(c)
-	operatorID := ""
-	if operator != nil {
-		operatorID = operator.ID
+	user := middleware.GetUserFromContext(c)
+	userID := ""
+	if user != nil {
+		userID = user.ID
 	}
 
-	result, err := h.service.ResendApproval(c.Request.Context(), imei, operatorID, orgID)
+	result, err := h.service.ResendApproval(c.Request.Context(), imei, userID, orgID)
 	if err != nil {
 		se := inbox.ToServiceError(err)
 		_ = c.Error(apperrors.NewServerErrorFromStatus(se.Status, se.Message))

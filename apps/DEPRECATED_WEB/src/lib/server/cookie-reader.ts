@@ -2,7 +2,7 @@
  * cookie-reader.ts - Server-side cookie parsing for SSR hydration
  *
  * This module handles reading authentication cookies from HTTP requests
- * and fetching the authenticated operator data from the Go API.
+ * and fetching the authenticated user data from the Go API.
  *
  * Based on Library's server.ts implementation pattern
  */
@@ -51,7 +51,7 @@ export { parseCookies };
  *
  * This runs on the SERVER (Node.js) during SSR:
  * 1. Extracts session cookie from request headers
- * 2. Calls Go API to validate session and get operator data
+ * 2. Calls Go API to validate session and get user data
  * 3. Returns auth state to be injected into HTML
  *
  * Mirrors Library's server.ts flow:
@@ -83,7 +83,7 @@ const getPrefetchedAuthState = async (request: Request): Promise<PrefetchedAuthS
     return { isAuthenticated: false, operator: null };
   }
 
-  // 4. Call Go API to get operator data
+  // 4. Call Go API to get user data
   // The Go API reads the cookie from the request and validates the session
   // During migration, we'll switch from JWT validation to cookie-based validation
   const apiUrl = process.env.API_URL ?? "http://localhost:3000";
@@ -110,7 +110,7 @@ const getPrefetchedAuthState = async (request: Request): Promise<PrefetchedAuthS
       return { isAuthenticated: false, operator: null };
     }
 
-    // 5. Parse operator data from response
+    // 5. Parse user data from response
     const operator = (await response.json()) as Operator;
 
     return {

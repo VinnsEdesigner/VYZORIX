@@ -29,7 +29,7 @@ func toSecuritySession(s *domainsession.Session) *session.Session {
 
 	return &session.Session{
 		ID:                     s.ID,
-		OperatorID:             s.OperatorID,
+		UserID:             s.UserID,
 		SelectedOrganizationID: s.SelectedOrganizationID,
 		ExpiresAt:              s.ExpiresAt,
 		CreatedAt:              s.CreatedAt,
@@ -54,7 +54,7 @@ func toDomainSession(s *session.Session) *domainsession.Session {
 
 	return &domainsession.Session{
 		ID:                     s.ID,
-		OperatorID:             s.OperatorID,
+		UserID:             s.UserID,
 		ExpiresAt:              s.ExpiresAt,
 		CreatedAt:              s.CreatedAt,
 		SelectedOrganizationID: s.SelectedOrganizationID,
@@ -72,8 +72,8 @@ func (a *sessionRepoAdapter) FindByID(ctx context.Context, id string) (*session.
 	return toSecuritySession(s), nil
 }
 
-func (a *sessionRepoAdapter) FindByOperatorID(ctx context.Context, operatorID string) ([]*session.Session, error) {
-	sessions, err := a.repo.FindByOperatorID(ctx, operatorID)
+func (a *sessionRepoAdapter) FindByUserID(ctx context.Context, userID string) ([]*session.Session, error) {
+	sessions, err := a.repo.FindByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -89,8 +89,8 @@ func (a *sessionRepoAdapter) Delete(ctx context.Context, id string) error {
 	return a.repo.Delete(ctx, id)
 }
 
-func (a *sessionRepoAdapter) DeleteByOperatorID(ctx context.Context, operatorID string) error {
-	return a.repo.DeleteByOperatorID(ctx, operatorID)
+func (a *sessionRepoAdapter) DeleteByUserID(ctx context.Context, userID string) error {
+	return a.repo.DeleteByUserID(ctx, userID)
 }
 
 func (a *sessionRepoAdapter) DeleteExpired(ctx context.Context) (int, error) {
@@ -101,6 +101,6 @@ func (a *sessionRepoAdapter) Extend(ctx context.Context, id string, newExpiry ti
 	return a.repo.Extend(ctx, id, newExpiry)
 }
 
-func (a *sessionRepoAdapter) RevokeAllOperatorSessions(ctx context.Context, operatorID string) error {
-	return a.repo.RevokeAllOperatorSessions(ctx, operatorID)
+func (a *sessionRepoAdapter) RevokeAllUserSessions(ctx context.Context, userID string) error {
+	return a.repo.RevokeAllUserSessions(ctx, userID)
 }

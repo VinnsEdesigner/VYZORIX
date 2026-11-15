@@ -44,9 +44,9 @@ func (r *PasswordResetRepository) exec(ctx context.Context, query string, args .
 // Create creates a new password reset token.
 func (r *PasswordResetRepository) Create(ctx context.Context, token *password_reset.PasswordResetToken) error {
 	_, err := r.exec(ctx,
-		`INSERT INTO password_reset_tokens(id, operator_id, token_hash, expires_at, used_at, created_at)
+		`INSERT INTO password_reset_tokens(id, user_id, token_hash, expires_at, used_at, created_at)
 		 VALUES(?, ?, ?, ?, ?, ?)`,
-		token.ID, token.OperatorID, token.TokenHash, token.ExpiresAt.UnixMilli(), nil, token.CreatedAt.UnixMilli(),
+		token.ID, token.UserID, token.TokenHash, token.ExpiresAt.UnixMilli(), nil, token.CreatedAt.UnixMilli(),
 	)
 
 	return err
@@ -61,10 +61,10 @@ func (r *PasswordResetRepository) FindByTokenHash(ctx context.Context, tokenHash
 	var usedAt *int64
 
 	err := r.queryRow(ctx,
-		`SELECT id, operator_id, token_hash, expires_at, used_at, created_at
+		`SELECT id, user_id, token_hash, expires_at, used_at, created_at
 		 FROM password_reset_tokens WHERE token_hash = ?`,
 		tokenHash,
-	).Scan(&token.ID, &token.OperatorID, &token.TokenHash, &expiresAt, &usedAt, &createdAt)
+	).Scan(&token.ID, &token.UserID, &token.TokenHash, &expiresAt, &usedAt, &createdAt)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, password_reset.ErrNotFound
@@ -95,9 +95,9 @@ func (r *PasswordResetRepository) MarkUsed(ctx context.Context, id string) error
 	return err
 }
 
-// DeleteByOperator removes all tokens for an operator.
-func (r *PasswordResetRepository) DeleteByOperator(ctx context.Context, operatorID string) error {
-	_, err := r.exec(ctx, `DELETE FROM password_reset_tokens WHERE operator_id = ?`, operatorID)
+// DeleteByUser removes all tokens for a user.
+func (r *PasswordResetRepository) DeleteByUser(ctx context.Context, userID string) error {
+	_, err := r.exec(ctx, `DELETE FROM password_reset_tokens WHERE user_id = ?`, userID)
 	return err
 }
 

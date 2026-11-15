@@ -165,7 +165,7 @@ but its directory and data remain — only `purge = true` deletes them.
 
 ## 8. Reaching an app
 
-An app listens on a port inside the container. How an operator reaches it depends on
+An app listens on a port inside the container. How a user reaches it depends on
 `expose` in the manifest: `loopback` (the device itself), `lan` (the local network, with
 a token), or `cloud` (refused in v1). Layer 1 owns the socket, so the proxy is a relay,
 not a server. The details are `APP_EXPOSURE.md`.

@@ -35,7 +35,7 @@ func newEnrollmentService(t *testing.T) *Service {
 		id TEXT PRIMARY KEY, firebase_install_id TEXT, fcm_token TEXT, app_version TEXT,
 		device_class TEXT, online INTEGER NOT NULL DEFAULT 0,
 		registered_at INTEGER NOT NULL DEFAULT 0, last_seen INTEGER NOT NULL DEFAULT 0,
-		operator_id TEXT, organization_id TEXT, created_at TIMESTAMP, updated_at TIMESTAMP,
+		user_id TEXT, organization_id TEXT, created_at TIMESTAMP, updated_at TIMESTAMP,
 		device_name TEXT, manufacturer TEXT, model TEXT, os_version TEXT, security_patch TEXT,
 			build_id TEXT, api_level INTEGER NOT NULL DEFAULT 0, supported_abis TEXT,
 			ram_bytes INTEGER NOT NULL DEFAULT 0, storage_bytes INTEGER NOT NULL DEFAULT 0,
@@ -71,7 +71,7 @@ func newEnrollmentServiceRepo(t *testing.T) (*Service, *storage.DeviceRepository
 		id TEXT PRIMARY KEY, firebase_install_id TEXT, fcm_token TEXT, app_version TEXT,
 		device_class TEXT, online INTEGER NOT NULL DEFAULT 0,
 		registered_at INTEGER NOT NULL DEFAULT 0, last_seen INTEGER NOT NULL DEFAULT 0,
-		operator_id TEXT, organization_id TEXT, created_at TIMESTAMP, updated_at TIMESTAMP,
+		user_id TEXT, organization_id TEXT, created_at TIMESTAMP, updated_at TIMESTAMP,
 		device_name TEXT, manufacturer TEXT, model TEXT, os_version TEXT, security_patch TEXT,
 		build_id TEXT, api_level INTEGER NOT NULL DEFAULT 0, supported_abis TEXT,
 		ram_bytes INTEGER NOT NULL DEFAULT 0, storage_bytes INTEGER NOT NULL DEFAULT 0,
@@ -247,8 +247,8 @@ func TestClaimBindsOwnerAndOrgAndConsumesTheCode(t *testing.T) {
 	}
 
 	d, err := svc.Claim(ctx, ClaimRequest{
-		PairingCode:    enrolled.PairingDisplay, // as the operator types it
-		OperatorID:     "op-1",
+		PairingCode:    enrolled.PairingDisplay, // as the user types it
+		UserID:     "op-1",
 		OrganizationID: "org-1",
 		Name:           "field-ops-07",
 		TierCap:        2,
@@ -257,8 +257,8 @@ func TestClaimBindsOwnerAndOrgAndConsumesTheCode(t *testing.T) {
 		t.Fatalf("claim: %v", err)
 	}
 
-	if d.OperatorID != "op-1" || d.OrganizationID != "org-1" {
-		t.Errorf("owner not bound: %q %q", d.OperatorID, d.OrganizationID)
+	if d.UserID != "op-1" || d.OrganizationID != "org-1" {
+		t.Errorf("owner not bound: %q %q", d.UserID, d.OrganizationID)
 	}
 	if d.DeviceName != "field-ops-07" {
 		t.Errorf("name not applied: %q", d.DeviceName)
@@ -277,7 +277,7 @@ func TestClaimBindsOwnerAndOrgAndConsumesTheCode(t *testing.T) {
 }
 
 // TestClaimIsSingleUse proves a second claim with the same code fails, which is
-// what stops one operator from taking a device another already owns.
+// what stops one user from taking a device another already owns.
 func TestClaimIsSingleUse(t *testing.T) {
 	svc := newEnrollmentService(t)
 	ctx := context.Background()
@@ -285,7 +285,7 @@ func TestClaimIsSingleUse(t *testing.T) {
 	enrolled, _ := svc.Enroll(ctx, EnrollRequest{DeviceUUID: "dev-1", PublicKeyPEM: testPublicKey(t)})
 	req := ClaimRequest{
 		PairingCode:    enrolled.PairingCode,
-		OperatorID:     "op-1",
+		UserID:     "op-1",
 		OrganizationID: "org-1",
 	}
 
@@ -293,7 +293,7 @@ func TestClaimIsSingleUse(t *testing.T) {
 		t.Fatalf("first claim: %v", err)
 	}
 
-	req.OperatorID = "op-2"
+	req.UserID = "op-2"
 	req.OrganizationID = "org-2"
 	if _, err := svc.Claim(ctx, req); !errors.Is(err, ErrPairingCodeUnknown) {
 		t.Fatalf("a second claim must fail, got %v", err)
@@ -305,7 +305,7 @@ func TestClaimRefusesAnUnknownCode(t *testing.T) {
 
 	_, err := svc.Claim(context.Background(), ClaimRequest{
 		PairingCode:    "ZZZZZZZZ",
-		OperatorID:     "op-1",
+		UserID:     "op-1",
 		OrganizationID: "org-1",
 	})
 	if !errors.Is(err, ErrPairingCodeUnknown) {
@@ -330,7 +330,7 @@ func TestClaimRefusesAnExpiredCode(t *testing.T) {
 
 	_, err := svc.Claim(ctx, ClaimRequest{
 		PairingCode:    enrolled.PairingCode,
-		OperatorID:     "op-1",
+		UserID:     "op-1",
 		OrganizationID: "org-1",
 	})
 	if !errors.Is(err, ErrPairingCodeUnknown) {
@@ -348,7 +348,7 @@ func TestEnrollRefusesAnAlreadyClaimedDevice(t *testing.T) {
 	enrolled, _ := svc.Enroll(ctx, EnrollRequest{DeviceUUID: "dev-1", PublicKeyPEM: key})
 	if _, err := svc.Claim(ctx, ClaimRequest{
 		PairingCode:    enrolled.PairingCode,
-		OperatorID:     "op-1",
+		UserID:     "op-1",
 		OrganizationID: "org-1",
 	}); err != nil {
 		t.Fatalf("claim: %v", err)
@@ -360,9 +360,9 @@ func TestEnrollRefusesAnAlreadyClaimedDevice(t *testing.T) {
 	}
 }
 
-// TestClaimNormalizesTheCodeTheOperatorTyped proves lowercase, spaces and the
+// TestClaimNormalizesTheCodeTheUserTyped proves lowercase, spaces and the
 // grouped form are all accepted, and the ambiguous letters map to digits.
-func TestClaimNormalizesTheCodeTheOperatorTyped(t *testing.T) {
+func TestClaimNormalizesTheCodeTheUserTyped(t *testing.T) {
 	svc := newEnrollmentService(t)
 	ctx := context.Background()
 
@@ -371,7 +371,7 @@ func TestClaimNormalizesTheCodeTheOperatorTyped(t *testing.T) {
 	typed := " " + enrolled.PairingDisplay[:4] + " " + enrolled.PairingDisplay[5:]
 	if _, err := svc.Claim(ctx, ClaimRequest{
 		PairingCode:    typed,
-		OperatorID:     "op-1",
+		UserID:     "op-1",
 		OrganizationID: "org-1",
 	}); err != nil {
 		t.Fatalf("a code typed with a space must be accepted: %v", err)

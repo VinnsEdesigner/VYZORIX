@@ -52,14 +52,14 @@ The Vyzorix Update Server uses **SQLite** with WAL (Write-Ahead Logging) mode fo
 | 1 | devices |  Existing |
 | 2 | telemetry |  Existing |
 | 3 | commands |  Existing |
-| 4 | operators |  Existing |
+| 4 | users |  Existing |
 | 5 | auth_sessions |  Existing |
 | 6 | email_verifications |  Existing |
 | 7 | password_reset_tokens |  Existing |
 | 8 | settings |  Existing |
 | 9 | commands (add columns) |  Existing |
 | 10 | devices (command_secret_hash) |  Existing |
-| 11 | operators (github_id) |  Existing |
+| 11 | users (github_id) |  Existing |
 | 12 | password_reset_resend_tracker |  Existing |
 | 13 | api_clients |  Existing |
 | 14 | signing_keys |  Existing |
@@ -139,10 +139,10 @@ CREATE TABLE commands (
 );
 ```
 
-### 3.4 operators
+### 3.4 users
 
 ```sql
-CREATE TABLE operators (
+CREATE TABLE users (
     id                  TEXT PRIMARY KEY,
     email               TEXT NOT NULL UNIQUE,
     name                TEXT NOT NULL,
@@ -172,7 +172,7 @@ CREATE TABLE auth_sessions (
     created_at      INTEGER NOT NULL,
     user_agent      TEXT,
     ip_address      TEXT,
-    FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE
+    FOREIGN KEY(operator_id) REFERENCES users(id) ON DELETE CASCADE
 );
 ```
 
@@ -185,7 +185,7 @@ CREATE TABLE email_verifications (
     token_hash      TEXT NOT NULL UNIQUE,
     expires_at      INTEGER NOT NULL,
     created_at      INTEGER NOT NULL,
-    FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE
+    FOREIGN KEY(operator_id) REFERENCES users(id) ON DELETE CASCADE
 );
 ```
 
@@ -199,7 +199,7 @@ CREATE TABLE password_reset_tokens (
     expires_at      INTEGER NOT NULL,
     used_at         INTEGER,
     created_at      INTEGER NOT NULL,
-    FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE
+    FOREIGN KEY(operator_id) REFERENCES users(id) ON DELETE CASCADE
 );
 ```
 
@@ -282,7 +282,7 @@ CREATE TABLE audit_logs (
     ip_address      TEXT,
     user_agent      TEXT,
     created_at      INTEGER NOT NULL,
-    FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE
+    FOREIGN KEY(operator_id) REFERENCES users(id) ON DELETE CASCADE
 );
 ```
 
@@ -359,7 +359,7 @@ CREATE INDEX idx_events_type ON events(event_type, created_at DESC);
 
 ### 4.2 inbox_requests (Migration 21)
 
-Device registration inbox for operator approval workflow.
+Device registration inbox for user approval workflow.
 
 ```sql
 CREATE TABLE inbox_requests (
@@ -378,7 +378,7 @@ CREATE TABLE inbox_requests (
     command_secret           TEXT,
     notes                   TEXT,
     operator_id              TEXT,
-    FOREIGN KEY(operator_id) REFERENCES operators(id)
+    FOREIGN KEY(operator_id) REFERENCES users(id)
 );
 
 CREATE INDEX idx_inbox_pending ON inbox_requests(status, created_at DESC);
@@ -399,7 +399,7 @@ CREATE TABLE registration_logs (
     details         TEXT,
     created_at      INTEGER NOT NULL,
     FOREIGN KEY(device_id) REFERENCES devices(id) ON DELETE CASCADE,
-    FOREIGN KEY(operator_id) REFERENCES operators(id)
+    FOREIGN KEY(operator_id) REFERENCES users(id)
 );
 
 CREATE INDEX idx_registration_logs_device ON registration_logs(device_id, created_at DESC);
@@ -486,7 +486,7 @@ CREATE TABLE update_pushes (
     cancelled_at    INTEGER,
     cancelled_by    TEXT,
     FOREIGN KEY(version_id) REFERENCES update_versions(id),
-    FOREIGN KEY(initiated_by) REFERENCES operators(id)
+    FOREIGN KEY(initiated_by) REFERENCES users(id)
 );
 
 CREATE INDEX idx_update_pushes_status ON update_pushes(status);
@@ -524,7 +524,7 @@ CREATE INDEX idx_update_push_devices_status ON update_push_devices(push_id, stat
 
 ### 4.9 operator_settings (Migration 24)
 
-Per-operator configuration and threshold settings.
+Per-user configuration and threshold settings.
 
 ```sql
 CREATE TABLE operator_settings (
@@ -557,7 +557,7 @@ CREATE TABLE operator_settings (
     notify_registration_request INTEGER NOT NULL DEFAULT 1,
     created_at              INTEGER NOT NULL,
     updated_at              INTEGER NOT NULL,
-    FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE
+    FOREIGN KEY(operator_id) REFERENCES users(id) ON DELETE CASCADE
 );
 ```
 
@@ -575,7 +575,7 @@ CREATE TABLE refresh_tokens (
     created_at      INTEGER NOT NULL,
     replaced_by_id  TEXT,
     revoked         INTEGER NOT NULL DEFAULT 0,
-    FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE,
+    FOREIGN KEY(operator_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY(session_id) REFERENCES auth_sessions(id) ON DELETE CASCADE,
     FOREIGN KEY(replaced_by_id) REFERENCES refresh_tokens(id)
 );
@@ -586,7 +586,7 @@ CREATE INDEX idx_refresh_tokens_operator_id ON refresh_tokens(operator_id);
 
 ### 4.11 notification_audit_log (Migration 26)
 
-Audit trail for operator notifications.
+Audit trail for user notifications.
 
 ```sql
 CREATE TABLE notification_audit_log (
@@ -596,7 +596,7 @@ CREATE TABLE notification_audit_log (
     channel         TEXT NOT NULL,
     payload         TEXT,
     sent_at         INTEGER NOT NULL,
-    FOREIGN KEY(operator_id) REFERENCES operators(id)
+    FOREIGN KEY(operator_id) REFERENCES users(id)
 );
 
 CREATE INDEX idx_notification_audit_operator ON notification_audit_log(operator_id, sent_at DESC);
@@ -672,7 +672,7 @@ ALTER TABLE devices ADD COLUMN fcm_token_refreshed_at INTEGER;
                                                          
                                                                             
                            
-    operators   auth_sessions refresh_tokens (v25)         
+    users   auth_sessions refresh_tokens (v25)         
                                                                      
    • id (PK)         • id (PK)         • token_hash               
    • email           • operator_id                    
@@ -712,7 +712,7 @@ ALTER TABLE devices ADD COLUMN fcm_token_refreshed_at INTEGER;
 ## 7. Entity Relationships
 
 ```
-operators (1)  (N) auth_sessions
+users (1)  (N) auth_sessions
                          
       (1) operator_settings (1:1)
       (N) refresh_tokens
@@ -720,8 +720,8 @@ operators (1)  (N) auth_sessions
       (N) password_reset_tokens
       (N) audit_logs
       (N) notification_audit_log
-      (N) inbox_requests (as operator)
-      (N) registration_logs (as operator)
+      (N) inbox_requests (as user)
+      (N) registration_logs (as user)
 
 api_clients (1)  (N) signing_keys
 
@@ -835,7 +835,7 @@ func migrateCreateInboxAndRegistrationLogs(db *sql.DB) error {
             command_secret           TEXT,
             notes                   TEXT,
             operator_id              TEXT,
-            FOREIGN KEY(operator_id) REFERENCES operators(id)
+            FOREIGN KEY(operator_id) REFERENCES users(id)
         )
     `)
     if err != nil {
@@ -859,7 +859,7 @@ func migrateCreateInboxAndRegistrationLogs(db *sql.DB) error {
             details         TEXT,
             created_at      INTEGER NOT NULL,
             FOREIGN KEY(device_id) REFERENCES devices(id) ON DELETE CASCADE,
-            FOREIGN KEY(operator_id) REFERENCES operators(id)
+            FOREIGN KEY(operator_id) REFERENCES users(id)
         )
     `)
     if err != nil {
@@ -986,7 +986,7 @@ func migrateCreateUpdates(db *sql.DB) error {
             cancelled_at    INTEGER,
             cancelled_by    TEXT,
             FOREIGN KEY(version_id) REFERENCES update_versions(id),
-            FOREIGN KEY(initiated_by) REFERENCES operators(id)
+            FOREIGN KEY(initiated_by) REFERENCES users(id)
         )
     `)
     if err != nil {
@@ -1073,7 +1073,7 @@ func migrateCreateOperatorSettings(db *sql.DB) error {
             notify_registration_request INTEGER NOT NULL DEFAULT 1,
             created_at              INTEGER NOT NULL,
             updated_at              INTEGER NOT NULL,
-            FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE
+            FOREIGN KEY(operator_id) REFERENCES users(id) ON DELETE CASCADE
         )
     `)
 
@@ -1095,7 +1095,7 @@ func migrateCreateRefreshTokens(db *sql.DB) error {
             created_at      INTEGER NOT NULL,
             replaced_by_id  TEXT,
             revoked         INTEGER NOT NULL DEFAULT 0,
-            FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE,
+            FOREIGN KEY(operator_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY(session_id) REFERENCES auth_sessions(id) ON DELETE CASCADE,
             FOREIGN KEY(replaced_by_id) REFERENCES refresh_tokens(id)
         )
@@ -1133,7 +1133,7 @@ func migrateCreateNotificationAuditLog(db *sql.DB) error {
             channel         TEXT NOT NULL,
             payload         TEXT,
             sent_at         INTEGER NOT NULL,
-            FOREIGN KEY(operator_id) REFERENCES operators(id)
+            FOREIGN KEY(operator_id) REFERENCES users(id)
         )
     `)
     if err != nil {

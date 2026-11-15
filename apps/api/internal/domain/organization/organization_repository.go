@@ -15,11 +15,11 @@ type OrganizationRepository interface {
 	// FindByOrganizationID retrieves an organization by OrganizationID value object.
 	FindByOrganizationID(ctx context.Context, id OrganizationID) (*Organization, error)
 
-	// FindByName finds an organization by name for a specific operator.
-	FindByName(ctx context.Context, operatorID, name string) (*Organization, error)
+	// FindByName finds an organization by name for a specific user.
+	FindByName(ctx context.Context, userID, name string) (*Organization, error)
 
-	// FindByNameAndOperatorID finds an organization by name for a specific operator.
-	FindByNameAndOperatorID(ctx context.Context, operatorID OperatorID, name string) (*Organization, error)
+	// FindByNameAndUserID finds an organization by name for a specific user.
+	FindByNameAndUserID(ctx context.Context, userID UserID, name string) (*Organization, error)
 
 	// Update updates an existing organization.
 	Update(ctx context.Context, org *Organization) error
@@ -30,14 +30,14 @@ type OrganizationRepository interface {
 	// SoftDeleteByID soft-deletes an organization by OrganizationID.
 	SoftDeleteByID(ctx context.Context, id OrganizationID) error
 
-	// ListByOperator lists all organizations for an operator (via memberships).
-	ListByOperator(ctx context.Context, operatorID string) ([]*Organization, error)
+	// ListByUser lists all organizations for a user (via memberships).
+	ListByUser(ctx context.Context, userID string) ([]*Organization, error)
 
-	// ListByOperatorID lists all organizations for an OperatorID.
-	ListByOperatorID(ctx context.Context, operatorID OperatorID) ([]*Organization, error)
+	// ListByUserID lists all organizations for an UserID.
+	ListByUserID(ctx context.Context, userID UserID) ([]*Organization, error)
 
-	// ListByOperatorPaginated lists organizations for an operator with pagination.
-	ListByOperatorPaginated(ctx context.Context, operatorID string, limit, offset int) ([]*Organization, int, error)
+	// ListByUserPaginated lists organizations for a user with pagination.
+	ListByUserPaginated(ctx context.Context, userID string, limit, offset int) ([]*Organization, int, error)
 
 	// ListActive lists all active (non-archived) organizations.
 	ListActive(ctx context.Context) ([]*Organization, error)

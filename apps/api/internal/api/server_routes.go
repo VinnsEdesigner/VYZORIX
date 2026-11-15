@@ -17,6 +17,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// skipIfMissingTrue opts a route group into OrganizationContext without
+// requiring an organization, for routes that are valid with none (a caller who
+// has not created or selected one yet).
+var skipIfMissingTrue = true
+
+// skipIfMissing is the pointer form the middleware constructor takes.
+var skipIfMissing = &skipIfMissingTrue
+
 // setupRoutes configures all API routes on the Gin engine.
 func (s *Server) setupRoutes() {
 	s.engine.HandleMethodNotAllowed = true
@@ -151,7 +159,7 @@ func (s *Server) setupStaticRoutes() {
 	s.engine.HEAD("/bin/*name", s.binHandler)
 	s.engine.GET("/api/v1/check-update", s.updaterHandler.CheckUpdate)
 	s.engine.POST("/api/v1/download-progress", s.updaterHandler.DownloadProgress)
-	// The read half of the report endpoint, so an operator can ask how far along a
+	// The read half of the report endpoint, so a user can ask how far along a
 	// device's update is rather than the server only logging it.
 	s.engine.GET("/api/v1/download-progress/:deviceId", s.updaterHandler.GetDownloadProgress)
 	// Also register at /v1/ without the /api prefix so requests forwarded.
@@ -236,7 +244,7 @@ func (s *Server) setupAuthenticatedRoutes() {
 	r := public.Group("/v1")
 
 	// TENANT routes: Session OR API Key + Scope.
-	// These are routes that operators access with their session or API keys.
+	// These are routes that users access with their session or API keys.
 	tenantGroup := r.Group("")
 	tenantGroup.Use(s.authLimiter.Middleware())
 	tenantGroup.Use(s.cookieAuth.Middleware())
@@ -289,8 +297,11 @@ func (s *Server) setupAuthenticatedRoutes() {
 	// Client credentials routes: Auth + Org required for org-scoped API key management.
 	s.setupClientCredentialsRoutes(tenantGroup)
 
-	// Organization routes: Session required (operators, invitations, members).
+	// Organization routes: Session required (users, invitations, members).
 	s.setupOrganizationRoutes(tenantGroup)
+
+	// Instance routes: Session required, deployment-scoped (InstanceRole).
+	s.setupInstanceRoutes(tenantGroup)
 
 	// ADMIN routes: SuperAdmin session required (NO API key auth).
 	// These require valid session AND SuperAdmin role.
@@ -298,7 +309,7 @@ func (s *Server) setupAuthenticatedRoutes() {
 
 	// DEVICE routes: HMAC authentication only (no session/API key).
 	// These are device-initiated requests that use HMAC signatures.
-	// Note: /command and /fcm-token require HMAC, but /count and /:imei are operator endpoints.
+	// Note: /command and /fcm-token require HMAC, but /count and /:imei are user endpoints.
 	s.setupDeviceSignedRoutes(r)
 	s.setupDeviceManagementRoutes(tenantGroup)
 
@@ -312,17 +323,17 @@ func (s *Server) setupAuthenticatedRoutes() {
 // setupDeployRoutes registers the deploy surface (
 // ).
 //
-// The operator endpoints live on the tenant group, so they take a session or an
+// The user endpoints live on the tenant group, so they take a session or an
 // API key plus the org context. The device's own secret fetch is registered on
 // the device-signed group in setupDeviceSignedRoutes, because it is the device,
-// not an operator, that asks for its ciphertext.
+// not a user, that asks for its ciphertext.
 func (s *Server) setupDeployRoutes(tenantGroup *gin.RouterGroup) {
 	if s.deployHandler == nil {
 		return
 	}
 
 	// A deploy credential authenticates a CI client with no session. It is applied
-	// to the operator group only, and it sets the org from the credential so the
+	// to the user group only, and it sets the org from the credential so the
 	// client cannot move it with a header.
 	deployGroup := tenantGroup.Group("/deploy")
 	deployGroup.Use(middleware.DeployCredentialAuth(s.resolveDeployCredential))
@@ -404,11 +415,11 @@ func (s *Server) setupDashboardRoutes(r ...*gin.RouterGroup) {
 	// rate limiter is the tightest in this file because opening a shell is the
 	// most sensitive dashboard action, and the handler additionally enforces the
 	// PTY_SESSION_OPEN critical tier (MFA + confirmation token).
-	if s.operatorTerminalHandler != nil {
+	if s.userTerminalHandler != nil {
 		dashboard.GET("/device/:imei/terminal",
 			s.requireScope(permission.ActionShell, permission.WildcardScope(permission.ScopeDevices)),
 			s.dashboardRateLimiter.TerminalOpenLimit(),
-			s.operatorTerminalHandler.Handle)
+			s.userTerminalHandler.Handle)
 	}
 
 	// Terminal session recordings. Gated on shell.execute too: a recording shows
@@ -420,7 +431,7 @@ func (s *Server) setupDashboardRoutes(r ...*gin.RouterGroup) {
 			s.dashboardRateLimiter.TerminalOpenLimit(),
 			s.recordingHandler.Handle)
 	}
-	dashboard.GET("/devices/operator", s.requireScope(permission.ActionDeviceRead, permission.WildcardScope(permission.ScopeDevices)), s.deviceListHandler.ListByOperator)
+	dashboard.GET("/devices/operator", s.requireScope(permission.ActionDeviceRead, permission.WildcardScope(permission.ScopeDevices)), s.deviceListHandler.ListByUser)
 	if s.commandHistoryHandler != nil {
 		s.commandHistoryHandler.RegisterRoutes(dashboard, s.dashboardRateLimiter)
 	}
@@ -532,11 +543,11 @@ func (s *Server) registerPprofRoutes(admin *gin.RouterGroup) {
 // setupDeviceSignedRoutes registers the routes a *device* calls, authenticated by
 // its own keypair signature.
 //
-// These are separate from the operator routes below because the two have different
+// These are separate from the user routes below because the two have different
 // credentials, and chaining both authenticators on one group broke both: a device
 // has no API-client id/secret, so RequestSigningMiddleware refused every device
-// request before requireHMAC ever ran; and an operator's session has no device
-// private key, so requireHMAC would refuse every operator request. One
+// request before requireHMAC ever ran; and a user's session has no device
+// private key, so requireHMAC would refuse every user request. One
 // authenticator per transport, chosen by who is calling.
 func (s *Server) setupDeviceSignedRoutes(r *gin.RouterGroup) {
 	deviceSigned := r.Group("/device")
@@ -565,14 +576,14 @@ func (s *Server) setupDeviceSignedRoutes(r *gin.RouterGroup) {
 	deviceSigned.GET("/:imei/stream", s.streamHandler.Handle)
 
 	// The device fetches a secret's ciphertext. It is on this group because it is
-	// the device, not an operator, that asks; requireHMAC has already bound the
+	// the device, not a user, that asks; requireHMAC has already bound the
 	// request to :imei, and the handler gates the key against the current config.
 	if s.deployHandler != nil {
 		deviceSigned.GET("/:imei/secrets/:app/:key", s.deployHandler.FetchSecret)
 	}
 }
 
-// setupDeviceManagementRoutes registers the routes an *operator* calls, under the
+// setupDeviceManagementRoutes registers the routes an *user* calls, under the
 // tenant group so they get session or API-key auth plus organization context.
 func (s *Server) setupDeviceManagementRoutes(r *gin.RouterGroup) {
 	deviceMgmt := r.Group("/device")
@@ -583,7 +594,7 @@ func (s *Server) setupDeviceManagementRoutes(r *gin.RouterGroup) {
 	// Apply idempotency middleware to all device management routes.
 	deviceMgmt.Use(s.deviceIdempotencyMiddleware())
 	//
-	// These are operator routes on the tenant group, which already authenticates with
+	// These are user routes on the tenant group, which already authenticates with
 	// a session or an API key and applies the session signature middleware. They must
 	// NOT also carry the API-client request-signing middleware (X-Signature /
 	// X-Client-ID): nothing in the console sends that signature, so requiring it made
@@ -604,7 +615,7 @@ func (s *Server) setupDeviceManagementRoutes(r *gin.RouterGroup) {
 }
 
 func (s *Server) setupDeviceInboxRoutes(r *gin.RouterGroup) {
-	// Claiming a device is an authenticated operator action, so it is registered
+	// Claiming a device is an authenticated user action, so it is registered
 	// independently of the inbox handler: it needs org context and the device-write
 	// scope, not the inbox scopes. phase B.
 	if s.enrollHandler != nil {
@@ -668,7 +679,7 @@ func (s *Server) setupDevicesRoutes(r *gin.RouterGroup) {
 		}
 	}
 
-	// Confirmation endpoint: an operator requests a single-use token to.
+	// Confirmation endpoint: a user requests a single-use token to.
 	// authorize a risky command before issuing it. Registered independently of.
 	// the device-listing rate limiter (which may be unset on the wire path) so it.
 	// is available on both server construction paths. Org-scoped + member-checked.
@@ -923,7 +934,7 @@ func (s *Server) setupAPIKeysRoutes(r *gin.RouterGroup) {
 func (s *Server) setupSessionsRoutes(r *gin.RouterGroup) {
 	sessionsGroup := r.Group("/auth/sessions")
 	// Note: Auth middleware is applied at the tenantGroup level, not here.
-	// Sessions are per-operator, not per-organization.
+	// Sessions are per-user, not per-organization.
 	sessionsGroup.Use(middleware.NoCache())
 	{
 		sessionsGroup.GET("", s.authHandlers.Sessions.ListSessions)
@@ -958,41 +969,50 @@ func (s *Server) setupOrganizationRoutes(r *gin.RouterGroup) {
 		return
 	}
 
-	// Organization routes (authenticated + org-scoped).
+	// Organization routes.
+	//
+	// POST "" and GET "" are instance-scoped: a caller with no membership must
+	// still be able to create their first organisation and list what they belong
+	// to. Gating them on an org role was the bootstrap hole — creating the first
+	// org required settings.write on org:*, which is impossible before a
+	// membership exists. The remaining routes are org-scoped.
 	orgs := r.Group("/organizations")
 	orgs.Use(s.cookieAuth.Middleware())
-	orgs.Use(middleware.NewOrganizationContext(nil).Middleware())
-	orgs.Use(middleware.NewOrganizationMembership(s.memberHandler.MembershipChecker()).Middleware())
 	{
-		// Org CRUD: admins manage settings, only super_admin deletes.
-		orgs.POST("", s.requireScope(permission.ActionSettingsWrite, permission.WildcardScope(permission.ScopeOrg)), s.organizationHandler.Create)
-		orgs.GET("", s.requireScope(permission.ActionSettingsRead, permission.WildcardScope(permission.ScopeOrg)), s.organizationHandler.List)
-		orgs.GET("/:id", s.requireScope(permission.ActionSettingsRead, permission.WildcardScope(permission.ScopeOrg)), s.organizationHandler.Get)
-		orgs.PATCH("/:id", s.requireScope(permission.ActionSettingsWrite, permission.WildcardScope(permission.ScopeOrg)), s.organizationHandler.Update)
-		orgs.DELETE("/:id", s.requireScope(permission.ActionSettingsWrite, permission.WildcardScope(permission.ScopeOrg)), s.organizationHandler.Delete)
+		orgs.POST("", s.requireInstanceScope(permission.ActionOrgCreate), s.organizationHandler.Create)
+		orgs.GET("", s.requireInstanceScope(permission.ActionOrgList), s.organizationHandler.List)
+	}
+
+	orgScoped := orgs.Group("")
+	orgScoped.Use(middleware.NewOrganizationContext(nil).Middleware())
+	orgScoped.Use(middleware.NewOrganizationMembership(s.memberHandler.MembershipChecker()).Middleware())
+	{
+		orgScoped.GET("/:id", s.requireScope(permission.ActionSettingsRead, permission.WildcardScope(permission.ScopeOrg)), s.organizationHandler.Get)
+		orgScoped.PATCH("/:id", s.requireScope(permission.ActionSettingsWrite, permission.WildcardScope(permission.ScopeOrg)), s.organizationHandler.Update)
+		orgScoped.DELETE("/:id", s.requireScope(permission.ActionSettingsWrite, permission.WildcardScope(permission.ScopeOrg)), s.organizationHandler.Delete)
 
 		// Member routes: member management (suspend/reinstate/remove/role) requires members:write.
-		orgs.GET("/:id/members", s.requireScope(permission.ActionMembersRead, permission.WildcardScope(permission.ScopeOrg)), s.memberHandler.List)
-		orgs.DELETE("/:id/members/:memberId", s.requireScope(permission.ActionMembersDelete, permission.WildcardScope(permission.ScopeOrg)), s.memberHandler.Remove)
-		orgs.PATCH("/:id/members/:memberId", s.requireScope(permission.ActionMembersWrite, permission.WildcardScope(permission.ScopeOrg)), s.memberHandler.UpdateRole)
-		orgs.POST("/:id/members/:memberId/transfer", s.requireScope(permission.ActionMembersWrite, permission.WildcardScope(permission.ScopeOrg)), s.memberHandler.TransferOwnership)
-		orgs.POST("/:id/members/:memberId/suspend", s.requireScope(permission.ActionMembersWrite, permission.WildcardScope(permission.ScopeOrg)), s.memberHandler.Suspend)
-		orgs.POST("/:id/members/:memberId/reinstate", s.requireScope(permission.ActionMembersWrite, permission.WildcardScope(permission.ScopeOrg)), s.memberHandler.Reinstate)
+		orgScoped.GET("/:id/members", s.requireScope(permission.ActionMembersRead, permission.WildcardScope(permission.ScopeOrg)), s.memberHandler.List)
+		orgScoped.DELETE("/:id/members/:memberId", s.requireScope(permission.ActionMembersDelete, permission.WildcardScope(permission.ScopeOrg)), s.memberHandler.Remove)
+		orgScoped.PATCH("/:id/members/:memberId", s.requireScope(permission.ActionMembersWrite, permission.WildcardScope(permission.ScopeOrg)), s.memberHandler.UpdateRole)
+		orgScoped.POST("/:id/members/:memberId/transfer", s.requireScope(permission.ActionMembersWrite, permission.WildcardScope(permission.ScopeOrg)), s.memberHandler.TransferOwnership)
+		orgScoped.POST("/:id/members/:memberId/suspend", s.requireScope(permission.ActionMembersWrite, permission.WildcardScope(permission.ScopeOrg)), s.memberHandler.Suspend)
+		orgScoped.POST("/:id/members/:memberId/reinstate", s.requireScope(permission.ActionMembersWrite, permission.WildcardScope(permission.ScopeOrg)), s.memberHandler.Reinstate)
 
 		// Invitation routes under organizations.
-		orgs.GET("/:id/invitations", s.requireScope(permission.ActionMembersRead, permission.WildcardScope(permission.ScopeOrg)), s.invitationHandler.ListByOrganization)
+		orgScoped.GET("/:id/invitations", s.requireScope(permission.ActionMembersRead, permission.WildcardScope(permission.ScopeOrg)), s.invitationHandler.ListByOrganization)
 
 		// Organization settings routes.
 		if s.organizationSettingsHandler != nil {
-			orgs.GET("/:id/settings", s.requireScope(permission.ActionSettingsRead, permission.WildcardScope(permission.ScopeOrg)), s.organizationSettingsHandler.GetSettings)
-			orgs.PATCH("/:id/settings", s.requireScope(permission.ActionSettingsWrite, permission.WildcardScope(permission.ScopeOrg)), s.organizationSettingsHandler.UpdateSettings)
-			orgs.GET("/:id/settings/thresholds", s.requireScope(permission.ActionSettingsRead, permission.WildcardScope(permission.ScopeOrg)), s.organizationSettingsHandler.GetThresholds)
-			orgs.PATCH("/:id/settings/thresholds", s.requireScope(permission.ActionSettingsWrite, permission.WildcardScope(permission.ScopeOrg)), s.organizationSettingsHandler.UpdateThresholds)
+			orgScoped.GET("/:id/settings", s.requireScope(permission.ActionSettingsRead, permission.WildcardScope(permission.ScopeOrg)), s.organizationSettingsHandler.GetSettings)
+			orgScoped.PATCH("/:id/settings", s.requireScope(permission.ActionSettingsWrite, permission.WildcardScope(permission.ScopeOrg)), s.organizationSettingsHandler.UpdateSettings)
+			orgScoped.GET("/:id/settings/thresholds", s.requireScope(permission.ActionSettingsRead, permission.WildcardScope(permission.ScopeOrg)), s.organizationSettingsHandler.GetThresholds)
+			orgScoped.PATCH("/:id/settings/thresholds", s.requireScope(permission.ActionSettingsWrite, permission.WildcardScope(permission.ScopeOrg)), s.organizationSettingsHandler.UpdateThresholds)
 		}
 
 		// Device transfer route (super_admin source + target membership enforced in handler).
 		if s.transferHandler != nil {
-			orgs.POST("/:id/devices/:imei/transfer", s.requireScope(permission.ActionDeviceAssign, permission.WildcardScope(permission.ScopeDevices)), s.transferHandler.Transfer)
+			orgScoped.POST("/:id/devices/:imei/transfer", s.requireScope(permission.ActionDeviceAssign, permission.WildcardScope(permission.ScopeDevices)), s.transferHandler.Transfer)
 		}
 	}
 
@@ -1020,6 +1040,13 @@ func (s *Server) setupOrganizationRoutes(r *gin.RouterGroup) {
 	me.Use(s.cookieAuth.Middleware())
 	{
 		me.GET("/invitations", s.invitationHandler.ListPendingForEmail)
+		// Effective capabilities across the three grant stores. Org context is
+		// resolved for this route only, and is optional: a caller with no
+		// membership still gets personal and instance, which is what the
+		// first-org bootstrap needs.
+		me.GET("/capabilities",
+			middleware.NewOrganizationContext(skipIfMissing).Middleware(),
+			s.capabilitiesHandler)
 		me.GET("/thresholds", s.authHandlers.Settings.GetThresholds)
 		me.PATCH("/thresholds", s.authHandlers.Settings.UpdateThresholds)
 		me.GET("/notifications", s.authHandlers.Settings.GetNotifications)
@@ -1028,7 +1055,7 @@ func (s *Server) setupOrganizationRoutes(r *gin.RouterGroup) {
 		me.POST("/notifications/webhook/rotate", s.authHandlers.Settings.RotateWebhookSecret)
 	}
 
-	// Operator settings routes (under /v1/me/settings for simpler UX).
+	// User settings routes (under /v1/me/settings for simpler UX).
 	meSettings := r.Group("/me/settings")
 	meSettings.Use(s.cookieAuth.Middleware())
 	meSettings.Use(middleware.NoCache())

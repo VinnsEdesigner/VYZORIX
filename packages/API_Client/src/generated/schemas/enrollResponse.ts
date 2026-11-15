@@ -20,7 +20,7 @@ export interface EnrollResponse {
   /**
      * PollIntervalSeconds is how often the device should ask for its config while
      * it waits to be claimed. The config normally arrives over the held WebSocket
-     * the moment an operator claims the code, so this is the fallback for a device
+     * the moment a user claims the code, so this is the fallback for a device
      * whose socket is not up — it bounds how long a claimed device can sit
      * unconfigured. The server owns the value so the cadence can be tuned without
      * shipping a new APK.

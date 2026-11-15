@@ -68,16 +68,16 @@ func (r *DeviceGroupRepository) ListByOrg(ctx context.Context, orgID string) ([]
 	return groups, rows.Err()
 }
 
-// AddMember adds an operator to a group (idempotent).
-func (r *DeviceGroupRepository) AddMember(ctx context.Context, groupID, operatorID string) error {
-	query := `INSERT INTO device_group_members (group_id, operator_id, created_at) VALUES (?, ?, ?) ON CONFLICT(group_id, operator_id) DO NOTHING`
-	_, err := r.db.ExecContext(ctx, query, groupID, operatorID, time.Now().UnixMilli())
+// AddMember adds a user to a group (idempotent).
+func (r *DeviceGroupRepository) AddMember(ctx context.Context, groupID, userID string) error {
+	query := `INSERT INTO device_group_members (group_id, user_id, created_at) VALUES (?, ?, ?) ON CONFLICT(group_id, user_id) DO NOTHING`
+	_, err := r.db.ExecContext(ctx, query, groupID, userID, time.Now().UnixMilli())
 	return err
 }
 
-// RemoveMember removes an operator from a group, returning whether it existed.
-func (r *DeviceGroupRepository) RemoveMember(ctx context.Context, groupID, operatorID string) (bool, error) {
-	res, err := r.db.ExecContext(ctx, `DELETE FROM device_group_members WHERE group_id = ? AND operator_id = ?`, groupID, operatorID)
+// RemoveMember removes a user from a group, returning whether it existed.
+func (r *DeviceGroupRepository) RemoveMember(ctx context.Context, groupID, userID string) (bool, error) {
+	res, err := r.db.ExecContext(ctx, `DELETE FROM device_group_members WHERE group_id = ? AND user_id = ?`, groupID, userID)
 	if err != nil {
 		return false, err
 	}
@@ -85,12 +85,12 @@ func (r *DeviceGroupRepository) RemoveMember(ctx context.Context, groupID, opera
 	return n > 0, err
 }
 
-// IsMember reports whether the operator belongs to the group.
-func (r *DeviceGroupRepository) IsMember(ctx context.Context, groupID, operatorID string) (bool, error) {
+// IsMember reports whether the user belongs to the group.
+func (r *DeviceGroupRepository) IsMember(ctx context.Context, groupID, userID string) (bool, error) {
 	var one int
 	err := r.db.QueryRowContext(ctx,
-		`SELECT 1 FROM device_group_members WHERE group_id = ? AND operator_id = ? LIMIT 1`,
-		groupID, operatorID,
+		`SELECT 1 FROM device_group_members WHERE group_id = ? AND user_id = ? LIMIT 1`,
+		groupID, userID,
 	).Scan(&one)
 	if err == sql.ErrNoRows {
 		return false, nil

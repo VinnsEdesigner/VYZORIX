@@ -181,7 +181,7 @@ func (o *Organization) CanAddMember() bool {
 	return o.Lifecycle.CanAcceptMembers() && (o.MaxMembers <= 0 || o.MemberCount < o.MaxMembers)
 }
 
-// OrganizationMember represents a membership linking an operator to an organization.
+// OrganizationMember represents a membership linking a user to an organization.
 type OrganizationMember struct {
 	// Lifecycle tracks the membership lifecycle state.
 	Lifecycle MemberLifecycle
@@ -189,7 +189,7 @@ type OrganizationMember struct {
 	// Core fields.
 	ID             string
 	OrganizationID string
-	OperatorID     string
+	UserID     string
 	Role           OrganizationRole
 	InvitedBy      *string
 	JoinedAt       time.Time
@@ -197,17 +197,17 @@ type OrganizationMember struct {
 	SuspendedAt    *time.Time
 
 	// Populated fields (joined from other tables).
-	OperatorName  string
-	OperatorEmail string
+	UserName  string
+	UserEmail string
 }
 
 // NewMember creates a new OrganizationMember as an active member.
 // Use this when creating an organization (founder) or when a member is auto-created.
-func NewMember(id, organizationID, operatorID string, role OrganizationRole) *OrganizationMember {
+func NewMember(id, organizationID, userID string, role OrganizationRole) *OrganizationMember {
 	return &OrganizationMember{
 		ID:             id,
 		OrganizationID: organizationID,
-		OperatorID:     operatorID,
+		UserID:     userID,
 		Role:           role,
 		Lifecycle:      MemberLifecycleActive,
 		JoinedAt:       time.Now(),

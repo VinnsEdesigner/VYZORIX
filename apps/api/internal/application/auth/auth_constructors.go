@@ -9,7 +9,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/devicestore"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/email_verification"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/password_reset"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/refresh_token"
@@ -18,20 +18,20 @@ import (
 	infraSession "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security/session"
 )
 
-// PasswordPolicy delegates to domain operator package.
-type PasswordPolicy = operator.PasswordPolicy
+// PasswordPolicy delegates to domain user package.
+type PasswordPolicy = user.PasswordPolicy
 
-// DefaultPasswordPolicy delegates to domain operator package.
-var DefaultPasswordPolicy = operator.DefaultPasswordPolicy
+// DefaultPasswordPolicy delegates to domain user package.
+var DefaultPasswordPolicy = user.DefaultPasswordPolicy
 
-// ValidatePassword delegates to domain operator package.
-var ValidatePassword = operator.ValidatePassword
+// ValidatePassword delegates to domain user package.
+var ValidatePassword = user.ValidatePassword
 
-// PasswordStrength delegates to domain operator package.
-var PasswordStrength = operator.Strength
+// PasswordStrength delegates to domain user package.
+var PasswordStrength = user.Strength
 
-// PasswordError delegates to domain operator package.
-type PasswordError = operator.PasswordError
+// PasswordError delegates to domain user package.
+type PasswordError = user.PasswordError
 
 // RefreshTokenRepository interface for refresh token operations.
 type RefreshTokenRepository interface {
@@ -40,7 +40,7 @@ type RefreshTokenRepository interface {
 	FindByTokenHash(ctx context.Context, tokenHash string) (*refresh_token.RefreshToken, error)
 	Revoke(ctx context.Context, id string) error
 	RevokeByTokenHash(ctx context.Context, tokenHash string) error
-	RevokeAllForOperator(ctx context.Context, operatorID string) error
+	RevokeAllForUser(ctx context.Context, userID string) error
 	CleanupExpired(ctx context.Context, olderThan time.Duration) (int, error)
 }
 
@@ -70,7 +70,7 @@ type AuthService struct {
 	passwordResetRepo  password_reset.Repository
 	passwordHasher     PasswordHasher
 	memberRepo         organization.MemberRepository
-	operatorRepo       operator.Repository
+	userRepo       user.Repository
 	jwtManager         *infraauth.JWTManager
 	ldapConfig         *LDAPConfig
 	deviceStore        devicestore.Store
@@ -82,7 +82,7 @@ type AuthService struct {
 
 // NewAuthService creates a new AuthService.
 func NewAuthService(
-	operatorRepo operator.Repository,
+	userRepo user.Repository,
 	sessionRepo session.Repository,
 	emailVerifyRepo email_verification.Repository,
 	passwordResetRepo password_reset.Repository,
@@ -90,7 +90,7 @@ func NewAuthService(
 	sessionTTL time.Duration,
 ) *AuthService {
 	return &AuthService{
-		operatorRepo:      operatorRepo,
+		userRepo:      userRepo,
 		sessionRepo:       sessionRepo,
 		emailVerifyRepo:   emailVerifyRepo,
 		passwordResetRepo: passwordResetRepo,
@@ -102,7 +102,7 @@ func NewAuthService(
 
 // NewAuthServiceWithRefresh creates a new AuthService with refresh token support.
 func NewAuthServiceWithRefresh(
-	operatorRepo operator.Repository,
+	userRepo user.Repository,
 	sessionRepo session.Repository,
 	emailVerifyRepo email_verification.Repository,
 	passwordResetRepo password_reset.Repository,
@@ -114,7 +114,7 @@ func NewAuthServiceWithRefresh(
 	ldapConfig *LDAPConfig,
 ) *AuthService {
 	return &AuthService{
-		operatorRepo:       operatorRepo,
+		userRepo:       userRepo,
 		sessionRepo:        sessionRepo,
 		emailVerifyRepo:    emailVerifyRepo,
 		passwordResetRepo:  passwordResetRepo,
@@ -143,12 +143,12 @@ func (s *AuthService) SetSessionManager(sessionManager *infraSession.Manager) {
 	s.sessionManager = sessionManager
 }
 
-// SetInvitationRepository sets the invitation repository for operator deletion flow.
+// SetInvitationRepository sets the invitation repository for user deletion flow.
 func (s *AuthService) SetInvitationRepository(invitationRepo organization.InvitationRepository) {
 	s.invitationRepo = invitationRepo
 }
 
-// SetDeviceRepository sets the device repository for operator deletion flow.
+// SetDeviceRepository sets the device repository for user deletion flow.
 func (s *AuthService) SetDeviceRepository(deviceRepo device.Repository) {
 	s.deviceRepo = deviceRepo
 }
@@ -173,17 +173,17 @@ func (s *AuthService) GetSessionManager() *infraSession.Manager {
 	return s.sessionManager
 }
 
-// ResolveOrganizationForOperator resolves the appropriate organization for an operator.
+// ResolveOrganizationForUser resolves the appropriate organization for a user.
 // Priority: LastOrganizationID (if valid) > Single org > Multiple orgs (require selection).
 //
 // Returns:.
 // - orgID, orgName, nil: Single org or auto-selected org.
 // - "", "", ErrNoOrganization: No memberships.
 // - "", "", ErrOrgSelectionRequired: Multiple orgs require selection.
-func (s *AuthService) ResolveOrganizationForOperator(ctx context.Context, op *operator.Operator) (string, string, error) {
+func (s *AuthService) ResolveOrganizationForUser(ctx context.Context, op *user.User) (string, string, error) {
 	// Load memberships if not already loaded.
 	if len(op.Memberships) == 0 && s.memberRepo != nil {
-		members, err := s.memberRepo.ListByOperator(ctx, op.ID)
+		members, err := s.memberRepo.ListByUser(ctx, op.ID)
 		if err != nil {
 			return "", "", err
 		}
@@ -235,21 +235,21 @@ func (s *AuthService) ResolveOrganizationForOperator(ctx context.Context, op *op
 }
 
 // SelectOrganization switches the session's organization context to the specified organization.
-// This allows operators with multiple organization memberships to switch between them.
-// Also updates the operator's LastOrganizationID for auto-selection on next login.
-func (s *AuthService) SelectOrganization(ctx context.Context, operatorID, sessionID, organizationID string) (*SelectOrganizationResult, error) {
-	// Validate operator has membership in the target organization.
-	member, err := s.ValidateOrganizationMembership(ctx, operatorID, organizationID)
+// This allows users with multiple organization memberships to switch between them.
+// Also updates the user's LastOrganizationID for auto-selection on next login.
+func (s *AuthService) SelectOrganization(ctx context.Context, userID, sessionID, organizationID string) (*SelectOrganizationResult, error) {
+	// Validate user has membership in the target organization.
+	member, err := s.ValidateOrganizationMembership(ctx, userID, organizationID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Verify the session belongs to this operator.
+	// Verify the session belongs to this user.
 	sess, err := s.sessionRepo.FindByID(ctx, sessionID)
 	if err != nil {
 		return nil, application.ErrUnauthorized
 	}
-	if sess.OperatorID != operatorID {
+	if sess.UserID != userID {
 		return nil, application.ErrUnauthorized
 	}
 
@@ -258,15 +258,15 @@ func (s *AuthService) SelectOrganization(ctx context.Context, operatorID, sessio
 		return nil, err
 	}
 
-	// Update operator's LastOrganizationID for auto-selection on next login.
+	// Update user's LastOrganizationID for auto-selection on next login.
 
-	if s.operatorRepo != nil {
-		op, err := s.operatorRepo.FindByID(ctx, operatorID)
+	if s.userRepo != nil {
+		op, err := s.userRepo.FindByID(ctx, userID)
 		if err == nil && op != nil {
 			op.LastOrganizationID = organizationID
-			if err := s.operatorRepo.Update(ctx, op); err != nil {
+			if err := s.userRepo.Update(ctx, op); err != nil {
 				s.logger.Warn("failed to update operator LastOrganizationID",
-					"operatorID", operatorID,
+					"operatorID", userID,
 					"organizationID", organizationID,
 					"error", err)
 			}
@@ -292,13 +292,13 @@ func (s *AuthService) SelectOrganization(ctx context.Context, operatorID, sessio
 	}, nil
 }
 
-// ValidateOrganizationMembership checks if an operator is a member of an organization.
-func (s *AuthService) ValidateOrganizationMembership(ctx context.Context, operatorID, orgID string) (*organization.OrganizationMember, error) {
+// ValidateOrganizationMembership checks if a user is a member of an organization.
+func (s *AuthService) ValidateOrganizationMembership(ctx context.Context, userID, orgID string) (*organization.OrganizationMember, error) {
 	if s.memberRepo == nil {
 		return nil, application.ErrForbidden
 	}
 
-	member, err := s.memberRepo.FindByOperatorAndOrg(ctx, operatorID, orgID)
+	member, err := s.memberRepo.FindByUserAndOrg(ctx, userID, orgID)
 	if err != nil {
 		if err == organization.ErrMemberNotFound {
 			return nil, application.ErrForbidden
@@ -313,11 +313,11 @@ func (s *AuthService) ValidateOrganizationMembership(ctx context.Context, operat
 	return member, nil
 }
 
-// GetOperatorOrganizations returns all organizations for an operator with their roles.
-func (s *AuthService) GetOperatorOrganizations(ctx context.Context, op *operator.Operator) ([]OrganizationInfo, error) {
+// GetUserOrganizations returns all organizations for a user with their roles.
+func (s *AuthService) GetUserOrganizations(ctx context.Context, op *user.User) ([]OrganizationInfo, error) {
 	// Load memberships if not already loaded.
 	if len(op.Memberships) == 0 && s.memberRepo != nil {
-		members, err := s.memberRepo.ListByOperator(ctx, op.ID)
+		members, err := s.memberRepo.ListByUser(ctx, op.ID)
 		if err != nil {
 			return nil, err
 		}

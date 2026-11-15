@@ -21,7 +21,7 @@ func NewUpdatesAdminAuth() *UpdatesAdminAuth {
 // RequireAdmin returns a Gin middleware that requires admin role.
 func (m *UpdatesAdminAuth) RequireAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		op, exists := gqlcontext.GetOperator(c.Request.Context())
+		op, exists := gqlcontext.GetUser(c.Request.Context())
 		if !exists || op == nil {
 			responses.RespondStructured(c, http.StatusUnauthorized,
 
@@ -47,7 +47,7 @@ func (m *UpdatesAdminAuth) RequireAdmin() gin.HandlerFunc {
 // RequireSuperAdmin returns a Gin middleware that requires super_admin role.
 func (m *UpdatesAdminAuth) RequireSuperAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		op, exists := gqlcontext.GetOperator(c.Request.Context())
+		op, exists := gqlcontext.GetUser(c.Request.Context())
 		if !exists || op == nil {
 			responses.RespondStructured(c, http.StatusUnauthorized,
 

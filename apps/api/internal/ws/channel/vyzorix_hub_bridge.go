@@ -22,18 +22,18 @@ func NewHubBridge(mgr *Manager, hub *ws.Hub) *HubBridge {
 }
 
 // Subscribe registers a hub client callback for a channel. Callback is the
-// raw frame delivered on the websocket; operator authorization flows through
+// raw frame delivered on the websocket; user authorization flows through
 // the manager.
-func (b *HubBridge) Subscribe(ctx context.Context, operatorID, channelAddr string, onMessage func(*Message)) (*Stream, error) {
+func (b *HubBridge) Subscribe(ctx context.Context, userID, channelAddr string, onMessage func(*Message)) (*Stream, error) {
 	ch, err := Parse(channelAddr)
 	if err != nil {
 		return nil, err
 	}
-	stream, err := b.mgr.Subscribe(ctx, SubscribeEvent{SubjectID: operatorID, Channel: ch})
+	stream, err := b.mgr.Subscribe(ctx, SubscribeEvent{SubjectID: userID, Channel: ch})
 	if err != nil {
 		return nil, err
 	}
-	stream.Subscribe(operatorID, onMessage)
+	stream.Subscribe(userID, onMessage)
 	return stream, nil
 }
 

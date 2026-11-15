@@ -20,7 +20,6 @@ export interface LoginWithTokensResult {
   mfa_session?: string;
   name?: string;
   needs_organization?: boolean;
-  operator_id?: string;
   organizations?: OrganizationInfo[];
   refresh_token?: string;
   requires_mfa?: boolean;
@@ -28,4 +27,5 @@ export interface LoginWithTokensResult {
   selected_organization?: OrganizationInfo;
   session_id?: string;
   signing_key?: string;
+  user_id?: string;
 }

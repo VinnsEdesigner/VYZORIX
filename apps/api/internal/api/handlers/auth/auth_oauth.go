@@ -285,8 +285,8 @@ func (h *OAuthHandler) GoogleCallback(c *gin.Context) {
 		return
 	}
 
-	// Find or create operator via application service.
-	result, err := h.authService.FindOrCreateGoogleOperator(ctx, googleClaims.Sub, googleClaims.Email, googleClaims.Name)
+	// Find or create user via application service.
+	result, err := h.authService.FindOrCreateGoogleUser(ctx, googleClaims.Sub, googleClaims.Email, googleClaims.Name)
 	if err != nil {
 		errURL := h.getOAuthRedirectURL(redirectURL, OAuthErrorDetails{
 			Code:      ErrOAuthLoginFailed,
@@ -298,8 +298,8 @@ func (h *OAuthHandler) GoogleCallback(c *gin.Context) {
 		return
 	}
 
-	// Create session (validates operator was found/created).
-	session, err := h.authService.CreateSession(ctx, result.Operator.ID)
+	// Create session (validates user was found/created).
+	session, err := h.authService.CreateSession(ctx, result.User.ID)
 	if err != nil {
 		errURL := h.getOAuthRedirectURL(redirectURL, OAuthErrorDetails{
 			Code:      ErrOAuthLoginFailed,
@@ -429,13 +429,13 @@ func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
 		return
 	}
 
-	result, err := h.findOrCreateOperator(ctx, ghUser, email)
+	result, err := h.findOrCreateUser(ctx, ghUser, email)
 	if err != nil {
 		h.redirectWithOAuthError(c, redirectURL, ErrOAuthLoginFailed, "Failed to create or access your account.")
 		return
 	}
 
-	session, err := h.authService.CreateSession(ctx, result.Operator.ID)
+	session, err := h.authService.CreateSession(ctx, result.User.ID)
 	if err != nil {
 		h.redirectWithOAuthError(c, redirectURL, ErrOAuthLoginFailed, "Failed to create session.")
 		return
@@ -504,14 +504,14 @@ func (h *OAuthHandler) hasVerifiedEmail(email string, emails []infraauth.GitHubE
 	return false
 }
 
-// findOrCreateOperator finds or creates the operator.
-func (h *OAuthHandler) findOrCreateOperator(ctx context.Context, ghUser *infraauth.GitHubUserInfo, email string) (*appsvc.OAuthResult, error) {
+// findOrCreateUser finds or creates the user.
+func (h *OAuthHandler) findOrCreateUser(ctx context.Context, ghUser *infraauth.GitHubUserInfo, email string) (*appsvc.OAuthResult, error) {
 	githubID := fmt.Sprintf("gh_%d", ghUser.ID)
 	name := ghUser.Name
 	if name == "" {
 		name = ghUser.Login
 	}
-	return h.authService.FindOrCreateGitHubOperator(ctx, githubID, email, name)
+	return h.authService.FindOrCreateGitHubUser(ctx, githubID, email, name)
 }
 
 // redirectWithOAuthError redirects to the error URL.

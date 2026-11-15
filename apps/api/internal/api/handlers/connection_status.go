@@ -306,8 +306,8 @@ func (h *ConnectionStatusHandler) DisconnectDevice(c *gin.Context) {
 		}
 	}
 
-	// Require operator auth.
-	op := middleware.GetOperatorFromContext(c)
+	// Require user auth.
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "authentication required"))
 
@@ -326,12 +326,12 @@ func (h *ConnectionStatusHandler) DisconnectDevice(c *gin.Context) {
 
 	h.log.Info("device disconnected by operator",
 		"deviceId", deviceID,
-		"operatorId", op.ID,
+		"userId", op.ID,
 	)
 
 	c.JSON(http.StatusOK, openapi.DeviceDisconnectResult{
 		DeviceID:     deviceID,
 		Disconnected: true,
-		OperatorID:   op.ID,
+		UserID:   op.ID,
 	})
 }

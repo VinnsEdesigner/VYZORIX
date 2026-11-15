@@ -85,7 +85,7 @@ type MetricThresholdEvent struct {
 	Threshold float64   `json:"threshold"`
 }
 
-// ThresholdPreset represents operator-specific threshold settings.
+// ThresholdPreset represents user-specific threshold settings.
 type ThresholdPreset struct {
 	RiskScoreWarning  float64 `json:"riskScoreWarning"`
 	RiskScoreCritical float64 `json:"riskScoreCritical"`

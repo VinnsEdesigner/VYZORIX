@@ -30,13 +30,13 @@
 
 ### 1.1 Feature Summary
 
-This document describes the implementation of a multi-client API key system that allows operators to generate, manage, and use multiple API keys for accessing the Vyzorix Update Server from different client applications.
+This document describes the implementation of a multi-client API key system that allows users to generate, manage, and use multiple API keys for accessing the Vyzorix Update Server from different client applications.
 
 **Key Characteristics:**
 - Format: `vxyz_<random>` (prefix configurable via `API_KEY_PREFIX` env var)
 - Keys are shown once at creation (copy-paste only)
 - Immediate rotation (old key stops working immediately)
-- Maximum 20 keys per operator per month
+- Maximum 20 keys per user per month
 - Expiration settings per key (optional)
 - Key scopes: read, write, admin
 - Rate limiting: 100 req/min per key
@@ -57,7 +57,7 @@ Different endpoint types use different authentication methods. API keys (databas
 | Question | Answer |
 |----------|--------|
 | Rate limiting | Global limit: 100 req/min per key |
-| Super admin capabilities | View ALL keys, revoke ANY key, see per-operator stats |
+| Super admin capabilities | View ALL keys, revoke ANY key, see per-user stats |
 | Audit logging | Management events only (create, revoke, rotate, failed auth) |
 | Scope enforcement | Middleware (automatic) + Handler-level (override capability) |
 
@@ -168,7 +168,7 @@ Different endpoint types use different authentication methods. API keys (databas
 | REQ-07 | API key format: `vxyz_<random>` | Must |
 | REQ-08 | Copy-paste key display | Must |
 | REQ-09 | Immediate rotation (old key stops) | Must |
-| REQ-10 | 20 keys per operator per month limit | Must |
+| REQ-10 | 20 keys per user per month limit | Must |
 | REQ-11 | Env-var admin keys continue working for infrastructure | Must |
 | REQ-12 | API key expiration settings | Must |
 | REQ-13 | Key metadata: name, created, last used, request count | Must |
@@ -177,9 +177,9 @@ Different endpoint types use different authentication methods. API keys (databas
 | REQ-16 | Scope enforcement: handler-level override capability | Must |
 | REQ-17 | Rate limiting: 100 req/min per key | Must |
 | REQ-18 | Audit logging: management events only | Must |
-| REQ-19 | Super admin can view ALL keys from ALL operators | Must |
-| REQ-20 | Super admin can revoke ANY operator's key | Must |
-| REQ-21 | Super admin can see per-operator usage stats | Must |
+| REQ-19 | Super admin can view ALL keys from ALL users | Must |
+| REQ-20 | Super admin can revoke ANY user's key | Must |
+| REQ-21 | Super admin can see per-user usage stats | Must |
 | REQ-22 | PATCH endpoint for rename/scope change | Must |
 | REQ-23 | Pagination on list endpoints (20 per page) | Must |
 | REQ-24 | DB-level monthly limit enforcement | Must |
@@ -283,7 +283,7 @@ Request
 ```sql
 CREATE TABLE IF NOT EXISTS api_keys (
     id TEXT PRIMARY KEY,                     -- UUIDv7
-    operator_id TEXT NOT NULL,              -- FK to operators
+    operator_id TEXT NOT NULL,              -- FK to users
     name TEXT NOT NULL,                     -- User-defined label (max 64 chars)
     key_prefix TEXT NOT NULL,               -- First 8 chars of key for display
     key_hash TEXT NOT NULL,                 -- Argon2id hash of full key
@@ -295,7 +295,7 @@ CREATE TABLE IF NOT EXISTS api_keys (
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
     revoked_at INTEGER,                     -- Unix ms when revoked
-    FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE
+    FOREIGN KEY(operator_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_api_keys_operator_id ON api_keys(operator_id);
@@ -321,11 +321,11 @@ CREATE INDEX idx_api_key_usage_operator ON api_key_usage_stats(operator_id);
 CREATE INDEX idx_api_key_usage_year_month ON api_key_usage_stats(year_month);
 ```
 
-### 5.3 Table: `operators` (Add Columns)
+### 5.3 Table: `users` (Add Columns)
 
 ```sql
-ALTER TABLE operators ADD COLUMN api_key_count_this_month INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE operators ADD COLUMN api_key_count_reset_at INTEGER NOT NULL;
+ALTER TABLE users ADD COLUMN api_key_count_this_month INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN api_key_count_reset_at INTEGER NOT NULL;
 ```
 
 ---
@@ -340,7 +340,7 @@ ALTER TABLE operators ADD COLUMN api_key_count_reset_at INTEGER NOT NULL;
 | `apps/api/internal/domain/api_key_repository.go` | Repository interface for API keys |
 | `apps/api/internal/application/api_key_service.go` | Business logic for API key operations |
 | `apps/api/internal/infrastructure/storage/039_api_keys.go` | Migration + APIKeyRepository implementation |
-| `apps/api/internal/api/handlers/auth/api_key_handler.go` | HTTP handlers for operator API key CRUD |
+| `apps/api/internal/api/handlers/auth/api_key_handler.go` | HTTP handlers for user API key CRUD |
 | `apps/api/internal/api/handlers/admin/api_key_admin_handler.go` | HTTP handlers for super admin |
 | `apps/api/internal/api/middleware/api_key.go` | Refactored: path-based auth, scope enforcement |
 | `apps/api/internal/api/middleware/super_admin.go` | Super admin authorization middleware |
@@ -358,12 +358,12 @@ ALTER TABLE operators ADD COLUMN api_key_count_reset_at INTEGER NOT NULL;
 
 ## 7. API Endpoints
 
-### 7.1 Operator API Key Endpoints
+### 7.1 User API Key Endpoints
 
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
 | POST | `/v1/auth/api-keys` | Session | Create new API key |
-| GET | `/v1/auth/api-keys` | Session | List operator's keys (paginated) |
+| GET | `/v1/auth/api-keys` | Session | List user's keys (paginated) |
 | GET | `/v1/auth/api-keys/:keyId` | Session | Get single key details |
 | PATCH | `/v1/auth/api-keys/:keyId` | Session | Update key (rename, change scope) |
 | DELETE | `/v1/auth/api-keys/:keyId` | Session | Revoke API key |
@@ -373,9 +373,9 @@ ALTER TABLE operators ADD COLUMN api_key_count_reset_at INTEGER NOT NULL;
 
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
-| GET | `/v1/admin/api-keys` | Super Admin | List ALL keys (all operators) |
+| GET | `/v1/admin/api-keys` | Super Admin | List ALL keys (all users) |
 | GET | `/v1/admin/api-keys/stats` | Super Admin | Global API key statistics |
-| GET | `/v1/admin/operators/:operatorId/api-keys` | Super Admin | Get all keys for specific operator |
+| GET | `/v1/admin/users/:operatorId/api-keys` | Super Admin | Get all keys for specific user |
 | DELETE | `/v1/admin/api-keys/:keyId` | Super Admin | Force revoke any key |
 | GET | `/v1/admin/api-keys/:keyId` | Super Admin | Get any key details |
 
@@ -529,7 +529,7 @@ Note: Old key is immediately invalidated.
 **Query Parameters:**
 - `page` (int, default: 1)
 - `limit` (int, default: 20, max: 100)
-- `operator_id` (string, optional, filter by operator)
+- `operator_id` (string, optional, filter by user)
 - `search` (string, optional, search by key name)
 
 **Response (200):**
@@ -565,11 +565,11 @@ Note: Old key is immediately invalidated.
 
 **Response (204):** No content
 
-**Note:** Super admin can revoke any operator's key.
+**Note:** Super admin can revoke any user's key.
 
-#### GET /v1/admin/operators/:operatorId/api-keys - Super Admin: Get Operator Keys
+#### GET /v1/admin/users/:operatorId/api-keys - Super Admin: Get User Keys
 
-**Response (200):** Same as List Keys response but filtered by operator.
+**Response (200):** Same as List Keys response but filtered by user.
 
 #### GET /v1/admin/api-keys/stats - Super Admin: Global Stats
 
@@ -768,13 +768,13 @@ func RateLimitMiddleware(limiter *RateLimiter) gin.HandlerFunc {
 func RequireSuperAdmin() gin.HandlerFunc {
     return func(c *gin.Context) {
         // Check session-based auth for super_admin role
-        operator, exists := c.Get("operator")
+        user, exists := c.Get("user")
         if !exists {
             c.AbortWithStatusJSON(401, gin.H{"error": "unauthorized"})
             return
         }
         
-        if !operator.IsSuperAdmin() {
+        if !user.IsSuperAdmin() {
             c.AbortWithStatusJSON(403, gin.H{"error": "super_admin_required"})
             return
         }
@@ -876,7 +876,7 @@ func (s *APIKeyService) CreateAPIKey(ctx context.Context, input CreateAPIKeyInpu
 }
 
 func (s *APIKeyService) canCreateKey(ctx context.Context, operatorID string) (bool, error) {
-    // Get operator's current month stats
+    // Get user's current month stats
     stats, err := s.repo.GetMonthlyStats(ctx, operatorID)
     if err != nil {
         return false, err
@@ -1321,7 +1321,7 @@ func (s *AuditService) Log(action Action, operatorID string, resourceID string, 
 - Run migration 039_api_keys
 - Add `scope` column to `api_keys` table
 - Add `api_key_usage_stats` table
-- Add columns to `operators` table
+- Add columns to `users` table
 
 ### 14.2 Phase 2: Deploy New Middleware
 
@@ -1336,7 +1336,7 @@ func (s *AuditService) Log(action Action, operatorID string, resourceID string, 
 - Add `/v1/auth/api-keys` endpoints (CRUD + rotate)
 - Add `/v1/admin/api-keys` endpoints (super admin)
 - Frontend integration
-- Operators can create/revoke their own keys
+- Users can create/revoke their own keys
 - Super admin can view/revoke any key
 
 ### 14.4 Phase 4: Deprecation (Optional)
@@ -1351,7 +1351,7 @@ func (s *AuditService) Log(action Action, operatorID string, resourceID string, 
 | Env Variable | Default | Description |
 |--------------|---------|-------------|
 | `API_KEY_PREFIX` | `vxyz` | Key prefix |
-| `API_KEY_MAX_PER_MONTH` | `20` | Max keys per operator per month |
+| `API_KEY_MAX_PER_MONTH` | `20` | Max keys per user per month |
 | `API_KEY_MAX_NAME_LENGTH` | `64` | Max key name length |
 | `API_KEY_DEFAULT_EXPIRY_DAYS` | `0` | Default expiry (0 = never) |
 | `API_KEY_EXPIRY_MAX_DAYS` | `365` | Max expiry days |
@@ -1373,7 +1373,7 @@ func (s *AuditService) Log(action Action, operatorID string, resourceID string, 
 | 403 | `monthly_limit_exceeded` | Too many keys created this month |
 | 403 | `super_admin_required` | Requires super admin role |
 | 404 | `key_not_found` | Key ID doesn't exist |
-| 409 | `key_name_conflict` | Operator already has key with this name |
+| 409 | `key_name_conflict` | User already has key with this name |
 | 429 | `rate_limit_exceeded` | Too many requests |
 
 ---

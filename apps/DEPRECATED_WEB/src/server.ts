@@ -38,7 +38,7 @@ const normalizeCatastrophicSsrResponse = async (response: Response): Promise<Res
 /**
  * Inject auth state into HTML responses
  *
- * This modifies the HTML response to include the authenticated operator state
+ * This modifies the HTML response to include the authenticated user state
  * from server-side cookie reading, enabling SSR hydration without flash.
  *
  * Based on Library's server.ts pattern:

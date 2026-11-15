@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/config"
 
@@ -32,16 +32,16 @@ func pprofTestServer(t *testing.T, enablePprof bool) *gin.Engine {
 	admin := r.Group("/v1/admin")
 
 	if enablePprof {
-		// Inject a super-admin operator + org context, then the real guard.
+		// Inject a super-admin user + org context, then the real guard.
 		admin.Use(func(c *gin.Context) {
 			orgID := c.GetHeader("X-Organization-ID")
-			op := &operator.Operator{
+			op := &user.User{
 				ID: "op-1",
 				Memberships: []*organization.OrganizationMember{
 					organization.NewMember("m-1", orgID, "op-1", organization.RoleSuperAdmin),
 				},
 			}
-			c.Set(middleware.ContextKeyOperator, op)
+			c.Set(middleware.ContextKeyUser, op)
 			c.Set(middleware.ContextKeyOrganizationID, orgID)
 			c.Next()
 		})
@@ -72,7 +72,7 @@ func TestPprofRoutes_DisabledByDefault(t *testing.T) {
 }
 
 // TestPprofRoutes_RequireSuperAdmin proves the enabled routes are behind the
-// super-admin guard: without an operator in context they must not serve a profile.
+// super-admin guard: without a user in context they must not serve a profile.
 func TestPprofRoutes_RequireSuperAdmin(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
@@ -82,7 +82,7 @@ func TestPprofRoutes_RequireSuperAdmin(t *testing.T) {
 	}
 	r := gin.New()
 	admin := r.Group("/v1/admin")
-	admin.Use(middleware.RequireSuperAdmin()) // no operator injected -> must reject
+	admin.Use(middleware.RequireSuperAdmin()) // no user injected -> must reject
 	s.registerPprofRoutes(admin)
 
 	w := httptest.NewRecorder()

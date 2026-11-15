@@ -24,7 +24,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
   export const getInbox = () => {
 /**
- * Returns paginated inbox entries for the authenticated operator within the organization
+ * Returns paginated inbox entries for the authenticated user within the organization
  * @summary List inbox entries
  */
 const getDeviceInbox = (
@@ -37,7 +37,7 @@ const getDeviceInbox = (
       options);
     }
   /**
- * Submits a device registration request to the operator inbox. Requires device attestation when configured
+ * Submits a device registration request to the user inbox. Requires device attestation when configured
  * @summary Create inbox request
  */
 const postDeviceInbox = (
@@ -63,7 +63,7 @@ const getDeviceInboxImei = (
       options);
     }
   /**
- * Updates an inbox entry (e.g., add operator notes) within the organization
+ * Updates an inbox entry (e.g., add user notes) within the organization
  * @summary Update inbox entry
  */
 const patchDeviceInboxImei = (

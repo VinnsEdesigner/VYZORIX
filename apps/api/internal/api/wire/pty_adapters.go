@@ -56,7 +56,7 @@ func NewDevicePublicKeyProvider(repo *storage.DeviceRepository) websockethandler
 }
 
 // DeviceOrganization returns the org ID for a device, or "" when the device is
-// unknown. The endpoint compares it against the operator's org, so an empty
+// unknown. The endpoint compares it against the user's org, so an empty
 // result fails the check closed.
 func (r *ptyDeviceResolver) DeviceOrganization(ctx context.Context, deviceID string) string {
 	dev, err := r.repo.FindByID(ctx, deviceID)
@@ -78,7 +78,7 @@ func ptyAuditLogger(logger *audit.Logger) websockethandlers.PTYAudit {
 	return logger
 }
 
-// ptyCapabilityResolver resolves a session's capability at open: the operator's
+// ptyCapabilityResolver resolves a session's capability at open: the user's
 // role and grants intersected with the device's tier, per the boundary contract's
 // . It is the server-side decision, made once, so the device never re-derives
 // authority.
@@ -128,13 +128,13 @@ func newPTYCapabilityResolver(deps HandlerDependencies) websockethandlers.PTYCap
 }
 
 // ResolveForSession evaluates the two axes and returns the allowlist the device
-// will enforce. ok is false when the operator is not an active member, which the
+// will enforce. ok is false when the user is not an active member, which the
 // handler treats as a refusal rather than an empty capability.
 func (r *ptyCapabilityResolver) ResolveForSession(
 	ctx context.Context,
-	operatorID, orgID, deviceID string,
+	userID, orgID, deviceID string,
 ) (websockethandlers.SessionCapabilityInfo, bool) {
-	member, err := r.members.GetMembership(ctx, operatorID, orgID)
+	member, err := r.members.GetMembership(ctx, userID, orgID)
 	if err != nil || member == nil || !member.IsActive() {
 		return websockethandlers.SessionCapabilityInfo{}, false
 	}
@@ -146,7 +146,7 @@ func (r *ptyCapabilityResolver) ResolveForSession(
 
 	var custom []*permission.ResourcePermission
 	if r.grants != nil {
-		custom, _ = r.grants.ListEffective(ctx, operatorID, orgID)
+		custom, _ = r.grants.ListEffective(ctx, userID, orgID)
 	}
 
 	capability := permission.ResolveSessionCapability(
@@ -171,9 +171,9 @@ func (r *ptyCapabilityResolver) ResolveForSession(
 
 	return websockethandlers.SessionCapabilityInfo{
 		// Identity, resolved here so it cannot disagree with the capability.
-		OperatorID:   operatorID,
-		OperatorName: member.OperatorName,
-		Email:        member.OperatorEmail,
+		UserID:   userID,
+		UserName: member.UserName,
+		Email:        member.UserEmail,
 		OrgID:        orgID,
 		OrgName:      orgName,
 		Role:         string(member.Role),
@@ -186,7 +186,7 @@ func (r *ptyCapabilityResolver) ResolveForSession(
 }
 
 // newPTYRecorderFactory builds the registry's recorder constructor. It creates
-// the recording directory on first use, so an operator can enable recording
+// the recording directory on first use, so a user can enable recording
 // without a provisioning step; a failure is reported per session rather than at
 // startup, since recording is optional.
 func newPTYRecorderFactory(dir string, log *slog.Logger) func(sessionID string) (*hub.PTYRecorder, error) {
@@ -225,7 +225,7 @@ func NewPTYAuthorizer(authorizer *command.Authorizer) websockethandlers.PTYAutho
 // AuthorizePTYOpen evaluates the request against the PTY_SESSION_OPEN profile.
 func (a *ptyAuthorizer) AuthorizePTYOpen(ctx context.Context, req websockethandlers.PTYAuthRequest) websockethandlers.PTYAuthDecision {
 	outcome := a.authorizer.Authorize(ctx, domaincommand.ActorContext{
-		OperatorID:   req.OperatorID,
+		UserID:   req.UserID,
 		OrgID:        req.OrgID,
 		IsSuperAdmin: req.IsSuperAdmin,
 		MFAVerified:  req.MFAVerified,

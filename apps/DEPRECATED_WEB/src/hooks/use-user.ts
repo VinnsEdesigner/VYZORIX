@@ -1,0 +1,104 @@
+/**
+ * use-user.ts - SSR-aware authentication hook
+ *
+ * This hook provides access to the authenticated user from either:
+ * 1. Server-injected state (SSR hydration)
+ * 2. API fallback (for client-side navigation)
+ *
+ * Based on Library's getHydratedState pattern
+ */
+
+import { useState, useEffect } from "react";
+
+import { getFullHydratedState } from "@/lib/server/state-injector";
+
+export interface Operator {
+  id: string;
+  email: string;
+  name: string;
+  role: "viewer" | "operator" | "super_admin";
+  createdAt?: number;
+  emailVerified?: boolean;
+  thresholds?: Record<string, number>;
+}
+
+export interface AuthContext {
+  operator: Operator | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+}
+
+/**
+ * SSR-aware auth hook
+ *
+ * This replaces localStorage-based auth checking with server-provided state hydration.
+ *
+ * Library's pattern (src/lib/config.ts):
+ *   export function getHydratedState<T>(key: string, defaultValue: T): T {
+ *     if (typeof window !== 'undefined') {
+ *       const globalState = (window as any).__VYZORIX_PREFETCHED_STATE__;
+ *       if (globalState && globalState[key] !== undefined) {
+ *         return globalState[key];
+ *       }
+ *     }
+ *     return defaultValue;
+ *   }
+ */
+// eslint-disable-next-line func-style
+export function useUser(): AuthContext {
+  const [operator, setOperator] = useState<Operator | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Try to get state from server injection first (SSR hydration)
+    const globalState = getFullHydratedState();
+
+    if (globalState) {
+      // Server provided the auth state - use it
+      setOperator(globalState.operator ?? null);
+      setIsAuthenticated(globalState.isAuthenticated ?? false);
+      setIsLoading(false);
+      return;
+    }
+
+    // Fallback: Fetch from API if SSR state not available
+    // This handles client-side navigation without SSR state
+    // (e.g., direct page navigation, or SSR state not injected)
+    fetch("/v1/auth/me", { credentials: "include" })
+      .then((res) => {
+        if (res.ok) {
+          return res.json();
+        }
+        return null;
+      })
+      .then((data) => {
+        setOperator(data);
+        setIsAuthenticated(Boolean(data));
+      })
+      .catch(() => {
+        setIsAuthenticated(false);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
+
+  return { operator, isAuthenticated, isLoading };
+}
+
+/**
+ * Hook to check if user is authenticated (simpler version)
+ */
+export const useIsAuthenticated = (): boolean => {
+  const { isAuthenticated, isLoading } = useUser();
+  return !isLoading && isAuthenticated;
+};
+
+/**
+ * Hook to get the current user (simpler version)
+ */
+export const useCurrentOperator = (): Operator | null => {
+  const { operator } = useUser();
+  return operator;
+};

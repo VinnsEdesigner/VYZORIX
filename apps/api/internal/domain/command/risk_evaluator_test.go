@@ -4,7 +4,7 @@ import "testing"
 
 func TestRiskEvaluator_AllowLowRisk(t *testing.T) {
 	ev := NewRiskEvaluator()
-	actor := ActorContext{OperatorID: "op-1", OrgID: "org-1"}
+	actor := ActorContext{UserID: "op-1", OrgID: "org-1"}
 
 	decision, profile := ev.Evaluate(TypeCheckUpdate, actor)
 	if decision != DecisionAllow {
@@ -17,7 +17,7 @@ func TestRiskEvaluator_AllowLowRisk(t *testing.T) {
 
 func TestRiskEvaluator_RequireConfirmationForHighRisk(t *testing.T) {
 	ev := NewRiskEvaluator()
-	actor := ActorContext{OperatorID: "op-1", OrgID: "org-1", Confirmed: false}
+	actor := ActorContext{UserID: "op-1", OrgID: "org-1", Confirmed: false}
 
 	decision, profile := ev.Evaluate("device.reboot", actor)
 	if decision != DecisionRequireConfirmation {
@@ -30,7 +30,7 @@ func TestRiskEvaluator_RequireConfirmationForHighRisk(t *testing.T) {
 
 func TestRiskEvaluator_HighRiskAllowedWhenConfirmed(t *testing.T) {
 	ev := NewRiskEvaluator()
-	actor := ActorContext{OperatorID: "op-1", OrgID: "org-1", Confirmed: true}
+	actor := ActorContext{UserID: "op-1", OrgID: "org-1", Confirmed: true}
 
 	decision, _ := ev.Evaluate("device.reboot", actor)
 	if decision != DecisionAllow {
@@ -42,7 +42,7 @@ func TestRiskEvaluator_CriticalRequiresMFAEvenWhenConfirmed(t *testing.T) {
 	ev := NewRiskEvaluator()
 
 	// Confirmed but no MFA → still gated until Phase 3 confirmation store.
-	actor := ActorContext{OperatorID: "op-1", Confirmed: true, MFAVerified: false}
+	actor := ActorContext{UserID: "op-1", Confirmed: true, MFAVerified: false}
 	decision, _ := ev.Evaluate("device.factory_reset", actor)
 	if decision != DecisionRequireConfirmation {
 		t.Errorf("decision = %s, want %s (critical needs MFA)", decision, DecisionRequireConfirmation)
@@ -58,7 +58,7 @@ func TestRiskEvaluator_CriticalRequiresMFAEvenWhenConfirmed(t *testing.T) {
 
 func TestRiskEvaluator_UnknownCommandAllowedAtDefaultTier(t *testing.T) {
 	ev := NewRiskEvaluator()
-	actor := ActorContext{OperatorID: "op-1"}
+	actor := ActorContext{UserID: "op-1"}
 
 	decision, profile := ev.Evaluate("some.new.command", actor)
 	if decision != DecisionAllow {

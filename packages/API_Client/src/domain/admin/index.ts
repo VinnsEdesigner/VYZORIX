@@ -1,9 +1,9 @@
 // Admin domain — generated types re-exported.
 export type {
-  AdminOperator,
-  AdminOperatorListResult,
-  CreateOperatorRequest,
-  UpdateOperatorRequest,
+  AdminUser,
+  AdminUserListResult,
+  CreateUserRequest,
+  UpdateUserRequest,
   AdminClient,
   AdminClientListResult,
   AdminClientResult,
@@ -11,8 +11,8 @@ export type {
   SupportBundleResult,
   UpdateCheckerResult,
   GlobalAPIKeyStatsResult,
-  OperatorAPIKeyStatsResult,
-  TopOperatorStat,
+  UserAPIKeyStatsResult,
+  TopUserStat,
   AdminAPIKey,
   AdminAPIKeyListResult,
 } from '../../generated/vyzorixUpdateServerAPI.schemas';

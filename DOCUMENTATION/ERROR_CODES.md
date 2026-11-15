@@ -16,7 +16,7 @@ Too many failed login attempts. The account is temporarily locked. The `details`
 
 ### AUTH_MFA_REQUIRED
 
-The operator has MFA enabled, and the login request didn't include a TOTP code. The response includes `operator_id` so the client knows which account is being challenged. The client should prompt for a TOTP code and call `POST /v1/mfa/verify`.
+The user has MFA enabled, and the login request didn't include a TOTP code. The response includes `user_id` so the client knows which account is being challenged. The client should prompt for a TOTP code and call `POST /v1/mfa/verify`.
 
 ### AUTH_MFA_INVALID
 
@@ -28,7 +28,7 @@ The session cookie exists but the session has passed its expiration time. The cl
 
 ### AUTH_SESSION_REVOKED
 
-The session was explicitly revoked — either the operator logged out from another device, or an admin revoked it. The `auth_sessions` table tracks revocation. The `AuthRevocationMiddleware` checks a revocation list on every authenticated request.
+The session was explicitly revoked — either the user logged out from another device, or an admin revoked it. The `auth_sessions` table tracks revocation. The `AuthRevocationMiddleware` checks a revocation list on every authenticated request.
 
 ### AUTH_TOKEN_INVALID
 
@@ -60,11 +60,11 @@ All return HTTP 403.
 
 ### AUTHZ_INSUFFICIENT_PERMISSIONS
 
-The operator is authenticated but doesn't have the required role for the operation. For example, an `operator`-role user trying to create an API key (requires `admin`), or a `viewer` trying to execute a command (requires `operator`).
+The user is authenticated but doesn't have the required role for the operation. For example, an `operator`-role user trying to create an API key (requires `admin`), or a `viewer` trying to execute a command (requires `operator`).
 
 ### AUTHZ_ORG_MEMBERSHIP_REQUIRED
 
-The operator isn't a member of the organization they're trying to access. The `NewOrganizationMembership` middleware checks the `organization_members` table and returns this if no active membership exists.
+The user isn't a member of the organization they're trying to access. The `NewOrganizationMembership` middleware checks the `organization_members` table and returns this if no active membership exists.
 
 ### AUTHZ_ORG_OWNERSHIP_REQUIRED
 
@@ -76,7 +76,7 @@ An API key was used but its scope doesn't allow the operation. A `read`-scope ke
 
 ### AUTHZ_DEVICE_ACCESS_DENIED
 
-The device exists but belongs to a different organization. The operator is authenticated and is an org member, but the device they're trying to access isn't in their org. The `verifyDeviceInOrganization` check in the command handler catches this.
+The device exists but belongs to a different organization. The user is authenticated and is an org member, but the device they're trying to access isn't in their org. The `verifyDeviceInOrganization` check in the command handler catches this.
 
 ## Resource codes (RESOURCE_*)
 
@@ -198,7 +198,7 @@ The device didn't respond to the command within the timeout. The command's `Expi
 
 ### DEVICE_COMMAND_FAILED (400)
 
-The device received and executed the command but reported a failure. The `FailureReason` field on the command record contains the device's error message. Not retryable automatically — the operator must decide whether to retry.
+The device received and executed the command but reported a failure. The `FailureReason` field on the command record contains the device's error message. Not retryable automatically — the user must decide whether to retry.
 
 ### DEVICE_NOT_REGISTERED (400)
 
@@ -206,7 +206,7 @@ The device ID wasn't found in the registry. The device needs to register first v
 
 ### DEVICE_ALREADY_REGISTERED (400)
 
-A device with this ID is already registered. Registration is idempotent if the same operator re-registers, but a different operator trying to register an existing device gets this error.
+A device with this ID is already registered. Registration is idempotent if the same user re-registers, but a different user trying to register an existing device gets this error.
 
 ## Organization codes (ORG_*)
 

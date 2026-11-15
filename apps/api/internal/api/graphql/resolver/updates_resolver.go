@@ -23,7 +23,7 @@ func (r *Resolver) GetUpdatesStatus(p graphql.ResolveParams) (interface{}, error
 		return nil, err
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -100,7 +100,7 @@ func (r *Resolver) GetUpdatesStatus(p graphql.ResolveParams) (interface{}, error
 func (r *Resolver) GetUpdatesVersions(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -153,7 +153,7 @@ func (r *Resolver) GetUpdatesVersions(p graphql.ResolveParams) (interface{}, err
 func (r *Resolver) GetUpdatesChangelog(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -186,7 +186,7 @@ func (r *Resolver) GetUpdatesChangelog(p graphql.ResolveParams) (interface{}, er
 func (r *Resolver) GetUpdatesHistory(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -265,7 +265,7 @@ func (r *Resolver) GetUpdatesHistoryDetail(p graphql.ResolveParams) (interface{}
 		return nil, r.Presenter.BadRequestError("push ID is required")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -323,7 +323,7 @@ func (r *Resolver) GetUpdatesHistoryDetail(p graphql.ResolveParams) (interface{}
 func (r *Resolver) GetUpdatesSyncStatus(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -379,7 +379,7 @@ func (r *Resolver) PushUpdate(p graphql.ResolveParams) (interface{}, error) {
 		}
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -439,7 +439,7 @@ func (r *Resolver) CancelUpdate(p graphql.ResolveParams) (interface{}, error) {
 		return nil, r.Presenter.BadRequestError("push ID is required")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -477,7 +477,7 @@ func (r *Resolver) CancelUpdate(p graphql.ResolveParams) (interface{}, error) {
 func (r *Resolver) SyncFromGitHub(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}

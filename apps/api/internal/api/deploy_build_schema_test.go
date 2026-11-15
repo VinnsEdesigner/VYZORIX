@@ -25,7 +25,7 @@ func TestWhoamiReportsDeviceABIs(t *testing.T) {
 		t.Fatalf("set device ABIs: %v", err)
 	}
 
-	r := f.engineFor(memberOperator(organization.RoleAdmin), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleAdmin), deployOrg)
 
 	w := do(t, r, http.MethodGet, "/v1/deploy/whoami?device="+deployDevice, nil, nil)
 	if w.Code != http.StatusOK {

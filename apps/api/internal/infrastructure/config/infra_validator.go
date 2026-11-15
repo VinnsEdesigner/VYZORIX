@@ -33,7 +33,7 @@ type ConfigValidator struct {
 	errs   []ValidationError
 }
 
-// ValidateConfig validates cfg and returns every problem found, so an operator
+// ValidateConfig validates cfg and returns every problem found, so a user
 // can fix them in one pass rather than one restart at a time.
 func ValidateConfig(cfg *Config) []ValidationError {
 	v := &ConfigValidator{cfg: cfg}

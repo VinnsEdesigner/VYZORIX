@@ -9,5 +9,5 @@
 export interface DeviceDisconnectResult {
   deviceId?: string;
   disconnected?: boolean;
-  operatorId?: string;
+  userId?: string;
 }

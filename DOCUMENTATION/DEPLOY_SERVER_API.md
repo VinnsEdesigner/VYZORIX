@@ -19,11 +19,11 @@ most of understanding the surface.
 
 | Group | Registered at | Authentication | Who calls it |
 |:--|:--|:--|:--|
-| **Deploy (operator)** | `/v1/deploy` | tenant auth (session cookie or operator API key) **or** a deploy credential, plus organization context | The CLI, and the console |
+| **Deploy (user)** | `/v1/deploy` | tenant auth (session cookie or user API key) **or** a deploy credential, plus organization context | The CLI, and the console |
 | **Public** | `/v1/deploy/schema/:version` | none | The CLI, before it holds any credential |
 | **Device-signed** | `/v1/device/:imei/secrets/:app/:key` | the device's own HMAC/keypair | The device, and only the device |
 
-The operator group carries three pieces of middleware stacked:
+The user group carries three pieces of middleware stacked:
 
 1. `DeployCredentialAuth` — resolves a presented `X-Vyzorix-Deploy-Credential` to a
    device, so a CI token can reach this group with no session.
@@ -31,7 +31,7 @@ The operator group carries three pieces of middleware stacked:
 3. The tenant group's own auth (session or API key).
 
 The device-signed route sits on a *different* group, because the device authenticates
-with its own credential, not an operator session — and an operator has no device
+with its own credential, not a user session — and a user has no device
 private key, so the two authenticators must not be confused. See
 `DEVICE_COMMANDS_AND_SIGNING.md`.
 
@@ -44,7 +44,7 @@ private key, so the two authenticators must not be confused. See
 The one endpoint that changes anything. It authenticates, authorises, compiles, signs
 and persists.
 
-**Auth:** operator session/API key, or a deploy credential (which pins the device).
+**Auth:** user session/API key, or a deploy credential (which pins the device).
 
 **Status:** `202 Accepted` — the deploy is stored and will be applied by the device; a `202` rather than a `200` because nothing has run yet.
 
@@ -69,7 +69,7 @@ and persists.
 ```
 
 - `version` is the server-assigned, monotonic version.
-- `authorizedBy` is the operator who authorised it (injected into the config as
+- `authorizedBy` is the user who authorised it (injected into the config as
   `memberId`).
 - `custom` marks an app the catalog does not know. It is a review aid, not a gate.
 
@@ -110,7 +110,7 @@ a credential works before saving it.
 }
 ```
 
-A deploy credential has no operator behind it (it is a CI token, not a person), so
+A deploy credential has no user behind it (it is a CI token, not a person), so
 `operatorName` and `email` are empty. A credential also cannot be steered to a
 different device: naming a device other than the credential's own returns `404`.
 

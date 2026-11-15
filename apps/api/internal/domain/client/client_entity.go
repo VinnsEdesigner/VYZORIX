@@ -16,7 +16,7 @@ type Client struct {
 	UpdatedAt        time.Time
 	CreatedAt        time.Time
 	LastRequestAt    *int64
-	OperatorID       string
+	UserID       string
 	Name             string
 	Platform         string
 	ClientSecretHash string

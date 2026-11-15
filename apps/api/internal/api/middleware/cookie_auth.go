@@ -9,7 +9,7 @@ import (
 	gqlcontext "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/graphql/context"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/responses"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/auth"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/session"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
 
@@ -19,11 +19,11 @@ import (
 const (
 	// CookieName is the name of the session cookie.
 	CookieName = "vyz_session"
-	// ContextKeyOperator is the key for the operator in gin context.
-	ContextKeyOperator = "operator"
+	// ContextKeyUser is the key for the user in gin context.
+	ContextKeyUser = "user"
 )
 
-// CookieAuth is middleware that validates the HttpOnly session cookie and sets the operator in context.
+// CookieAuth is middleware that validates the HttpOnly session cookie and sets the user in context.
 type CookieAuth struct {
 	sessionManager *infraauth.SessionManager
 	authService    *auth.AuthService
@@ -85,32 +85,32 @@ func (c *CookieAuth) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		// Set operator and session in context for downstream handlers.
-		ctx.Set(ContextKeyOperator, op)
-		ctx.Set("operator_id", op.ID)
+		// Set user and session in context for downstream handlers.
+		ctx.Set(ContextKeyUser, op)
+		ctx.Set("user_id", op.ID)
 		ctx.Set("session", sess)
 		// Also populate the GraphQL request context so REST middleware (e.g.
-		// UpdatesAdminAuth.RequireAdmin) can read the operator via.
-		// gqlcontext.GetOperator(c.Request.Context()).
-		ctx.Request = ctx.Request.WithContext(gqlcontext.WithOperator(ctx.Request.Context(), op))
+		// UpdatesAdminAuth.RequireAdmin) can read the user via.
+		// gqlcontext.GetUser(c.Request.Context()).
+		ctx.Request = ctx.Request.WithContext(gqlcontext.WithUser(ctx.Request.Context(), op))
 		ctx.Next()
 	}
 }
 
-// GetOperatorFromContext retrieves the operator from the gin context.
-func GetOperatorFromContext(c *gin.Context) *operator.Operator {
-	val, exists := c.Get(ContextKeyOperator)
+// GetUserFromContext retrieves the user from the gin context.
+func GetUserFromContext(c *gin.Context) *user.User {
+	val, exists := c.Get(ContextKeyUser)
 	if exists {
-		if op, ok := val.(*operator.Operator); ok {
+		if op, ok := val.(*user.User); ok {
 			return op
 		}
 	}
 
-	// Fall back to operator_id (set by the tenant API key middleware for.
-	// API-key-authenticated requests that never load the full operator).
-	if opID, ok := c.Get("operator_id"); ok {
+	// Fall back to user_id (set by the tenant API key middleware for.
+	// API-key-authenticated requests that never load the full user).
+	if opID, ok := c.Get("user_id"); ok {
 		if id, ok := opID.(string); ok && id != "" {
-			return &operator.Operator{ID: id}
+			return &user.User{ID: id}
 		}
 	}
 

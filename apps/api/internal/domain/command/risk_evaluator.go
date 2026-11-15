@@ -19,12 +19,12 @@ const (
 // risk decision. It is intentionally a value type so handlers can build it.
 // cheaply from gin context without allocations.
 type ActorContext struct {
-	// OperatorID is the authenticated operator making the request. Empty for.
+	// UserID is the authenticated user making the request. Empty for.
 	// system-originated commands.
-	OperatorID string
+	UserID string
 	// OrgID scopes the command to an organization.
 	OrgID string
-	// IsSuperAdmin is true for platform-level operators who bypass org checks.
+	// IsSuperAdmin is true for platform-level users who bypass org checks.
 	IsSuperAdmin bool
 	// MFAVerified indicates the current session has cleared MFA. Phase 3 will.
 	// require this for critical-tier commands; Phase 2 records it only.

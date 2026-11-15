@@ -4,7 +4,7 @@
  * These tests use the REAL authContext and REAL useAuthStore — no mocks.
  * They verify that:
  *   1. Store actions correctly delegate to authContext
- *   2. The store snapshot reflects authContext state (tokens, operator, org)
+ *   2. The store snapshot reflects authContext state (tokens, user, org)
  *   3. Status derivation (unauthenticated → mfa_required → authenticated)
  *   4. Lockout state overrides everything to 'locked'
  *   5. clear() resets everything to unauthenticated
@@ -23,9 +23,9 @@ const MOCK_ORG: OrganizationInfo = {
 
 function makeLoginResponse(overrides: Partial<LoginWithTokensResult> = {}): LoginWithTokensResult {
   return {
-    operator_id: 'operator-1',
+    user_id: 'operator-1',
     email: 'test@vyzorix.com',
-    name: 'Test Operator',
+    name: 'Test User',
     mfa_enabled: false,
     access_token: 'access-token-123',
     refresh_token: 'refresh-token-123',
@@ -42,7 +42,7 @@ function makeMeResponse(overrides: Partial<MeResult> = {}): MeResult {
   return {
     id: 'operator-1',
     email: 'test@vyzorix.com',
-    name: 'Test Operator',
+    name: 'Test User',
     mfa_enabled: false,
     email_verified: true,
     needs_organization: false,
@@ -69,15 +69,15 @@ afterEach(() => {
 });
 
 describe('auth-store — setFromLoginWithTokens', () => {
-  it('sets isAuthenticated, operator, tokens, and organizationId from login response', () => {
+  it('sets isAuthenticated, user, tokens, and organizationId from login response', () => {
     const response = makeLoginResponse();
     useAuthStore.getState().setFromLoginWithTokens(response);
 
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(true);
-    expect(state.operator?.id).toBe('operator-1');
-    expect(state.operator?.email).toBe('test@vyzorix.com');
-    expect(state.operator?.name).toBe('Test Operator');
+    expect(state.user?.id).toBe('operator-1');
+    expect(state.user?.email).toBe('test@vyzorix.com');
+    expect(state.user?.name).toBe('Test User');
     expect(state.accessToken).toBe('access-token-123');
     expect(state.refreshToken).toBe('refresh-token-123');
     expect(state.organizationId).toBe('org-test-1');
@@ -99,9 +99,9 @@ describe('auth-store — setFromLoginWithTokens', () => {
 
   it('clears mfaChallenge on successful login', () => {
     useAuthStore.getState().setMfaChallenge({
-      operatorId: 'operator-1',
+      userId: 'operator-1',
       email: 'test@vyzorix.com',
-      name: 'Test Operator',
+      name: 'Test User',
       mfaEnabled: true,
     });
     expect(useAuthStore.getState().mfaChallenge).not.toBeNull();
@@ -113,14 +113,14 @@ describe('auth-store — setFromLoginWithTokens', () => {
 });
 
 describe('auth-store — setFromMeResponse', () => {
-  it('sets operator and organizationId from /me response', () => {
+  it('sets user and organizationId from /me response', () => {
     const me = makeMeResponse();
     useAuthStore.getState().setFromMeResponse(me);
 
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(true);
-    expect(state.operator?.id).toBe('operator-1');
-    expect(state.operator?.email).toBe('test@vyzorix.com');
+    expect(state.user?.id).toBe('operator-1');
+    expect(state.user?.email).toBe('test@vyzorix.com');
     expect(state.organizationId).toBe('org-test-1');
     expect(state.status).toBe('authenticated');
   });
@@ -140,9 +140,9 @@ describe('auth-store — setFromMeResponse', () => {
 describe('auth-store — setMfaChallenge', () => {
   it('sets status to mfa_required', () => {
     const challenge: MfaChallenge = {
-      operatorId: 'operator-1',
+      userId: 'operator-1',
       email: 'test@vyzorix.com',
-      name: 'Test Operator',
+      name: 'Test User',
       mfaEnabled: true,
     };
     useAuthStore.getState().setMfaChallenge(challenge);
@@ -154,9 +154,9 @@ describe('auth-store — setMfaChallenge', () => {
 
   it('clearing mfaChallenge reverts to unauthenticated (if no auth)', () => {
     useAuthStore.getState().setMfaChallenge({
-      operatorId: 'operator-1',
+      userId: 'operator-1',
       email: 'test@vyzorix.com',
-      name: 'Test Operator',
+      name: 'Test User',
       mfaEnabled: true,
     });
     expect(useAuthStore.getState().status).toBe('mfa_required');
@@ -219,9 +219,9 @@ describe('auth-store — setLockout', () => {
 
   it('lockout takes precedence over mfa_required', () => {
     useAuthStore.getState().setMfaChallenge({
-      operatorId: 'operator-1',
+      userId: 'operator-1',
       email: 'test@vyzorix.com',
-      name: 'Test Operator',
+      name: 'Test User',
       mfaEnabled: true,
     });
     expect(useAuthStore.getState().status).toBe('mfa_required');
@@ -244,7 +244,7 @@ describe('auth-store — clear', () => {
 
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(false);
-    expect(state.operator).toBeNull();
+    expect(state.user).toBeNull();
     expect(state.accessToken).toBeNull();
     expect(state.refreshToken).toBeNull();
     expect(state.organizationId).toBeNull();
@@ -274,9 +274,9 @@ describe('auth-store — status derivation priority', () => {
       last_organization_id: undefined,
     }));
     useAuthStore.getState().setMfaChallenge({
-      operatorId: 'operator-1',
+      userId: 'operator-1',
       email: 'test@vyzorix.com',
-      name: 'Test Operator',
+      name: 'Test User',
       mfaEnabled: true,
     });
     useAuthStore.getState().setLockout({

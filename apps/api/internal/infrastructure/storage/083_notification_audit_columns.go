@@ -9,7 +9,7 @@ import (
 // migrateAddNotificationAuditColumns adds the columns the audit repository writes
 // but the original table never declared.
 //
-// The table was created with `id, operator_id, event_type, channel, payload,
+// The table was created with `id, user_id, event_type, channel, payload,
 // sent_at`, but `notification.Repository.LogEntry` inserts `device_id, success,
 // error_msg` as well. Every audit write therefore failed with "table
 // notification_audit_log has no column named device_id", and because the caller

@@ -48,13 +48,13 @@ func (r *noopDeviceRepo) FindByIMEI(context.Context, string) (*device.Device, er
 func (r *noopDeviceRepo) FindByFirebaseInstallID(context.Context, string) (*device.Device, error) {
 	return nil, nil
 }
-func (r *noopDeviceRepo) FindByIDAndOperator(context.Context, string, string) (*device.Device, error) {
+func (r *noopDeviceRepo) FindByIDAndUser(context.Context, string, string) (*device.Device, error) {
 	return nil, nil
 }
-func (r *noopDeviceRepo) FindByIDAndOperatorID(context.Context, device.DeviceID, device.OperatorID) (*device.Device, error) {
+func (r *noopDeviceRepo) FindByIDAndUserID(context.Context, device.DeviceID, device.UserID) (*device.Device, error) {
 	return nil, nil
 }
-func (r *noopDeviceRepo) FindByIMEIAndOperator(context.Context, string, string) (*device.Device, error) {
+func (r *noopDeviceRepo) FindByIMEIAndUser(context.Context, string, string) (*device.Device, error) {
 	return nil, nil
 }
 func (r *noopDeviceRepo) FindByIMEIAndOrganization(context.Context, string, string) (*device.Device, error) {
@@ -87,10 +87,10 @@ func (r *noopDeviceRepo) Touch(context.Context, string) error          { return 
 func (r *noopDeviceRepo) List(context.Context, string, int, int) ([]*device.Device, int, error) {
 	return nil, 0, nil
 }
-func (r *noopDeviceRepo) ListByOperator(context.Context, string) ([]*device.Device, error) {
+func (r *noopDeviceRepo) ListByUser(context.Context, string) ([]*device.Device, error) {
 	return nil, nil
 }
-func (r *noopDeviceRepo) ListByOperatorID(context.Context, device.OperatorID) ([]*device.Device, error) {
+func (r *noopDeviceRepo) ListByUserID(context.Context, device.UserID) ([]*device.Device, error) {
 	return nil, nil
 }
 func (r *noopDeviceRepo) ListByOrganization(context.Context, string) ([]*device.Device, error) {
@@ -100,7 +100,7 @@ func (r *noopDeviceRepo) ListByOrganizationPaginated(context.Context, string, in
 	return nil, 0, nil
 }
 func (r *noopDeviceRepo) Count(context.Context, string) (int, error) { return 0, nil }
-func (r *noopDeviceRepo) CountByOperator(context.Context, string) (int, error) {
+func (r *noopDeviceRepo) CountByUser(context.Context, string) (int, error) {
 	return 0, nil
 }
 func (r *noopDeviceRepo) CountByOrganization(context.Context, string) (int, error) {
@@ -113,11 +113,11 @@ func (r *noopDeviceRepo) SoftDeleteByIMEI(context.Context, string, int64, int64)
 func (r *noopDeviceRepo) ListActive(context.Context, int, int) ([]*device.Device, int, error) {
 	return nil, 0, nil
 }
-func (r *noopDeviceRepo) ListActiveByOperator(context.Context, string) ([]*device.Device, error) {
+func (r *noopDeviceRepo) ListActiveByUser(context.Context, string) ([]*device.Device, error) {
 	return nil, nil
 }
 func (r *noopDeviceRepo) ListPending(context.Context) ([]*device.Device, error) { return nil, nil }
-func (r *noopDeviceRepo) ListPendingByOperator(context.Context, device.OperatorID) ([]*device.Device, error) {
+func (r *noopDeviceRepo) ListPendingByUser(context.Context, device.UserID) ([]*device.Device, error) {
 	return nil, nil
 }
 func (r *noopDeviceRepo) DeleteScheduled(context.Context) (int, error) { return 0, nil }

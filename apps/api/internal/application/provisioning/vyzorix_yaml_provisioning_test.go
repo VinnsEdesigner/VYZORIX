@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 )
 
@@ -26,7 +26,7 @@ func TestParseConfig_YAML(t *testing.T) {
 organizations:
   - name: YAML Org
     description: from yaml
-operators:
+users:
   - email: yaml@test.local
     name: YAML Admin
     password: pass123
@@ -43,11 +43,11 @@ operators:
 	if cfg.Organizations[0].Name != "YAML Org" {
 		t.Errorf("expected org name 'YAML Org', got %s", cfg.Organizations[0].Name)
 	}
-	if len(cfg.Operators) != 1 {
-		t.Errorf("expected 1 operator, got %d", len(cfg.Operators))
+	if len(cfg.Users) != 1 {
+		t.Errorf("expected 1 operator, got %d", len(cfg.Users))
 	}
-	if cfg.Operators[0].Email != "yaml@test.local" {
-		t.Errorf("expected email 'yaml@test.local', got %s", cfg.Operators[0].Email)
+	if cfg.Users[0].Email != "yaml@test.local" {
+		t.Errorf("expected email 'yaml@test.local', got %s", cfg.Users[0].Email)
 	}
 }
 
@@ -66,13 +66,13 @@ func TestParseConfig_JSON(t *testing.T) {
 }
 
 func TestLoadAndApply_YAMLFile_CreatesOrg(t *testing.T) {
-	// An organization needs a creator operator (FK), so the operator is declared
+	// An organization needs a creator user (FK), so the user is declared
 	// too — this mirrors how a real provisioning file must be shaped.
 	yamlContent := `
 organizations:
   - name: YAML Test Org
     description: provisioned from yaml
-operators:
+users:
   - email: yaml@test.local
     name: YAML Admin
     password: pass123
@@ -81,7 +81,7 @@ operators:
 `
 	path := writeYAMLProvisioningFile(t, yamlContent)
 	orgRepo := &fakeOrgRepo{orgs: make(map[string]*organization.Organization)}
-	opRepo := &fakeOpRepo{ops: make(map[string]*operator.Operator)}
+	opRepo := &fakeOpRepo{ops: make(map[string]*user.User)}
 	orgCreator := &fakeOrgCreator{}
 	opCreator := &fakeOpCreator{}
 	p := New(slog.Default()).
@@ -100,8 +100,8 @@ operators:
 	}
 }
 
-func TestLoadAndApply_OrgWithoutOperatorIsSkipped(t *testing.T) {
-	// Without an operator there is no valid creator, so the org is skipped
+func TestLoadAndApply_OrgWithoutUserIsSkipped(t *testing.T) {
+	// Without a user there is no valid creator, so the org is skipped
 	// rather than inserted with a dangling created_by.
 	yamlContent := `
 organizations:
@@ -128,7 +128,7 @@ organizations:
   - name: Full YAML Org
     description: complete provisioning test
 
-operators:
+users:
   - email: yamladmin@test.local
     name: YAML Admin
     password: SecurePass!
@@ -138,7 +138,7 @@ operators:
 device_groups:
   - name: staging
     org_name: Full YAML Org
-    operator_emails:
+    user_emails:
       - yamladmin@test.local
 
 api_keys:
@@ -157,7 +157,7 @@ permission_grants:
 `
 	path := writeYAMLProvisioningFile(t, yamlContent)
 	orgRepo := &fakeOrgRepo{orgs: make(map[string]*organization.Organization)}
-	opRepo := &fakeOpRepo{ops: make(map[string]*operator.Operator)}
+	opRepo := &fakeOpRepo{ops: make(map[string]*user.User)}
 	groupRepo := &fakeGroupRepo{}
 	grantRepo := &fakeGrantRepo{}
 	orgCreator := &fakeOrgCreator{}

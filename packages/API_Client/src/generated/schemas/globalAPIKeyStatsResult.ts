@@ -6,15 +6,15 @@
  * OpenAPI spec version: 0.0.01
  */
 import type { GlobalAPIKeyStatsResultRequestsByScope } from './globalAPIKeyStatsResultRequestsByScope';
-import type { TopOperatorStat } from './topOperatorStat';
+import type { TopUserStat } from './topUserStat';
 
 export interface GlobalAPIKeyStatsResult {
   active_keys?: number;
   max_per_month?: number;
   requests_by_scope?: GlobalAPIKeyStatsResultRequestsByScope;
   revoked_keys?: number;
-  top_operators?: TopOperatorStat[];
+  top_users?: TopUserStat[];
   total_keys?: number;
-  total_operators?: number;
   total_requests?: number;
+  total_users?: number;
 }

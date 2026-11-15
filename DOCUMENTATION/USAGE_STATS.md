@@ -1,13 +1,13 @@
 # Usage Stats
 
 The server keeps a small, periodic snapshot of itself — how many devices,
-operators, organizations, alert rules, contact points, and annotations exist, and
+users, organizations, alert rules, contact points, and annotations exist, and
 which feature toggles are on. It's self-telemetry: the platform measuring its own
 shape.
 
 The snapshot isn't a dashboard. It exists for two things: the admin update
 checker, which reports what version is running alongside what the deployment
-contains, and operator support, where "how big is this install?" is the first
+contains, and user support, where "how big is this install?" is the first
 question in any triage.
 
 ---
@@ -17,7 +17,7 @@ question in any triage.
 | Field | Meaning |
 |:------|:--------|
 | `counts.devices` | Devices across the deployment. |
-| `counts.operators` | Operator accounts. |
+| `counts.users` | User accounts. |
 | `counts.organizations` | Organizations. |
 | `counts.service_accounts` | Service accounts. |
 | `counts.alert_rules` | Alert rules. |
@@ -55,7 +55,7 @@ GET /v1/admin/updates/check
   "latest_version": "2.1.0",
   "update_available": true,
   "usage_stats": {
-    "counts": { "devices": 1284, "operators": 37, ... },
+    "counts": { "devices": 1284, "users": 37, ... },
     "toggles": { "scoped_rbac": true, "device_groups": true, ... },
     "collected_at": 1767225600000
   }

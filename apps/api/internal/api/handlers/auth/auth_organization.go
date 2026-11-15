@@ -44,9 +44,9 @@ func NewOrganizationHandler(authService *auth.AuthService, presenter *response.P
 }
 
 // SelectOrganization handles POST /v1/auth/organizations/select.
-// This endpoint allows operators with multiple organization memberships to switch between them.
+// This endpoint allows users with multiple organization memberships to switch between them.
 // @Summary      Select organization
-// @Description  Switches the operator's active organization context
+// @Description  Switches the user's active organization context
 // @Tags         auth
 // @Accept       json
 // @Produce      json
@@ -58,8 +58,8 @@ func NewOrganizationHandler(authService *auth.AuthService, presenter *response.P
 // @Failure      403  {object}  openapi.ErrorResponse  "access denied"
 // @Router       /auth/organizations/select [post]
 func (h *OrganizationHandler) SelectOrganization(c *gin.Context) {
-	// Get operator and session from context (set by cookieAuth middleware).
-	op := middleware.GetOperatorFromContext(c)
+	// Get user and session from context (set by cookieAuth middleware).
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
@@ -111,24 +111,24 @@ func (h *OrganizationHandler) SelectOrganization(c *gin.Context) {
 }
 
 // GetOrganizations handles GET /v1/auth/organizations.
-// This endpoint returns all organizations the operator is a member of.
+// This endpoint returns all organizations the user is a member of.
 // @Tags         auth
 // @Accept       json
 // @Produce      json
 // @Param        X-Organization-ID  header  string  true  "Organization ID"
-// @Success      200  {object}  openapi.OrganizationListResult  "operator's organizations"
+// @Success      200  {object}  openapi.OrganizationListResult  "user's organizations"
 // @Failure      401  {object}  openapi.ErrorResponse  "authentication required"
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/organizations [get]
 func (h *OrganizationHandler) GetOrganizations(c *gin.Context) {
-	// Get operator from context (set by cookieAuth middleware).
-	op := middleware.GetOperatorFromContext(c)
+	// Get user from context (set by cookieAuth middleware).
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
 	}
 
-	orgs, err := h.authService.GetOperatorOrganizations(c.Request.Context(), op)
+	orgs, err := h.authService.GetUserOrganizations(c.Request.Context(), op)
 	if err != nil {
 		h.presenter.InternalError(c, "an error occurred fetching organizations")
 		return

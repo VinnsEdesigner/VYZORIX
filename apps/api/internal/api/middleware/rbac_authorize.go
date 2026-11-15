@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/responses"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/gin-gonic/gin"
 )
@@ -12,7 +12,7 @@ import (
 // RequireOrgRole returns middleware that requires a minimum role level in the organization.
 func RequireOrgRole(minRole organization.OrganizationRole) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		op := GetOperatorFromContext(c)
+		op := GetUserFromContext(c)
 		if op == nil {
 			responses.RespondStructured(c, http.StatusUnauthorized,
 
@@ -37,9 +37,9 @@ func RequireOrgRole(minRole organization.OrganizationRole) gin.HandlerFunc {
 }
 
 // RequirePermission returns middleware that requires a specific permission.
-func RequirePermission(perm operator.Permission) gin.HandlerFunc {
+func RequirePermission(perm user.Permission) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		op := GetOperatorFromContext(c)
+		op := GetUserFromContext(c)
 		if op == nil {
 			responses.RespondStructured(c, http.StatusUnauthorized,
 
@@ -63,9 +63,9 @@ func RequirePermission(perm operator.Permission) gin.HandlerFunc {
 }
 
 // RequireAnyPermission returns middleware that checks for any of the given permissions.
-func RequireAnyPermission(perms ...operator.Permission) gin.HandlerFunc {
+func RequireAnyPermission(perms ...user.Permission) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		op := GetOperatorFromContext(c)
+		op := GetUserFromContext(c)
 		if op == nil {
 			responses.RespondStructured(c, http.StatusUnauthorized,
 
@@ -89,9 +89,9 @@ func RequireAnyPermission(perms ...operator.Permission) gin.HandlerFunc {
 }
 
 // RequireAllPermissions returns middleware that checks for all of the given permissions.
-func RequireAllPermissions(perms ...operator.Permission) gin.HandlerFunc {
+func RequireAllPermissions(perms ...user.Permission) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		op := GetOperatorFromContext(c)
+		op := GetUserFromContext(c)
 		if op == nil {
 			responses.RespondStructured(c, http.StatusUnauthorized,
 

@@ -12,7 +12,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/shared"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/email_verification"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/redaction"
 )
 
@@ -38,13 +38,13 @@ func (s *AuthService) VerifyEmail(ctx context.Context, token string) (*VerifyEma
 		return &VerifyEmailResult{Verified: false}, nil
 	}
 
-	if err := s.operatorRepo.UpdateEmailVerified(ctx, ev.OperatorID, true); err != nil {
+	if err := s.userRepo.UpdateEmailVerified(ctx, ev.UserID, true); err != nil {
 		return nil, err
 	}
 
 	_ = s.emailVerifyRepo.Delete(ctx, ev.ID)
 
-	op, _ := s.operatorRepo.FindByID(ctx, ev.OperatorID)
+	op, _ := s.userRepo.FindByID(ctx, ev.UserID)
 	email := ""
 	if op != nil {
 		email = op.Email
@@ -57,9 +57,9 @@ func (s *AuthService) VerifyEmail(ctx context.Context, token string) (*VerifyEma
 func (s *AuthService) ResendVerification(ctx context.Context, email string) error {
 	email = strings.ToLower(strings.TrimSpace(email))
 
-	op, err := s.operatorRepo.FindByEmail(ctx, email)
+	op, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
-		if errors.Is(err, operator.ErrNotFound) {
+		if errors.Is(err, user.ErrNotFound) {
 			return nil
 		}
 		return err
@@ -70,7 +70,7 @@ func (s *AuthService) ResendVerification(ctx context.Context, email string) erro
 	}
 
 	// Delete old verification tokens.
-	_ = s.emailVerifyRepo.DeleteByOperator(ctx, op.ID)
+	_ = s.emailVerifyRepo.DeleteByUser(ctx, op.ID)
 
 	// Create new verification token.
 	token, _, err := s.CreateEmailVerification(ctx, op.ID)
@@ -81,7 +81,7 @@ func (s *AuthService) ResendVerification(ctx context.Context, email string) erro
 	// Log the token for email sending (actual email sending should be done at handler level).
 	// This is the standard pattern: service creates token, handler sends email.
 	slog.Default().Info("email_verification_resent",
-		"operator_id", op.ID,
+		"user_id", op.ID,
 		"email", redaction.DefaultRedactor.Redact(email),
 		"token_hint", token[:8]+"...", // Only log partial token for debugging.
 	)
@@ -90,7 +90,7 @@ func (s *AuthService) ResendVerification(ctx context.Context, email string) erro
 }
 
 // CreateEmailVerification creates a new email verification token and returns the raw token and ID.
-func (s *AuthService) CreateEmailVerification(ctx context.Context, operatorID string) (token string, id string, err error) {
+func (s *AuthService) CreateEmailVerification(ctx context.Context, userID string) (token string, id string, err error) {
 	tokenBytes := make([]byte, 32)
 	if _, err := rand.Read(tokenBytes); err != nil {
 		return "", "", err
@@ -103,7 +103,7 @@ func (s *AuthService) CreateEmailVerification(ctx context.Context, operatorID st
 
 	ev := &email_verification.EmailVerification{
 		ID:         id,
-		OperatorID: operatorID,
+		UserID: userID,
 		TokenHash:  tokenHash,
 		ExpiresAt:  time.Now().UTC().Add(24 * time.Hour),
 		CreatedAt:  time.Now().UTC(),
@@ -145,7 +145,7 @@ func (s *AuthService) PollVerification(ctx context.Context, token string) (*emai
 		}, nil
 	}
 
-	op, err := s.operatorRepo.FindByID(ctx, ev.OperatorID)
+	op, err := s.userRepo.FindByID(ctx, ev.UserID)
 	if err != nil {
 		return &email_verification.PollVerificationResult{
 			Status: email_verification.PollStatusWaiting,
@@ -174,13 +174,13 @@ func (s *AuthService) PollVerification(ctx context.Context, token string) (*emai
 func (s *AuthService) CancelVerification(ctx context.Context, email string) error {
 	email = strings.ToLower(strings.TrimSpace(email))
 
-	op, err := s.operatorRepo.FindByEmail(ctx, email)
+	op, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
-		if errors.Is(err, operator.ErrNotFound) {
+		if errors.Is(err, user.ErrNotFound) {
 			return nil
 		}
 		return err
 	}
 
-	return s.emailVerifyRepo.DeleteByOperator(ctx, op.ID)
+	return s.emailVerifyRepo.DeleteByUser(ctx, op.ID)
 }

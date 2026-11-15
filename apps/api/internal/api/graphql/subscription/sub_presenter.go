@@ -5,7 +5,7 @@ import (
 	"context"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 )
 
 // auditLoggerAdapter wraps audit.Logger to implement AuditLogger.
@@ -19,8 +19,8 @@ func NewAuditLoggerAdapter(logger *audit.Logger) AuditLogger {
 }
 
 // LogAction implements AuditLogger.
-func (a *auditLoggerAdapter) LogAction(ctx context.Context, operatorID, action, resourceType, resourceID string) {
-	a.logger.AdminAction(ctx, operatorID, action, resourceType, resourceID, "", nil)
+func (a *auditLoggerAdapter) LogAction(ctx context.Context, userID, action, resourceType, resourceID string) {
+	a.logger.AdminAction(ctx, userID, action, resourceType, resourceID, "", nil)
 }
 
 // Presenter handles subscription logging and audit.
@@ -38,14 +38,14 @@ func NewPresenter(log Logger, auditLogger AuditLogger) *Presenter {
 }
 
 // LogConnect logs a subscription connection.
-func (p *Presenter) LogConnect(ctx context.Context, op *operator.Operator) {
+func (p *Presenter) LogConnect(ctx context.Context, op *user.User) {
 	if p.log != nil {
 		p.log.Info("subscription client connected", "operatorID", op.ID)
 	}
 }
 
 // LogDisconnect logs a subscription disconnection.
-func (p *Presenter) LogDisconnect(ctx context.Context, op *operator.Operator) {
+func (p *Presenter) LogDisconnect(ctx context.Context, op *user.User) {
 	if p.log != nil {
 		p.log.Info("subscription client disconnected", "operatorID", op.ID)
 	}
@@ -73,14 +73,14 @@ func (p *Presenter) LogMessageError(ctx context.Context, err error) {
 }
 
 // AuditSubscribe logs a subscription audit event.
-func (p *Presenter) AuditSubscribe(ctx context.Context, op *operator.Operator, subscriptionType, resourceID string) {
+func (p *Presenter) AuditSubscribe(ctx context.Context, op *user.User, subscriptionType, resourceID string) {
 	if p.auditLogger != nil {
 		p.auditLogger.LogAction(ctx, op.ID, "graphql_subscription_"+subscriptionType, "subscription", resourceID)
 	}
 }
 
 // AuditUnsubscribe logs an unsubscription audit event.
-func (p *Presenter) AuditUnsubscribe(ctx context.Context, op *operator.Operator, subscriptionType string) {
+func (p *Presenter) AuditUnsubscribe(ctx context.Context, op *user.User, subscriptionType string) {
 	if p.auditLogger != nil {
 		p.auditLogger.LogAction(ctx, op.ID, "graphql_unsubscription_"+subscriptionType, "subscription", "")
 	}

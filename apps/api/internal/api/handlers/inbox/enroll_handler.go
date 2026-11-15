@@ -28,7 +28,7 @@ var (
 // EnrollHandler serves the keypair registration endpoints.
 //
 // Enroll is public: a freshly installed device has no credential yet, so there is
-// nothing to authenticate with. Claim is operator-authenticated: it is the step
+// nothing to authenticate with. Claim is user-authenticated: it is the step
 // that decides who owns the device.
 //
 // for the flow this implements.
@@ -93,7 +93,7 @@ type enrollResponse struct {
 	ExpiresInSeconds int64 `json:"expiresInSeconds"`
 	// PollIntervalSeconds is how often the device should ask for its config while
 	// it waits to be claimed. The config normally arrives over the held WebSocket
-	// the moment an operator claims the code, so this is the fallback for a device
+	// the moment a user claims the code, so this is the fallback for a device
 	// whose socket is not up — it bounds how long a claimed device can sit
 	// unconfigured. The server owns the value so the cadence can be tuned without
 	// shipping a new APK.
@@ -175,7 +175,7 @@ func (h *EnrollHandler) Enroll(c *gin.Context) {
 	})
 }
 
-// claimRequest is the operator's action: the code they typed, plus the details
+// claimRequest is the user's action: the code they typed, plus the details
 // they chose.
 type claimRequest struct {
 	PairingCode string `json:"pairingCode" binding:"required"`
@@ -197,7 +197,7 @@ type claimRequest struct {
 // @Failure      409   {object}  openapi.ErrorResponse  "device already claimed"
 // @Router       /v1/device/claim [post]
 func (h *EnrollHandler) Claim(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "authentication required"))
 
@@ -220,7 +220,7 @@ func (h *EnrollHandler) Claim(c *gin.Context) {
 
 	d, err := h.devices.Claim(c.Request.Context(), devicesvc.ClaimRequest{
 		PairingCode:    req.PairingCode,
-		OperatorID:     op.ID,
+		UserID:     op.ID,
 		OrganizationID: orgID,
 		Name:           req.Name,
 		TierCap:        req.TierCap,
@@ -241,7 +241,7 @@ func (h *EnrollHandler) Claim(c *gin.Context) {
 		return
 	}
 
-	// The operator sees these facts and confirms the device is theirs (
+	// The user sees these facts and confirms the device is theirs (
 	//), so the whole set the device reported is returned, not just the name and model.
 	c.JSON(http.StatusOK, gin.H{
 		"deviceId":        d.ID,
@@ -320,7 +320,7 @@ func (h *EnrollHandler) GetConfig(c *gin.Context) {
 //
 // A failure is not an error for the claim: the device is bound and registered
 // either way, and it re-fetches on reconnect by version. Reporting the outcome
-// lets the operator see that the device has not been configured yet.
+// lets the user see that the device has not been configured yet.
 func (h *EnrollHandler) deliverConfig(c *gin.Context, deviceID string) bool {
 	sent, err := h.pushConfig(c.Request.Context(), deviceID)
 	if err != nil {

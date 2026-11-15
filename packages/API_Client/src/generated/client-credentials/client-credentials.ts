@@ -21,7 +21,7 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
   export const getClientCredentials = () => {
 /**
- * Returns all client credentials for the authenticated operator
+ * Returns all client credentials for the authenticated user
  * @summary List client credentials
  */
 const getAuthClientCredentials = (

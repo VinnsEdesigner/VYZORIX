@@ -21,7 +21,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/keys"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/logs"
 	appmetrics "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/metrics"
-	appoperator "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/operator"
+	appuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/user"
 	orgapplication "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/provisioning"
 	devicedomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
@@ -140,8 +140,8 @@ func main() {
 		diagnosticsSvc := diagnosticsapp.NewService(diagnosticsRepo, deviceRepo, deps.Hub, cfg.DiagnosticsConfig)
 
 		// Create settings-related services for GraphQL.
-		settingsService := auth.NewClientSettingsService(deps.OperatorRepo)
-		notificationSvc := appoperator.NewNotificationService(deps.OperatorRepo)
+		settingsService := auth.NewClientSettingsService(deps.UserRepo)
+		notificationSvc := appuser.NewNotificationService(deps.UserRepo)
 		webhookClient := infrawebhook.NewClient(10 * time.Second)
 
 		if regErr := apiServer.RegisterGraphQL(
@@ -158,7 +158,7 @@ func main() {
 			deps.Hub,
 			deps.UpdatesService,
 			diagnosticsSvc,
-			deps.OperatorRepo,
+			deps.UserRepo,
 			settingsService,
 			notificationSvc,
 			webhookClient,
@@ -358,13 +358,13 @@ func startServer(cfg *config.Config, log *slog.Logger, apiServer *api.Server,
 			prov = prov.
 				WithRepositories(
 					provOrgRepo{storage.NewOrganizationStorage(db)},
-					provOperatorRepo{storage.NewOperatorRepository(db)},
+					provUserRepo{storage.NewUserRepository(db)},
 					provGroupRepo{storage.NewDeviceGroupRepository(db)},
 					provGrantRepo{storage.NewGrantRepository(db)},
 				).
 				WithCreators(
 					provOrgCreator{orgService},
-					provOperatorCreator{authService},
+					provUserCreator{authService},
 					provKeyCreator{keyService},
 				).
 				WithAlertRepository(storage.NewAlertRuleRepository(db)).

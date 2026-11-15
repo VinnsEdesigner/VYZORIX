@@ -72,7 +72,7 @@ export const getGetOrganizationsUrl = () => {
 }
 
 /**
- * Returns all organizations the operator is a member of
+ * Returns all organizations the user is a member of
  * @summary List organizations
  */
 export const getOrganizations = async ( options?: Parameters<typeof customAxios>[1]): Promise<OrganizationListResult> => {

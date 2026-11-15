@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 )
 
-// ValidatePasswordPolicy validates a new password against operator's security policy.
-func (s *AuthService) ValidatePasswordPolicy(ctx context.Context, op *operator.Operator, newPassword string) error {
+// ValidatePasswordPolicy validates a new password against user's security policy.
+func (s *AuthService) ValidatePasswordPolicy(ctx context.Context, op *user.User, newPassword string) error {
 	settings := op.SecuritySettings
 
 	if settings.PasswordHistoryCount > 0 {
@@ -30,8 +30,8 @@ func (s *AuthService) ValidatePasswordPolicy(ctx context.Context, op *operator.O
 	return nil
 }
 
-func (s *AuthService) checkPasswordHistory(ctx context.Context, operatorID, newPassword string, _ int) error {
-	op, err := s.operatorRepo.FindByID(ctx, operatorID)
+func (s *AuthService) checkPasswordHistory(ctx context.Context, userID, newPassword string, _ int) error {
+	op, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -43,8 +43,8 @@ func (s *AuthService) checkPasswordHistory(ctx context.Context, operatorID, newP
 	return nil
 }
 
-// IsPasswordExpired checks if operator's password has expired.
-func (s *AuthService) IsPasswordExpired(ctx context.Context, op *operator.Operator) (bool, error) {
+// IsPasswordExpired checks if user's password has expired.
+func (s *AuthService) IsPasswordExpired(ctx context.Context, op *user.User) (bool, error) {
 	settings := op.SecuritySettings
 
 	if settings.PasswordMaxAgeDays <= 0 {

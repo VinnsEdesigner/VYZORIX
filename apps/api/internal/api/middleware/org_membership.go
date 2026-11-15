@@ -14,10 +14,10 @@ const ContextKeyMembership = "org_membership"
 
 // OrganizationMembershipChecker defines the interface for checking organization membership.
 type OrganizationMembershipChecker interface {
-	GetMembership(ctx context.Context, operatorID, orgID string) (interface{}, error)
+	GetMembership(ctx context.Context, userID, orgID string) (interface{}, error)
 }
 
-// OrganizationMembership middleware validates operator's membership in the organization.
+// OrganizationMembership middleware validates user's membership in the organization.
 type OrganizationMembership struct {
 	membershipChecker OrganizationMembershipChecker
 }
@@ -41,9 +41,9 @@ func (m *OrganizationMembership) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		// Get operator from context (set by auth middleware).
-		operator := GetOperatorFromContext(c)
-		if operator == nil {
+		// Get user from context (set by auth middleware).
+		user := GetUserFromContext(c)
+		if user == nil {
 			responses.RespondStructuredAbort(c, http.StatusUnauthorized,
 
 				"authentication required",
@@ -60,8 +60,8 @@ func (m *OrganizationMembership) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		// Check if operator is a member of the organization.
-		membership, err := m.membershipChecker.GetMembership(c.Request.Context(), operator.ID, orgID)
+		// Check if user is a member of the organization.
+		membership, err := m.membershipChecker.GetMembership(c.Request.Context(), user.ID, orgID)
 		if err != nil {
 			responses.RespondStructuredAbort(c, http.StatusForbidden,
 

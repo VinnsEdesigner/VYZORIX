@@ -9,7 +9,7 @@
     "/admin/api-keys": {
       "get": {
         "summary": "List all API keys",
-        "description": "Lists all API keys across all operators (super admin only)",
+        "description": "Lists all API keys across all users (super admin only)",
         "tags": [
           "admin"
         ],
@@ -42,13 +42,13 @@
             "description": "page size (default 20)"
           },
           {
-            "name": "operator_id",
+            "name": "user_id",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string"
             },
-            "description": "filter by operator ID"
+            "description": "filter by user ID"
           },
           {
             "name": "search",
@@ -62,86 +62,7 @@
         ],
         "responses": {
           "200": {
-            "description": "API keys with operator identity",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminAPIKeyListResult"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "super_admin required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/admin/api-keys/operator/{operatorId}": {
-      "get": {
-        "summary": "List operator API keys",
-        "description": "Lists all API keys for a specific operator (super admin only)",
-        "tags": [
-          "admin"
-        ],
-        "parameters": [
-          {
-            "name": "X-Organization-ID",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Organization ID"
-          },
-          {
-            "name": "operatorId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "operator ID"
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "page number (default 1)"
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer"
-            },
-            "description": "page size (default 20)"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "operator API keys",
+            "description": "API keys with user identity",
             "content": {
               "application/json": {
                 "schema": {
@@ -225,10 +146,10 @@
         }
       }
     },
-    "/admin/api-keys/stats/operator/{operatorId}": {
+    "/admin/api-keys/stats/user/{userId}": {
       "get": {
-        "summary": "Get operator API key stats",
-        "description": "Returns API key statistics for a specific operator (super admin only)",
+        "summary": "Get user API key stats",
+        "description": "Returns API key statistics for a specific user (super admin only)",
         "tags": [
           "admin"
         ],
@@ -243,22 +164,101 @@
             "description": "Organization ID"
           },
           {
-            "name": "operatorId",
+            "name": "userId",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string"
             },
-            "description": "operator ID"
+            "description": "user ID"
           }
         ],
         "responses": {
           "200": {
-            "description": "operator stats",
+            "description": "user stats",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OperatorAPIKeyStatsResult"
+                  "$ref": "#/components/schemas/UserAPIKeyStatsResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "super_admin required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api-keys/user/{userId}": {
+      "get": {
+        "summary": "List user API keys",
+        "description": "Lists all API keys for a specific user (super admin only)",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "X-Organization-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "user ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "page number (default 1)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "page size (default 20)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "user API keys",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminAPIKeyListResult"
                 }
               }
             }
@@ -289,7 +289,7 @@
     "/admin/api-keys/{keyId}": {
       "delete": {
         "summary": "Force revoke API key",
-        "description": "Force revokes an API key for any operator (super admin only)",
+        "description": "Force revokes an API key for any user (super admin only)",
         "tags": [
           "admin"
         ],
@@ -1639,91 +1639,10 @@
         }
       }
     },
-    "/auth/admin/lockout/unlock/{operator_id}": {
-      "post": {
-        "summary": "Unlock account",
-        "description": "Clears an operator's account lockout. Requires org-scoped super_admin",
-        "tags": [
-          "auth"
-        ],
-        "parameters": [
-          {
-            "name": "X-Organization-ID",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Organization ID"
-          },
-          {
-            "name": "operator_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "operator ID to unlock"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "account unlocked",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResult"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "operator_id required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "not authenticated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "super_admin required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "operator not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/admin/operators": {
+    "/auth/admin/users": {
       "get": {
-        "summary": "List operators",
-        "description": "Lists all operators in the system (super_admin only)",
+        "summary": "List users",
+        "description": "Lists all users in the system (super_admin only)",
         "tags": [
           "admin"
         ],
@@ -1740,11 +1659,11 @@
         ],
         "responses": {
           "200": {
-            "description": "operators",
+            "description": "users",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AdminOperatorListResult"
+                  "$ref": "#/components/schemas/AdminUserListResult"
                 }
               }
             }
@@ -1782,8 +1701,8 @@
         }
       },
       "post": {
-        "summary": "Create operator",
-        "description": "Creates a new operator (super_admin only)",
+        "summary": "Create user",
+        "description": "Creates a new user (super_admin only)",
         "tags": [
           "admin"
         ],
@@ -1800,22 +1719,22 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "operator credentials",
+          "description": "user credentials",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateOperatorRequest"
+                "$ref": "#/components/schemas/CreateUserRequest"
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "created operator",
+            "description": "created user",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AdminOperator"
+                  "$ref": "#/components/schemas/AdminUser"
                 }
               }
             }
@@ -1873,10 +1792,10 @@
         }
       }
     },
-    "/auth/admin/operators/{id}": {
+    "/auth/admin/users/{id}": {
       "get": {
-        "summary": "Get operator",
-        "description": "Returns a single operator by ID (super_admin only)",
+        "summary": "Get user",
+        "description": "Returns a single user by ID (super_admin only)",
         "tags": [
           "admin"
         ],
@@ -1897,16 +1816,16 @@
             "schema": {
               "type": "string"
             },
-            "description": "operator ID"
+            "description": "user ID"
           }
         ],
         "responses": {
           "200": {
-            "description": "operator",
+            "description": "created user",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AdminOperator"
+                  "$ref": "#/components/schemas/AdminUser"
                 }
               }
             }
@@ -1954,8 +1873,8 @@
         }
       },
       "delete": {
-        "summary": "Delete operator",
-        "description": "Deletes an operator. Cannot delete yourself or the last super_admin",
+        "summary": "Delete user",
+        "description": "Deletes a user. Cannot delete yourself or the last super_admin",
         "tags": [
           "admin"
         ],
@@ -1976,12 +1895,12 @@
             "schema": {
               "type": "string"
             },
-            "description": "operator ID"
+            "description": "user ID"
           }
         ],
         "responses": {
           "200": {
-            "description": "operator deleted",
+            "description": "user deleted",
             "content": {
               "application/json": {
                 "schema": {
@@ -1991,7 +1910,7 @@
             }
           },
           "400": {
-            "description": "operator id required / cannot delete self",
+            "description": "user id required / cannot delete self",
             "content": {
               "application/json": {
                 "schema": {
@@ -2053,8 +1972,8 @@
         }
       },
       "patch": {
-        "summary": "Update operator",
-        "description": "Updates mutable operator fields (super_admin only)",
+        "summary": "Update user",
+        "description": "Updates mutable user fields (super_admin only)",
         "tags": [
           "admin"
         ],
@@ -2075,27 +1994,27 @@
             "schema": {
               "type": "string"
             },
-            "description": "operator ID"
+            "description": "user ID"
           }
         ],
         "requestBody": {
           "required": true,
-          "description": "operator update",
+          "description": "user update",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateOperatorRequest"
+                "$ref": "#/components/schemas/UpdateUserRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "updated operator",
+            "description": "updated user",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AdminOperator"
+                  "$ref": "#/components/schemas/AdminUser"
                 }
               }
             }
@@ -2166,7 +2085,7 @@
     "/auth/api-keys": {
       "get": {
         "summary": "List API keys",
-        "description": "Returns paginated API keys for the operator with monthly quota usage",
+        "description": "Returns paginated API keys for the user with monthly quota usage",
         "tags": [
           "api-keys"
         ],
@@ -2653,7 +2572,7 @@
     "/auth/client-credentials": {
       "get": {
         "summary": "List client credentials",
-        "description": "Returns all client credentials for the authenticated operator",
+        "description": "Returns all client credentials for the authenticated user",
         "tags": [
           "client-credentials"
         ],
@@ -3101,7 +3020,7 @@
     "/auth/lockout/status": {
       "get": {
         "summary": "Get lockout status",
-        "description": "Returns the current account lockout status for the authenticated operator",
+        "description": "Returns the current account lockout status for the authenticated user",
         "tags": [
           "auth"
         ],
@@ -3131,8 +3050,8 @@
     },
     "/auth/login": {
       "post": {
-        "summary": "Operator login",
-        "description": "Authenticates an operator with email/password and starts a session",
+        "summary": "User login",
+        "description": "Authenticates a user with email/password and starts a session",
         "tags": [
           "auth"
         ],
@@ -3193,8 +3112,8 @@
     },
     "/auth/login/tokens": {
       "post": {
-        "summary": "Operator login (token response)",
-        "description": "Authenticates an operator and returns access/refresh tokens instead of a cookie",
+        "summary": "User login (token response)",
+        "description": "Authenticates a user and returns access/refresh tokens instead of a cookie",
         "tags": [
           "auth"
         ],
@@ -3297,14 +3216,14 @@
     },
     "/auth/me": {
       "get": {
-        "summary": "Get current operator",
-        "description": "Returns the authenticated operator's profile and organization context",
+        "summary": "Get current user",
+        "description": "Returns the authenticated user's profile and organization context",
         "tags": [
           "auth"
         ],
         "responses": {
           "200": {
-            "description": "current operator",
+            "description": "current user",
             "content": {
               "application/json": {
                 "schema": {
@@ -3336,8 +3255,8 @@
         }
       },
       "patch": {
-        "summary": "Update operator name",
-        "description": "Updates the current operator's display name",
+        "summary": "Update user name",
+        "description": "Updates the current user's display name",
         "tags": [
           "settings"
         ],
@@ -3354,11 +3273,11 @@
         },
         "responses": {
           "200": {
-            "description": "updated operator",
+            "description": "updated user",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OperatorSettingsResultLegacy"
+                  "$ref": "#/components/schemas/UserSettingsResultLegacy"
                 }
               }
             }
@@ -3605,7 +3524,7 @@
     "/auth/mfa/status": {
       "get": {
         "summary": "Get MFA status",
-        "description": "Returns whether MFA is enabled for the current operator",
+        "description": "Returns whether MFA is enabled for the current user",
         "tags": [
           "mfa"
         ],
@@ -3652,7 +3571,7 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "operator_id + MFA code",
+          "description": "user_id + MFA code",
           "content": {
             "application/json": {
               "schema": {
@@ -3673,7 +3592,7 @@
             }
           },
           "400": {
-            "description": "operator_id and code required",
+            "description": "user_id and code required",
             "content": {
               "application/json": {
                 "schema": {
@@ -3683,7 +3602,7 @@
             }
           },
           "401": {
-            "description": "invalid MFA code / operator invalid",
+            "description": "invalid MFA code / user invalid",
             "content": {
               "application/json": {
                 "schema": {
@@ -3708,7 +3627,7 @@
     "/auth/mfa/verify-backup": {
       "post": {
         "summary": "Verify MFA backup code",
-        "description": "Verifies a backup code for an operator with MFA enabled",
+        "description": "Verifies a backup code for a user with MFA enabled",
         "tags": [
           "mfa"
         ],
@@ -3923,7 +3842,7 @@
         ],
         "responses": {
           "200": {
-            "description": "operator's organizations",
+            "description": "user's organizations",
             "content": {
               "application/json": {
                 "schema": {
@@ -3958,7 +3877,7 @@
     "/auth/organizations/select": {
       "post": {
         "summary": "Select organization",
-        "description": "Switches the operator's active organization context",
+        "description": "Switches the user's active organization context",
         "tags": [
           "auth"
         ],
@@ -4144,8 +4063,8 @@
     },
     "/auth/register": {
       "post": {
-        "summary": "Register operator",
-        "description": "Registers a new operator account and sends a verification email",
+        "summary": "Register user",
+        "description": "Registers a new user account and sends a verification email",
         "tags": [
           "auth"
         ],
@@ -4162,7 +4081,7 @@
         },
         "responses": {
           "201": {
-            "description": "created operator",
+            "description": "created user",
             "content": {
               "application/json": {
                 "schema": {
@@ -4281,7 +4200,7 @@
             "schema": {
               "type": "string"
             },
-            "description": "operator email"
+            "description": "user email"
           }
         ],
         "responses": {
@@ -4319,7 +4238,7 @@
       },
       "post": {
         "summary": "Resend verification email",
-        "description": "Resends the verification email to an operator",
+        "description": "Resends the verification email to a user",
         "tags": [
           "auth"
         ],
@@ -4433,7 +4352,7 @@
     "/auth/sessions": {
       "get": {
         "summary": "List sessions",
-        "description": "Returns all active sessions for the authenticated operator",
+        "description": "Returns all active sessions for the authenticated user",
         "tags": [
           "sessions"
         ],
@@ -4513,7 +4432,7 @@
     "/auth/sessions/concurrent": {
       "get": {
         "summary": "Check concurrent sessions",
-        "description": "Returns whether the operator has concurrent active logins",
+        "description": "Returns whether the user has concurrent active logins",
         "tags": [
           "sessions"
         ],
@@ -4737,7 +4656,7 @@
     "/auth/verify-email": {
       "get": {
         "summary": "Verify email (GET)",
-        "description": "Verifies an operator's email via a token query parameter (alternative to POST)",
+        "description": "Verifies a user's email via a token query parameter (alternative to POST)",
         "tags": [
           "auth"
         ],
@@ -4787,7 +4706,7 @@
       },
       "post": {
         "summary": "Verify email",
-        "description": "Verifies an operator's email using a verification token",
+        "description": "Verifies a user's email using a verification token",
         "tags": [
           "auth"
         ],
@@ -4965,7 +4884,7 @@
     "/channels/subscribe": {
       "post": {
         "summary": "Subscribe to channel",
-        "description": "Registers a logical subscription to a channel scope for the operator",
+        "description": "Registers a logical subscription to a channel scope for the user",
         "tags": [
           "channels"
         ],
@@ -5731,7 +5650,7 @@
             }
           },
           "401": {
-            "description": "operator context required",
+            "description": "user context required",
             "content": {
               "application/json": {
                 "schema": {
@@ -6228,10 +6147,10 @@
         }
       }
     },
-    "/dashboard/devices/operator": {
+    "/dashboard/devices/user": {
       "get": {
-        "summary": "List devices by operator",
-        "description": "Returns devices assigned to a specific operator",
+        "summary": "List devices by user",
+        "description": "Returns devices assigned to a specific user",
         "tags": [
           "devices"
         ],
@@ -6246,13 +6165,13 @@
             "description": "Organization ID"
           },
           {
-            "name": "operatorId",
+            "name": "userId",
             "in": "query",
             "required": false,
             "schema": {
               "type": "string"
             },
-            "description": "operator ID"
+            "description": "user ID"
           }
         ],
         "responses": {
@@ -6328,7 +6247,7 @@
             }
           },
           "401": {
-            "description": "operator context required",
+            "description": "user context required",
             "content": {
               "application/json": {
                 "schema": {
@@ -6530,7 +6449,7 @@
             }
           },
           "401": {
-            "description": "operator context required",
+            "description": "user context required",
             "content": {
               "application/json": {
                 "schema": {
@@ -6721,7 +6640,7 @@
     },
     "/deploy/whoami": {
       "get": {
-        "summary": "Current operator identity for the deploy surface",
+        "summary": "Current user identity for the deploy surface",
         "description": "",
         "tags": [
           "deploy"
@@ -7441,7 +7360,7 @@
     "/device/inbox": {
       "get": {
         "summary": "List inbox entries",
-        "description": "Returns paginated inbox entries for the authenticated operator within the organization",
+        "description": "Returns paginated inbox entries for the authenticated user within the organization",
         "tags": [
           "inbox"
         ],
@@ -7518,7 +7437,7 @@
       },
       "post": {
         "summary": "Create inbox request",
-        "description": "Submits a device registration request to the operator inbox. Requires device attestation when configured",
+        "description": "Submits a device registration request to the user inbox. Requires device attestation when configured",
         "tags": [
           "inbox"
         ],
@@ -7678,7 +7597,7 @@
       },
       "patch": {
         "summary": "Update inbox entry",
-        "description": "Updates an inbox entry (e.g., add operator notes) within the organization",
+        "description": "Updates an inbox entry (e.g., add user notes) within the organization",
         "tags": [
           "inbox"
         ],
@@ -9754,10 +9673,82 @@
         }
       }
     },
+    "/instance/lockout/unlock/{user_id}": {
+      "post": {
+        "summary": "Unlock account",
+        "description": "Clears a user's account lockout. Instance-scoped: requires admin.lockout on the deployment, not an organization role. Locking a user out of the deployment is not contained by any single organization.",
+        "tags": [
+          "instance"
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "user ID to unlock"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "account unlocked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "user_id required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "instance admin required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "user not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/invitations": {
       "get": {
         "summary": "List sent invitations",
-        "description": "Returns invitations sent by the authenticated operator",
+        "description": "Returns invitations sent by the authenticated user",
         "tags": [
           "invitations"
         ],
@@ -9796,7 +9787,7 @@
       },
       "post": {
         "summary": "Create invitation",
-        "description": "Invites an operator to an organization by email",
+        "description": "Invites a user to an organization by email",
         "tags": [
           "invitations"
         ],
@@ -10062,7 +10053,7 @@
     "/invite/{token}/accept": {
       "post": {
         "summary": "Accept invitation",
-        "description": "Accepts an invitation and adds the operator to the organization",
+        "description": "Accepts an invitation and adds the user to the organization",
         "tags": [
           "invitations"
         ],
@@ -10203,10 +10194,41 @@
         }
       }
     },
+    "/me/capabilities": {
+      "get": {
+        "summary": "Get effective capabilities",
+        "description": "Returns the caller's effective permissions across the personal, organization and instance grant stores, as \"action:scope\" strings.",
+        "tags": [
+          "me"
+        ],
+        "responses": {
+          "200": {
+            "description": "effective capabilities",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapabilitiesResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me/invitations": {
       "get": {
-        "summary": "List pending invitations for current operator",
-        "description": "Returns pending invitations addressed to the authenticated operator's email",
+        "summary": "List pending invitations for current user",
+        "description": "Returns pending invitations addressed to the authenticated user's email",
         "tags": [
           "invitations"
         ],
@@ -10247,7 +10269,7 @@
     "/me/notifications": {
       "get": {
         "summary": "Get notification settings",
-        "description": "Returns the current operator's notification settings",
+        "description": "Returns the current user's notification settings",
         "tags": [
           "settings"
         ],
@@ -10286,7 +10308,7 @@
       },
       "patch": {
         "summary": "Update notification settings",
-        "description": "Updates the current operator's notification settings",
+        "description": "Updates the current user's notification settings",
         "tags": [
           "settings"
         ],
@@ -10440,8 +10462,8 @@
     },
     "/me/preferences": {
       "get": {
-        "summary": "Get operator preferences",
-        "description": "Returns the current operator's UI preferences",
+        "summary": "Get user preferences",
+        "description": "Returns the current user's UI preferences",
         "tags": [
           "settings"
         ],
@@ -10479,8 +10501,8 @@
         }
       },
       "patch": {
-        "summary": "Update operator preferences",
-        "description": "Updates the current operator's UI preferences",
+        "summary": "Update user preferences",
+        "description": "Updates the current user's UI preferences",
         "tags": [
           "settings"
         ],
@@ -10541,18 +10563,18 @@
     },
     "/me/settings": {
       "get": {
-        "summary": "Get operator settings",
-        "description": "Returns the current operator's settings",
+        "summary": "Get user settings",
+        "description": "Returns the current user's settings",
         "tags": [
           "settings"
         ],
         "responses": {
           "200": {
-            "description": "operator settings",
+            "description": "user settings",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OperatorSettingsResult"
+                  "$ref": "#/components/schemas/UserSettingsResult"
                 }
               }
             }
@@ -10580,8 +10602,8 @@
         }
       },
       "patch": {
-        "summary": "Update operator settings",
-        "description": "Updates the current operator's settings",
+        "summary": "Update user settings",
+        "description": "Updates the current user's settings",
         "tags": [
           "settings"
         ],
@@ -10642,8 +10664,8 @@
     },
     "/me/thresholds": {
       "get": {
-        "summary": "Get operator thresholds",
-        "description": "Returns the current operator's alert thresholds",
+        "summary": "Get user thresholds",
+        "description": "Returns the current user's alert thresholds",
         "tags": [
           "settings"
         ],
@@ -10681,8 +10703,8 @@
         }
       },
       "patch": {
-        "summary": "Update operator thresholds",
-        "description": "Updates the current operator's alert thresholds",
+        "summary": "Update user thresholds",
+        "description": "Updates the current user's alert thresholds",
         "tags": [
           "settings"
         ],
@@ -11098,7 +11120,7 @@
     "/organizations": {
       "get": {
         "summary": "List organizations",
-        "description": "Returns all organizations the operator is a member of",
+        "description": "Returns all organizations the user is a member of",
         "tags": [
           "organizations"
         ],
@@ -14585,6 +14607,9 @@
           "document": {
             "type": "string"
           },
+          "drift": {
+            "$ref": "#/components/schemas/driftResponse"
+          },
           "kind": {
             "type": "string"
           },
@@ -14639,6 +14664,23 @@
           }
         }
       },
+      "driftResponse": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "reportedAt": {
+            "type": "integer"
+          },
+          "reportedVersion": {
+            "type": "integer"
+          },
+          "state": {
+            "type": "string"
+          }
+        }
+      },
       "identityResponse": {
         "type": "object",
         "properties": {
@@ -14648,9 +14690,6 @@
           "email": {
             "type": "string"
           },
-          "operatorName": {
-            "type": "string"
-          },
           "orgId": {
             "type": "string"
           },
@@ -14658,6 +14697,9 @@
             "type": "string"
           },
           "role": {
+            "type": "string"
+          },
+          "userName": {
             "type": "string"
           }
         }
@@ -14850,7 +14892,7 @@
             "type": "string"
           },
           "pollIntervalSeconds": {
-            "description": "PollIntervalSeconds is how often the device should ask for its config while\nit waits to be claimed. The config normally arrives over the held WebSocket\nthe moment an operator claims the code, so this is the fallback for a device\nwhose socket is not up \u2014 it bounds how long a claimed device can sit\nunconfigured. The server owns the value so the cadence can be tuned without\nshipping a new APK.",
+            "description": "PollIntervalSeconds is how often the device should ask for its config while\nit waits to be claimed. The config normally arrives over the held WebSocket\nthe moment a user claims the code, so this is the fallback for a device\nwhose socket is not up \u2014 it bounds how long a claimed device can sit\nunconfigured. The server owns the value so the cadence can be tuned without\nshipping a new APK.",
             "type": "integer"
           }
         }
@@ -14879,9 +14921,6 @@
           "name": {
             "type": "string"
           },
-          "operator_id": {
-            "type": "string"
-          },
           "request_count": {
             "type": "integer"
           },
@@ -14893,6 +14932,9 @@
           },
           "updated_at": {
             "type": "integer"
+          },
+          "user_id": {
+            "type": "string"
           }
         }
       },
@@ -14943,9 +14985,6 @@
           "name": {
             "type": "string"
           },
-          "operator_id": {
-            "type": "string"
-          },
           "request_count": {
             "type": "integer"
           },
@@ -14957,6 +14996,9 @@
           },
           "updated_at": {
             "type": "integer"
+          },
+          "user_id": {
+            "type": "string"
           }
         }
       },
@@ -14984,12 +15026,6 @@
           "name": {
             "type": "string"
           },
-          "operator_id": {
-            "type": "string"
-          },
-          "operator_name": {
-            "type": "string"
-          },
           "request_count": {
             "type": "integer"
           },
@@ -15001,6 +15037,12 @@
           },
           "updated_at": {
             "type": "integer"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "user_name": {
+            "type": "string"
           }
         }
       },
@@ -15054,9 +15096,6 @@
           "name": {
             "type": "string"
           },
-          "operator_id": {
-            "type": "string"
-          },
           "platform": {
             "type": "string"
           },
@@ -15068,6 +15107,9 @@
           },
           "updated_at": {
             "type": "integer"
+          },
+          "user_id": {
+            "type": "string"
           }
         }
       },
@@ -15093,7 +15135,7 @@
           }
         }
       },
-      "AdminOperator": {
+      "AdminUser": {
         "type": "object",
         "properties": {
           "created_at": {
@@ -15122,17 +15164,17 @@
           }
         }
       },
-      "AdminOperatorListResult": {
+      "AdminUserListResult": {
         "type": "object",
         "properties": {
-          "operators": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AdminOperator"
-            }
-          },
           "total": {
             "type": "integer"
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminUser"
+            }
           }
         }
       },
@@ -15383,6 +15425,32 @@
           }
         }
       },
+      "CapabilitiesResult": {
+        "type": "object",
+        "properties": {
+          "instance": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "instance_role": {
+            "type": "string"
+          },
+          "org": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "personal": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "ChannelStatusResult": {
         "type": "object",
         "properties": {
@@ -15454,9 +15522,6 @@
           "name": {
             "type": "string"
           },
-          "operator_id": {
-            "type": "string"
-          },
           "platform": {
             "type": "string"
           },
@@ -15471,6 +15536,9 @@
           },
           "updated_at": {
             "type": "integer"
+          },
+          "user_id": {
+            "type": "string"
           }
         }
       },
@@ -16011,23 +16079,6 @@
           }
         }
       },
-      "CreateOperatorRequest": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "password": {
-            "type": "string"
-          },
-          "role": {
-            "type": "string"
-          }
-        }
-      },
       "CreateOrganizationRequest": {
         "type": "object",
         "properties": {
@@ -16069,6 +16120,23 @@
             }
           },
           "service_id": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateUserRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "role": {
             "type": "string"
           }
         }
@@ -16185,7 +16253,7 @@
           "disconnected": {
             "type": "boolean"
           },
-          "operatorId": {
+          "userId": {
             "type": "string"
           }
         }
@@ -16374,7 +16442,7 @@
             }
           },
           "thresholds": {
-            "$ref": "#/components/schemas/OperatorThresholds"
+            "$ref": "#/components/schemas/UserThresholds"
           },
           "updatedAt": {
             "type": "string"
@@ -16715,19 +16783,19 @@
           "revoked_keys": {
             "type": "integer"
           },
-          "top_operators": {
+          "top_users": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TopOperatorStat"
+              "$ref": "#/components/schemas/TopUserStat"
             }
           },
           "total_keys": {
             "type": "integer"
           },
-          "total_operators": {
+          "total_requests": {
             "type": "integer"
           },
-          "total_requests": {
+          "total_users": {
             "type": "integer"
           }
         }
@@ -16820,9 +16888,6 @@
           "notes": {
             "type": "string"
           },
-          "operatorId": {
-            "type": "string"
-          },
           "osVersion": {
             "type": "string"
           },
@@ -16830,6 +16895,9 @@
             "type": "integer"
           },
           "status": {
+            "type": "string"
+          },
+          "userId": {
             "type": "string"
           }
         }
@@ -17060,9 +17128,6 @@
           "needs_organization": {
             "type": "boolean"
           },
-          "operator_id": {
-            "type": "string"
-          },
           "organizations": {
             "type": "array",
             "items": {
@@ -17079,6 +17144,9 @@
             "$ref": "#/components/schemas/OrganizationInfo"
           },
           "signing_key": {
+            "type": "string"
+          },
+          "user_id": {
             "type": "string"
           }
         }
@@ -17122,9 +17190,6 @@
           "needs_organization": {
             "type": "boolean"
           },
-          "operator_id": {
-            "type": "string"
-          },
           "organizations": {
             "type": "array",
             "items": {
@@ -17147,6 +17212,9 @@
             "type": "string"
           },
           "signing_key": {
+            "type": "string"
+          },
+          "user_id": {
             "type": "string"
           }
         }
@@ -17219,26 +17287,6 @@
           }
         }
       },
-      "MFAOperator": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "id": {
-            "type": "string"
-          },
-          "mfa_enabled": {
-            "type": "boolean"
-          },
-          "name": {
-            "type": "string"
-          },
-          "role": {
-            "type": "string"
-          }
-        }
-      },
       "MFARegenerateResult": {
         "type": "object",
         "properties": {
@@ -17258,13 +17306,33 @@
           }
         }
       },
+      "MFAUser": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "mfa_enabled": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      },
       "MFAVerifyRequest": {
         "type": "object",
         "properties": {
           "code": {
             "type": "string"
           },
-          "operator_id": {
+          "user_id": {
             "type": "string"
           }
         }
@@ -17278,9 +17346,6 @@
           "expires_at": {
             "type": "integer"
           },
-          "operator": {
-            "$ref": "#/components/schemas/MFAOperator"
-          },
           "refresh_token": {
             "type": "string"
           },
@@ -17292,6 +17357,9 @@
           },
           "success": {
             "type": "boolean"
+          },
+          "user": {
+            "$ref": "#/components/schemas/MFAUser"
           }
         }
       },
@@ -17426,92 +17494,6 @@
           }
         }
       },
-      "OperatorAPIKeyStatsResult": {
-        "type": "object",
-        "properties": {
-          "active_keys": {
-            "type": "integer"
-          },
-          "keys_created_this_month": {
-            "type": "integer"
-          },
-          "monthly_limit": {
-            "type": "integer"
-          },
-          "operator_id": {
-            "type": "string"
-          },
-          "revoked_keys": {
-            "type": "integer"
-          },
-          "total_keys": {
-            "type": "integer"
-          }
-        }
-      },
-      "OperatorSettingsResult": {
-        "type": "object",
-        "properties": {
-          "client": {
-            "$ref": "#/components/schemas/ClientSettings"
-          },
-          "notifications": {
-            "$ref": "#/components/schemas/NotificationSettings"
-          },
-          "thresholds": {
-            "$ref": "#/components/schemas/OperatorThresholds"
-          }
-        }
-      },
-      "OperatorSettingsResultLegacy": {
-        "type": "object",
-        "properties": {
-          "client": {
-            "$ref": "#/components/schemas/ClientSettings"
-          },
-          "email": {
-            "type": "string"
-          },
-          "email_verified": {
-            "type": "boolean"
-          },
-          "id": {
-            "type": "string"
-          },
-          "mfa_enabled": {
-            "type": "boolean"
-          },
-          "name": {
-            "type": "string"
-          },
-          "role": {
-            "type": "string"
-          }
-        }
-      },
-      "OperatorThresholds": {
-        "type": "object",
-        "properties": {
-          "bufferCrit": {
-            "type": "integer"
-          },
-          "bufferWarn": {
-            "type": "integer"
-          },
-          "riskCrit": {
-            "type": "integer"
-          },
-          "riskWarn": {
-            "type": "integer"
-          },
-          "thermalCrit": {
-            "type": "integer"
-          },
-          "thermalWarn": {
-            "type": "integer"
-          }
-        }
-      },
       "Organization": {
         "type": "object",
         "properties": {
@@ -17581,15 +17563,6 @@
           "joined_at": {
             "type": "integer"
           },
-          "operator_email": {
-            "type": "string"
-          },
-          "operator_id": {
-            "type": "string"
-          },
-          "operator_name": {
-            "type": "string"
-          },
           "organization_id": {
             "type": "string"
           },
@@ -17600,6 +17573,15 @@
             "type": "string"
           },
           "status": {
+            "type": "string"
+          },
+          "user_email": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "user_name": {
             "type": "string"
           }
         }
@@ -17628,7 +17610,7 @@
             "type": "string"
           },
           "defaultThresholds": {
-            "$ref": "#/components/schemas/OperatorThresholds"
+            "$ref": "#/components/schemas/UserThresholds"
           },
           "id": {
             "type": "string"
@@ -17758,7 +17740,7 @@
           "name": {
             "type": "string"
           },
-          "operator_id": {
+          "user_id": {
             "type": "string"
           }
         }
@@ -18040,13 +18022,13 @@
           "hostname": {
             "type": "string"
           },
-          "operator_count": {
-            "type": "integer"
-          },
           "org_count": {
             "type": "integer"
           },
           "schema_version": {
+            "type": "integer"
+          },
+          "user_count": {
             "type": "integer"
           }
         }
@@ -18229,7 +18211,7 @@
         "type": "object",
         "properties": {
           "thresholds": {
-            "$ref": "#/components/schemas/OperatorThresholds"
+            "$ref": "#/components/schemas/UserThresholds"
           }
         }
       },
@@ -18265,20 +18247,20 @@
           }
         }
       },
-      "TopOperatorStat": {
+      "TopUserStat": {
         "type": "object",
         "properties": {
           "active_key_count": {
             "type": "integer"
           },
-          "operator_id": {
-            "type": "string"
-          },
-          "operator_name": {
-            "type": "string"
-          },
           "total_requests": {
             "type": "integer"
+          },
+          "user_id": {
+            "type": "string"
+          },
+          "user_name": {
+            "type": "string"
           }
         }
       },
@@ -18414,7 +18396,7 @@
             }
           },
           "thresholds": {
-            "$ref": "#/components/schemas/OperatorThresholds"
+            "$ref": "#/components/schemas/UserThresholds"
           }
         }
       },
@@ -18513,26 +18495,6 @@
           }
         }
       },
-      "UpdateOperatorRequest": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "email_verified": {
-            "type": "boolean"
-          },
-          "mfa_enabled": {
-            "type": "boolean"
-          },
-          "name": {
-            "type": "string"
-          },
-          "role": {
-            "type": "string"
-          }
-        }
-      },
       "UpdateOrganizationRequest": {
         "type": "object",
         "properties": {
@@ -18557,7 +18519,7 @@
             "type": "string"
           },
           "defaultThresholds": {
-            "$ref": "#/components/schemas/OperatorThresholds"
+            "$ref": "#/components/schemas/UserThresholds"
           },
           "timezone": {
             "type": "string"
@@ -18863,6 +18825,26 @@
           }
         }
       },
+      "UpdateUserRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "email_verified": {
+            "type": "boolean"
+          },
+          "mfa_enabled": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      },
       "UpdateVersionListResult": {
         "type": "object",
         "properties": {
@@ -18973,13 +18955,13 @@
           "devices": {
             "type": "integer"
           },
-          "operators": {
-            "type": "integer"
-          },
           "organizations": {
             "type": "integer"
           },
           "service_accounts": {
+            "type": "integer"
+          },
+          "users": {
             "type": "integer"
           }
         }
@@ -18998,6 +18980,92 @@
             "additionalProperties": {
               "type": "boolean"
             }
+          }
+        }
+      },
+      "UserAPIKeyStatsResult": {
+        "type": "object",
+        "properties": {
+          "active_keys": {
+            "type": "integer"
+          },
+          "keys_created_this_month": {
+            "type": "integer"
+          },
+          "monthly_limit": {
+            "type": "integer"
+          },
+          "revoked_keys": {
+            "type": "integer"
+          },
+          "total_keys": {
+            "type": "integer"
+          },
+          "user_id": {
+            "type": "string"
+          }
+        }
+      },
+      "UserSettingsResult": {
+        "type": "object",
+        "properties": {
+          "client": {
+            "$ref": "#/components/schemas/ClientSettings"
+          },
+          "notifications": {
+            "$ref": "#/components/schemas/NotificationSettings"
+          },
+          "thresholds": {
+            "$ref": "#/components/schemas/UserThresholds"
+          }
+        }
+      },
+      "UserSettingsResultLegacy": {
+        "type": "object",
+        "properties": {
+          "client": {
+            "$ref": "#/components/schemas/ClientSettings"
+          },
+          "email": {
+            "type": "string"
+          },
+          "email_verified": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "mfa_enabled": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      },
+      "UserThresholds": {
+        "type": "object",
+        "properties": {
+          "bufferCrit": {
+            "type": "integer"
+          },
+          "bufferWarn": {
+            "type": "integer"
+          },
+          "riskCrit": {
+            "type": "integer"
+          },
+          "riskWarn": {
+            "type": "integer"
+          },
+          "thermalCrit": {
+            "type": "integer"
+          },
+          "thermalWarn": {
+            "type": "integer"
           }
         }
       },

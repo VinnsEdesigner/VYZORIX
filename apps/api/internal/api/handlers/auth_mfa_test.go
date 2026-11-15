@@ -9,7 +9,7 @@ import (
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/adapters/response"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/auth"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
 	"github.com/gin-gonic/gin"
 )
@@ -192,12 +192,12 @@ func TestTOTPGeneration(t *testing.T) {
 	}
 }
 
-func TestOperatorRoleConstants(t *testing.T) {
-	if operator.RoleOperator != "operator" {
-		t.Errorf("RoleOperator = %s, want operator", operator.RoleOperator)
+func TestUserRoleConstants(t *testing.T) {
+	if user.RoleOperator != "operator" {
+		t.Errorf("RoleOperator = %s, want operator", user.RoleOperator)
 	}
-	if operator.RoleSuperAdmin != "super_admin" {
-		t.Errorf("RoleSuperAdmin = %s, want super_admin", operator.RoleSuperAdmin)
+	if user.RoleSuperAdmin != "super_admin" {
+		t.Errorf("RoleSuperAdmin = %s, want super_admin", user.RoleSuperAdmin)
 	}
 }
 

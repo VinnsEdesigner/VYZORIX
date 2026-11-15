@@ -21,7 +21,7 @@ type PasswordResetToken struct {
 	CreatedAt  time.Time
 	UsedAt     *time.Time
 	ID         string
-	OperatorID string
+	UserID string
 	TokenHash  string
 }
 
@@ -69,8 +69,8 @@ type Repository interface {
 	// MarkUsed marks a token as used.
 	MarkUsed(ctx context.Context, id string) error
 
-	// DeleteByOperator removes all tokens for an operator.
-	DeleteByOperator(ctx context.Context, operatorID string) error
+	// DeleteByUser removes all tokens for a user.
+	DeleteByUser(ctx context.Context, userID string) error
 
 	// GetResendTracker retrieves the resend tracker for an email hash.
 	GetResendTracker(ctx context.Context, emailHash string) (*ResendTracker, error)

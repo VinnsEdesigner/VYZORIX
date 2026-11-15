@@ -10,11 +10,11 @@ type Repository interface {
 	// FindByID retrieves a session by ID.
 	FindByID(ctx context.Context, id string) (*Session, error)
 
-	// FindByOperatorID retrieves all sessions for an operator.
-	FindByOperatorID(ctx context.Context, operatorID string) ([]*Session, error)
+	// FindByUserID retrieves all sessions for a user.
+	FindByUserID(ctx context.Context, userID string) ([]*Session, error)
 
-	// ListActiveByOperator retrieves active (non-expired) sessions for an operator, ordered by creation time.
-	ListActiveByOperator(ctx context.Context, operatorID string) ([]*Session, error)
+	// ListActiveByUser retrieves active (non-expired) sessions for a user, ordered by creation time.
+	ListActiveByUser(ctx context.Context, userID string) ([]*Session, error)
 
 	// Create creates a new session.
 	Create(ctx context.Context, s *Session) error
@@ -22,8 +22,8 @@ type Repository interface {
 	// Delete deletes a session.
 	Delete(ctx context.Context, id string) error
 
-	// DeleteByOperatorID deletes all sessions for an operator.
-	DeleteByOperatorID(ctx context.Context, operatorID string) error
+	// DeleteByUserID deletes all sessions for a user.
+	DeleteByUserID(ctx context.Context, userID string) error
 
 	// DeleteExpired deletes all expired sessions.
 	DeleteExpired(ctx context.Context) (int, error)
@@ -34,9 +34,9 @@ type Repository interface {
 	// UpdateOrganizationID updates the selected organization ID for a session.
 	UpdateOrganizationID(ctx context.Context, sessionID, organizationID string) error
 
-	// UpdateOperatorSessionsOrgID sets the selected org on all active sessions
-	// for an operator (used when an invite is accepted).
-	UpdateOperatorSessionsOrgID(ctx context.Context, operatorID, organizationID string) error
+	// UpdateUserSessionsOrgID sets the selected org on all active sessions
+	// for a user (used when an invite is accepted).
+	UpdateUserSessionsOrgID(ctx context.Context, userID, organizationID string) error
 
 	// SetMFAVerifiedAt sets the MFAVerifiedAt timestamp for a session.
 	// This is called after successful MFA verification during login.
@@ -57,6 +57,6 @@ type Repository interface {
 	// CleanupSessionRevocations removes revocation entries older than the specified duration.
 	CleanupSessionRevocations(ctx context.Context, olderThan time.Duration) (int, error)
 
-	// RevokeAllOperatorSessions revokes all sessions for a specific operator.
-	RevokeAllOperatorSessions(ctx context.Context, operatorID string) error
+	// RevokeAllUserSessions revokes all sessions for a specific user.
+	RevokeAllUserSessions(ctx context.Context, userID string) error
 }

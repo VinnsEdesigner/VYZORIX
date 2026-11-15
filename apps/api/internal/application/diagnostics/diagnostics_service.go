@@ -483,10 +483,10 @@ type AuthorizationResponse struct {
 	Forbidden  bool
 }
 
-// VerifyDeviceOwnership checks if the operator owns the device and device belongs to org (org-scoped DOA check).
-func (s *Service) VerifyDeviceOwnership(ctx context.Context, imei, operatorID, orgID string) *AuthorizationResponse {
-	if operatorID == "" {
-		// No operator context - unauthorized.
+// VerifyDeviceOwnership checks if the user owns the device and device belongs to org (org-scoped DOA check).
+func (s *Service) VerifyDeviceOwnership(ctx context.Context, imei, userID, orgID string) *AuthorizationResponse {
+	if userID == "" {
+		// No user context - unauthorized.
 		return &AuthorizationResponse{Authorized: false, Forbidden: false}
 	}
 
@@ -501,8 +501,8 @@ func (s *Service) VerifyDeviceOwnership(ctx context.Context, imei, operatorID, o
 		return &AuthorizationResponse{Authorized: false, Forbidden: true}
 	}
 
-	if dev.OperatorID != operatorID {
-		// Device exists but belongs to different operator.
+	if dev.UserID != userID {
+		// Device exists but belongs to different user.
 		return &AuthorizationResponse{Authorized: false, Forbidden: true}
 	}
 

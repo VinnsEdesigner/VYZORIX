@@ -40,14 +40,14 @@ func NewStatsHandler(dashboardSvc *dashboard.Service, logger *slog.Logger) *Stat
 // @Produce      json
 // @Param        X-Organization-ID  header  string  true  "Organization ID"
 // @Success      200  {object}  openapi.DashboardStats  "dashboard stats"
-// @Failure      401  {object}  openapi.ErrorResponse  "operator context required"
+// @Failure      401  {object}  openapi.ErrorResponse  "user context required"
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /dashboard/stats [get]
 func (h *StatsHandler) GetStats(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// Extract operator for auth check.
-	op := middleware.GetOperatorFromContext(c)
+	// Extract user for auth check.
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "Operator context required"))
 		return

@@ -3,7 +3,7 @@ import type { MeResult, LoginWithTokensResult, MFAVerifyResult } from "../../dom
 
 export interface AuthState {
   isAuthenticated: boolean;
-  operator: MeResult | null;
+  user: MeResult | null;
   organizationId: string | null;
   accessToken: string | null;
   refreshToken: string | null;
@@ -31,7 +31,7 @@ interface AuthContextState {
 const authContextState: AuthContextState = {
   auth: {
     isAuthenticated: false,
-    operator: null,
+    user: null,
     organizationId: null,
     accessToken: null,
     refreshToken: null,
@@ -135,8 +135,8 @@ export const authContext = {
     setFromLoginWithTokens(response: LoginWithTokensResult): void {
     authContextState.auth = {
       isAuthenticated: true,
-      operator: {
-        id: response.operator_id,
+      user: {
+        id: response.user_id,
         email: response.email,
         name: response.name,
         mfa_enabled: response.mfa_enabled,
@@ -169,7 +169,7 @@ export const authContext = {
   },
 
     setFromMeResponse(me: MeResult): void {
-    authContextState.auth.operator = me;
+    authContextState.auth.user = me;
     authContextState.auth.organizationId = me.selected_organization?.id || me.last_organization_id || null;
     authContextState.auth.isAuthenticated = true;
 
@@ -181,13 +181,13 @@ export const authContext = {
   },
 
   setFromMfaVerify(response: MFAVerifyResult): void {
-    if (!response.success || !response.access_token || !response.refresh_token || !response.operator) {
+    if (!response.success || !response.access_token || !response.refresh_token || !response.user) {
       return;
     }
-    const op = response.operator;
+    const op = response.user;
     authContextState.auth = {
       isAuthenticated: true,
-      operator: {
+      user: {
         id: op.id,
         email: op.email,
         name: op.name,
@@ -241,7 +241,7 @@ export const authContext = {
     clear(): void {
     authContextState.auth = {
       isAuthenticated: false,
-      operator: null,
+      user: null,
       organizationId: null,
       accessToken: null,
       refreshToken: null,

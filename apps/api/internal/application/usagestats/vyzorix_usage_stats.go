@@ -1,5 +1,5 @@
 // Package usagestats computes periodic self-telemetry: build version, feature
-// toggle state, and entity counts. The update-checker surfaces it to operators.
+// toggle state, and entity counts. The update-checker surfaces it to users.
 package usagestats
 
 import (
@@ -11,7 +11,7 @@ import (
 // EntityCounts reports per-table counts.
 type EntityCounts struct {
 	Devices         int `json:"devices"`
-	Operators       int `json:"operators"`
+	Users       int `json:"users"`
 	Organizations   int `json:"organizations"`
 	ServiceAccounts int `json:"service_accounts"`
 	AlertRules      int `json:"alert_rules"`
@@ -48,7 +48,7 @@ func (c *Collector) Query(ctx context.Context) *Snapshot {
 func (c *Collector) queryCounts(ctx context.Context) EntityCounts {
 	return EntityCounts{
 		Devices:         c.count(ctx, "devices"),
-		Operators:       c.count(ctx, "operators"),
+		Users:       c.count(ctx, "users"),
 		Organizations:   c.count(ctx, "organizations"),
 		ServiceAccounts: c.count(ctx, "service_accounts"),
 		AlertRules:      c.count(ctx, "alert_rules"),

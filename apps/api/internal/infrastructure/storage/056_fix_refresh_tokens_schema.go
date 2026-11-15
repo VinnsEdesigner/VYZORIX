@@ -77,14 +77,14 @@ func migrateFixRefreshTokensSchema(tx *sql.Tx) error {
 		CREATE TABLE IF NOT EXISTS refresh_tokens_new (
 			id              TEXT PRIMARY KEY,
 			token_hash      TEXT NOT NULL UNIQUE,
-			operator_id     TEXT NOT NULL,
+			user_id     TEXT NOT NULL,
 			session_id      TEXT NOT NULL,
 			expires_at      INTEGER NOT NULL,
 			created_at      INTEGER NOT NULL,
 			replaced_by_id  TEXT,
 			is_revoked      INTEGER NOT NULL DEFAULT 0,
 			revoked_at      INTEGER,
-			FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE,
+			FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
 			FOREIGN KEY(session_id) REFERENCES auth_sessions(id) ON DELETE CASCADE,
 			FOREIGN KEY(replaced_by_id) REFERENCES refresh_tokens_new(id)
 		)
@@ -96,14 +96,14 @@ func migrateFixRefreshTokensSchema(tx *sql.Tx) error {
 	// Copy rows, mapping the old `revoked` column to `is_revoked` if present.
 	if hasRevoked {
 		_, err = tx.ExecContext(ctx, `
-			INSERT INTO refresh_tokens_new (id, token_hash, operator_id, session_id, expires_at, created_at, replaced_by_id, is_revoked, revoked_at)
-			SELECT id, token_hash, operator_id, session_id, expires_at, created_at, replaced_by_id, revoked, NULL
+			INSERT INTO refresh_tokens_new (id, token_hash, user_id, session_id, expires_at, created_at, replaced_by_id, is_revoked, revoked_at)
+			SELECT id, token_hash, user_id, session_id, expires_at, created_at, replaced_by_id, revoked, NULL
 			FROM refresh_tokens
 		`)
 	} else {
 		_, err = tx.ExecContext(ctx, `
-			INSERT INTO refresh_tokens_new (id, token_hash, operator_id, session_id, expires_at, created_at, replaced_by_id, is_revoked, revoked_at)
-			SELECT id, token_hash, operator_id, session_id, expires_at, created_at, replaced_by_id, 0, NULL
+			INSERT INTO refresh_tokens_new (id, token_hash, user_id, session_id, expires_at, created_at, replaced_by_id, is_revoked, revoked_at)
+			SELECT id, token_hash, user_id, session_id, expires_at, created_at, replaced_by_id, 0, NULL
 			FROM refresh_tokens
 		`)
 	}
@@ -126,7 +126,7 @@ func migrateFixRefreshTokensSchema(tx *sql.Tx) error {
 	if err != nil {
 		return err
 	}
-	_, err = tx.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS idx_refresh_tokens_operator_id ON refresh_tokens(operator_id)`)
+	_, err = tx.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id)`)
 	if err != nil {
 		return err
 	}

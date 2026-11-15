@@ -14,11 +14,11 @@ export const APIKeySchema = z.object({
   key_prefix: z.string().optional(),
   last_request_at: z.number().int().optional(),
   name: z.string().optional(),
-  operator_id: z.string().optional(),
   request_count: z.number().int().optional(),
   revoked_at: z.number().int().optional(),
   scope: z.string().optional(),
   updated_at: z.number().int().optional(),
+  user_id: z.string().optional(),
 });
 export const APIKeyListResultSchema = z.object({
   keys: z.array(z.lazy(() => APIKeySchema)).optional(),
@@ -35,11 +35,11 @@ export const APIKeyWithSecretSchema = z.object({
   key_prefix: z.string().optional(),
   last_request_at: z.number().int().optional(),
   name: z.string().optional(),
-  operator_id: z.string().optional(),
   request_count: z.number().int().optional(),
   revoked_at: z.number().int().optional(),
   scope: z.string().optional(),
   updated_at: z.number().int().optional(),
+  user_id: z.string().optional(),
 });
 export const AdminAPIKeySchema = z.object({
   created_at: z.number().int().optional(),
@@ -49,12 +49,12 @@ export const AdminAPIKeySchema = z.object({
   key_prefix: z.string().optional(),
   last_request_at: z.number().int().optional(),
   name: z.string().optional(),
-  operator_id: z.string().optional(),
-  operator_name: z.string().optional(),
   request_count: z.number().int().optional(),
   revoked_at: z.number().int().optional(),
   scope: z.string().optional(),
   updated_at: z.number().int().optional(),
+  user_id: z.string().optional(),
+  user_name: z.string().optional(),
 });
 export const AdminAPIKeyListResultSchema = z.object({
   keys: z.array(z.lazy(() => AdminAPIKeySchema)).optional(),
@@ -70,11 +70,11 @@ export const AdminClientSchema = z.object({
   is_active: z.boolean().optional(),
   last_request_at: z.number().int().optional(),
   name: z.string().optional(),
-  operator_id: z.string().optional(),
   platform: z.string().optional(),
   rate_limit: z.number().int().optional(),
   request_count: z.number().int().optional(),
   updated_at: z.number().int().optional(),
+  user_id: z.string().optional(),
 });
 export const AdminClientListResultSchema = z.object({
   clients: z.array(z.lazy(() => AdminClientSchema)).optional(),
@@ -83,7 +83,7 @@ export const AdminClientListResultSchema = z.object({
 export const AdminClientResultSchema = z.object({
   client: z.lazy(() => AdminClientSchema).optional(),
 });
-export const AdminOperatorSchema = z.object({
+export const AdminUserSchema = z.object({
   created_at: z.number().int().optional(),
   email: z.string().optional(),
   email_verified: z.boolean().optional(),
@@ -93,9 +93,9 @@ export const AdminOperatorSchema = z.object({
   role: z.string().optional(),
   updated_at: z.number().int().optional(),
 });
-export const AdminOperatorListResultSchema = z.object({
-  operators: z.array(z.lazy(() => AdminOperatorSchema)).optional(),
+export const AdminUserListResultSchema = z.object({
   total: z.number().int().optional(),
+  users: z.array(z.lazy(() => AdminUserSchema)).optional(),
 });
 export const AlertEvaluateResultSchema = z.object({
   rule_id: z.string().optional(),
@@ -199,12 +199,12 @@ export const ClientCredentialSchema = z.object({
   is_active: z.boolean().optional(),
   last_request_at: z.number().int().optional(),
   name: z.string().optional(),
-  operator_id: z.string().optional(),
   platform: z.string().optional(),
   rate_limit: z.number().int().optional(),
   request_count: z.number().int().optional(),
   secret: z.string().optional(),
   updated_at: z.number().int().optional(),
+  user_id: z.string().optional(),
 });
 export const ClientCredentialListResultSchema = z.object({
   clients: z.array(z.lazy(() => ClientCredentialSchema)).optional(),
@@ -384,12 +384,6 @@ export const CreateInvitationRequestSchema = z.object({
   org_id: z.string().optional(),
   role: z.string().optional(),
 });
-export const CreateOperatorRequestSchema = z.object({
-  email: z.string().optional(),
-  name: z.string().optional(),
-  password: z.string().optional(),
-  role: z.string().optional(),
-});
 export const CreateOrganizationRequestSchema = z.object({
   description: z.string().optional(),
   maxMembers: z.number().int().optional(),
@@ -405,6 +399,12 @@ export const CreateServiceAccountTokenRequestSchema = z.object({
   scopes: z.array(z.string()).optional(),
   service_id: z.string().optional(),
 });
+export const CreateUserRequestSchema = z.object({
+  email: z.string().optional(),
+  name: z.string().optional(),
+  password: z.string().optional(),
+  role: z.string().optional(),
+});
 export const CursorPaginationResultSchema = z.object({
   hasMore: z.boolean().optional(),
   limit: z.number().int().optional(),
@@ -419,37 +419,32 @@ export const DashboardStatsSchema = z.object({
 export const DeletedResultSchema = z.object({
   deleted: z.boolean().optional(),
 });
-export const DeviceConfirmRequestSchema = z.object({
-  commandSecret: z.string().optional(),
-  imei: z.string().optional(),
-});
-export const DeviceConfirmResultSchema = z.object({
-  confirmed: z.boolean().optional(),
-  device_id: z.string().optional(),
-  imei: z.string().optional(),
-  online: z.boolean().optional(),
-  registered_at: z.number().int().optional(),
-  server_time: z.number().int().optional(),
-});
 export const DeviceCountResultSchema = z.object({
   count: z.number().int().optional(),
   serverTime: z.number().int().optional(),
 });
 export const DeviceDetailResultSchema = z.object({
+  api_level: z.number().int().optional(),
   app_version: z.string().optional(),
+  build_id: z.string().optional(),
   device_name: z.string().optional(),
   id: z.string().optional(),
   imei: z.string().optional(),
   last_seen: z.number().int().optional(),
   manufacturer: z.string().optional(),
   model: z.string().optional(),
+  os_version: z.string().optional(),
+  ram_bytes: z.number().int().optional(),
   registered_at: z.number().int().optional(),
+  security_patch: z.string().optional(),
   status: z.string().optional(),
+  storage_bytes: z.number().int().optional(),
+  supported_abis: z.string().optional(),
 });
 export const DeviceDisconnectResultSchema = z.object({
   deviceId: z.string().optional(),
   disconnected: z.boolean().optional(),
-  operatorId: z.string().optional(),
+  userId: z.string().optional(),
 });
 export const DeviceEventSchema = z.object({
   created_at: z.number().int().optional(),
@@ -510,7 +505,7 @@ export const DeviceSettingsResultSchema = z.object({
   id: z.string().optional(),
   location: z.string().optional(),
   metadata: z.record(z.string(), z.string()).optional(),
-  thresholds: z.lazy(() => OperatorThresholdsSchema).optional(),
+  thresholds: z.lazy(() => UserThresholdsSchema).optional(),
   updatedAt: z.string().optional(),
 });
 export const DeviceStatusSchema = z.object({
@@ -567,7 +562,6 @@ export const DiagnosticsIdentityInfoSchema = z.object({
   model: z.string().optional(),
 });
 export const DiagnosticsRegistrationInfoSchema = z.object({
-  commandSecretSet: z.boolean().optional(),
   fcmTokenRefreshedAt: z.number().int().optional(),
   fcmTokenValid: z.boolean().optional(),
   registeredAt: z.number().int().optional(),
@@ -628,10 +622,10 @@ export const GlobalAPIKeyStatsResultSchema = z.object({
   max_per_month: z.number().int().optional(),
   requests_by_scope: z.record(z.string(), z.number().int()).optional(),
   revoked_keys: z.number().int().optional(),
-  top_operators: z.array(z.lazy(() => TopOperatorStatSchema)).optional(),
+  top_users: z.array(z.lazy(() => TopUserStatSchema)).optional(),
   total_keys: z.number().int().optional(),
-  total_operators: z.number().int().optional(),
   total_requests: z.number().int().optional(),
+  total_users: z.number().int().optional(),
 });
 export const InboxAckRequestSchema = z.object({
   action: z.string().optional(),
@@ -641,7 +635,6 @@ export const InboxAckResultSchema = z.object({
   acknowledgedAt: z.number().int().optional(),
   approvedAt: z.number().int().optional(),
   approvingAt: z.number().int().optional(),
-  commandSecret: z.string().optional(),
   fcmPushSent: z.boolean().optional(),
   id: z.string().optional(),
   imei: z.string().optional(),
@@ -664,10 +657,10 @@ export const InboxEntryResponseSchema = z.object({
   manufacturer: z.string().optional(),
   model: z.string().optional(),
   notes: z.string().optional(),
-  operatorId: z.string().optional(),
   osVersion: z.string().optional(),
   rejectedAt: z.number().int().optional(),
   status: z.string().optional(),
+  userId: z.string().optional(),
 });
 export const InboxListResultSchema = z.object({
   pagination: z.lazy(() => PaginationSchema).optional(),
@@ -745,12 +738,12 @@ export const LoginResultSchema = z.object({
   mfa_session: z.string().optional(),
   name: z.string().optional(),
   needs_organization: z.boolean().optional(),
-  operator_id: z.string().optional(),
   organizations: z.array(z.lazy(() => OrganizationInfoSchema)).optional(),
   requires_mfa: z.boolean().optional(),
   retry_after: z.number().int().optional(),
   selected_organization: z.lazy(() => OrganizationInfoSchema).optional(),
   signing_key: z.string().optional(),
+  user_id: z.string().optional(),
 });
 export const LoginWithTokensResultSchema = z.object({
   access_token: z.string().optional(),
@@ -765,7 +758,6 @@ export const LoginWithTokensResultSchema = z.object({
   mfa_session: z.string().optional(),
   name: z.string().optional(),
   needs_organization: z.boolean().optional(),
-  operator_id: z.string().optional(),
   organizations: z.array(z.lazy(() => OrganizationInfoSchema)).optional(),
   refresh_token: z.string().optional(),
   requires_mfa: z.boolean().optional(),
@@ -773,6 +765,7 @@ export const LoginWithTokensResultSchema = z.object({
   selected_organization: z.lazy(() => OrganizationInfoSchema).optional(),
   session_id: z.string().optional(),
   signing_key: z.string().optional(),
+  user_id: z.string().optional(),
 });
 export const LogoutRequestSchema = z.object({
   all_devices: z.boolean().optional(),
@@ -798,31 +791,31 @@ export const MFAEnrollResultSchema = z.object({
   secret: z.string().optional(),
   uri: z.string().optional(),
 });
-export const MFAOperatorSchema = z.object({
-  email: z.string().optional(),
-  id: z.string().optional(),
-  mfa_enabled: z.boolean().optional(),
-  name: z.string().optional(),
-  role: z.string().optional(),
-});
 export const MFARegenerateResultSchema = z.object({
   backup_codes: z.array(z.string()).optional(),
 });
 export const MFAStatusResultSchema = z.object({
   mfa_enabled: z.boolean().optional(),
 });
+export const MFAUserSchema = z.object({
+  email: z.string().optional(),
+  id: z.string().optional(),
+  mfa_enabled: z.boolean().optional(),
+  name: z.string().optional(),
+  role: z.string().optional(),
+});
 export const MFAVerifyRequestSchema = z.object({
   code: z.string().optional(),
-  operator_id: z.string().optional(),
+  user_id: z.string().optional(),
 });
 export const MFAVerifyResultSchema = z.object({
   access_token: z.string().optional(),
   expires_at: z.number().int().optional(),
-  operator: z.lazy(() => MFAOperatorSchema).optional(),
   refresh_token: z.string().optional(),
   session_id: z.string().optional(),
   signing_key: z.string().optional(),
   success: z.boolean().optional(),
+  user: z.lazy(() => MFAUserSchema).optional(),
 });
 export const MFAVerifySetupRequestSchema = z.object({
   code: z.string().optional(),
@@ -867,36 +860,6 @@ export const NotificationUpdateRequestSchema = z.object({
   push: z.lazy(() => PushNotificationsSchema).optional(),
   webhook: z.lazy(() => WebhookNotificationsSchema).optional(),
 });
-export const OperatorAPIKeyStatsResultSchema = z.object({
-  active_keys: z.number().int().optional(),
-  keys_created_this_month: z.number().int().optional(),
-  monthly_limit: z.number().int().optional(),
-  operator_id: z.string().optional(),
-  revoked_keys: z.number().int().optional(),
-  total_keys: z.number().int().optional(),
-});
-export const OperatorSettingsResultSchema = z.object({
-  client: z.lazy(() => ClientSettingsSchema).optional(),
-  notifications: z.lazy(() => NotificationSettingsSchema).optional(),
-  thresholds: z.lazy(() => OperatorThresholdsSchema).optional(),
-});
-export const OperatorSettingsResultLegacySchema = z.object({
-  client: z.lazy(() => ClientSettingsSchema).optional(),
-  email: z.string().optional(),
-  email_verified: z.boolean().optional(),
-  id: z.string().optional(),
-  mfa_enabled: z.boolean().optional(),
-  name: z.string().optional(),
-  role: z.string().optional(),
-});
-export const OperatorThresholdsSchema = z.object({
-  bufferCrit: z.number().int().optional(),
-  bufferWarn: z.number().int().optional(),
-  riskCrit: z.number().int().optional(),
-  riskWarn: z.number().int().optional(),
-  thermalCrit: z.number().int().optional(),
-  thermalWarn: z.number().int().optional(),
-});
 export const OrganizationSchema = z.object({
   created_at: z.number().int().optional(),
   created_by: z.string().optional(),
@@ -920,13 +883,13 @@ export const OrganizationMemberSchema = z.object({
   id: z.string().optional(),
   invited_by: z.string().optional(),
   joined_at: z.number().int().optional(),
-  operator_email: z.string().optional(),
-  operator_id: z.string().optional(),
-  operator_name: z.string().optional(),
   organization_id: z.string().optional(),
   removed_at: z.number().int().optional(),
   role: z.string().optional(),
   status: z.string().optional(),
+  user_email: z.string().optional(),
+  user_id: z.string().optional(),
+  user_name: z.string().optional(),
 });
 export const OrganizationMemberListResultSchema = z.object({
   members: z.array(z.lazy(() => OrganizationMemberSchema)).optional(),
@@ -935,7 +898,7 @@ export const OrganizationSettingsResultSchema = z.object({
   alertCooldownMinutes: z.number().int().optional(),
   createdAt: z.string().optional(),
   dateFormat: z.string().optional(),
-  defaultThresholds: z.lazy(() => OperatorThresholdsSchema).optional(),
+  defaultThresholds: z.lazy(() => UserThresholdsSchema).optional(),
   id: z.string().optional(),
   organizationId: z.string().optional(),
   timezone: z.string().optional(),
@@ -981,7 +944,7 @@ export const RegisterRequestSchema = z.object({
 export const RegisterResultSchema = z.object({
   email: z.string().optional(),
   name: z.string().optional(),
-  operator_id: z.string().optional(),
+  user_id: z.string().optional(),
 });
 export const ResendVerificationRequestSchema = z.object({
   email: z.string().optional(),
@@ -1075,9 +1038,9 @@ export const SupportBundleResultSchema = z.object({
   go_version: z.string().optional(),
   goroutines: z.number().int().optional(),
   hostname: z.string().optional(),
-  operator_count: z.number().int().optional(),
   org_count: z.number().int().optional(),
   schema_version: z.number().int().optional(),
+  user_count: z.number().int().optional(),
 });
 export const TelemetryEntrySchema = z.object({
   buffer_level: z.number().int().optional(),
@@ -1138,7 +1101,7 @@ export const ThresholdUpdateRequestSchema = z.object({
   thermalWarn: z.number().int().optional(),
 });
 export const ThresholdsResultSchema = z.object({
-  thresholds: z.lazy(() => OperatorThresholdsSchema).optional(),
+  thresholds: z.lazy(() => UserThresholdsSchema).optional(),
 });
 export const TimelineEventResultSchema = z.object({
   data: z.record(z.string(), z.unknown()).optional(),
@@ -1150,11 +1113,11 @@ export const TimelineResultSchema = z.object({
   events: z.array(z.lazy(() => TimelineEventResultSchema)).optional(),
   pagination: z.lazy(() => CursorPaginationResultSchema).optional(),
 });
-export const TopOperatorStatSchema = z.object({
+export const TopUserStatSchema = z.object({
   active_key_count: z.number().int().optional(),
-  operator_id: z.string().optional(),
-  operator_name: z.string().optional(),
   total_requests: z.number().int().optional(),
+  user_id: z.string().optional(),
+  user_name: z.string().optional(),
 });
 export const UpdateAPIKeyRequestSchema = z.object({
   name: z.string().optional(),
@@ -1198,7 +1161,7 @@ export const UpdateDeviceSettingsRequestSchema = z.object({
   customName: z.string().optional(),
   location: z.string().optional(),
   metadata: z.record(z.string(), z.string()).optional(),
-  thresholds: z.lazy(() => OperatorThresholdsSchema).optional(),
+  thresholds: z.lazy(() => UserThresholdsSchema).optional(),
 });
 export const UpdateDeviceStatusInfoSchema = z.object({
   currentVersion: z.string().optional(),
@@ -1232,13 +1195,6 @@ export const UpdateMemberRoleRequestSchema = z.object({
 export const UpdateNameRequestSchema = z.object({
   name: z.string().optional(),
 });
-export const UpdateOperatorRequestSchema = z.object({
-  email: z.string().optional(),
-  email_verified: z.boolean().optional(),
-  mfa_enabled: z.boolean().optional(),
-  name: z.string().optional(),
-  role: z.string().optional(),
-});
 export const UpdateOrganizationRequestSchema = z.object({
   isActive: z.boolean().optional(),
   maxMembers: z.number().int().optional(),
@@ -1247,7 +1203,7 @@ export const UpdateOrganizationRequestSchema = z.object({
 export const UpdateOrganizationSettingsRequestSchema = z.object({
   alertCooldownMinutes: z.number().int().optional(),
   dateFormat: z.string().optional(),
-  defaultThresholds: z.lazy(() => OperatorThresholdsSchema).optional(),
+  defaultThresholds: z.lazy(() => UserThresholdsSchema).optional(),
   timezone: z.string().optional(),
 });
 export const UpdatePushDetailDeviceSchema = z.object({
@@ -1349,6 +1305,13 @@ export const UpdateSyncStatusResultSchema = z.object({
   status: z.string().optional(),
   versionsFound: z.number().int().optional(),
 });
+export const UpdateUserRequestSchema = z.object({
+  email: z.string().optional(),
+  email_verified: z.boolean().optional(),
+  mfa_enabled: z.boolean().optional(),
+  name: z.string().optional(),
+  role: z.string().optional(),
+});
 export const UpdateVersionListResultSchema = z.object({
   pagination: z.lazy(() => PaginationSchema).optional(),
   versions: z.array(z.lazy(() => UpdateVersionResponseSchema)).optional(),
@@ -1386,14 +1349,44 @@ export const UsageStatsCountsSchema = z.object({
   annotations: z.number().int().optional(),
   contact_points: z.number().int().optional(),
   devices: z.number().int().optional(),
-  operators: z.number().int().optional(),
   organizations: z.number().int().optional(),
   service_accounts: z.number().int().optional(),
+  users: z.number().int().optional(),
 });
 export const UsageStatsSnapshotSchema = z.object({
   collected_at: z.number().int().optional(),
   counts: z.lazy(() => UsageStatsCountsSchema).optional(),
   toggles: z.record(z.string(), z.boolean()).optional(),
+});
+export const UserAPIKeyStatsResultSchema = z.object({
+  active_keys: z.number().int().optional(),
+  keys_created_this_month: z.number().int().optional(),
+  monthly_limit: z.number().int().optional(),
+  revoked_keys: z.number().int().optional(),
+  total_keys: z.number().int().optional(),
+  user_id: z.string().optional(),
+});
+export const UserSettingsResultSchema = z.object({
+  client: z.lazy(() => ClientSettingsSchema).optional(),
+  notifications: z.lazy(() => NotificationSettingsSchema).optional(),
+  thresholds: z.lazy(() => UserThresholdsSchema).optional(),
+});
+export const UserSettingsResultLegacySchema = z.object({
+  client: z.lazy(() => ClientSettingsSchema).optional(),
+  email: z.string().optional(),
+  email_verified: z.boolean().optional(),
+  id: z.string().optional(),
+  mfa_enabled: z.boolean().optional(),
+  name: z.string().optional(),
+  role: z.string().optional(),
+});
+export const UserThresholdsSchema = z.object({
+  bufferCrit: z.number().int().optional(),
+  bufferWarn: z.number().int().optional(),
+  riskCrit: z.number().int().optional(),
+  riskWarn: z.number().int().optional(),
+  thermalCrit: z.number().int().optional(),
+  thermalWarn: z.number().int().optional(),
 });
 export const WebhookNotificationsSchema = z.object({
   enabled: z.boolean().optional(),
@@ -1413,5 +1406,127 @@ export const WebhookTestResultSchema = z.object({
   responseTime: z.number().int().optional(),
   statusCode: z.number().int().optional(),
   success: z.boolean().optional(),
+});
+export const appMarkingSchema = z.object({
+  custom: z.boolean().optional(),
+  name: z.string().optional(),
+});
+export const ciphertextResponseSchema = z.object({
+  app: z.string().optional(),
+  ciphertext: z.string().optional(),
+  envelope: z.string().optional(),
+  generation: z.number().int().optional(),
+  key: z.string().optional(),
+});
+export const claimRequestSchema = z.object({
+  name: z.string().optional(),
+  pairingCode: z.string(),
+  tierCap: z.number().int().optional(),
+});
+export const credentialListResponseSchema = z.object({
+  credentials: z.array(z.lazy(() => credentialResponseSchema)).optional(),
+});
+export const credentialResponseSchema = z.object({
+  createdAt: z.number().int().optional(),
+  createdBy: z.string().optional(),
+  deviceId: z.string().optional(),
+  id: z.string().optional(),
+  lastUsedAt: z.number().int().optional(),
+  name: z.string().optional(),
+  prefix: z.string().optional(),
+  revokedAt: z.number().int().optional(),
+});
+export const currentResponseSchema = z.object({
+  createdAt: z.number().int().optional(),
+  deviceId: z.string().optional(),
+  document: z.string().optional(),
+  drift: z.lazy(() => driftResponseSchema).optional(),
+  kind: z.string().optional(),
+  version: z.number().int().optional(),
+});
+export const deployResponseSchema = z.object({
+  apps: z.array(z.lazy(() => appMarkingSchema)).optional(),
+  artifacts: z.number().int().optional(),
+  authorizedBy: z.string().optional(),
+  document: z.string().optional(),
+  dryRun: z.boolean().optional(),
+  version: z.number().int().optional(),
+});
+export const deviceSummarySchema = z.object({
+  id: z.string().optional(),
+  name: z.string().optional(),
+  supportedAbis: z.array(z.string()).optional(),
+  tier: z.string().optional(),
+});
+export const driftResponseSchema = z.object({
+  detail: z.string().optional(),
+  reportedAt: z.number().int().optional(),
+  reportedVersion: z.number().int().optional(),
+  state: z.string().optional(),
+});
+export const enrollRequestSchema = z.object({
+  apiLevel: z.number().int().optional(),
+  appVersion: z.string().optional(),
+  buildId: z.string().optional(),
+  deviceClass: z.string().optional(),
+  deviceUuid: z.string(),
+  manufacturer: z.string().optional(),
+  model: z.string().optional(),
+  osVersion: z.string().optional(),
+  publicKey: z.string(),
+  ramBytes: z.number().int().optional(),
+  secretKey: z.string().optional(),
+  securityPatch: z.string().optional(),
+  storageBytes: z.number().int().optional(),
+  supportedAbis: z.array(z.string()).optional(),
+  tierHint: z.number().int().optional(),
+});
+export const enrollResponseSchema = z.object({
+  deviceId: z.string().optional(),
+  expiresAt: z.number().int().optional(),
+  expiresInSeconds: z.number().int().optional(),
+  pairingCode: z.string().optional(),
+  pairingDisplay: z.string().optional(),
+  pollIntervalSeconds: z.number().int().optional(),
+});
+export const identityResponseSchema = z.object({
+  device: z.lazy(() => deviceSummarySchema).optional(),
+  email: z.string().optional(),
+  orgId: z.string().optional(),
+  orgName: z.string().optional(),
+  role: z.string().optional(),
+  userName: z.string().optional(),
+});
+export const mintCredentialRequestSchema = z.object({
+  name: z.string().optional(),
+});
+export const mintCredentialResponseSchema = z.object({
+  createdAt: z.number().int().optional(),
+  createdBy: z.string().optional(),
+  deviceId: z.string().optional(),
+  id: z.string().optional(),
+  lastUsedAt: z.number().int().optional(),
+  name: z.string().optional(),
+  prefix: z.string().optional(),
+  revokedAt: z.number().int().optional(),
+  token: z.string().optional(),
+});
+export const secretListResponseSchema = z.object({
+  app: z.string().optional(),
+  secrets: z.array(z.lazy(() => secretNameResponseSchema)).optional(),
+});
+export const secretNameResponseSchema = z.object({
+  generation: z.number().int().optional(),
+  key: z.string().optional(),
+  updatedAt: z.number().int().optional(),
+});
+export const setSecretRequestSchema = z.object({
+  key: z.string().optional(),
+  value: z.string().optional(),
+});
+export const setSecretResponseSchema = z.object({
+  app: z.string().optional(),
+  generation: z.number().int().optional(),
+  key: z.string().optional(),
 });
 

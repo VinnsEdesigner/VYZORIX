@@ -47,7 +47,7 @@ package vyzorix
 
 // OrganizationSettingsResult.
 #OrganizationSettingsResult: {
-        defaultThresholds?: #OperatorThresholds
+        defaultThresholds?: #UserThresholds
         id: string
         organizationId: string
         timezone: string
@@ -62,7 +62,7 @@ package vyzorix
         timezone?: string
         dateFormat?: string
         alertCooldownMinutes?: int
-        defaultThresholds?: #OperatorThresholds
+        defaultThresholds?: #UserThresholds
 }
 
 // UpdateOrganizationRequest.

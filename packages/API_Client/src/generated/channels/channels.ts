@@ -33,7 +33,7 @@ const getChannelsStatus = (
       options);
     }
   /**
- * Registers a logical subscription to a channel scope for the operator
+ * Registers a logical subscription to a channel scope for the user
  * @summary Subscribe to channel
  */
 const postChannelsSubscribe = (

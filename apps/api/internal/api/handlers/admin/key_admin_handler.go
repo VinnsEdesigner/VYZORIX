@@ -38,12 +38,12 @@ func apiKeysToAdminOpenAPI(in []apikeydomain.APIKeyResponse) []openapi.AdminAPIK
 	return out
 }
 
-func adminKeysByOperatorToOpenAPI(in []apikeydomain.AdminAPIKeyResponse) []openapi.AdminAPIKey {
+func adminKeysByUserToOpenAPI(in []apikeydomain.AdminAPIKeyResponse) []openapi.AdminAPIKey {
 	out := make([]openapi.AdminAPIKey, len(in))
 	for i, k := range in {
 		item := openapi.AdminAPIKey{
-			OperatorID:   k.OperatorID,
-			OperatorName: k.OperatorName,
+			UserID:   k.UserID,
+			UserName: k.UserName,
 			ID:           k.ID,
 			Name:         k.Name,
 			KeyPrefix:    k.KeyPrefix,
@@ -77,7 +77,7 @@ func int64Ptr(v int64) *int64 { return &v }
 var (
 	_ openapi.APIKeyListResult
 	_ openapi.GlobalAPIKeyStatsResult
-	_ openapi.OperatorAPIKeyStatsResult
+	_ openapi.UserAPIKeyStatsResult
 	_ openapi.SuccessResult
 	_ openapi.ErrorResponse
 )
@@ -101,24 +101,24 @@ func NewSuperAdminHandler(service *apikeyapp.APIKeyService, auditLogger *audit.L
 func (h *SuperAdminHandler) RegisterRoutes(r *gin.RouterGroup) {
 	// r is already the /admin/api-keys group from setupAdminRoutes.
 	r.GET("", h.ListAllKeys)
-	r.GET("/operator/:operatorId", h.GetOperatorKeys)
+	r.GET("/user/:userId", h.GetUserKeys)
 	r.DELETE("/:keyId", h.ForceRevokeKey)
 	r.GET("/stats", h.GetGlobalStats)
-	r.GET("/stats/operator/:operatorId", h.GetOperatorStats)
+	r.GET("/stats/user/:userId", h.GetUserStats)
 }
 
 // ListAllKeys handles GET /v1/admin/api-keys.
 // @Summary      List all API keys
-// @Description  Lists all API keys across all operators (super admin only)
+// @Description  Lists all API keys across all users (super admin only)
 // @Tags         admin
 // @Accept       json
 // @Produce      json
 // @Param        X-Organization-ID  header  string  true  "Organization ID"
 // @Param        page   query int  false  "page number (default 1)"
 // @Param        limit  query int  false  "page size (default 20)"
-// @Param        operator_id  query string  false  "filter by operator ID"
+// @Param        user_id  query string  false  "filter by user ID"
 // @Param        search  query string  false  "search by key name"
-// @Success      200  {object}  openapi.AdminAPIKeyListResult  "API keys with operator identity"
+// @Success      200  {object}  openapi.AdminAPIKeyListResult  "API keys with user identity"
 // @Failure      401  {object}  openapi.ErrorResponse  "not authenticated"
 // @Failure      403  {object}  openapi.ErrorResponse  "super_admin required"
 // @Router       /admin/api-keys [get]
@@ -130,10 +130,10 @@ func (h *SuperAdminHandler) ListAllKeys(c *gin.Context) {
 		limit = 20
 	}
 
-	operatorID := c.Query("operator_id")
+	userID := c.Query("user_id")
 	search := c.Query("search")
 
-	result, err := h.service.ListAllKeys(c.Request.Context(), page, limit, operatorID, search)
+	result, err := h.service.ListAllKeys(c.Request.Context(), page, limit, userID, search)
 	if err != nil {
 		status := apikeydomain.HTTPStatusCode(err)
 		c.JSON(status, openapi.ErrorResponse{
@@ -144,27 +144,27 @@ func (h *SuperAdminHandler) ListAllKeys(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, openapi.AdminAPIKeyListResult{
-		Keys:       adminKeysByOperatorToOpenAPI(result.Keys),
+		Keys:       adminKeysByUserToOpenAPI(result.Keys),
 		Pagination: apikeydomainPagination(result.Pagination),
 	})
 }
 
-// GetOperatorKeys handles GET /v1/admin/api-keys/operator/:operatorId.
-// @Summary      List operator API keys
-// @Description  Lists all API keys for a specific operator (super admin only)
+// GetUserKeys handles GET /v1/admin/api-keys/user/:userId.
+// @Summary      List user API keys
+// @Description  Lists all API keys for a specific user (super admin only)
 // @Tags         admin
 // @Accept       json
 // @Produce      json
 // @Param        X-Organization-ID  header  string  true  "Organization ID"
-// @Param        operatorId  path  string  true  "operator ID"
+// @Param        userId  path  string  true  "user ID"
 // @Param        page   query int  false  "page number (default 1)"
 // @Param        limit  query int  false  "page size (default 20)"
-// @Success      200  {object}  openapi.AdminAPIKeyListResult  "operator API keys"
+// @Success      200  {object}  openapi.AdminAPIKeyListResult  "user API keys"
 // @Failure      401  {object}  openapi.ErrorResponse  "not authenticated"
 // @Failure      403  {object}  openapi.ErrorResponse  "super_admin required"
-// @Router       /admin/api-keys/operator/{operatorId} [get]
-func (h *SuperAdminHandler) GetOperatorKeys(c *gin.Context) {
-	operatorID := c.Param("operatorId")
+// @Router       /admin/api-keys/user/{userId} [get]
+func (h *SuperAdminHandler) GetUserKeys(c *gin.Context) {
+	userID := c.Param("userId")
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
@@ -173,7 +173,7 @@ func (h *SuperAdminHandler) GetOperatorKeys(c *gin.Context) {
 		limit = 20
 	}
 
-	result, err := h.service.ListKeys(c.Request.Context(), operatorID, page, limit)
+	result, err := h.service.ListKeys(c.Request.Context(), userID, page, limit)
 	if err != nil {
 		status := apikeydomain.HTTPStatusCode(err)
 		c.JSON(status, openapi.ErrorResponse{
@@ -193,7 +193,7 @@ func (h *SuperAdminHandler) GetOperatorKeys(c *gin.Context) {
 
 // ForceRevokeKey handles DELETE /v1/admin/api-keys/:keyId.
 // @Summary      Force revoke API key
-// @Description  Force revokes an API key for any operator (super admin only)
+// @Description  Force revokes an API key for any user (super admin only)
 // @Tags         admin
 // @Accept       json
 // @Produce      json
@@ -232,7 +232,7 @@ func (h *SuperAdminHandler) ForceRevokeKey(c *gin.Context) {
 	if h.auditLogger != nil {
 		h.auditLogger.APIKeyRevoked(
 			c.Request.Context(),
-			key.OperatorID,
+			key.UserID,
 			keyID,
 			key.Name,
 			c.ClientIP(),
@@ -268,25 +268,25 @@ func (h *SuperAdminHandler) GetGlobalStats(c *gin.Context) {
 	c.JSON(http.StatusOK, stats)
 }
 
-// GetOperatorStats handles GET /v1/admin/api-keys/stats/operator/:operatorId.
-// @Summary      Get operator API key stats
-// @Description  Returns API key statistics for a specific operator (super admin only)
+// GetUserStats handles GET /v1/admin/api-keys/stats/user/:userId.
+// @Summary      Get user API key stats
+// @Description  Returns API key statistics for a specific user (super admin only)
 // @Tags         admin
 // @Accept       json
 // @Produce      json
 // @Param        X-Organization-ID  header  string  true  "Organization ID"
-// @Param        operatorId  path  string  true  "operator ID"
-// @Success      200  {object}  openapi.OperatorAPIKeyStatsResult  "operator stats"
+// @Param        userId  path  string  true  "user ID"
+// @Success      200  {object}  openapi.UserAPIKeyStatsResult  "user stats"
 // @Failure      401  {object}  openapi.ErrorResponse  "not authenticated"
 // @Failure      403  {object}  openapi.ErrorResponse  "super_admin required"
-// @Router       /admin/api-keys/stats/operator/{operatorId} [get]
-func (h *SuperAdminHandler) GetOperatorStats(c *gin.Context) {
-	operatorID := c.Param("operatorId")
+// @Router       /admin/api-keys/stats/user/{userId} [get]
+func (h *SuperAdminHandler) GetUserStats(c *gin.Context) {
+	userID := c.Param("userId")
 
 	page := 1
 	limit := 20
 
-	result, err := h.service.ListKeys(c.Request.Context(), operatorID, page, limit)
+	result, err := h.service.ListKeys(c.Request.Context(), userID, page, limit)
 	if err != nil {
 		status := apikeydomain.HTTPStatusCode(err)
 		c.JSON(status, openapi.ErrorResponse{
@@ -304,8 +304,8 @@ func (h *SuperAdminHandler) GetOperatorStats(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, openapi.OperatorAPIKeyStatsResult{
-		OperatorID:           operatorID,
+	c.JSON(http.StatusOK, openapi.UserAPIKeyStatsResult{
+		UserID:           userID,
 		TotalKeys:            totalKeys,
 		ActiveKeys:           activeKeys,
 		RevokedKeys:          totalKeys - activeKeys,

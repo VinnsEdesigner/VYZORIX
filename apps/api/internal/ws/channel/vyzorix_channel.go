@@ -70,14 +70,14 @@ type Message struct {
 
 // Authorizer gates subscriptions: scope-level permission check per channel.
 type Authorizer interface {
-	// Allowed reports whether the subject (operator or service account) may
+	// Allowed reports whether the subject (user or service account) may
 	// subscribe to the channel's scope. ErrForbidden on denial.
 	Allowed(ctx context.Context, orgID, subjectID string, ch *Channel) error
 }
 
 // MemberLookup resolves org membership.
 type MemberLookup interface {
-	FindByOperatorAndOrg(ctx context.Context, operatorID, orgID string) (*organization.OrganizationMember, error)
+	FindByUserAndOrg(ctx context.Context, userID, orgID string) (*organization.OrganizationMember, error)
 }
 
 // MembershipAuthorizer gates on org membership alone.
@@ -95,7 +95,7 @@ func (a *MembershipAuthorizer) Allowed(ctx context.Context, orgID, subjectID str
 	if a.members == nil || subjectID == "" {
 		return ErrForbidden
 	}
-	if _, err := a.members.FindByOperatorAndOrg(ctx, subjectID, orgID); err != nil {
+	if _, err := a.members.FindByUserAndOrg(ctx, subjectID, orgID); err != nil {
 		return ErrForbidden
 	}
 	return nil
@@ -117,7 +117,7 @@ func (a *PermissionAuthorizer) Allowed(ctx context.Context, orgID, subjectID str
 	if a.members == nil || subjectID == "" {
 		return ErrForbidden
 	}
-	if _, err := a.members.FindByOperatorAndOrg(ctx, subjectID, orgID); err != nil {
+	if _, err := a.members.FindByUserAndOrg(ctx, subjectID, orgID); err != nil {
 		return ErrForbidden
 	}
 	if a.permission != nil && !a.permission(ctx, orgID, subjectID, ch.Scope) {

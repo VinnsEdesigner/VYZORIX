@@ -24,12 +24,12 @@ import (
 func (r *Resolver) GetMySettings(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
 
-	settings, err := r.OperatorRepo.GetOperatorSettings(ctx, op.ID)
+	settings, err := r.UserRepo.GetUserSettings(ctx, op.ID)
 	if err != nil {
 		return nil, r.Presenter.InternalError("failed to get settings")
 	}
@@ -52,7 +52,7 @@ func (r *Resolver) GetMySettings(p graphql.ResolveParams) (interface{}, error) {
 func (r *Resolver) GetMyNotifications(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -69,7 +69,7 @@ func (r *Resolver) GetMyNotifications(p graphql.ResolveParams) (interface{}, err
 func (r *Resolver) GetDeviceSettings(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -84,7 +84,7 @@ func (r *Resolver) GetDeviceSettings(p graphql.ResolveParams) (interface{}, erro
 		return nil, r.Presenter.BadRequestError("device IMEI is required")
 	}
 
-	// Check if operator is a member of the organization.
+	// Check if user is a member of the organization.
 	err = r.MemberService.CheckCanManageOrganization(ctx, op.ID, orgID)
 	if err != nil {
 		return nil, r.Presenter.ForbiddenError("not a member of this organization")
@@ -138,7 +138,7 @@ func convertMetadataToList(metadata map[string]string) []map[string]string {
 func (r *Resolver) GetOrganizationSettings(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -148,7 +148,7 @@ func (r *Resolver) GetOrganizationSettings(p graphql.ResolveParams) (interface{}
 		return nil, err
 	}
 
-	// Check if operator is a member of the organization.
+	// Check if user is a member of the organization.
 	err = r.MemberService.CheckCanManageOrganization(ctx, op.ID, orgID)
 	if err != nil {
 		return nil, r.Presenter.ForbiddenError("not a member of this organization")
@@ -192,7 +192,7 @@ func (r *Resolver) GetDevice(p graphql.ResolveParams) (interface{}, error) {
 		return nil, err
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -233,7 +233,7 @@ func (r *Resolver) GetDevices(p graphql.ResolveParams) (interface{}, error) {
 		offset = 0
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -269,7 +269,7 @@ func (r *Resolver) GetDeviceCount(p graphql.ResolveParams) (interface{}, error) 
 		return nil, err
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -300,7 +300,7 @@ func (r *Resolver) GetCommand(p graphql.ResolveParams) (interface{}, error) {
 		return nil, err
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -336,7 +336,7 @@ func (r *Resolver) GetPendingCommands(p graphql.ResolveParams) (interface{}, err
 		return nil, err
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -387,7 +387,7 @@ func (r *Resolver) GetTelemetryHistory(p graphql.ResolveParams) (interface{}, er
 		limit = 100
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -456,7 +456,7 @@ func (r *Resolver) GetLatestTelemetry(p graphql.ResolveParams) (interface{}, err
 		return nil, r.Presenter.BadRequestError("organizationId is required")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -508,7 +508,7 @@ func (r *Resolver) GetTelemetryStats(p graphql.ResolveParams) (interface{}, erro
 		return nil, r.Presenter.BadRequestError("organizationId is required")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -594,7 +594,7 @@ func (r *Resolver) GetConnectionStatus(p graphql.ResolveParams) (interface{}, er
 		return nil, r.Presenter.BadRequestError("organizationId is required")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -645,7 +645,7 @@ func (r *Resolver) GetAllConnections(p graphql.ResolveParams) (interface{}, erro
 		return nil, err
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -724,7 +724,7 @@ func (r *Resolver) GetDeviceMetrics(p graphql.ResolveParams) (interface{}, error
 		return nil, err
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -835,7 +835,7 @@ func (r *Resolver) GetDeviceCommandHistory(p graphql.ResolveParams) (interface{}
 		return nil, err
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -890,7 +890,7 @@ func (r *Resolver) GetDeviceCommandHistory(p graphql.ResolveParams) (interface{}
 func (r *Resolver) GetDashboardStats(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -991,7 +991,7 @@ func (r *Resolver) GetDeviceInspection(p graphql.ResolveParams) (interface{}, er
 		return nil, err
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -1085,7 +1085,7 @@ func (r *Resolver) GetDeviceTimeline(p graphql.ResolveParams) (interface{}, erro
 		return nil, err
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -1150,12 +1150,12 @@ func (r *Resolver) GetDeviceLogs(p graphql.ResolveParams) (interface{}, error) {
 		return nil, err
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
 
-	// Check if operator is a member of the organization.
+	// Check if user is a member of the organization.
 	err = r.MemberService.CheckCanManageOrganization(ctx, op.ID, orgID)
 	if err != nil {
 		return nil, r.Presenter.ForbiddenError("not a member of this organization")
@@ -1211,7 +1211,7 @@ func (r *Resolver) GetDeviceLogs(p graphql.ResolveParams) (interface{}, error) {
 
 // GetAlertRules resolves the alertRules query.
 func (r *Resolver) GetAlertRules(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -1254,7 +1254,7 @@ func (r *Resolver) GetAlertRules(p graphql.ResolveParams) (interface{}, error) {
 
 // GetAlertHistory resolves the alertHistory query.
 func (r *Resolver) GetAlertHistory(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -1293,7 +1293,7 @@ func (r *Resolver) GetAlertHistory(p graphql.ResolveParams) (interface{}, error)
 
 // GetContactPoints resolves the contactPoints query.
 func (r *Resolver) GetContactPoints(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -1330,7 +1330,7 @@ func (r *Resolver) GetContactPoints(p graphql.ResolveParams) (interface{}, error
 
 // GetServiceAccounts resolves the serviceAccounts query.
 func (r *Resolver) GetServiceAccounts(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -1371,7 +1371,7 @@ func (r *Resolver) GetServiceAccounts(p graphql.ResolveParams) (interface{}, err
 
 // GetAnnotations resolves the annotations query.
 func (r *Resolver) GetAnnotations(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}

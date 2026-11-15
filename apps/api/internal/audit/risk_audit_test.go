@@ -52,7 +52,7 @@ func TestNoOpLogger_CommandExecuted(t *testing.T) {
 		t.Fatal("NewNoOpLogger returned nil")
 	}
 	l.CommandExecuted(context.Background(), CommandExecutedEvent{
-		OperatorID: "op-1",
+		UserID: "op-1",
 		DeviceID:   "dev-1",
 		Command:    "device.reboot",
 		Result:     ResultBlocked,
@@ -64,7 +64,7 @@ func TestNoOpLogger_CommandExecuted(t *testing.T) {
 func TestNoOpLogger_CommandExecutedWithChangeTracking(t *testing.T) {
 	l := NewNoOpLogger()
 	l.CommandExecuted(context.Background(), CommandExecutedEvent{
-		OperatorID: "op-1",
+		UserID: "op-1",
 		DeviceID:   "dev-1",
 		Command:    "device.reboot",
 		Result:     ResultSuccess,

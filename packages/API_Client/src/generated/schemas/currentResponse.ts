@@ -5,11 +5,13 @@
  * Go-generated OpenAPI contract from handler annotations
  * OpenAPI spec version: 0.0.01
  */
+import type { DriftResponse } from './driftResponse';
 
 export interface CurrentResponse {
   createdAt?: number;
   deviceId?: string;
   document?: string;
+  drift?: DriftResponse;
   kind?: string;
   version?: number;
 }

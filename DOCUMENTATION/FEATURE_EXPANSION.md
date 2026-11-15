@@ -12,7 +12,7 @@ time. No separate quota DB table — quotas live on the org entity as a JSON
 blob, queried once per request context.
 
 **Requirements**:
-- `QuotaConfig` struct on `Organization` entity (devices, operators, api_keys,
+- `QuotaConfig` struct on `Organization` entity (devices, users, api_keys,
   commands_per_minute, pending_invitations).
 - `QuotaService` in `application/` that checks limits before creation ops.
 - Checked in: `DeviceService.Register`, `MemberService.AddMember`,
@@ -52,33 +52,33 @@ release on completion; auto-expire after timeout. No external dependency
   (so horizontal scaling doesn't double-execute).
 - New file: `internal/infrastructure/serverlock/lock.go` (small, standalone).
 
-## 4. Preferences (Per-Operator)
+## 4. Preferences (Per-User)
 
 hot+cold fields and version-locked PATCH.
-**Vyzorix improvement**: Merge into existing `operator_settings` table (already
-exists). Add a `preferences` JSON column. No separate table — the operator
+**Vyzorix improvement**: Merge into existing `user_settings` table (already
+exists). Add a `preferences` JSON column. No separate table — the user
 settings service already handles get/update. Add `PATCH /v1/me/preferences`.
 
 **Requirements**:
 - `Preferences` struct: theme, default_org, notification_frequency, dashboard
   refresh_interval, language, timezone.
-- Stored as JSON in `operator_settings.preferences` column (migration).
+- Stored as JSON in `user_settings.preferences` column (migration).
 - `OperatorSettingsService.GetPreferences` / `UpdatePreferences`.
 - PATCH nil = leave unchanged, PATCH value = set, PATCH empty string = reset
   to default.
-- Merge into: `internal/application/auth/` (operator settings service).
+- Merge into: `internal/application/auth/` (user settings service).
 
 ## 5. Support Bundles
 
 **Vyzorix improvement**: Synchronous JSON export (not tar — simpler, API-native).
 Collects: config (redacted), DB schema version, recent errors, worker status,
-hub metrics, device count, operator count. Returns as a JSON download.
+hub metrics, device count, user count. Returns as a JSON download.
 
 **Requirements**:
 - `SupportBundleService` that collects diagnostic data from existing services.
 - `GET /v1/admin/support-bundle` (super_admin only).
 - Collectors: config, migrations, audit log tail, hub metrics, worker status,
-  device/org/operator counts.
+  device/org/user counts.
 - No new table — reads from existing tables/services.
 - New file: `internal/api/handlers/admin/support_bundle.go`.
 
@@ -116,12 +116,12 @@ typed results with resource type + snippet.
 ## 8. Provisioning (Declarative YAML at Boot)
 
 **Vyzorix improvement**: Single `provisioning.yaml` file read at boot that
-declares orgs, operators, device groups, API keys, and permission grants.
+declares orgs, users, device groups, API keys, and permission grants.
 Idempotent — skips resources that already exist. Runs before the HTTP server
 starts.
 
 **Requirements**:
-- `provisioning.yaml` schema: orgs, operators, device_groups, api_keys,
+- `provisioning.yaml` schema: orgs, users, device_groups, api_keys,
   permission_grants.
 - `ProvisioningService` that reads the file and creates resources via existing
   application services.
@@ -134,7 +134,7 @@ starts.
 1. Quota (domain + checks)
 2. Tags (device entity + migration)
 3. Server lock (infra + worker integration)
-4. Preferences (operator settings merge)
+4. Preferences (user settings merge)
 5. Support bundle (admin handler)
 6. Update manager (admin handler)
 7. Search (application service + route)

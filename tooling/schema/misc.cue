@@ -32,7 +32,7 @@ package vyzorix
         id: string
         last_request_at?: int64
         name: string
-        operator_id: string
+        user_id: string
         platform: string
         allowed_origins: [...string]
         allowed_paths: [...string]
@@ -65,7 +65,7 @@ package vyzorix
         schema_version?: int
         device_count?: int
         org_count?: int
-        operator_count?: int
+        user_count?: int
 }
 
 // LogoutRequest.
@@ -144,7 +144,7 @@ package vyzorix
 
 // ThresholdsResult.
 #ThresholdsResult: {
-        thresholds?: #OperatorThresholds
+        thresholds?: #UserThresholds
 }
 
 // PreferencesResult.

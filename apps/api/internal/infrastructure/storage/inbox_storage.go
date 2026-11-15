@@ -112,8 +112,8 @@ func (r *InboxRepository) GetByIMEI(ctx context.Context, imei string) (*inbox.In
 	return r.scanEntry(r.queryRow(ctx, query, imei))
 }
 
-// ListByOperator retrieves paginated inbox entries for a specific operator within an organization with optional status filter.
-func (r *InboxRepository) ListByOperator(ctx context.Context, operatorID, orgID, status string, limit, offset int) ([]*inbox.InboxEntry, int, error) {
+// ListByUser retrieves paginated inbox entries for a specific user within an organization with optional status filter.
+func (r *InboxRepository) ListByUser(ctx context.Context, userID, orgID, status string, limit, offset int) ([]*inbox.InboxEntry, int, error) {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -122,9 +122,9 @@ func (r *InboxRepository) ListByOperator(ctx context.Context, operatorID, orgID,
 	}
 
 	// Build WHERE clause based on status and organization:.
-	// - "pending": show ALL pending entries (no operator filter - any operator can see pending).
-	// - "approved"/"rejected": show entries with that status AND reviewed_by = operatorID.
-	// - "all"/"": show pending entries + entries reviewed by this operator.
+	// - "pending": show ALL pending entries (no user filter - any user can see pending).
+	// - "approved"/"rejected": show entries with that status AND reviewed_by = userID.
+	// - "all"/"": show pending entries + entries reviewed by this user.
 	// Always filter by organization ID for multi-tenant isolation.
 	var whereClause string
 	var args []interface{}
@@ -133,18 +133,18 @@ func (r *InboxRepository) ListByOperator(ctx context.Context, operatorID, orgID,
 	switch statusLower {
 	case "pending":
 		// Show pending entries that are either unassigned (reviewed_by IS NULL).
-		// or assigned to this specific operator, within the organization.
-		// This ensures operators only see pending entries they can work on.
+		// or assigned to this specific user, within the organization.
+		// This ensures users only see pending entries they can work on.
 		whereClause = "WHERE organization_id = ? AND status = ? AND (reviewed_by IS NULL OR reviewed_by = ?)"
-		args = append(args, orgID, inbox.StatusPending, operatorID)
+		args = append(args, orgID, inbox.StatusPending, userID)
 	case "approved", "rejected":
-		// Show entries with this status that were reviewed by this operator within the organization.
+		// Show entries with this status that were reviewed by this user within the organization.
 		whereClause = "WHERE organization_id = ? AND status = ? AND reviewed_by = ?"
-		args = append(args, orgID, statusLower, operatorID)
+		args = append(args, orgID, statusLower, userID)
 	default:
-		// "all" or empty: show pending entries (unassigned or mine) + entries reviewed by this operator.
+		// "all" or empty: show pending entries (unassigned or mine) + entries reviewed by this user.
 		whereClause = "WHERE organization_id = ? AND ((status = ? AND (reviewed_by IS NULL OR reviewed_by = ?)) OR reviewed_by = ?)"
-		args = append(args, orgID, inbox.StatusPending, operatorID, operatorID)
+		args = append(args, orgID, inbox.StatusPending, userID, userID)
 	}
 
 	// Get total count.
@@ -221,7 +221,7 @@ func (r *InboxRepository) Update(ctx context.Context, e *inbox.InboxEntry) error
 		e.IMEI, e.FirebaseInstallID, e.FCMToken,
 		e.DeviceName, e.Manufacturer, e.OSVersion, e.AppVersion,
 		e.DeviceClass, e.Model, e.Status,
-		e.OperatorID, reviewedAt, reviewedReason,
+		e.UserID, reviewedAt, reviewedReason,
 		rejectionReason, e.OrganizationID, now, e.ID)
 	return err
 }
@@ -289,7 +289,7 @@ func (r *InboxRepository) scanEntry(row *sql.Row) (*inbox.InboxEntry, error) {
 	err := row.Scan(
 		&e.ID, &e.IMEI, &e.FirebaseInstallID, &e.FCMToken, &e.DeviceName,
 		&e.Manufacturer, &e.OSVersion, &e.AppVersion, &e.DeviceClass, &e.Model, &e.Status,
-		&e.OperatorID, &reviewedAt, &reviewedReason, &rejectionReason,
+		&e.UserID, &reviewedAt, &reviewedReason, &rejectionReason,
 		&organizationID, &e.CreatedAt, &updatedAt,
 		&confirmedAt,
 	)
@@ -337,7 +337,7 @@ func (r *InboxRepository) scanEntryRows(rows *sql.Rows) (*inbox.InboxEntry, erro
 	err := rows.Scan(
 		&e.ID, &e.IMEI, &e.FirebaseInstallID, &e.FCMToken, &e.DeviceName,
 		&e.Manufacturer, &e.OSVersion, &e.AppVersion, &e.DeviceClass, &e.Model, &e.Status,
-		&e.OperatorID, &reviewedAt, &reviewedReason, &rejectionReason,
+		&e.UserID, &reviewedAt, &reviewedReason, &rejectionReason,
 		&organizationID, &e.CreatedAt, &updatedAt,
 		&confirmedAt,
 	)

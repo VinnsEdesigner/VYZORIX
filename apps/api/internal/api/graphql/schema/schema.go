@@ -34,8 +34,8 @@ func buildQueryType(res *resolver.Resolver) *graphql.Object {
 func settingsQueries(res *resolver.Resolver) graphql.Fields {
 	return graphql.Fields{
 		"mySettings": &graphql.Field{
-			Type:        OperatorSettingsType,
-			Description: "Get current operator's settings (client and notifications)",
+			Type:        UserSettingsType,
+			Description: "Get current user's settings (client and notifications)",
 			Resolve:     res.GetMySettings,
 		},
 		"deviceSettings": &graphql.Field{
@@ -57,7 +57,7 @@ func settingsQueries(res *resolver.Resolver) graphql.Fields {
 		},
 		"myNotifications": &graphql.Field{
 			Type:        NotificationSettingsType,
-			Description: "Get current operator's notification settings",
+			Description: "Get current user's notification settings",
 			Resolve:     res.GetMyNotifications,
 		},
 	}
@@ -101,7 +101,7 @@ func deviceQueries(res *resolver.Resolver) graphql.Fields {
 		},
 		"devices": &graphql.Field{
 			Type:        graphql.NewList(DeviceType),
-			Description: "List all devices for the authenticated operator in an organization",
+			Description: "List all devices for the authenticated user in an organization",
 			Args: graphql.FieldConfigArgument{
 				"organizationId": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String), Description: "Organization ID"},
 				"limit":          &graphql.ArgumentConfig{Type: graphql.Int, DefaultValue: 50},
@@ -358,7 +358,7 @@ func settingsMutations(res *resolver.Resolver) graphql.Fields {
 	return graphql.Fields{
 		"updateMyNotifications": &graphql.Field{
 			Type:        NotificationSettingsType,
-			Description: "Update current operator's notification settings",
+			Description: "Update current user's notification settings",
 			Args: graphql.FieldConfigArgument{
 				"input": &graphql.ArgumentConfig{
 					Type: graphql.NewNonNull(graphql.NewInputObject(graphql.InputObjectConfig{
@@ -710,34 +710,34 @@ func organizationQueries(res *resolver.Resolver) graphql.Fields {
 		},
 		"organizations": &graphql.Field{
 			Type:        OrganizationListResponseType,
-			Description: "List all organizations for the authenticated operator",
+			Description: "List all organizations for the authenticated user",
 			Args: graphql.FieldConfigArgument{
 				"page": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 1,
-					Description:  "Page number",
+					Description: "Page number",
 				},
 				"limit": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 50,
-					Description:  "Maximum number of organizations to return (max 100)",
+					Description: "Maximum number of organizations to return (max 100)",
 				},
 			},
 			Resolve: res.GetOrganizations,
 		},
 		"myMemberships": &graphql.Field{
 			Type:        MemberListResponseType,
-			Description: "Get all organization memberships for the authenticated operator",
+			Description: "Get all organization memberships for the authenticated user",
 			Args: graphql.FieldConfigArgument{
 				"page": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 1,
-					Description:  "Page number",
+					Description: "Page number",
 				},
 				"limit": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 50,
-					Description:  "Maximum number of memberships to return (max 100)",
+					Description: "Maximum number of memberships to return (max 100)",
 				},
 			},
 			Resolve: res.GetMyMemberships,
@@ -753,12 +753,12 @@ func organizationQueries(res *resolver.Resolver) graphql.Fields {
 				"page": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 1,
-					Description:  "Page number",
+					Description: "Page number",
 				},
 				"limit": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 50,
-					Description:  "Maximum number of members to return (max 100)",
+					Description: "Maximum number of members to return (max 100)",
 				},
 			},
 			Resolve: res.GetOrganizationMembers,
@@ -774,19 +774,19 @@ func organizationQueries(res *resolver.Resolver) graphql.Fields {
 				"page": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 1,
-					Description:  "Page number",
+					Description: "Page number",
 				},
 				"limit": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 50,
-					Description:  "Maximum number of invitations to return (max 100)",
+					Description: "Maximum number of invitations to return (max 100)",
 				},
 			},
 			Resolve: res.GetOrganizationInvitations,
 		},
 		"myInvitations": &graphql.Field{
 			Type:        graphql.NewList(InvitationType),
-			Description: "Get all pending invitations for the authenticated operator",
+			Description: "Get all pending invitations for the authenticated user",
 			Resolve:     res.GetMyInvitations,
 		},
 		"invitation": &graphql.Field{

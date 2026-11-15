@@ -14,7 +14,7 @@ import (
 	annotationdomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/annotation"
 	devicedomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
 	notificationdomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/notification"
-	domainoperator "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	domainuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	orgdomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	sadomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/serviceaccount"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/webhook"
@@ -59,7 +59,7 @@ func (r *Resolver) UpdateFCMToken(p graphql.ResolveParams) (interface{}, error) 
 		return nil, r.Presenter.BadRequestError("organizationId is required")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -109,7 +109,7 @@ func (r *Resolver) DeleteDevice(p graphql.ResolveParams) (interface{}, error) {
 		return nil, r.Presenter.BadRequestError("organizationId is required")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -159,7 +159,7 @@ func (r *Resolver) SendCommand(p graphql.ResolveParams) (interface{}, error) {
 		return nil, r.Presenter.BadRequestError("organizationId is required")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -240,7 +240,7 @@ func (r *Resolver) RetryCommand(p graphql.ResolveParams) (interface{}, error) {
 		return nil, r.Presenter.BadRequestError("organizationId is required")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -290,7 +290,7 @@ func (r *Resolver) CancelCommand(p graphql.ResolveParams) (interface{}, error) {
 		return nil, r.Presenter.BadRequestError("organizationId is required")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -343,7 +343,7 @@ func (r *Resolver) DisconnectDevice(p graphql.ResolveParams) (interface{}, error
 		return nil, r.Presenter.BadRequestError("organizationId is required")
 	}
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -380,7 +380,7 @@ func (r *Resolver) DisconnectDevice(p graphql.ResolveParams) (interface{}, error
 func (r *Resolver) UpdateMyNotifications(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -401,8 +401,8 @@ func (r *Resolver) UpdateMyNotifications(p graphql.ResolveParams) (interface{}, 
 }
 
 // parseNotificationInput parses notification input from GraphQL args.
-func (r *Resolver) parseNotificationInput(input map[string]interface{}) *domainoperator.NotificationInput {
-	notifInput := &domainoperator.NotificationInput{}
+func (r *Resolver) parseNotificationInput(input map[string]interface{}) *domainuser.NotificationInput {
+	notifInput := &domainuser.NotificationInput{}
 
 	if v, ok := input["enabled"].(bool); ok {
 		notifInput.Enabled = &v
@@ -442,8 +442,8 @@ func (r *Resolver) parseStringArray(arr []interface{}) *[]string {
 }
 
 // parseEmailInput parses email notification settings.
-func (r *Resolver) parseEmailInput(email map[string]interface{}) *domainoperator.EmailNotificationInput {
-	emailInput := &domainoperator.EmailNotificationInput{}
+func (r *Resolver) parseEmailInput(email map[string]interface{}) *domainuser.EmailNotificationInput {
+	emailInput := &domainuser.EmailNotificationInput{}
 	if v, ok := email["thresholdBreach"].(bool); ok {
 		emailInput.ThresholdBreach = &v
 	}
@@ -457,8 +457,8 @@ func (r *Resolver) parseEmailInput(email map[string]interface{}) *domainoperator
 }
 
 // parseWebhookInput parses webhook notification settings.
-func (r *Resolver) parseWebhookInput(webhook map[string]interface{}) *domainoperator.WebhookNotificationInput {
-	webhookInput := &domainoperator.WebhookNotificationInput{}
+func (r *Resolver) parseWebhookInput(webhook map[string]interface{}) *domainuser.WebhookNotificationInput {
+	webhookInput := &domainuser.WebhookNotificationInput{}
 	if v, ok := webhook["enabled"].(bool); ok {
 		webhookInput.Enabled = &v
 	}
@@ -472,8 +472,8 @@ func (r *Resolver) parseWebhookInput(webhook map[string]interface{}) *domainoper
 }
 
 // parsePushInput parses push notification settings.
-func (r *Resolver) parsePushInput(push map[string]interface{}) *domainoperator.PushNotificationInput {
-	pushInput := &domainoperator.PushNotificationInput{}
+func (r *Resolver) parsePushInput(push map[string]interface{}) *domainuser.PushNotificationInput {
+	pushInput := &domainuser.PushNotificationInput{}
 	if v, ok := push["thresholdBreach"].(bool); ok {
 		pushInput.ThresholdBreach = &v
 	}
@@ -501,7 +501,7 @@ func (r *Resolver) parseStringSlice(v []interface{}) []string {
 func (r *Resolver) UpdateDeviceSettings(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -516,7 +516,7 @@ func (r *Resolver) UpdateDeviceSettings(p graphql.ResolveParams) (interface{}, e
 		return nil, r.Presenter.BadRequestError("device IMEI is required")
 	}
 
-	// Check if operator is a member of the organization.
+	// Check if user is a member of the organization.
 	err = r.MemberService.CheckCanManageOrganization(ctx, op.ID, orgID)
 	if err != nil {
 		return nil, r.Presenter.ForbiddenError("not a member of this organization")
@@ -599,7 +599,7 @@ func (r *Resolver) UpdateDeviceSettings(p graphql.ResolveParams) (interface{}, e
 func (r *Resolver) UpdateOrganizationSettings(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -609,7 +609,7 @@ func (r *Resolver) UpdateOrganizationSettings(p graphql.ResolveParams) (interfac
 		return nil, err
 	}
 
-	// Check if operator is a member of the organization.
+	// Check if user is a member of the organization.
 	err = r.MemberService.CheckCanManageOrganization(ctx, op.ID, orgID)
 	if err != nil {
 		return nil, r.Presenter.ForbiddenError("not a member of this organization")
@@ -718,7 +718,7 @@ func parseOrgThresholds(input map[string]interface{}) *orgdomain.Thresholds {
 func (r *Resolver) TestWebhook(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -747,7 +747,7 @@ func (r *Resolver) TestWebhook(p graphql.ResolveParams) (interface{}, error) {
 func (r *Resolver) RotateWebhookSecret(p graphql.ResolveParams) (interface{}, error) {
 	ctx := p.Context
 
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -762,7 +762,7 @@ func (r *Resolver) RotateWebhookSecret(p graphql.ResolveParams) (interface{}, er
 
 // CreateAlertRule resolves the createAlertRule mutation.
 func (r *Resolver) CreateAlertRule(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -786,7 +786,7 @@ func (r *Resolver) CreateAlertRule(p graphql.ResolveParams) (interface{}, error)
 
 // UpdateAlertRule resolves the updateAlertRule mutation.
 func (r *Resolver) UpdateAlertRule(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -814,7 +814,7 @@ func (r *Resolver) UpdateAlertRule(p graphql.ResolveParams) (interface{}, error)
 
 // DeleteAlertRule resolves the deleteAlertRule mutation.
 func (r *Resolver) DeleteAlertRule(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -840,7 +840,7 @@ func (r *Resolver) DeleteAlertRule(p graphql.ResolveParams) (interface{}, error)
 
 // EvaluateAlertRule resolves the evaluateAlertRule mutation.
 func (r *Resolver) EvaluateAlertRule(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -897,7 +897,7 @@ func (r *Resolver) alertRuleView(p graphql.ResolveParams, orgID, ruleID string) 
 
 // CreateContactPoint resolves the createContactPoint mutation.
 func (r *Resolver) CreateContactPoint(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -921,7 +921,7 @@ func (r *Resolver) CreateContactPoint(p graphql.ResolveParams) (interface{}, err
 
 // UpdateContactPoint resolves the updateContactPoint mutation.
 func (r *Resolver) UpdateContactPoint(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -949,7 +949,7 @@ func (r *Resolver) UpdateContactPoint(p graphql.ResolveParams) (interface{}, err
 
 // DeleteContactPoint resolves the deleteContactPoint mutation.
 func (r *Resolver) DeleteContactPoint(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -975,7 +975,7 @@ func (r *Resolver) DeleteContactPoint(p graphql.ResolveParams) (interface{}, err
 
 // TestContactPoint resolves the testContactPoint mutation.
 func (r *Resolver) TestContactPoint(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -1050,7 +1050,7 @@ func contactPointView(cp *notificationdomain.ContactPoint) map[string]interface{
 
 // CreateServiceAccount resolves the createServiceAccount mutation.
 func (r *Resolver) CreateServiceAccount(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -1083,7 +1083,7 @@ func (r *Resolver) CreateServiceAccount(p graphql.ResolveParams) (interface{}, e
 
 // DeleteServiceAccount resolves the deleteServiceAccount mutation.
 func (r *Resolver) DeleteServiceAccount(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -1109,7 +1109,7 @@ func (r *Resolver) DeleteServiceAccount(p graphql.ResolveParams) (interface{}, e
 
 // CreateServiceAccountToken resolves the createServiceAccountToken mutation.
 func (r *Resolver) CreateServiceAccountToken(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -1151,7 +1151,7 @@ func (r *Resolver) CreateServiceAccountToken(p graphql.ResolveParams) (interface
 
 // RotateServiceAccountToken resolves the rotateServiceAccountToken mutation.
 func (r *Resolver) RotateServiceAccountToken(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -1192,7 +1192,7 @@ func tokenView(token *sadomain.Token) map[string]interface{} {
 
 // CreateAnnotation resolves the createAnnotation mutation.
 func (r *Resolver) CreateAnnotation(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}
@@ -1244,7 +1244,7 @@ func (r *Resolver) CreateAnnotation(p graphql.ResolveParams) (interface{}, error
 
 // DeleteAnnotation resolves the deleteAnnotation mutation.
 func (r *Resolver) DeleteAnnotation(p graphql.ResolveParams) (interface{}, error) {
-	op, ok := gqlcontext.GetOperator(p.Context)
+	op, ok := gqlcontext.GetUser(p.Context)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}

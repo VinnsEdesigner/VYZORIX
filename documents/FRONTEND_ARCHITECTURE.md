@@ -419,7 +419,7 @@ src/
        use-device-selector.ts
        use-time-range.ts
     use-mobile.tsx
-    use-operator.ts
+    use-user.ts
     use-server-health.ts
 
  domain/                         # DOMAIN LAYER

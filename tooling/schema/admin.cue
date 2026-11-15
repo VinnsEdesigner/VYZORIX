@@ -1,16 +1,16 @@
 package vyzorix
 
-// TopOperatorStat.
-#TopOperatorStat: {
-        operator_id: string
-        operator_name: string
+// TopUserStat.
+#TopUserStat: {
+        user_id: string
+        user_name: string
         total_requests: int64
         active_key_count: int
 }
 
-// OperatorAPIKeyStatsResult.
-#OperatorAPIKeyStatsResult: {
-        operator_id: string
+// UserAPIKeyStatsResult.
+#UserAPIKeyStatsResult: {
+        user_id: string
         total_keys: int64
         active_keys: int64
         revoked_keys: int64
@@ -18,8 +18,8 @@ package vyzorix
         monthly_limit: int
 }
 
-// AdminOperator.
-#AdminOperator: {
+// AdminUser.
+#AdminUser: {
         id: string
         email: string
         name: string
@@ -30,22 +30,22 @@ package vyzorix
         email_verified: bool
 }
 
-// AdminOperatorListResult.
-#AdminOperatorListResult: {
-        operators: [...#AdminOperator]
+// AdminUserListResult.
+#AdminUserListResult: {
+        users: [...#AdminUser]
         total: int
 }
 
-// CreateOperatorRequest.
-#CreateOperatorRequest: {
+// CreateUserRequest.
+#CreateUserRequest: {
         email: string
         password: string
         name: string
         role?: string
 }
 
-// OperatorThresholds.
-#OperatorThresholds: {
+// UserThresholds.
+#UserThresholds: {
         riskWarn?: int
         riskCrit?: int
         thermalWarn?: int
@@ -54,15 +54,15 @@ package vyzorix
         bufferCrit?: int
 }
 
-// OperatorSettingsResult.
-#OperatorSettingsResult: {
+// UserSettingsResult.
+#UserSettingsResult: {
         notifications?: #NotificationSettings
         client?: #ClientSettings
-        thresholds?: #OperatorThresholds
+        thresholds?: #UserThresholds
 }
 
-// OperatorSettingsResultLegacy.
-#OperatorSettingsResultLegacy: {
+// UserSettingsResultLegacy.
+#UserSettingsResultLegacy: {
         client?: #ClientSettings
         id: string
         email: string

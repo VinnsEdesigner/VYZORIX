@@ -14,7 +14,7 @@ import (
 // thin adapter over this, so the sequence and its ordering live in one place and
 // are testable without HTTP.
 
-// DeployRequest is one operator's deploy. The caller is resolved by the handler,
+// DeployRequest is one user's deploy. The caller is resolved by the handler,
 // which is the authentication boundary, and passed in so the service never has to
 // reach back into a request context it does not own.
 //
@@ -30,7 +30,7 @@ type DeployRequest struct {
 	DryRun   bool
 }
 
-// DeployResult is what the operator is told.
+// DeployResult is what the user is told.
 type DeployResult struct {
 	AuthorizedBy string
 	Document     string
@@ -192,7 +192,7 @@ type Deliverable struct {
 //
 // This is the delivery half of the deploy feature: the device_config frame and
 // the re-fetch endpoint both read the *stored* config, not a fresh compile. The
-// stored config is the one the operator's manifest produced and the server
+// stored config is the one the user's manifest produced and the server
 // signed; rebuilding it here would issue a different document at a different
 // version and the device would apply something nobody deployed.
 func (s *DeployService) DeliverableForDevice(ctx context.Context, deviceID string) (*Deliverable, error) {
@@ -250,7 +250,7 @@ var ErrNoConfig = errors.New("device has no config")
 //
 // There is no caller here on purpose: this read is the device's own, made with
 // the device's own credential, and the handler has already bound the request to
-// that device. It is not the operator path, which goes through Current and its
+// that device. It is not the user path, which goes through Current and its
 // authorisation.
 func (s *DeployService) CurrentForDevice(ctx context.Context, deviceID string) (*deployconfig.Record, error) {
 	record, err := s.configs.Current(ctx, deviceID)
@@ -286,7 +286,7 @@ func (s *DeployService) currentVersion(ctx context.Context, deviceID string) (in
 	return current.Version, nil
 }
 
-// resultFromConfig builds the operator-facing summary.
+// resultFromConfig builds the user-facing summary.
 func resultFromConfig(cfg *Config, version int, dryRun bool, catalog *Catalog) *DeployResult {
 	result := &DeployResult{
 		Version:      version,

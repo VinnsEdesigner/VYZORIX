@@ -80,8 +80,8 @@ func (h *EventsHandler) findDevice(ctx context.Context, deviceID, orgID string) 
 func (h *EventsHandler) GetEvents(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// Extract operator for auth check.
-	op := middleware.GetOperatorFromContext(c)
+	// Extract user for auth check.
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "Operator context required"))
 		return
@@ -186,7 +186,7 @@ func (h *EventsHandler) GetEvents(c *gin.Context) {
 func (h *EventsHandler) GetEventsByType(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "Operator context required"))
 		return
@@ -238,13 +238,13 @@ func (h *EventsHandler) GetEventsByType(c *gin.Context) {
 // @Param        X-Organization-ID  header  string  true  "Organization ID"
 // @Param        limit  query int     false  "result limit (default 50, max 200)"
 // @Success      200  {object}  openapi.DeviceEventListResult  "events"
-// @Failure      401  {object}  openapi.ErrorResponse  "operator context required"
+// @Failure      401  {object}  openapi.ErrorResponse  "user context required"
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /dashboard/events/recent [get]
 func (h *EventsHandler) GetRecentEvents(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "Operator context required"))
 		return
@@ -287,7 +287,7 @@ func (h *EventsHandler) GetRecentEvents(c *gin.Context) {
 func (h *EventsHandler) GetEventByID(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		_ = c.Error(apperrors.NewServerError(apperrors.CodeAuthTokenInvalid, "Operator context required"))
 		return

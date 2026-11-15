@@ -2,7 +2,7 @@
 
 **Status:** orientation. This is the document to read first if you are new to Vyzorix,
 or if you have been working on one corner of it and have lost sight of the whole.
-**Audience:** engineers, operators and reviewers who need the shape of the system
+**Audience:** engineers, users and reviewers who need the shape of the system
 before they need any single contract.
 
 Every other document in this folder assumes you already know the vocabulary on this
@@ -14,8 +14,8 @@ with this one about *structure*, that document wins — this is a map, not the t
 ## 1. What Vyzorix is, in a paragraph
 
 Vyzorix puts a real Linux userspace on an ordinary, unrooted Android phone and lets an
-operator reach it from anywhere. The phone runs a Debian container under `proot`, a
-long-lived agent holds a WebSocket to a server, and the server gives an operator a
+user reach it from anywhere. The phone runs a Debian container under `proot`, a
+long-lived agent holds a WebSocket to a server, and the server gives a user a
 terminal into that container, a live view of the device's health, and a way to
 **deploy applications** into it. The whole thing is built so that the phone can be
 offline for days and still behave correctly, because the authority to run something
@@ -76,7 +76,7 @@ split is in `CONTAINER_ANDROID_APIS.md` §7 (the capability model) and
 |:--|:--|:--|
 | `VYZORIX` (this one) | The server: API, console, deploy compilation and signing, secrets, telemetry, OTA. | Go, plus a TypeScript console |
 | `Vyzorix-android` | The device agent: the four layers above, the rootfs build, the app runtime. | Kotlin (Gradle) and C++ |
-| `vyzorix-cli` | The operator's command-line tool: `vyzorix login`, `deploy`, `secrets`. | Go |
+| `vyzorix-cli` | The user's command-line tool: `vyzorix login`, `deploy`, `secrets`. | Go |
 | `vyzorix-spec` | The shared manifest schema and wire types, so the CLI and the server cannot drift. | Go |
 
 The CLI and the server share one declaration of the manifest shape (`vyzorix-spec`),
@@ -103,7 +103,7 @@ wire; the pairing code is only a rendezvous.
 
 ### 4.2 Open a terminal into the container
 
-Once the device is online, an operator opens a terminal from the console. The session
+Once the device is online, a user opens a terminal from the console. The session
 is a PTY allocated on the device (Layer 1), wrapped in `proot` running a Debian login
 shell (Layer 2), multiplexed by the cloud connector and streamed to the browser. If the
 WebSocket drops, the shell survives inside `tmux` and reattaches when the client
@@ -113,7 +113,7 @@ reconnects.
 
 ### 4.3 Deploy applications
 
-An operator writes a `vyzorix.toml` that declares what should run, and runs
+A user writes a `vyzorix.toml` that declares what should run, and runs
 `vyzorix deploy`. The server validates it, checks that the caller may deploy to that
 device, compiles it into a signed config, and delivers it. The device verifies the
 signature offline, fetches the artifacts it names, checks each against its digest, and
@@ -126,7 +126,7 @@ installs them atomically. A failure changes nothing.
 ## 5. The data path, at a glance
 
 ```
-   operator                    server                         device
+   user                    server                         device
    ────────                    ──────                         ──────
    vyzorix.toml
      │  vyzorix deploy
@@ -160,10 +160,10 @@ The short list. The long list is in `VYZORIX_GLOSSARY.md`.
 | **`android-bin`** | The container-side client for `android.sock`; one binary, one name per API. |
 | **The supervisor** | The C process inside the container that runs and watches apps (Layer 3). |
 | **`apps.json`** | The supervisor's registry of what should run. |
-| **`vyzorix.toml`** | The operator's manifest, the only file a human writes. |
+| **`vyzorix.toml`** | The user's manifest, the only file a human writes. |
 | **The config** | The compiled, signed `vyzorix.v` document the device receives. |
 | **Artifact** | A referenced, digest-pinned blob an app is built from (a tarball). |
-| **Deploy credential** | A device-scoped CI token, so a pipeline can deploy without an operator session. |
+| **Deploy credential** | A device-scoped CI token, so a pipeline can deploy without a user session. |
 | **Tier** | A device's capability class (unrooted / rooted / advanced), used to cap what may be granted. |
 
 ---

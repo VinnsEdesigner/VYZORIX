@@ -18,11 +18,11 @@ type APIKeyRepository interface {
 	// GetByPrefix retrieves an API key by its prefix (for lookup).
 	GetByPrefix(ctx context.Context, prefix string) (*APIKey, string, error)
 
-	// ListByOperator lists all API keys for an operator with pagination.
-	ListByOperator(ctx context.Context, operatorID string, page, limit int) ([]*APIKey, int, error)
+	// ListByUser lists all API keys for a user with pagination.
+	ListByUser(ctx context.Context, userID string, page, limit int) ([]*APIKey, int, error)
 
 	// ListAll lists all API keys with pagination (for super admin).
-	ListAll(ctx context.Context, page, limit int, operatorID *string) ([]*APIKey, int, error)
+	ListAll(ctx context.Context, page, limit int, userID *string) ([]*APIKey, int, error)
 
 	// Update updates an API key.
 	Update(ctx context.Context, key *APIKey) error
@@ -36,11 +36,11 @@ type APIKeyRepository interface {
 	// IncrementUsage increments the request count for an API key.
 	IncrementUsage(ctx context.Context, id string) error
 
-	// CountByOperatorThisMonth counts how many keys an operator has created this month.
-	CountByOperatorThisMonth(ctx context.Context, operatorID string) (int, error)
+	// CountByUserThisMonth counts how many keys a user has created this month.
+	CountByUserThisMonth(ctx context.Context, userID string) (int, error)
 
-	// GetMonthlyUsage gets usage stats for an operator this month.
-	GetMonthlyUsage(ctx context.Context, operatorID string) (*MonthlyUsage, error)
+	// GetMonthlyUsage gets usage stats for a user this month.
+	GetMonthlyUsage(ctx context.Context, userID string) (*MonthlyUsage, error)
 }
 
 // MonthlyUsage represents monthly API key usage statistics.

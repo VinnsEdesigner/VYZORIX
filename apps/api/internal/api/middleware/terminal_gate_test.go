@@ -7,21 +7,21 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
 )
 
 // This test proves the terminal gate rejects over a real HTTP request (the same
 // path a WebSocket upgrade takes): the request is refused before any socket is
-// established, so an operator without shell.execute never reaches the handler.
+// established, so a user without shell.execute never reaches the handler.
 //
 // It uses the evaluator requireScope uses, driven through the same request
 // shape the terminal route sees.
 
-// terminalGate mimics requireScope(ActionShell, devices:*) for one operator: it
+// terminalGate mimics requireScope(ActionShell, devices:*) for one user: it
 // runs the scope evaluation and reports the HTTP status the gate would produce.
-func terminalGate(op *operator.Operator, orgID string) int {
+func terminalGate(op *user.User, orgID string) int {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodGet, "/v1/dashboard/device/dev-1/terminal", nil)
@@ -43,8 +43,8 @@ func terminalGate(op *operator.Operator, orgID string) int {
 	return http.StatusOK
 }
 
-func operatorWithRole(id, orgID string, role organization.OrganizationRole) *operator.Operator {
-	return &operator.Operator{
+func userWithRole(id, orgID string, role organization.OrganizationRole) *user.User {
+	return &user.User{
 		ID: id,
 		Memberships: []*organization.OrganizationMember{
 			organization.NewMember("m-"+id, orgID, id, role),
@@ -52,21 +52,21 @@ func operatorWithRole(id, orgID string, role organization.OrganizationRole) *ope
 	}
 }
 
-// TestTerminalGateOverHTTP is the socket-level assertion: an operator role that
+// TestTerminalGateOverHTTP is the socket-level assertion: a user role that
 // lacks shell.execute is refused with 403, and an admin is allowed through. A
 // WebSocket client sees the 403 and the handshake never completes.
 func TestTerminalGateOverHTTP(t *testing.T) {
 	cases := []struct {
 		name string
-		op   *operator.Operator
+		op   *user.User
 		want int
 	}{
 		{"unauthenticated", nil, http.StatusUnauthorized},
-		{"viewer denied", operatorWithRole("op-1", "org-1", organization.RoleViewer), http.StatusForbidden},
-		{"operator denied", operatorWithRole("op-1", "org-1", organization.RoleOperator), http.StatusForbidden},
-		{"admin allowed", operatorWithRole("op-1", "org-1", organization.RoleAdmin), http.StatusOK},
-		{"super admin allowed", operatorWithRole("op-1", "org-1", organization.RoleSuperAdmin), http.StatusOK},
-		{"member of another org denied", operatorWithRole("op-1", "org-2", organization.RoleAdmin), http.StatusForbidden},
+		{"viewer denied", userWithRole("op-1", "org-1", organization.RoleViewer), http.StatusForbidden},
+		{"operator denied", userWithRole("op-1", "org-1", organization.RoleOperator), http.StatusForbidden},
+		{"admin allowed", userWithRole("op-1", "org-1", organization.RoleAdmin), http.StatusOK},
+		{"super admin allowed", userWithRole("op-1", "org-1", organization.RoleSuperAdmin), http.StatusOK},
+		{"member of another org denied", userWithRole("op-1", "org-2", organization.RoleAdmin), http.StatusForbidden},
 	}
 
 	for _, tc := range cases {
@@ -82,7 +82,7 @@ func TestTerminalGateOverHTTP(t *testing.T) {
 // scope check, so an admin of one org cannot open a shell on another's device.
 func TestTerminalGateDeniesNonMember(t *testing.T) {
 	// A super_admin role, but only in a different org.
-	op := operatorWithRole("op-1", "org-other", organization.RoleSuperAdmin)
+	op := userWithRole("op-1", "org-other", organization.RoleSuperAdmin)
 
 	if got := terminalGate(op, "org-1"); got != http.StatusForbidden {
 		t.Fatalf("cross-org terminal gate = %d, want 403", got)

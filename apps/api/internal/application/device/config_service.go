@@ -139,7 +139,7 @@ type ConfigEnvelope struct {
 // remembering.
 //
 // A device that has been deployed to is served the config the deploy stored —
-// the exact bytes the operator's manifest produced and the server signed, at the
+// the exact bytes the user's manifest produced and the server signed, at the
 // version it was signed with. The registration config below is the fallback for a
 // device that has never been deployed to; it is not a second source of truth for
 // one that has.

@@ -72,7 +72,7 @@ Current device registration requires:
 
 Zero-friction, **organization-scoped** device registration with:
 - Device auto-reports on first boot (creates an inbox request)
-- Operator reviews pending requests in the organization's inbox
+- User reviews pending requests in the organization's inbox
 - Machine-to-machine confirmation handshake via `commandSecret`
 - Multi-device, multi-organization support
 - Full audit trail (`operator_id`, `notes`, status timestamps)
@@ -81,13 +81,13 @@ Zero-friction, **organization-scoped** device registration with:
 
 ```
 
-  DEVICE (APK)                    SERVER                       DASHBOARD (operator)
+  DEVICE (APK)                    SERVER                       DASHBOARD (user)
 
   1. APK starts, fetches device info (IMEI, OS, app version, fcmToken, firebaseInstallId)
   2. POST /v1/device/inbox          (device sends registration request)
      → scoped to the device's target organization (X-Organization-ID)
   3. Server stores in INBOX         (status: pending)
-  4. Operator views inbox           GET /v1/device/inbox  (organization-scoped)
+  4. User views inbox           GET /v1/device/inbox  (organization-scoped)
      → clicks "Approve"
   5. POST /v1/inbox/:imei/ack {action:"approve"}
      Server validates, generates commandSecret, sends FCM push to device
@@ -99,7 +99,7 @@ Zero-friction, **organization-scoped** device registration with:
 
 ```
 
-> **Organization scope:** Steps 2-5 are performed within an organization context. The operator's
+> **Organization scope:** Steps 2-5 are performed within an organization context. The user's
 > active organization (from `useCurrentOrganizationId()`) determines which inbox entries and
 > devices are visible. A device always registers into exactly one organization.
 
@@ -215,7 +215,7 @@ UNREGISTERED
          (on rejection at any step)
        
 
- REJECTED    Operator clicks Dismiss
+ REJECTED    User clicks Dismiss
 
        
          (auto-cleanup after 30 days)
@@ -260,7 +260,7 @@ REGISTERED
  ONLINE  
 
      
-       DELETE /v1/device/:imei (operator deregisters)
+       DELETE /v1/device/:imei (user deregisters)
      
 
  DEREGISTERED   Terminal state
@@ -274,7 +274,7 @@ REGISTERED
 > **Source of truth:** `packages/API_Client/src/vyzorServer/rest/registration/registration-endpoints.ts`.
 > REST is the **primary** data layer. All endpoints are **organization-scoped**: the active org is
 > sent as the `X-Organization-ID` header (injected by the REST client interceptor) and/or an
-> `organization_id` query param by the API Client. Operators obtain the org id from
+> `organization_id` query param by the API Client. Users obtain the org id from
 > `useCurrentOrganizationId()`; devices receive it at provisioning time.
 
 ### 4.1 Inbox Endpoints
@@ -316,7 +316,7 @@ REGISTERED
 ---
 
 #### `GET /v1/device/inbox`
-**Purpose:** List all inbox entries for the active organization (operator).
+**Purpose:** List all inbox entries for the active organization (user).
 
 **Query Parameters:**
 | Param | Type | Default | Description |
@@ -411,14 +411,14 @@ REGISTERED
 OR
 ```json
 {
-  "action": "approve",      // ACKNOWLEDGED -> APPROVING -> APPROVED (operator approves)
-  "notes": "Optional operator notes"
+  "action": "approve",      // ACKNOWLEDGED -> APPROVING -> APPROVED (user approves)
+  "notes": "Optional user notes"
 }
 ```
 OR
 ```json
 {
-  "action": "reject",       // PENDING/ACKNOWLEDGED -> REJECTED (operator rejects)
+  "action": "reject",       // PENDING/ACKNOWLEDGED -> REJECTED (user rejects)
   "notes": "Reason for rejection"
 }
 ```
@@ -435,7 +435,7 @@ OR
   "rejectedAt": null,               // present when rejected
   "commandSecret": "abc123...",     // only on approve
   "fcmPushSent": true,              // whether FCM notification was sent
-  "notes": "Optional operator notes"
+  "notes": "Optional user notes"
 }
 ```
 
@@ -458,7 +458,7 @@ OR
 ---
 
 #### `DELETE /v1/inbox/:imei`
-**Purpose:** Operator dismisses an inbox entry.
+**Purpose:** User dismisses an inbox entry.
 
 > **Path note:** The API Client resolves this to `/v1/inbox/${imei}`.
 
@@ -475,7 +475,7 @@ OR
 
 #### `POST /v1/device/register` (device-initiated, alternative entry point)
 **Purpose:** Device-initiated registration (alternative to the inbox flow). Used by the
-`DeviceClient` (`vyzorServer/device/device-client.ts`) for direct registration when an operator
+`DeviceClient` (`vyzorServer/device/device-client.ts`) for direct registration when a user
 is not involved.
 
 **Request:**
@@ -493,7 +493,7 @@ is not involved.
 }
 ```
 
-> **Note:** The operator-driven flow uses the inbox `ack` endpoint (approve action) to generate
+> **Note:** The user-driven flow uses the inbox `ack` endpoint (approve action) to generate
 > `commandSecret` instead. See `SERVER_BACKEND_DEVICE_REGISTRATION_API.md` §4.3.
 
 ---
@@ -804,7 +804,7 @@ enum AckAction {
 }
 
 type Mutation {
-  # Operator inbox actions (organization-scoped)
+  # User inbox actions (organization-scoped)
   ackInbox(
     imei: String!
     action: AckAction!
@@ -887,12 +887,12 @@ CREATE TABLE inbox_requests (
     status TEXT NOT NULL DEFAULT 'pending'
         CHECK (status IN ('pending', 'acknowledged', 'approving', 'approved', 'rejected', 'expired')),
     acknowledged_at TIMESTAMPTZ,          -- When device acknowledged
-    approving_at TIMESTAMPTZ,             -- When operator started approving
+    approving_at TIMESTAMPTZ,             -- When user started approving
     approved_at TIMESTAMPTZ,              -- When fully approved
     rejected_at TIMESTAMPTZ,              -- When rejected
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     command_secret TEXT,                  -- Generated during APPROVING state
-    operator_id TEXT,                     -- Operator who approved/rejected
+    operator_id TEXT,                     -- User who approved/rejected
     notes TEXT,
 
     CONSTRAINT uq_org_imei UNIQUE (organization_id, imei),
@@ -1473,10 +1473,10 @@ Inbox queries + ack/deregister mutations implemented; REST remains primary.
 - REST endpoints (organization-scoped: cross-org isolation)
 
 ### 15.3 E2E Tests
-- Device sends request → Operator sees in inbox (same org)
-- Operator approves → Device confirms via `commandSecret`
-- Operator rejects → Entry removed from active list
-- Cross-org isolation: org A operator cannot see org B devices/inbox
+- Device sends request → User sees in inbox (same org)
+- User approves → Device confirms via `commandSecret`
+- User rejects → Entry removed from active list
+- Cross-org isolation: org A user cannot see org B devices/inbox
 
 ---
 

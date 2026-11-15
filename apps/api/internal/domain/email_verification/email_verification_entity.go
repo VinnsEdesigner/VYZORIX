@@ -17,7 +17,7 @@ type EmailVerification struct {
 	ExpiresAt   time.Time
 	CreatedAt   time.Time
 	ID          string
-	OperatorID  string
+	UserID  string
 	TokenHash   string
 	EmailSentAt *time.Time // Time when verification email was successfully sent.
 	EmailError  string     // Error message if email failed to send.
@@ -44,8 +44,8 @@ type Repository interface {
 	// Delete removes an email verification by ID.
 	Delete(ctx context.Context, id string) error
 
-	// DeleteByOperator removes all verifications for an operator.
-	DeleteByOperator(ctx context.Context, operatorID string) error
+	// DeleteByUser removes all verifications for a user.
+	DeleteByUser(ctx context.Context, userID string) error
 
 	// MarkEmailSent updates the email verification to record successful email delivery.
 	MarkEmailSent(ctx context.Context, id string, sentAt time.Time) error

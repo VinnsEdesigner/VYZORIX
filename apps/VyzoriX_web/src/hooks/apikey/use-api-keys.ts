@@ -5,7 +5,7 @@ import {
   usePatchAuthApiKeysKeyId,
   useDeleteAuthApiKeysKeyId,
   usePostAuthApiKeysKeyIdRotate,
-} from '@/generated-rq/api-keys/operator-api-keys';
+} from '@/generated-rq/api-keys/user-api-keys';
 
 export interface ApiKeyParams {
   page?: number;

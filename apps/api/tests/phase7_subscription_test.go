@@ -19,7 +19,7 @@ import (
 	cmdapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/command"
 	deviceapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/device"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	config "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/config"
 	cryptohmac "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/crypto"
 	wshub "github.com/VinnsEdesigner/vyzorix/apps/api/internal/ws"
@@ -33,7 +33,7 @@ type gqlSubState struct {
 	server   *httptest.Server
 	ctx      context.Context
 	cancel   context.CancelFunc
-	operator *operator.Operator
+	user *user.User
 	orgID    string
 	// devices is the repo backing the subscription org guard; tests register
 	// the IMEIs they intend to observe so the guard admits them.
@@ -71,7 +71,7 @@ func newGQLSubState(t *testing.T) *gqlSubState {
 	go h.Run(ctx)
 	time.Sleep(50 * time.Millisecond)
 
-	testOp := &operator.Operator{
+	testOp := &user.User{
 		ID:    "op-test-001",
 		Email: "test@vyzorix.dev",
 		Name:  "Test Operator",
@@ -87,7 +87,7 @@ func newGQLSubState(t *testing.T) *gqlSubState {
 	auditLogger := newTestAuditLogger(logger)
 	auditAdapter := subscription.NewAuditLoggerAdapter(auditLogger)
 
-	// AuthMiddleware with nil session/auth — we inject operator via middleware.
+	// AuthMiddleware with nil session/auth — we inject user via middleware.
 	authMw := gqlmiddleware.NewAuthMiddleware(nil, nil, logger)
 
 	subHandler := subscription.NewHandler(&subscription.Config{
@@ -105,9 +105,9 @@ func newGQLSubState(t *testing.T) *gqlSubState {
 	})
 
 	r := gin.New()
-	// Middleware that injects the test operator into gin context.
+	// Middleware that injects the test user into gin context.
 	r.Use(func(c *gin.Context) {
-		c.Set("operator", testOp)
+		c.Set("user", testOp)
 		c.Next()
 	})
 	r.GET("/:org/graphql/ws", subHandler.HandleWebSocket)
@@ -136,7 +136,7 @@ func newGQLSubState(t *testing.T) *gqlSubState {
 		server:   server,
 		ctx:      ctx,
 		cancel:   cancel,
-		operator: testOp,
+		user: testOp,
 		orgID:    orgID,
 		devices:  noopRepo,
 	}
@@ -724,7 +724,7 @@ func TestPhase7Sub_UnauthenticatedRejected(t *testing.T) {
 	})
 
 	r := gin.New()
-	// NO middleware to inject operator — simulates unauthenticated request.
+	// NO middleware to inject user — simulates unauthenticated request.
 	r.GET("/:org/graphql/ws", subHandler.HandleWebSocket)
 	server := httptest.NewServer(r)
 	defer server.Close()
@@ -773,9 +773,9 @@ func TestPhase7Sub_DisconnectCleansUp(t *testing.T) {
 	t.Log("disconnect → subscription cleanup verified (no crash, server healthy)")
 }
 
-// ─── 7.15: Subscribe with operator-wide (no deviceId) ───.
+// ─── 7.15: Subscribe with user-wide (no deviceId) ───.
 
-func TestPhase7Sub_OperatorWideSubscription(t *testing.T) {
+func TestPhase7Sub_UserWideSubscription(t *testing.T) {
 	state := newGQLSubState(t)
 	defer state.close()
 
@@ -785,7 +785,7 @@ func TestPhase7Sub_OperatorWideSubscription(t *testing.T) {
 	sendMsg(t, conn, wsMessage{Type: "connection_init"})
 	readMsg(t, conn, 3*time.Second)
 
-	// Subscribe to all telemetry for this operator (no deviceId).
+	// Subscribe to all telemetry for this user (no deviceId).
 	subPayload, _ := json.Marshal(map[string]any{
 		"query":     "subscription { telemetryReceived { deviceId riskScore } }",
 		"variables": map[string]any{},
@@ -793,7 +793,7 @@ func TestPhase7Sub_OperatorWideSubscription(t *testing.T) {
 	sendMsg(t, conn, wsMessage{Type: "subscribe", ID: "sub-wide", Payload: subPayload})
 	readMsg(t, conn, 3*time.Second) // initial null
 
-	// Publish telemetry for any device — operator-wide subscriber should receive it.
+	// Publish telemetry for any device — user-wide subscriber should receive it.
 	state.hub.PublishTelemetry(state.orgID, "ANY_DEVICE", map[string]int{"riskScore": 99})
 
 	msg := readMsg(t, conn, 3*time.Second)

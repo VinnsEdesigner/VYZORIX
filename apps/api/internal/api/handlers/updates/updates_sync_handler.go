@@ -45,17 +45,17 @@ func NewUpdatesSyncHandler(service *updates.Service, auditLogger *audit.Logger) 
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /updates/sync [post]
 func (h *UpdatesSyncHandler) Sync(c *gin.Context) {
-	operator := middleware.GetOperatorFromContext(c)
-	operatorID := ""
-	if operator != nil {
-		operatorID = operator.ID
+	user := middleware.GetUserFromContext(c)
+	userID := ""
+	if user != nil {
+		userID = user.ID
 	}
 
 	// Audit log sync start.
 	if h.auditLogger != nil {
 		h.auditLogger.UpdateSyncStarted(
 			c.Request.Context(),
-			operatorID,
+			userID,
 			c.ClientIP(),
 			c.GetHeader("User-Agent"),
 		)
@@ -67,7 +67,7 @@ func (h *UpdatesSyncHandler) Sync(c *gin.Context) {
 		if h.auditLogger != nil {
 			h.auditLogger.UpdateSyncFailed(
 				c.Request.Context(),
-				operatorID,
+				userID,
 				c.ClientIP(),
 				c.GetHeader("User-Agent"),
 				err.Error(),

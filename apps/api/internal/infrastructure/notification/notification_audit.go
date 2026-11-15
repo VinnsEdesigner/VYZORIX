@@ -10,7 +10,7 @@ import (
 type AuditEntry struct {
 	SentAt     time.Time `json:"sentAt"`
 	ID         string    `json:"id"`
-	OperatorID string    `json:"operatorId"`
+	UserID string    `json:"userId"`
 	EventType  string    `json:"eventType"`
 	Channel    string    `json:"channel"`
 	DeviceID   string    `json:"deviceId,omitempty"`
@@ -38,7 +38,7 @@ func (r *Repository) LogEntry(ctx context.Context, entry *AuditEntry) error {
 
 	_, err := r.db.ExecContext(ctx, query,
 		entry.ID,
-		entry.OperatorID,
+		entry.UserID,
 		entry.EventType,
 		entry.Channel,
 		entry.DeviceID,
@@ -51,8 +51,8 @@ func (r *Repository) LogEntry(ctx context.Context, entry *AuditEntry) error {
 	return err
 }
 
-// GetByOperator retrieves audit logs for an operator.
-func (r *Repository) GetByOperator(ctx context.Context, operatorID string, limit, offset int) ([]*AuditEntry, error) {
+// GetByUser retrieves audit logs for a user.
+func (r *Repository) GetByUser(ctx context.Context, userID string, limit, offset int) ([]*AuditEntry, error) {
 	query := `
 		SELECT id, operator_id, event_type, channel, device_id, payload, success, error_msg, sent_at
 		FROM notification_audit_log
@@ -60,7 +60,7 @@ func (r *Repository) GetByOperator(ctx context.Context, operatorID string, limit
 		ORDER BY sent_at DESC
 		LIMIT ? OFFSET ?`
 
-	rows, err := r.db.QueryContext(ctx, query, operatorID, limit, offset)
+	rows, err := r.db.QueryContext(ctx, query, userID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (r *Repository) GetByOperator(ctx context.Context, operatorID string, limit
 
 		err := rows.Scan(
 			&entry.ID,
-			&entry.OperatorID,
+			&entry.UserID,
 			&entry.EventType,
 			&entry.Channel,
 			&deviceID,
@@ -125,7 +125,7 @@ func (r *Repository) GetByEventType(ctx context.Context, eventType string, limit
 
 		err := rows.Scan(
 			&entry.ID,
-			&entry.OperatorID,
+			&entry.UserID,
 			&entry.EventType,
 			&entry.Channel,
 			&deviceID,

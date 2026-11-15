@@ -14,7 +14,7 @@ import (
 	domaincommand "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
 	domainconfirmation "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/confirmation"
 	domainerrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/session"
 	"github.com/gin-gonic/gin"
 )
@@ -56,13 +56,13 @@ func newHandlerWithFakes(t *testing.T, confirm cmdSvc.ConfirmationConsumer) (*Ex
 	return h, f
 }
 
-func newContextWithActor(op *operator.Operator) (*gin.Context, *httptest.ResponseRecorder) {
+func newContextWithActor(op *user.User) (*gin.Context, *httptest.ResponseRecorder) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/v1/device/imei/command", nil)
 	c.Set(middleware.ContextKeyOrganizationID, "org-1")
 	if op != nil {
-		c.Set(middleware.ContextKeyOperator, op)
+		c.Set(middleware.ContextKeyUser, op)
 	}
 	return c, w
 }
@@ -76,7 +76,7 @@ func withMFASession(c *gin.Context) {
 
 func TestAuthorizeCommand_AllowsLowRisk(t *testing.T) {
 	h, aud := newHandlerWithFakes(t, nil)
-	c, _ := newContextWithActor(&operator.Operator{ID: "op-1"})
+	c, _ := newContextWithActor(&user.User{ID: "op-1"})
 
 	if !h.authorizeCommand(c, commandRequest{Command: domaincommand.TypeCheckUpdate}, "imei-1") {
 		t.Fatal("expected low-risk command to be authorized")
@@ -88,7 +88,7 @@ func TestAuthorizeCommand_AllowsLowRisk(t *testing.T) {
 
 func TestAuthorizeCommand_BlocksHighRiskWithoutToken(t *testing.T) {
 	h, aud := newHandlerWithFakes(t, &fakeConfirmation{})
-	c, w := newContextWithActor(&operator.Operator{ID: "op-1"})
+	c, w := newContextWithActor(&user.User{ID: "op-1"})
 
 	if h.authorizeCommand(c, commandRequest{Command: "device.reboot"}, "imei-1") {
 		t.Fatal("expected high-risk command without token to be blocked")
@@ -109,15 +109,15 @@ func TestAuthorizeCommand_BlocksHighRiskWithoutToken(t *testing.T) {
 	if ev.Reason != "confirmation required" {
 		t.Errorf("audit reason = %q, want 'confirmation required'", ev.Reason)
 	}
-	if ev.OperatorID != "op-1" {
-		t.Errorf("audit operator_id = %q, want op-1", ev.OperatorID)
+	if ev.UserID != "op-1" {
+		t.Errorf("audit user_id = %q, want op-1", ev.UserID)
 	}
 }
 
 func TestAuthorizeCommand_AllowsHighRiskWithValidToken(t *testing.T) {
 	confirm := &fakeConfirmation{}
 	h, aud := newHandlerWithFakes(t, confirm)
-	c, _ := newContextWithActor(&operator.Operator{ID: "op-1"})
+	c, _ := newContextWithActor(&user.User{ID: "op-1"})
 
 	if !h.authorizeCommand(c, commandRequest{Command: "device.reboot", ConfirmationToken: "tok-123"}, "imei-1") {
 		t.Fatal("expected high-risk command with valid token to be authorized")
@@ -134,7 +134,7 @@ func TestAuthorizeCommand_BlocksHighRiskWhenConfirmationsDisabled(t *testing.T) 
 	// A nil confirmation consumer means confirmations are disabled: even with a.
 	// token, the command must be blocked.
 	h, aud := newHandlerWithFakes(t, nil)
-	c, w := newContextWithActor(&operator.Operator{ID: "op-1"})
+	c, w := newContextWithActor(&user.User{ID: "op-1"})
 
 	if h.authorizeCommand(c, commandRequest{Command: "device.reboot", ConfirmationToken: "tok-123"}, "imei-1") {
 		t.Fatal("expected high-risk command to be blocked when confirmations are disabled")
@@ -150,7 +150,7 @@ func TestAuthorizeCommand_BlocksHighRiskWhenConfirmationsDisabled(t *testing.T) 
 func TestAuthorizeCommand_BlocksHighRiskWithExpiredToken(t *testing.T) {
 	confirm := &fakeConfirmation{consumeErr: domainconfirmation.ErrExpired}
 	h, aud := newHandlerWithFakes(t, confirm)
-	c, w := newContextWithActor(&operator.Operator{ID: "op-1"})
+	c, w := newContextWithActor(&user.User{ID: "op-1"})
 
 	if h.authorizeCommand(c, commandRequest{Command: "device.reboot", ConfirmationToken: "tok-expired"}, "imei-1") {
 		t.Fatal("expected expired token to be rejected")
@@ -166,7 +166,7 @@ func TestAuthorizeCommand_BlocksHighRiskWithExpiredToken(t *testing.T) {
 func TestAuthorizeCommand_BlocksHighRiskWithMismatchedToken(t *testing.T) {
 	confirm := &fakeConfirmation{consumeErr: domainconfirmation.ErrMismatch}
 	h, _ := newHandlerWithFakes(t, confirm)
-	c, w := newContextWithActor(&operator.Operator{ID: "op-1"})
+	c, w := newContextWithActor(&user.User{ID: "op-1"})
 
 	if h.authorizeCommand(c, commandRequest{Command: "device.reboot", ConfirmationToken: "tok-other"}, "imei-1") {
 		t.Fatal("expected mismatched token to be rejected")
@@ -181,7 +181,7 @@ func TestAuthorizeCommand_BlocksCriticalWithoutMFAEvenWithToken(t *testing.T) {
 	// MFA-verified session.
 	confirm := &fakeConfirmation{}
 	h, aud := newHandlerWithFakes(t, confirm)
-	c, w := newContextWithActor(&operator.Operator{ID: "op-1"})
+	c, w := newContextWithActor(&user.User{ID: "op-1"})
 
 	if h.authorizeCommand(c, commandRequest{Command: "device.factory_reset", ConfirmationToken: "tok-1"}, "imei-1") {
 		t.Fatal("expected critical command without MFA to be blocked")
@@ -199,7 +199,7 @@ func TestAuthorizeCommand_AllowsCriticalWithMFAAndValidToken(t *testing.T) {
 	// evaluator returns Allow for a critical command and the handler proceeds.
 	confirm := &fakeConfirmation{}
 	h, aud := newHandlerWithFakes(t, confirm)
-	c, _ := newContextWithActor(&operator.Operator{ID: "op-1"})
+	c, _ := newContextWithActor(&user.User{ID: "op-1"})
 	withMFASession(c)
 
 	if !h.authorizeCommand(c, commandRequest{Command: "device.factory_reset", ConfirmationToken: "tok-1"}, "imei-1") {
@@ -216,7 +216,7 @@ func TestAuthorizeCommand_AllowsCriticalWithMFAAndValidToken(t *testing.T) {
 func TestAuthorizeCommand_BlocksCriticalWithMFAButNoToken(t *testing.T) {
 	confirm := &fakeConfirmation{}
 	h, aud := newHandlerWithFakes(t, confirm)
-	c, w := newContextWithActor(&operator.Operator{ID: "op-1"})
+	c, w := newContextWithActor(&user.User{ID: "op-1"})
 	withMFASession(c)
 
 	if h.authorizeCommand(c, commandRequest{Command: "device.factory_reset"}, "imei-1") {
@@ -234,7 +234,7 @@ func TestAuthorizeCommand_BlocksCriticalWithMFAButNoToken(t *testing.T) {
 func TestAuthorizeCommand_BlocksOnUnknownConsumeError(t *testing.T) {
 	confirm := &fakeConfirmation{consumeErr: errors.New("db unavailable")}
 	h, _ := newHandlerWithFakes(t, confirm)
-	c, w := newContextWithActor(&operator.Operator{ID: "op-1"})
+	c, w := newContextWithActor(&user.User{ID: "op-1"})
 
 	if h.authorizeCommand(c, commandRequest{Command: "device.reboot", ConfirmationToken: "tok-1"}, "imei-1") {
 		t.Fatal("expected unknown consume error to block")

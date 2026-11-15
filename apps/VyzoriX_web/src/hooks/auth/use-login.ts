@@ -11,7 +11,7 @@ export function useLogin() {
         let mfaChallenge: MfaChallenge | null = null;
         if (result.requires_mfa) {
           mfaChallenge = {
-            operatorId: result.operator_id ?? '',
+            userId: result.user_id ?? '',
             email: result.email ?? '',
             name: result.name ?? '',
             mfaEnabled: result.mfa_enabled ?? false,

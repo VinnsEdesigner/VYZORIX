@@ -6,23 +6,23 @@ import (
 	hub "github.com/VinnsEdesigner/vyzorix/apps/api/internal/ws"
 )
 
-// stubOperatorLookup returns a fixed operator for any session.
-type stubOperatorLookup struct{ op hub.PTYOperator }
+// stubUserLookup returns a fixed user for any session.
+type stubUserLookup struct{ op hub.PTYUser }
 
-func (s *stubOperatorLookup) OperatorFor(string) hub.PTYOperator { return s.op }
+func (s *stubUserLookup) UserFor(string) hub.PTYUser { return s.op }
 
-// captureOperator records delivered output.
-type captureOperator struct{ got [][]byte }
+// captureUser records delivered output.
+type captureUser struct{ got [][]byte }
 
-func (c *captureOperator) DeliverOutput(_ string, payload []byte) bool {
+func (c *captureUser) DeliverOutput(_ string, payload []byte) bool {
 	c.got = append(c.got, append([]byte(nil), payload...))
 
 	return true
 }
 
-func (c *captureOperator) NotifyClosed(string, string) {}
+func (c *captureUser) NotifyClosed(string, string) {}
 
-func newPTYHandlerWithSession(t *testing.T, deviceID, sessionID string) (*PTYDeviceHandler, *captureOperator) {
+func newPTYHandlerWithSession(t *testing.T, deviceID, sessionID string) (*PTYDeviceHandler, *captureUser) {
 	t.Helper()
 
 	reg := hub.NewPTYRegistry(hub.PTYRegistryConfig{})
@@ -31,12 +31,12 @@ func newPTYHandlerWithSession(t *testing.T, deviceID, sessionID string) (*PTYDev
 	}
 
 	relay := hub.NewPTYRelay(reg, nil, discardLogger())
-	op := &captureOperator{}
+	op := &captureUser{}
 
-	return NewPTYDeviceHandler(relay, &stubOperatorLookup{op: op}, discardLogger()), op
+	return NewPTYDeviceHandler(relay, &stubUserLookup{op: op}, discardLogger()), op
 }
 
-func TestPTYDeviceHandlerRoutesDataToOperator(t *testing.T) {
+func TestPTYDeviceHandlerRoutesDataToUser(t *testing.T) {
 	h, op := newPTYHandlerWithSession(t, "dev-1", "11111111-1111-4111-8111-111111111111")
 
 	frame := hub.EncodePTYFrame(hub.ChannelPTY, hub.PTYTypeData, hub.EncodeSessionData("11111111-1111-4111-8111-111111111111", []byte("output")))
@@ -98,12 +98,12 @@ func TestPTYDeviceHandlerCloseEndsSession(t *testing.T) {
 	}
 }
 
-// TestPTYDeviceHandlerWithoutOperatorLookupDoesNotPanic is the guard on the wiring
-// bug that made the terminal silently one-way: deps.PTYOperators was declared but
+// TestPTYDeviceHandlerWithoutUserLookupDoesNotPanic is the guard on the wiring
+// bug that made the terminal silently one-way: deps.PTYUsers was declared but
 // never populated, so the lookup was nil and the handler panicked on the first byte
-// of device output. The panic was recovered by the frame dispatcher, so the operator
+// of device output. The panic was recovered by the frame dispatcher, so the user
 // saw a shell that opened and then produced nothing, with no error anywhere.
-func TestPTYDeviceHandlerWithoutOperatorLookupDoesNotPanic(t *testing.T) {
+func TestPTYDeviceHandlerWithoutUserLookupDoesNotPanic(t *testing.T) {
 	reg := hub.NewPTYRegistry(hub.PTYRegistryConfig{})
 	sessionID := "11111111-1111-4111-8111-111111111111"
 	if _, err := reg.Open(sessionID, "dev-1", "op-1", "org-1", false); err != nil {

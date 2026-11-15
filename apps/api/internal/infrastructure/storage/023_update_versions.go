@@ -59,7 +59,7 @@ func migrateCreateUpdateTables(tx *sql.Tx) error {
 			cancelled_at    INTEGER,
 			cancelled_by    TEXT,
 			FOREIGN KEY(version_id) REFERENCES update_versions(id),
-			FOREIGN KEY(initiated_by) REFERENCES operators(id)
+			FOREIGN KEY(initiated_by) REFERENCES users(id)
 		)
 	`)
 	if err != nil {

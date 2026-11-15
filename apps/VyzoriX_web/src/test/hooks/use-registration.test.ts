@@ -65,7 +65,7 @@ const RAW_INBOX_ENTRY = {
   approvedAt: null,
   rejectedAt: null,
   notes: null,
-  operatorId: null,
+  userId: null,
   createdAt: now,
 };
 

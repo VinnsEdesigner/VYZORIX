@@ -56,42 +56,42 @@ func (id *DeviceID) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// OperatorID is a value object representing an operator's unique identifier.
-type OperatorID struct {
+// UserID is a value object representing a user's unique identifier.
+type UserID struct {
 	value string
 }
 
-// NewOperatorID creates a new OperatorID from a string value.
+// NewUserID creates a new UserID from a string value.
 // Returns an error if the value is empty.
-func NewOperatorID(value string) (OperatorID, error) {
+func NewUserID(value string) (UserID, error) {
 	if value == "" {
-		return OperatorID{}, errors.New("invalid operator ID")
+		return UserID{}, errors.New("invalid operator ID")
 	}
-	return OperatorID{value: value}, nil
+	return UserID{value: value}, nil
 }
 
-// MustNewOperatorID creates a new OperatorID from a string value.
+// MustNewUserID creates a new UserID from a string value.
 // Panics if the value is empty.
-func MustNewOperatorID(value string) OperatorID {
-	id, err := NewOperatorID(value)
+func MustNewUserID(value string) UserID {
+	id, err := NewUserID(value)
 	if err != nil {
 		panic(err)
 	}
 	return id
 }
 
-// String returns the string value of the OperatorID.
-func (id OperatorID) String() string {
+// String returns the string value of the UserID.
+func (id UserID) String() string {
 	return id.value
 }
 
-// IsZero returns true if the OperatorID is the zero value.
-func (id OperatorID) IsZero() bool {
+// IsZero returns true if the UserID is the zero value.
+func (id UserID) IsZero() bool {
 	return id.value == ""
 }
 
-// Equals returns true if two OperatorIDs are equal.
-func (id OperatorID) Equals(other OperatorID) bool {
+// Equals returns true if two UserIDs are equal.
+func (id UserID) Equals(other UserID) bool {
 	return id.value == other.value
 }
 

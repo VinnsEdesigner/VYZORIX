@@ -20,7 +20,7 @@ func usageSnapshotToOpenAPI(s *usagestats.Snapshot) *openapi.UsageStatsSnapshot 
 	return &openapi.UsageStatsSnapshot{
 		Counts: openapi.UsageStatsCounts{
 			Devices:       s.Counts.Devices,
-			Operators:     s.Counts.Operators,
+			Users:     s.Counts.Users,
 			Organizations: s.Counts.Organizations,
 			AlertRules:    s.Counts.AlertRules,
 			Annotations:   s.Counts.Annotations,

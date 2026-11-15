@@ -7,7 +7,7 @@ import {
   usePatchMeNotifications,
   usePostMeNotificationsWebhookTest,
   usePostMeNotificationsWebhookRotate,
-} from '@/generated-rq/settings/operator-settings';
+} from '@/generated-rq/settings/user-settings';
 
 export function useSettings() {
   return useGetMeSettings();

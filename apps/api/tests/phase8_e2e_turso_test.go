@@ -24,7 +24,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/logs"
 	appmetrics "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/metrics"
 	appnotifications "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/notifications"
-	appoperator "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/operator"
+	appuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/user"
 	saapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/serviceaccount"
 	notificationdomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/notification"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/config"
@@ -41,7 +41,7 @@ import (
 // This test spins up the *real* Vyzorix API server via wire.Injector with the.
 // actual Turso database (TURSO_DB_URL + TURSO_VYZOR_SCOPE_DB_TOKEN). It then:
 //
-//   1. Inserts a verified operator directly into the DB (skipping register/email).
+//   1. Inserts a verified user directly into the DB (skipping register/email).
 //   2. Logs in via POST /v1/auth/login → obtains a session cookie.
 //   3. Creates an organization via POST /v1/organizations.
 //   4. Opens a GraphQL subscription WebSocket to /:org/graphql/ws with the cookie.
@@ -65,7 +65,7 @@ type phase8State struct {
 	hub       interface {
 		PublishTelemetry(string, string, interface{})
 	}
-	operatorID    string
+	userID    string
 	orgID         string
 	sessionCookie *http.Cookie
 	csrfToken     string
@@ -141,8 +141,8 @@ func newPhase8State(t *testing.T) *phase8State {
 	diagnosticsRepo := storage.NewDiagnosticsRepository(db)
 	diagnosticsSvc := diagnosticsapp.NewService(diagnosticsRepo, deviceRepo, deps.Hub, cfg.DiagnosticsConfig)
 
-	settingsService := auth.NewClientSettingsService(deps.OperatorRepo)
-	notificationSvc := appoperator.NewNotificationService(deps.OperatorRepo)
+	settingsService := auth.NewClientSettingsService(deps.UserRepo)
+	notificationSvc := appuser.NewNotificationService(deps.UserRepo)
 	webhookClient := infrawebhook.NewClient(10 * time.Second)
 
 	// Service accounts backed by the test DB.
@@ -177,7 +177,7 @@ func newPhase8State(t *testing.T) *phase8State {
 		deps.Hub,
 		deps.UpdatesService,
 		diagnosticsSvc,
-		deps.OperatorRepo,
+		deps.UserRepo,
 		settingsService,
 		notificationSvc,
 		webhookClient,
@@ -257,11 +257,11 @@ func (s *phase8State) fetchCSRFToken(t *testing.T) {
 	s.csrfToken = result.CSRFToken
 }
 
-// insertVerifiedOperator inserts an operator with email_verified=1 directly into.
+// insertVerifiedOperator inserts a user with email_verified=1 directly into.
 // the Turso DB, skipping the register/email-verification flow. It also cleans up.
 // any prior orgs/members/sessions for this email from earlier test runs so the.
 // 2-active-org limit isn't hit.
-func (s *phase8State) insertVerifiedOperator(t *testing.T) string {
+func (s *phase8State) insertVerifiedUser(t *testing.T) string {
 	t.Helper()
 
 	hasher := password.NewArgon2idHasher()
@@ -270,26 +270,26 @@ func (s *phase8State) insertVerifiedOperator(t *testing.T) string {
 		t.Fatalf("password hash failed: %v", err)
 	}
 
-	// Clean up any prior operator with this email (and its orgs/members/sessions).
+	// Clean up any prior user with this email (and its orgs/members/sessions).
 	s.execSQL(t, fmt.Sprintf(
-		`DELETE FROM organization_members WHERE operator_id IN (SELECT id FROM operators WHERE email = '%s')`, phase8TestEmail))
+		`DELETE FROM organization_members WHERE user_id IN (SELECT id FROM users WHERE email = '%s')`, phase8TestEmail))
 	s.execSQL(t, fmt.Sprintf(
-		`DELETE FROM organizations WHERE created_by IN (SELECT id FROM operators WHERE email = '%s')`, phase8TestEmail))
+		`DELETE FROM organizations WHERE created_by IN (SELECT id FROM users WHERE email = '%s')`, phase8TestEmail))
 	s.execSQL(t, fmt.Sprintf(
-		`DELETE FROM auth_sessions WHERE operator_id IN (SELECT id FROM operators WHERE email = '%s')`, phase8TestEmail))
+		`DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM users WHERE email = '%s')`, phase8TestEmail))
 	s.execSQL(t, fmt.Sprintf(
-		`DELETE FROM operators WHERE email = '%s'`, phase8TestEmail))
+		`DELETE FROM users WHERE email = '%s'`, phase8TestEmail))
 
-	operatorID := "op-phase8-" + newUUID()
+	userID := "op-phase8-" + newUUID()
 	nowMs := time.Now().UnixMilli()
 
-	// Insert the verified operator.
+	// Insert the verified user.
 	s.execSQL(t, fmt.Sprintf(
-		`INSERT INTO operators (id, email, name, password_hash, role, mfa_enabled, email_verified, created_at, updated_at) VALUES ('%s', '%s', '%s', '%s', 'operator', 0, 1, %d, %d)`,
-		operatorID, phase8TestEmail, phase8TestName, hash, nowMs, nowMs))
+		`INSERT INTO users (id, email, name, password_hash, role, mfa_enabled, email_verified, created_at, updated_at) VALUES ('%s', '%s', '%s', '%s', 'operator', 0, 1, %d, %d)`,
+		userID, phase8TestEmail, phase8TestName, hash, nowMs, nowMs))
 
-	s.operatorID = operatorID
-	return operatorID
+	s.userID = userID
+	return userID
 }
 
 // execSQL runs a raw SQL statement against Turso via the HTTP API.
@@ -355,7 +355,7 @@ func (s *phase8State) login(t *testing.T) *http.Cookie {
 	}
 
 	s.sessionCookie = sessionCookie
-	t.Logf("login successful: operator_id=%v, cookie set", loginResp["operator_id"])
+	t.Logf("login successful: user_id=%v, cookie set", loginResp["user_id"])
 	return sessionCookie
 }
 
@@ -455,9 +455,9 @@ func TestPhase8_E2E_TursoLiveServer(t *testing.T) {
 	state := newPhase8State(t)
 	defer state.close()
 
-	// 1. Insert a verified operator directly into the DB.
-	operatorID := state.insertVerifiedOperator(t)
-	t.Logf("step 1: verified operator inserted: %s", operatorID)
+	// 1. Insert a verified user directly into the DB.
+	userID := state.insertVerifiedUser(t)
+	t.Logf("step 1: verified operator inserted: %s", userID)
 
 	// 2. Login to get a session cookie.
 	cookie := state.login(t)
@@ -501,7 +501,7 @@ func TestPhase8_E2E_TursoLiveServer(t *testing.T) {
 	// 7. Publish telemetry via the hub → subscriber should receive it.
 	//    The hub is the same instance the server uses, so the publish goes.
 	//    through the real subscription routing.
-	state.hub.PublishTelemetry(operatorID, "IMEI_PHASE8_LIVE", map[string]any{
+	state.hub.PublishTelemetry(userID, "IMEI_PHASE8_LIVE", map[string]any{
 		"deviceId":  "IMEI_PHASE8_LIVE",
 		"riskScore": 42,
 		"timestamp": time.Now().Unix(),
@@ -548,7 +548,7 @@ func TestPhase8_E2E_TursoLiveServer(t *testing.T) {
 	time.Sleep(300 * time.Millisecond)
 
 	// 10. Publish another event → should NOT receive it (unsubscribed).
-	state.hub.PublishTelemetry(operatorID, "IMEI_PHASE8_LIVE", map[string]any{"riskScore": 99})
+	state.hub.PublishTelemetry(userID, "IMEI_PHASE8_LIVE", map[string]any{"riskScore": 99})
 	if _, ok := reader.recv(2 * time.Second); ok {
 		t.Error("step 10: should not receive event after complete")
 	}
@@ -566,7 +566,7 @@ func TestPhase8_E2E_DeviceUpdateSubscription(t *testing.T) {
 	state := newPhase8State(t)
 	defer state.close()
 
-	operatorID := state.insertVerifiedOperator(t)
+	userID := state.insertVerifiedUser(t)
 	state.login(t)
 	state.createOrganization(t)
 
@@ -593,7 +593,7 @@ func TestPhase8_E2E_DeviceUpdateSubscription(t *testing.T) {
 	// Publish a device update.
 	state.hub.(interface {
 		PublishDeviceUpdate(string, string, interface{})
-	}).PublishDeviceUpdate(operatorID, "IMEI_PHASE8_DEVICE", map[string]any{
+	}).PublishDeviceUpdate(userID, "IMEI_PHASE8_DEVICE", map[string]any{
 		"id":     "IMEI_PHASE8_DEVICE",
 		"status": "online",
 	})
@@ -621,7 +621,7 @@ func TestPhase8_E2E_MultipleSubscriptionTypes(t *testing.T) {
 	state := newPhase8State(t)
 	defer state.close()
 
-	operatorID := state.insertVerifiedOperator(t)
+	userID := state.insertVerifiedUser(t)
 	state.login(t)
 	state.createOrganization(t)
 
@@ -657,7 +657,7 @@ func TestPhase8_E2E_MultipleSubscriptionTypes(t *testing.T) {
 	}
 
 	// Publish telemetry → should arrive on sub-telem.
-	state.hub.PublishTelemetry(operatorID, "IMEI_MULTI_TELEM", map[string]any{
+	state.hub.PublishTelemetry(userID, "IMEI_MULTI_TELEM", map[string]any{
 		"deviceId": "IMEI_MULTI_TELEM",
 	})
 	msg, ok := reader.recv(10 * time.Second)
@@ -669,7 +669,7 @@ func TestPhase8_E2E_MultipleSubscriptionTypes(t *testing.T) {
 	// Publish command status → should arrive on sub-cmd.
 	state.hub.(interface {
 		PublishCommandStatus(string, string, interface{})
-	}).PublishCommandStatus(operatorID, "DISPATCH_MULTI_001", map[string]any{
+	}).PublishCommandStatus(userID, "DISPATCH_MULTI_001", map[string]any{
 		"dispatchId": "DISPATCH_MULTI_001",
 		"status":     "delivered",
 	})
@@ -695,7 +695,7 @@ func TestPhase8_E2E_OrgEventSubscription(t *testing.T) {
 	state := newPhase8State(t)
 	defer state.close()
 
-	state.insertVerifiedOperator(t)
+	state.insertVerifiedUser(t)
 	state.login(t)
 	orgID := state.createOrganization(t)
 
@@ -747,7 +747,7 @@ func TestPhase8_E2E_ReconnectAfterDisconnect(t *testing.T) {
 	state := newPhase8State(t)
 	defer state.close()
 
-	operatorID := state.insertVerifiedOperator(t)
+	userID := state.insertVerifiedUser(t)
 	state.login(t)
 	state.createOrganization(t)
 
@@ -791,7 +791,7 @@ func TestPhase8_E2E_ReconnectAfterDisconnect(t *testing.T) {
 	}
 
 	// Publish → should receive on the new connection.
-	state.hub.PublishTelemetry(operatorID, "IMEI_RECONNECT", map[string]any{
+	state.hub.PublishTelemetry(userID, "IMEI_RECONNECT", map[string]any{
 		"deviceId": "IMEI_RECONNECT",
 	})
 	msg, ok := reader2.recv(10 * time.Second)
@@ -814,7 +814,7 @@ func TestPhase8_E2E_UnauthenticatedWSRejected(t *testing.T) {
 	state := newPhase8State(t)
 	defer state.close()
 
-	state.insertVerifiedOperator(t)
+	state.insertVerifiedUser(t)
 	state.login(t)
 	state.createOrganization(t)
 

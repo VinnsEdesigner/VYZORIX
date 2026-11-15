@@ -35,7 +35,7 @@ package vyzorix
         fcmToken: string
         deviceClass?: string
         status: string
-        operatorId?: string
+        userId?: string
         deviceName?: string
         imei: string
         notes?: string

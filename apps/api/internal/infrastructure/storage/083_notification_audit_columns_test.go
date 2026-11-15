@@ -23,7 +23,7 @@ func TestAddNotificationAuditColumns(t *testing.T) {
 	if _, err := db.ExecContext(context.Background(), `
 		CREATE TABLE notification_audit_log (
 			id          TEXT PRIMARY KEY,
-			operator_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
 			event_type  TEXT NOT NULL,
 			channel     TEXT NOT NULL,
 			payload     TEXT,
@@ -35,7 +35,7 @@ func TestAddNotificationAuditColumns(t *testing.T) {
 
 	// The insert the repository performs must fail before the migration.
 	insert := `INSERT INTO notification_audit_log
-		(id, operator_id, event_type, channel, device_id, payload, success, error_msg, sent_at)
+		(id, user_id, event_type, channel, device_id, payload, success, error_msg, sent_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	if _, err := db.ExecContext(context.Background(), insert,
 		"a1", "op1", "device_online", "push", "dev1", "{}", true, "", 1,

@@ -1,25 +1,25 @@
 import {
   useGetAdminApiKeys,
-  useGetAdminApiKeysOperatorOperatorId,
+  useGetAdminApiKeysUserUserId,
   useGetAdminApiKeysStats,
-  useGetAdminApiKeysStatsOperatorOperatorId,
+  useGetAdminApiKeysStatsUserUserId,
   useDeleteAdminApiKeysKeyId,
 } from '@/generated-rq/admin/admin-operations';
 
-export function useAdminApiKeys(params?: { page?: number; limit?: number; operatorId?: string; search?: string }) {
+export function useAdminApiKeys(params?: { page?: number; limit?: number; userId?: string; search?: string }) {
   return useGetAdminApiKeys({
     page: params?.page,
     limit: params?.limit,
-    operator_id: params?.operatorId,
+    user_id: params?.userId,
     search: params?.search,
   });
 }
 
-export function useAdminOperatorKeys(operatorId: string | undefined) {
-  return useGetAdminApiKeysOperatorOperatorId(
-    operatorId ?? '',
+export function useAdminUserKeys(userId: string | undefined) {
+  return useGetAdminApiKeysUserUserId(
+    userId ?? '',
     undefined,
-    { query: { enabled: operatorId !== undefined } },
+    { query: { enabled: userId !== undefined } },
   );
 }
 
@@ -27,10 +27,10 @@ export function useGlobalStats() {
   return useGetAdminApiKeysStats();
 }
 
-export function useAdminOperatorKeyStats(operatorId: string | undefined) {
-  return useGetAdminApiKeysStatsOperatorOperatorId(
-    operatorId ?? '',
-    { query: { enabled: operatorId !== undefined } },
+export function useAdminUserKeyStats(userId: string | undefined) {
+  return useGetAdminApiKeysStatsUserUserId(
+    userId ?? '',
+    { query: { enabled: userId !== undefined } },
   );
 }
 

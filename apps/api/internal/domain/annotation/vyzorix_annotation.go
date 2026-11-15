@@ -1,5 +1,5 @@
 // Package annotation provides org-scoped time-range markers on the fleet
-// timeline. Annotations pair with alert rules and updates so operators can
+// timeline. Annotations pair with alert rules and updates so users can
 // correlate "rollout v2.3 started" with a subsequent failure spike.
 package annotation
 

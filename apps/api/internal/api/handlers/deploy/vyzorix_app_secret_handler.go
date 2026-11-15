@@ -210,7 +210,7 @@ func (h *Handler) UnsetSecret(c *gin.Context) {
 
 // FetchSecret handles GET /v1/deploy/{imei}/secrets/{app}/{key} for the device
 // itself. The route is on the device-signed group, so requireHMAC has already
-// bound the request to :imei before this runs; there is no operator here and no
+// bound the request to :imei before this runs; there is no user here and no
 // org, which is why it takes no caller.
 //
 // The current signed config is the gate: a device may fetch only a key its own

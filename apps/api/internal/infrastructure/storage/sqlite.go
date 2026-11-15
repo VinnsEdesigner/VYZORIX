@@ -425,14 +425,14 @@ var migrations = []Migration{
 	{Apply: migrateCreateDevices, Name: "create_devices_table", Version: 1},
 	{Apply: migrateCreateTelemetry, Name: "create_telemetry_table", Version: 2},
 	{Apply: migrateCreateCommands, Name: "create_commands_table", Version: 3},
-	{Apply: migrateCreateOperators, Name: "create_operators_table", Version: 4},
+	{Apply: migrateCreateUsers, Name: "create_users_table", Version: 4},
 	{Apply: migrateCreateAuthSessions, Name: "create_auth_sessions_table", Version: 5},
 	{Apply: migrateCreateEmailVerifications, Name: "create_email_verifications_table", Version: 6},
 	{Apply: migrateCreatePasswordReset, Name: "create_password_reset_table", Version: 7},
 	{Apply: migrateCreateSettings, Name: "create_settings_table", Version: 8},
 	{Apply: migrateAddCommandsColumns, Name: "add_commands_columns", Version: 9},
 	{Apply: migrateAddDeviceSecretHash, Name: "add_device_secret_hash", Version: 10},
-	{Apply: migrateAddOperatorsGitHubID, Name: "add_operators_github_id", Version: 11},
+	{Apply: migrateAddUsersGitHubID, Name: "add_users_github_id", Version: 11},
 	{Apply: migrateCreateResendTracker, Name: "create_resend_tracker_table", Version: 12},
 	{Apply: migrateCreateAPIClients, Name: "create_api_clients_table", Version: 13},
 	{Apply: migrateCreateSigningKeys, Name: "create_signing_keys_table", Version: 14},
@@ -446,7 +446,7 @@ var migrations = []Migration{
 	{Apply: migrateCreateInboxAndRegistration, Name: "create_inbox_and_registration_tables", Version: 21},
 	{Apply: migrateCreateDeviceLogsAndEvents, Name: "create_device_logs_and_events_tables", Version: 22},
 	{Apply: migrateCreateUpdateTables, Name: "create_update_tables", Version: 23},
-	{Apply: migrateCreateOperatorSettings, Name: "create_operator_settings_table", Version: 24},
+	{Apply: migrateCreateUserSettings, Name: "create_user_settings_table", Version: 24},
 	{Apply: migrateCreateRefreshTokens, Name: "create_refresh_tokens_table", Version: 25},
 	{Apply: migrateCreateNotificationAuditLog, Name: "create_notification_audit_log_table", Version: 26},
 	{Apply: migrateAddDevicesColumns, Name: "add_devices_columns", Version: 27},
@@ -458,7 +458,7 @@ var migrations = []Migration{
 	{Apply: migrateIdempotencyRecords, Name: "create_idempotency_records_table", Version: 33},
 	{Apply: migrateDeviceEvents, Name: "create_device_events_table", Version: 34},
 	{Apply: migrateDeviceEventsExtended, Name: "add_device_events_extended_columns", Version: 35},
-	{Apply: migrateOperatorFCMToken, Name: "add_operator_fcm_token_column", Version: 36},
+	{Apply: migrateUserFCMToken, Name: "add_user_fcm_token_column", Version: 36},
 	{Apply: migrateCreateOAuthStates, Name: "create_oauth_states_table", Version: 37},
 	{Apply: migrateAddMFASecretMAC, Name: "add_mfa_secret_mac_column", Version: 38},
 	// Multi-tenant organization model.
@@ -499,7 +499,7 @@ var migrations = []Migration{
 	// and no prior migration added it. Idempotent.
 	{Apply: migrateAddUpdatePushOrgColumn, Name: "add_update_pushes_organization_id", Version: 51},
 	// Rebuild api_keys and api_clients to the rich schema the repository.
-	// code expects (operator_id, key_prefix, scope, is_active, ...). The.
+	// code expects (user_id, key_prefix, scope, is_active, ...). The.
 	// live tables were created by a deleted migration (038) / migration 013.
 	// with an incompatible minimal schema; SetupAPIKeysTable is never wired.
 	// and CREATE TABLE IF NOT EXISTS can't add columns, so the rich schema.
@@ -588,6 +588,10 @@ var migrations = []Migration{
 	// drift between the server's expectation and the device's reality is visible
 	// continuously rather than only when someone deploys.
 	{Apply: migrateAddDeviceReportedState, Name: "add_device_reported_state", Version: 84},
+	{Apply: migrateConsolidateUserSchema, Name: "consolidate_user_schema", Version: 85},
+	// The user's deployment-wide role: the instance axis, orthogonal to the org
+	// role ladder. Additive, never a superset — see permission.EffectiveScopes.
+	{Apply: migrateAddInstanceRole, Name: "add_instance_role", Version: 86},
 }
 
 // runMigrations applies all pending migrations.
@@ -674,7 +678,7 @@ func migrateCreateDevices(tx *sql.Tx) error {
 			online INTEGER NOT NULL DEFAULT 0,
 			registered_at INTEGER NOT NULL,
 			last_seen INTEGER NOT NULL,
-			operator_id TEXT,
+			user_id TEXT,
 			created_at INTEGER NOT NULL,
 			updated_at INTEGER NOT NULL
 		)
@@ -730,9 +734,9 @@ func migrateCreateCommands(tx *sql.Tx) error {
 	return err
 }
 
-func migrateCreateOperators(tx *sql.Tx) error {
+func migrateCreateUsers(tx *sql.Tx) error {
 	_, err := tx.ExecContext(context.Background(), `
-		CREATE TABLE IF NOT EXISTS operators (
+		CREATE TABLE IF NOT EXISTS users (
 			id TEXT PRIMARY KEY,
 			email TEXT NOT NULL UNIQUE,
 			name TEXT NOT NULL,
@@ -748,6 +752,7 @@ func migrateCreateOperators(tx *sql.Tx) error {
 			thresholds TEXT,
 			client_settings TEXT,
 			last_organization_id TEXT,
+			instance_role TEXT NOT NULL DEFAULT 'none',
 			created_at INTEGER NOT NULL,
 			updated_at INTEGER NOT NULL
 		)
@@ -760,14 +765,14 @@ func migrateCreateAuthSessions(tx *sql.Tx) error {
 	_, err := tx.ExecContext(context.Background(), `
 		CREATE TABLE IF NOT EXISTS auth_sessions (
 			id TEXT PRIMARY KEY,
-			operator_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
 			token_hash TEXT NOT NULL UNIQUE,
 			organization_id TEXT,
 			expires_at INTEGER NOT NULL,
 			created_at INTEGER NOT NULL,
 			user_agent TEXT,
 			ip_address TEXT,
-			FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE
+			FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 		)
 	`)
 
@@ -778,11 +783,11 @@ func migrateCreateEmailVerifications(tx *sql.Tx) error {
 	_, err := tx.ExecContext(context.Background(), `
 		CREATE TABLE IF NOT EXISTS email_verifications (
 			id TEXT PRIMARY KEY,
-			operator_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
 			token_hash TEXT NOT NULL UNIQUE,
 			expires_at INTEGER NOT NULL,
 			created_at INTEGER NOT NULL,
-			FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE
+			FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 		)
 	`)
 
@@ -793,12 +798,12 @@ func migrateCreatePasswordReset(tx *sql.Tx) error {
 	_, err := tx.ExecContext(context.Background(), `
 		CREATE TABLE IF NOT EXISTS password_reset_tokens (
 			id TEXT PRIMARY KEY,
-			operator_id TEXT NOT NULL,
+			user_id TEXT NOT NULL,
 			token_hash TEXT NOT NULL UNIQUE,
 			expires_at INTEGER NOT NULL,
 			used_at INTEGER,
 			created_at INTEGER NOT NULL,
-			FOREIGN KEY(operator_id) REFERENCES operators(id) ON DELETE CASCADE
+			FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 		)
 	`)
 
@@ -850,8 +855,8 @@ func migrateAddDeviceSecretHash(tx *sql.Tx) error {
 	return nil
 }
 
-func migrateAddOperatorsGitHubID(tx *sql.Tx) error {
-	_, err := tx.ExecContext(context.Background(), `ALTER TABLE operators ADD COLUMN github_id TEXT`)
+func migrateAddUsersGitHubID(tx *sql.Tx) error {
+	_, err := tx.ExecContext(context.Background(), `ALTER TABLE users ADD COLUMN github_id TEXT`)
 	if err != nil {
 		// Column may already exist.
 		if !isColumnExistsError(err) {
@@ -862,7 +867,7 @@ func migrateAddOperatorsGitHubID(tx *sql.Tx) error {
 }
 
 func migrateAddMFASecretMAC(tx *sql.Tx) error {
-	_, err := tx.ExecContext(context.Background(), `ALTER TABLE operators ADD COLUMN mfa_secret_mac TEXT`)
+	_, err := tx.ExecContext(context.Background(), `ALTER TABLE users ADD COLUMN mfa_secret_mac TEXT`)
 	if err != nil {
 		// Column may already exist.
 		if !isColumnExistsError(err) {
@@ -970,7 +975,7 @@ func migrateCreateAuditLogs(tx *sql.Tx) error {
 	_, err := tx.ExecContext(context.Background(), `
 		CREATE TABLE IF NOT EXISTS audit_logs (
 			id TEXT PRIMARY KEY,
-			operator_id TEXT,
+			user_id TEXT,
 			action TEXT NOT NULL,
 			details TEXT,
 			ip_address TEXT,
@@ -1096,9 +1101,9 @@ func migrateCreateOAuthStates(tx *sql.Tx) error {
 // migratePostV41Combined combines all post-V41 migrations into a single migration.
 // This includes: org context columns, inbox org column, and MFA tracking.
 func migratePostV41Combined(tx *sql.Tx) error {
-	// Add last_organization_id to operators table for auto-select on login.
+	// Add last_organization_id to users table for auto-select on login.
 	_, err := tx.ExecContext(context.Background(), `
-		ALTER TABLE operators ADD COLUMN last_organization_id TEXT
+		ALTER TABLE users ADD COLUMN last_organization_id TEXT
 	`)
 	if err != nil && !strings.Contains(err.Error(), "duplicate column") {
 		return err
@@ -1129,9 +1134,9 @@ func migratePostV41Combined(tx *sql.Tx) error {
 		return err
 	}
 
-	// Add mfa_enabled_at column to operators table for MFA tracking.
+	// Add mfa_enabled_at column to users table for MFA tracking.
 	_, err = tx.ExecContext(context.Background(), `
-		ALTER TABLE operators ADD COLUMN mfa_enabled_at INTEGER
+		ALTER TABLE users ADD COLUMN mfa_enabled_at INTEGER
 	`)
 	if err != nil && !strings.Contains(err.Error(), "duplicate column") {
 		return err

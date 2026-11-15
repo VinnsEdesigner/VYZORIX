@@ -19,11 +19,11 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/logs"
 	appmetrics "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/metrics"
 	notifications "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/notifications"
-	appoperator "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/operator"
+	appuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/user"
 	orgapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/organization"
 	serviceaccount "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/serviceaccount"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/updates"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/fcm"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/storage"
 	infrawebhook "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/webhook"
@@ -50,9 +50,9 @@ type Resolver struct {
 	AuthMiddleware        *gqlmiddleware.AuthMiddleware
 	Presenter             *gqladapters.Presenter
 	Validator             *validator.Validator
-	OperatorRepo          operator.Repository
+	UserRepo          user.Repository
 	SettingsService       *auth.ClientSettingsService
-	NotificationSvc       *appoperator.NotificationService
+	NotificationSvc       *appuser.NotificationService
 	WebhookClient         *infrawebhook.Client
 	OrgService            *orgapp.OrganizationService
 	OrgSettingsService    *orgapp.OrganizationSettingsService
@@ -87,9 +87,9 @@ func NewResolver(
 	fcmNotifier fcm.Notifier,
 	authMiddleware *gqlmiddleware.AuthMiddleware,
 	presenter *gqladapters.Presenter,
-	operatorRepo operator.Repository,
+	userRepo user.Repository,
 	settingsService *auth.ClientSettingsService,
-	notificationSvc *appoperator.NotificationService,
+	notificationSvc *appuser.NotificationService,
 	webhookClient *infrawebhook.Client,
 	orgService *orgapp.OrganizationService,
 	orgSettingsService *orgapp.OrganizationSettingsService,
@@ -122,7 +122,7 @@ func NewResolver(
 		AuthMiddleware:        authMiddleware,
 		Presenter:             presenter,
 		Validator:             validator.New(),
-		OperatorRepo:          operatorRepo,
+		UserRepo:          userRepo,
 		SettingsService:       settingsService,
 		NotificationSvc:       notificationSvc,
 		WebhookClient:         webhookClient,
@@ -141,9 +141,9 @@ func NewResolver(
 	}
 }
 
-// RequireAuth ensures the operator is authenticated.
+// RequireAuth ensures the user is authenticated.
 func (r *Resolver) RequireAuth(ctx context.Context) (*context.Context, error) {
-	op, ok := gqlcontext.GetOperator(ctx)
+	op, ok := gqlcontext.GetUser(ctx)
 	if !ok || op == nil {
 		return nil, r.Presenter.UnauthorizedError()
 	}

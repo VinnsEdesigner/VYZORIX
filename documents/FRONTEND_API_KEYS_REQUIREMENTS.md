@@ -32,8 +32,8 @@
 
 The API Keys feature consists of TWO distinct user experiences:
 
-**A. Operator Settings (Management)**
-- Operators manage their own API keys
+**A. User Settings (Management)**
+- Users manage their own API keys
 - Create, rename, revoke, rotate keys
 - Set key scopes (read-only, read-write)
 - View usage statistics
@@ -50,7 +50,7 @@ The API Keys feature consists of TWO distinct user experiences:
 | Endpoint | Method | Auth | Purpose |
 |----------|--------|------|---------|
 | `/v1/auth/api-keys` | POST | Session | Create new API key |
-| `/v1/auth/api-keys` | GET | Session | List all operator's keys |
+| `/v1/auth/api-keys` | GET | Session | List all user's keys |
 | `/v1/auth/api-keys/:keyId` | PATCH | Session | Update key (rename, scopes) |
 | `/v1/auth/api-keys/:keyId` | DELETE | Session | Revoke an API key |
 | `/v1/auth/api-keys/:keyId/rotate` | POST | Session | Rotate an API key |
@@ -68,7 +68,7 @@ The API Keys feature consists of TWO distinct user experiences:
 1. **Security First**: Keys shown once, never stored in plain text
 2. **Optimistic UI**: Immediate feedback, rollback on failure
 3. **Developer Experience**: Clear documentation and code examples
-4. **Separation**: Operator settings vs Developer portal are separate
+4. **Separation**: User settings vs Developer portal are separate
 5. **Pagination**: Show 20 keys with "Load More" pattern
 6. **Complete CRUD**: Create, Read, Update (rename), Delete (revoke)
 
@@ -119,7 +119,7 @@ src/
      pages/
         settings/
            api-keys/
-               apikey-settings.tsx         # Operator management
+               apikey-settings.tsx         # User management
                components/
                    apikey-list.tsx         # Key list table
                    apikey-row.tsx         # Single key row
@@ -171,9 +171,9 @@ src/
 ### 2.3 Two Separate API Clients (MUST BE SEPARATE)
 
 ```typescript
-// 1. Session-based Client (for Operator Settings UI)
+// 1. Session-based Client (for User Settings UI)
 // Location: packages/API_Client/src/vyzorServer/client/session-client.ts
-// Uses cookies - operator is logged in
+// Uses cookies - user is logged in
 // Purpose: Manage own keys (create, revoke, rotate, rename)
 
 import { sessionClient } from "@vyzorix/api-client/vyzorServer/client/session-client";
@@ -559,13 +559,13 @@ export const validateUpdateApiKeyRequest = (
 
 ## 4. Data Layer
 
-### 4.1 Session Client (Operator Settings - Management)
+### 4.1 Session Client (User Settings - Management)
 
 ```typescript
 // packages/API_Client/src/vyzorServer/client/session-client.ts
 
 /**
- * Session-based API client for operator settings
+ * Session-based API client for user settings
  * Uses cookies for authentication
  * Used ONLY for managing own keys (create, revoke, rotate, rename)
  */
@@ -625,7 +625,7 @@ const API_KEYS_BASE = "/v1/auth/api-keys";
 
 export const apiKeysEndpoints = {
   /**
-   * List all API keys for the authenticated operator
+   * List all API keys for the authenticated user
    * @param page Page number (1-indexed)
    * @param limit Items per page (default 20)
    */
@@ -2691,8 +2691,8 @@ export const DeveloperDashboardPage = () => {
 ### 12.1 Purpose
 
 Super Admin UI allows administrators to:
-- View ALL API keys across ALL operators
-- See usage statistics for all operators
+- View ALL API keys across ALL users
+- See usage statistics for all users
 - Force revoke any API key
 - Monitor API key usage patterns
 
@@ -2704,10 +2704,10 @@ src/ui/pages/admin/
     api-keys-admin-page.tsx    # List all keys with filters
     stats-page.tsx            # Global statistics
     components/
-        admin-key-list.tsx         # List with operator info
-        admin-key-row.tsx          # Row with operator name
+        admin-key-list.tsx         # List with user info
+        admin-key-row.tsx          # Row with user name
         force-revoke-dialog.tsx    # Force revoke confirmation
-        operator-filter.tsx        # Filter by operator
+        user-filter.tsx        # Filter by user
         global-stats.tsx           # Statistics dashboard
 ```
 
@@ -2803,7 +2803,7 @@ export const adminApiKeysEndpoints = {
     limit = 20
   ): Promise<{ keys: AdminApiKey[]; pagination: PaginationInfo }> => {
     const response = await sessionClient.request<any>(
-      `/v1/admin/operators/${operatorId}/api-keys?page=${page}&limit=${limit}`
+      `/v1/admin/users/${operatorId}/api-keys?page=${page}&limit=${limit}`
     );
     
     return {
@@ -2939,7 +2939,7 @@ export const AdminApiKeysPage = () => {
     <div className="container py-8">
       <PageHeader
         title="API Keys Administration"
-        description="Manage all API keys across operators"
+        description="Manage all API keys across users"
         action={
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setShowStats(!showStats)}>

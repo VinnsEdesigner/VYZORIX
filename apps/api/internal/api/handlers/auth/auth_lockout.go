@@ -40,7 +40,7 @@ func (h *LockoutHandler) Middleware() gin.HandlerFunc {
 
 // GetLockoutStatus handles GET /v1/auth/lockout/status.
 // @Summary      Get lockout status
-// @Description  Returns the current account lockout status for the authenticated operator
+// @Description  Returns the current account lockout status for the authenticated user
 // @Tags         auth
 // @Accept       json
 // @Produce      json
@@ -48,7 +48,7 @@ func (h *LockoutHandler) Middleware() gin.HandlerFunc {
 // @Failure      401  {object}  openapi.ErrorResponse  "not authenticated"
 // @Router       /auth/lockout/status [get]
 func (h *LockoutHandler) GetLockoutStatus(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "")
 		return
@@ -67,42 +67,36 @@ func (h *LockoutHandler) GetLockoutStatus(c *gin.Context) {
 	}
 }
 
-// UnlockAccount handles POST /v1/admin/lockout/unlock/:operator_id.
+// UnlockAccount handles POST /v1/instance/lockout/unlock/:user_id.
 // @Summary      Unlock account
-// @Description  Clears an operator's account lockout. Requires org-scoped super_admin
-// @Tags         auth
+// @Description  Clears a user's account lockout. Instance-scoped: requires admin.lockout on the deployment, not an organization role. Locking a user out of the deployment is not contained by any single organization.
+// @Tags         instance
 // @Accept       json
 // @Produce      json
-// @Param        X-Organization-ID  header  string  true  "Organization ID"
-// @Param        operator_id  path  string  true  "operator ID to unlock"
+// @Param        user_id  path  string  true  "user ID to unlock"
 // @Success      200  {object}  openapi.SuccessResult  "account unlocked"
-// @Failure      400  {object}  openapi.ErrorResponse  "operator_id required"
+// @Failure      400  {object}  openapi.ErrorResponse  "user_id required"
 // @Failure      401  {object}  openapi.ErrorResponse  "not authenticated"
-// @Failure      403  {object}  openapi.ErrorResponse  "super_admin required"
-// @Failure      404  {object}  openapi.ErrorResponse  "operator not found"
-// @Router       /auth/admin/lockout/unlock/{operator_id} [post]
+// @Failure      403  {object}  openapi.ErrorResponse  "instance admin required"
+// @Failure      404  {object}  openapi.ErrorResponse  "user not found"
+// @Router       /instance/lockout/unlock/{user_id} [post]
 func (h *LockoutHandler) UnlockAccount(c *gin.Context) {
-	op := middleware.GetOperatorFromContext(c)
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		h.presenter.Unauthorized(c, "")
 		return
 	}
 
-	// Org-scoped check.
-	orgID := middleware.GetOrganizationID(c)
-	if !op.IsSuperAdminIn(orgID) {
-		h.presenter.Forbidden(c, "")
-		return
-	}
-
-	targetOperatorID := c.Param("operator_id")
-	if targetOperatorID == "" {
+	// Authority is the route's requireInstanceScope(admin.lockout) guard; the
+	// handler performs no org check, because this action is deployment-scoped.
+	targetUserID := c.Param("user_id")
+	if targetUserID == "" {
 		h.presenter.BadRequest(c, "")
 		return
 	}
 
-	// Get target operator email to clear their lockout.
-	targetOp, err := h.authService.GetOperatorByID(c.Request.Context(), targetOperatorID)
+	// Get target user email to clear their lockout.
+	targetOp, err := h.authService.GetUserByID(c.Request.Context(), targetUserID)
 	if err != nil || targetOp == nil {
 		h.presenter.NotFound(c, "")
 		return
@@ -111,6 +105,6 @@ func (h *LockoutHandler) UnlockAccount(c *gin.Context) {
 	// Clear lockout using in-memory lockout (email-based).
 	h.lockout.RecordSuccessfulAttempt(targetOp.Email)
 
-	h.presenter.AdminAction(c, op.ID, "unlock_account", "operator", targetOperatorID, nil)
+	h.presenter.AdminAction(c, op.ID, "unlock_account", "user", targetUserID, nil)
 	h.presenter.OK(c, openapi.SuccessResult{Success: true, Message: "Account unlocked successfully"})
 }

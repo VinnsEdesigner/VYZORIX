@@ -38,12 +38,12 @@ func NewSessionsHandler(authService *appauth.AuthService, sessionManager *infraa
 	}
 }
 
-// getOperatorID extracts operator ID from the authenticated session.
+// getUserID extracts user ID from the authenticated session.
 // The cookieAuth middleware already validated the (encrypted) session cookie.
-// and stored the operator in context, so reuse it rather than re-reading the.
+// and stored the user in context, so reuse it rather than re-reading the.
 // raw cookie ciphertext (which is not the plaintext session ID).
-func (h *SessionsHandler) getOperatorID(c *gin.Context) (string, error) {
-	op := middleware.GetOperatorFromContext(c)
+func (h *SessionsHandler) getUserID(c *gin.Context) (string, error) {
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		return "", errors.New("unauthorized")
 	}
@@ -51,9 +51,9 @@ func (h *SessionsHandler) getOperatorID(c *gin.Context) (string, error) {
 	return op.ID, nil
 }
 
-// ListSessions handles GET /v1/auth/sessions - List all active sessions for the operator.
+// ListSessions handles GET /v1/auth/sessions - List all active sessions for the user.
 // @Summary      List sessions
-// @Description  Returns all active sessions for the authenticated operator
+// @Description  Returns all active sessions for the authenticated user
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
@@ -62,13 +62,13 @@ func (h *SessionsHandler) getOperatorID(c *gin.Context) (string, error) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/sessions [get]
 func (h *SessionsHandler) ListSessions(c *gin.Context) {
-	operatorID, err := h.getOperatorID(c)
+	userID, err := h.getUserID(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "")
 		return
 	}
 
-	sessions, err := h.sessionManager.ListActiveSessions(c.Request.Context(), operatorID)
+	sessions, err := h.sessionManager.ListActiveSessions(c.Request.Context(), userID)
 	if err != nil {
 		h.presenter.InternalError(c, "Failed to list sessions")
 		return
@@ -98,7 +98,7 @@ func (h *SessionsHandler) ListSessions(c *gin.Context) {
 
 // CheckConcurrent handles GET /v1/auth/sessions/concurrent - Check for concurrent logins.
 // @Summary      Check concurrent sessions
-// @Description  Returns whether the operator has concurrent active logins
+// @Description  Returns whether the user has concurrent active logins
 // @Tags         sessions
 // @Accept       json
 // @Produce      json
@@ -107,13 +107,13 @@ func (h *SessionsHandler) ListSessions(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/sessions/concurrent [get]
 func (h *SessionsHandler) CheckConcurrent(c *gin.Context) {
-	operatorID, err := h.getOperatorID(c)
+	userID, err := h.getUserID(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "")
 		return
 	}
 
-	sessions, err := h.sessionManager.ListActiveSessions(c.Request.Context(), operatorID)
+	sessions, err := h.sessionManager.ListActiveSessions(c.Request.Context(), userID)
 	if err != nil {
 		h.presenter.InternalError(c, "Failed to check concurrent sessions")
 		return
@@ -155,7 +155,7 @@ func (h *SessionsHandler) CheckConcurrent(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/sessions/{id} [delete]
 func (h *SessionsHandler) RevokeSession(c *gin.Context) {
-	operatorID, err := h.getOperatorID(c)
+	userID, err := h.getUserID(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "")
 		return
@@ -174,8 +174,8 @@ func (h *SessionsHandler) RevokeSession(c *gin.Context) {
 		return
 	}
 
-	// Verify session belongs to this operator.
-	sessions, err := h.sessionManager.ListActiveSessions(c.Request.Context(), operatorID)
+	// Verify session belongs to this user.
+	sessions, err := h.sessionManager.ListActiveSessions(c.Request.Context(), userID)
 	if err != nil {
 		h.presenter.InternalError(c, "Failed to verify session")
 		return
@@ -214,7 +214,7 @@ func (h *SessionsHandler) RevokeSession(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/sessions [delete]
 func (h *SessionsHandler) RevokeAllExceptCurrent(c *gin.Context) {
-	operatorID, err := h.getOperatorID(c)
+	userID, err := h.getUserID(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "")
 		return
@@ -223,7 +223,7 @@ func (h *SessionsHandler) RevokeAllExceptCurrent(c *gin.Context) {
 	currentSessionID := middleware.GetCurrentSessionID(c)
 
 	// Get all sessions.
-	sessions, err := h.sessionManager.ListActiveSessions(c.Request.Context(), operatorID)
+	sessions, err := h.sessionManager.ListActiveSessions(c.Request.Context(), userID)
 	if err != nil {
 		h.presenter.InternalError(c, "Failed to list sessions")
 		return
@@ -257,14 +257,14 @@ func (h *SessionsHandler) RevokeAllExceptCurrent(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/sessions/revoke-all [post]
 func (h *SessionsHandler) RevokeAllDevices(c *gin.Context) {
-	operatorID, err := h.getOperatorID(c)
+	userID, err := h.getUserID(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "")
 		return
 	}
 
 	// Get all sessions.
-	sessions, err := h.sessionManager.ListActiveSessions(c.Request.Context(), operatorID)
+	sessions, err := h.sessionManager.ListActiveSessions(c.Request.Context(), userID)
 	if err != nil {
 		h.presenter.InternalError(c, "Failed to list sessions")
 		return
@@ -302,7 +302,7 @@ func (h *SessionsHandler) RevokeAllDevices(c *gin.Context) {
 // @Failure      500  {object}  openapi.ErrorResponse  "internal error"
 // @Router       /auth/sessions/{id} [get]
 func (h *SessionsHandler) GetSession(c *gin.Context) {
-	operatorID, err := h.getOperatorID(c)
+	userID, err := h.getUserID(c)
 	if err != nil {
 		h.presenter.Unauthorized(c, "")
 		return
@@ -315,7 +315,7 @@ func (h *SessionsHandler) GetSession(c *gin.Context) {
 	}
 
 	// Get all sessions and find the one with matching ID.
-	sessions, err := h.sessionManager.ListActiveSessions(c.Request.Context(), operatorID)
+	sessions, err := h.sessionManager.ListActiveSessions(c.Request.Context(), userID)
 	if err != nil {
 		h.presenter.InternalError(c, "Failed to list sessions")
 		return

@@ -31,7 +31,7 @@ history is complete and ordered.
 |:------|:--------|
 | `version` | Monotonic number, scoped to the resource. Starts at 1. |
 | `snapshot` | The full config as it stood after the write. |
-| `changed_by` | The operator who made the change. |
+| `changed_by` | The user who made the change. |
 | `created_at` | When it happened. |
 | `resource_type` | Which surface this version belongs to. |
 

@@ -215,6 +215,6 @@ var AuthLimiter = NewMultiWindow(map[string]struct {
 })
 
 // MFAVerifyLimiter is a rate limiter specifically for MFA verification.
-// Uses operator_id as key to prevent brute force attacks on TOTP codes.
-// 3 attempts per minute per operator_id.
+// Uses user_id as key to prevent brute force attacks on TOTP codes.
+// 3 attempts per minute per user_id.
 var MFAVerifyLimiter = New(time.Minute, 3)

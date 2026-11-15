@@ -3,12 +3,12 @@
 A service account is an identity for automation. It isn't a person — it's a
 name your scripts, CI pipelines, and integrations authenticate as. It lives in
 one organization, holds its own tokens, and carries the same read/write/admin
-scope model as an operator's API keys, but it's deliberately *not* attached to
+scope model as a user's API keys, but it's deliberately *not* attached to
 any human.
 
 That separation is the point. When a key leaks, you rotate the service account's
 token without touching a person's credentials. When someone leaves, their
-operator account goes away and your automations keep running.
+user account goes away and your automations keep running.
 
 ---
 
@@ -86,16 +86,16 @@ token is usable, and attaches the token's scopes to the request. From that point
 the request is evaluated exactly like any other scoped request — the scoped RBAC
 engine checks the action against the token's scopes.
 
-Because service accounts have no operator, the auth middleware handles them
+Because service accounts have no user, the auth middleware handles them
 without a human identity: scope evaluation reads the token's own scope list
 rather than looking up a membership. An account can be a member of exactly the
 organization it belongs to, and no other.
 
 ---
 
-## Why this exists next to operator API keys
+## Why this exists next to user API keys
 
-Operator API keys hang off a person. That's the right default for a human
+User API keys hang off a person. That's the right default for a human
 driving the dashboard. But automation shouldn't borrow a person's identity — it
 makes revocation messy, audit confusing, and offboarding dangerous.
 

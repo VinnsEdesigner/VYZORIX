@@ -20,11 +20,11 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/logs"
 	appmetrics "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/metrics"
 	appnotifications "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/notifications"
-	appoperator "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/operator"
+	appuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/user"
 	orgapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/organization"
 	sadomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/serviceaccount"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/updates"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/storage"
 	infrawebhook "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/webhook"
@@ -53,9 +53,9 @@ func (s *Server) RegisterGraphQL(
 	wsHub *hub.Hub,
 	updatesSvc *updates.Service,
 	diagnosticsSvc *diagnosticsapp.Service,
-	operatorRepo operator.Repository,
+	userRepo user.Repository,
 	settingsService *appsvc.ClientSettingsService,
-	notificationSvc *appoperator.NotificationService,
+	notificationSvc *appuser.NotificationService,
 	webhookClient *infrawebhook.Client,
 	orgService *orgapp.OrganizationService,
 	orgSettingsService *orgapp.OrganizationSettingsService,
@@ -98,7 +98,7 @@ func (s *Server) RegisterGraphQL(
 		nil, // FCM notifier.
 		authMw,
 		gqlPresenter,
-		operatorRepo,
+		userRepo,
 		settingsService,
 		notificationSvc,
 		webhookClient,
@@ -152,7 +152,7 @@ func (s *Server) RegisterGraphQL(
 	// Set organization ID from the URL :org param into gin context so that.
 	// the OrganizationMembership middleware can validate it.
 	gqlGroup.Use(orgFromURLParamMiddleware)
-	// Validate that the authenticated operator is a member of the organization.
+	// Validate that the authenticated user is a member of the organization.
 	gqlGroup.Use(middleware.NewOrganizationMembership(s.memberHandler.MembershipChecker()).Middleware())
 
 	// HTTP endpoints carry per-session HMAC request signatures (same scheme as.
@@ -178,7 +178,7 @@ func (s *Server) RegisterGraphQL(
 	}
 
 	// Create subscription handler. The WS endpoint goes through the same.
-	// middleware group, so the operator is already authenticated by the time.
+	// middleware group, so the user is already authenticated by the time.
 	// HandleWebSocket runs.
 	subsHandler := subscription.NewHandler(&subscription.Config{
 		Hub:         wsHub,
@@ -197,7 +197,7 @@ func (s *Server) RegisterGraphQL(
 
 // orgFromURLParamMiddleware extracts the organization ID from the URL :org.
 // parameter and stores it in the gin context under ContextKeyOrganizationID.
-// This allows the OrganizationMembership middleware to validate the operator's.
+// This allows the OrganizationMembership middleware to validate the user's.
 // membership in the organization specified in the URL.
 func orgFromURLParamMiddleware(c *gin.Context) {
 	orgID := c.Param("org")
@@ -236,8 +236,8 @@ func (h *gqlHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	// Extract operator from gin context (set by cookieAuth or tenantAPIKeyAuth).
-	op := middleware.GetOperatorFromContext(c)
+	// Extract user from gin context (set by cookieAuth or tenantAPIKeyAuth).
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"errors": []gin.H{{"message": "authentication required"}},
@@ -249,9 +249,9 @@ func (h *gqlHandler) Handle(c *gin.Context) {
 	// Extract org from gin context (set by orgFromURLParamMiddleware).
 	orgID := middleware.GetOrganizationID(c)
 
-	// Add operator, organization, and MFA state to GraphQL context so the
+	// Add user, organization, and MFA state to GraphQL context so the
 	// command risk gate sees the same actor attributes as the REST path.
-	ctx := gqlcontext.WithOperator(c.Request.Context(), op)
+	ctx := gqlcontext.WithUser(c.Request.Context(), op)
 	ctx = gqlcontext.WithOrganizationID(ctx, orgID)
 	if sess := middleware.GetSession(c); sess != nil && sess.MFAVerifiedAt != nil {
 		ctx = gqlcontext.WithMFAVerified(ctx, true)
@@ -383,8 +383,8 @@ func (h *gqlBatchHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	// Extract operator from gin context (set by cookieAuth or tenantAPIKeyAuth).
-	op := middleware.GetOperatorFromContext(c)
+	// Extract user from gin context (set by cookieAuth or tenantAPIKeyAuth).
+	op := middleware.GetUserFromContext(c)
 	if op == nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"errors": []gin.H{{"message": "authentication required"}},
@@ -395,9 +395,9 @@ func (h *gqlBatchHandler) Handle(c *gin.Context) {
 	// Extract org from gin context (set by orgFromURLParamMiddleware).
 	orgID := middleware.GetOrganizationID(c)
 
-	// Add operator, organization, and MFA state to GraphQL context so the
+	// Add user, organization, and MFA state to GraphQL context so the
 	// command risk gate sees the same actor attributes as the REST path.
-	ctx := gqlcontext.WithOperator(c.Request.Context(), op)
+	ctx := gqlcontext.WithUser(c.Request.Context(), op)
 	ctx = gqlcontext.WithOrganizationID(ctx, orgID)
 	if sess := middleware.GetSession(c); sess != nil && sess.MFAVerifiedAt != nil {
 		ctx = gqlcontext.WithMFAVerified(ctx, true)

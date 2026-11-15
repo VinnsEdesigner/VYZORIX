@@ -71,7 +71,7 @@ func createAuditSchema(db *sql.DB) error {
 		return err
 	}
 
-	// Create index for querying by operator.
+	// Create index for querying by user.
 	_, err = db.ExecContext(context.Background(), `
 		CREATE INDEX IF NOT EXISTS idx_audit_operator
 		ON audit_logs(operator_id, created_at DESC)
@@ -111,7 +111,7 @@ func (r *SeparateDBRepository) Log(ctx context.Context, entry *Entry) error {
 
 	_, err := r.db.ExecContext(ctx, query,
 		entry.ID,
-		entry.OperatorID,
+		entry.UserID,
 		string(entry.Action),
 		entry.ResourceType,
 		entry.ResourceID,

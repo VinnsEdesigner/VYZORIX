@@ -101,7 +101,7 @@ func (r *ClientRepository) exec(ctx context.Context, query string, args ...inter
 
 // FindByID retrieves a client by ID.
 func (r *ClientRepository) FindByID(ctx context.Context, id string) (*client.Client, error) {
-	query := `SELECT id, operator_id, name, platform, client_secret_hash, hmac_key, 
+	query := `SELECT id, user_id, name, platform, client_secret_hash, hmac_key, 
 		allowed_origins, allowed_paths, rate_limit, is_active, request_count, 
 		last_request_at, created_at, updated_at 
 		FROM api_clients WHERE id = ?`
@@ -113,7 +113,7 @@ func (r *ClientRepository) FindByID(ctx context.Context, id string) (*client.Cli
 	var lastRequestAt sql.NullInt64
 
 	err := r.queryRow(ctx, query, id).Scan(
-		&c.ID, &c.OperatorID, &c.Name, &c.Platform, &c.ClientSecretHash, &c.HmacKey,
+		&c.ID, &c.UserID, &c.Name, &c.Platform, &c.ClientSecretHash, &c.HmacKey,
 		&allowedOrigins, &allowedPaths, &c.RateLimit, &c.IsActive, &c.RequestCount,
 		&lastRequestAt, &c.CreatedAt, &c.UpdatedAt,
 	)
@@ -141,14 +141,14 @@ func (r *ClientRepository) FindByID(ctx context.Context, id string) (*client.Cli
 	return &c, nil
 }
 
-// FindByOperatorID retrieves all clients for an operator.
-func (r *ClientRepository) FindByOperatorID(ctx context.Context, operatorID string) ([]*client.Client, error) {
-	query := `SELECT id, operator_id, name, platform, client_secret_hash, hmac_key, 
+// FindByUserID retrieves all clients for a user.
+func (r *ClientRepository) FindByUserID(ctx context.Context, userID string) ([]*client.Client, error) {
+	query := `SELECT id, user_id, name, platform, client_secret_hash, hmac_key, 
 		allowed_origins, allowed_paths, rate_limit, is_active, request_count, 
 		last_request_at, created_at, updated_at 
-		FROM api_clients WHERE operator_id = ?`
+		FROM api_clients WHERE user_id = ?`
 
-	rows, err := r.queryRows(ctx, query, operatorID)
+	rows, err := r.queryRows(ctx, query, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func (r *ClientRepository) FindByOperatorID(ctx context.Context, operatorID stri
 		var lastRequestAt sql.NullInt64
 
 		if err := rows.Scan(
-			&c.ID, &c.OperatorID, &c.Name, &c.Platform, &c.ClientSecretHash, &c.HmacKey,
+			&c.ID, &c.UserID, &c.Name, &c.Platform, &c.ClientSecretHash, &c.HmacKey,
 			&allowedOrigins, &allowedPaths, &c.RateLimit, &c.IsActive, &c.RequestCount,
 			&lastRequestAt, &c.CreatedAt, &c.UpdatedAt,
 		); err != nil {
@@ -200,7 +200,7 @@ func (r *ClientRepository) FindAll(ctx context.Context, limit, offset int) ([]*c
 		return nil, 0, err
 	}
 
-	query := `SELECT id, operator_id, name, platform, client_secret_hash, hmac_key, 
+	query := `SELECT id, user_id, name, platform, client_secret_hash, hmac_key, 
 		allowed_origins, allowed_paths, rate_limit, is_active, request_count, 
 		last_request_at, created_at, updated_at 
 		FROM api_clients ORDER BY created_at DESC LIMIT ? OFFSET ?`
@@ -222,7 +222,7 @@ func (r *ClientRepository) FindAll(ctx context.Context, limit, offset int) ([]*c
 		var lastRequestAt sql.NullInt64
 
 		if err := rows.Scan(
-			&c.ID, &c.OperatorID, &c.Name, &c.Platform, &c.ClientSecretHash, &c.HmacKey,
+			&c.ID, &c.UserID, &c.Name, &c.Platform, &c.ClientSecretHash, &c.HmacKey,
 			&allowedOrigins, &allowedPaths, &c.RateLimit, &c.IsActive, &c.RequestCount,
 			&lastRequestAt, &c.CreatedAt, &c.UpdatedAt,
 		); err != nil {
@@ -291,12 +291,12 @@ func (r *ClientRepository) Create(ctx context.Context, c *client.Client, secret 
 	c.UpdatedAt = now
 
 	query := `INSERT INTO api_clients 
-		(id, operator_id, name, platform, client_secret_hash, hmac_key, 
+		(id, user_id, name, platform, client_secret_hash, hmac_key, 
 		allowed_origins, allowed_paths, rate_limit, is_active, request_count, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err = r.exec(ctx, query,
-		c.ID, c.OperatorID, c.Name, c.Platform, c.ClientSecretHash, c.HmacKey,
+		c.ID, c.UserID, c.Name, c.Platform, c.ClientSecretHash, c.HmacKey,
 		string(originsJSON), string(pathsJSON), c.RateLimit, c.IsActive, 0,
 		c.CreatedAt.UnixMilli(), c.UpdatedAt.UnixMilli(),
 	)

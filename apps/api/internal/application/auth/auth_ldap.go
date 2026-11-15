@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/shared"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/go-ldap/ldap/v3"
 )
 
@@ -113,23 +113,23 @@ func (s *AuthService) AuthenticateLDAP(ctx context.Context, cfg *LDAPConfig, use
 	}, nil
 }
 
-// SyncOperatorFromLDAP syncs LDAP user to local operator record.
-func (s *AuthService) SyncOperatorFromLDAP(ctx context.Context, ldapUser *LDAPUser) (*operator.Operator, error) {
-	op, err := s.operatorRepo.FindByEmail(ctx, ldapUser.Email)
+// SyncUserFromLDAP syncs LDAP user to local user record.
+func (s *AuthService) SyncUserFromLDAP(ctx context.Context, ldapUser *LDAPUser) (*user.User, error) {
+	op, err := s.userRepo.FindByEmail(ctx, ldapUser.Email)
 	if err != nil {
-		op = &operator.Operator{
+		op = &user.User{
 			ID:    shared.GenerateID(),
 			Email: ldapUser.Email,
 			Name:  ldapUser.Name,
 		}
-		if createErr := s.operatorRepo.Create(ctx, op); createErr != nil {
+		if createErr := s.userRepo.Create(ctx, op); createErr != nil {
 			return nil, createErr
 		}
 		return op, nil
 	}
 
 	op.Name = ldapUser.Name
-	if err := s.operatorRepo.Update(ctx, op); err != nil {
+	if err := s.userRepo.Update(ctx, op); err != nil {
 		return nil, err
 	}
 

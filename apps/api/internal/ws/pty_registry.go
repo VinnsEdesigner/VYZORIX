@@ -45,7 +45,7 @@ const (
 	DefaultPTYMaxSessionsPerDevice = 4
 
 	// DefaultPTYCreditWindow is how many unacknowledged data frames may be in
-	// flight to the operator before the device's output is throttled. Without a
+	// flight to the user before the device's output is throttled. Without a
 	// window, `cat` of a large file would flood the socket and the browser.
 	DefaultPTYCreditWindow = 64
 
@@ -55,7 +55,7 @@ const (
 )
 
 // PTYSession is the in-memory state of one terminal session. It is deliberately
-// not durable: a session is a live connection between an operator and a device,
+// not durable: a session is a live connection between a user and a device,
 // and it is meaningless once the server restarts.
 type PTYSession struct {
 	// Fields are ordered so pointer-bearing ones come first and the pointer-free
@@ -66,7 +66,7 @@ type PTYSession struct {
 	recorder   *PTYRecorder
 	SessionID  string
 	DeviceID   string
-	OperatorID string
+	UserID string
 	OrgID      string
 	// capability is the resolved API allowlist, device tier and expiry the session
 	// carries. It is the boundary contract's decision, recorded here at open so
@@ -149,25 +149,25 @@ func NewPTYRegistry(cfg PTYRegistryConfig) *PTYRegistry {
 }
 
 // Open registers a new session for a device. It returns ErrPTYTooManySessions
-// when the device already holds the maximum, so one operator cannot open an
+// when the device already holds the maximum, so one user cannot open an
 // unbounded number of terminals on one device.
-func (r *PTYRegistry) Open(sessionID, deviceID, operatorID, orgID string, recording bool) (*PTYSession, error) {
+func (r *PTYRegistry) Open(sessionID, deviceID, userID, orgID string, recording bool) (*PTYSession, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	// A session outlives the device socket now, so a reconnect re-opens the same id
 	// rather than minting a new one. Re-binding is allowed only for the **same
-	// operator and device**: the id is client-supplied, so letting a different
-	// operator adopt a live session by guessing its id would be a session hijack.
-	// A different operator is refused exactly as before.
+	// user and device**: the id is client-supplied, so letting a different
+	// user adopt a live session by guessing its id would be a session hijack.
+	// A different user is refused exactly as before.
 	if existing, ok := r.sessions[sessionID]; ok {
-		if existing.OperatorID != operatorID || existing.DeviceID != deviceID {
+		if existing.UserID != userID || existing.DeviceID != deviceID {
 			return nil, ErrPTYSessionExists
 		}
 
-		// Re-arm for the reconnecting operator: refresh the liveness clock so the
+		// Re-arm for the reconnecting user: refresh the liveness clock so the
 		// idle TTL measures from now, and reset the credit window to a full one,
-		// because the operator is starting a fresh terminal view and the old
+		// because the user is starting a fresh terminal view and the old
 		// window's acks died with the socket they were sent on.
 		existing.LastSeenAt = r.now()
 		existing.Credit = r.creditWindow
@@ -191,7 +191,7 @@ func (r *PTYRegistry) Open(sessionID, deviceID, operatorID, orgID string, record
 	s := &PTYSession{
 		SessionID:  sessionID,
 		DeviceID:   deviceID,
-		OperatorID: operatorID,
+		UserID: userID,
 		OrgID:      orgID,
 		Recording:  recording,
 		OpenedAt:   now,
@@ -279,9 +279,9 @@ func (r *PTYRegistry) CloseByDevice(deviceID string) []*PTYSession {
 }
 
 // TakeCredit consumes one unit of send credit for a session. It returns
-// ErrPTYNoCredit when the operator has not acknowledged enough frames, which is
+// ErrPTYNoCredit when the user has not acknowledged enough frames, which is
 // how backpressure is applied to a device that is producing faster than the
-// operator can consume.
+// user can consume.
 func (r *PTYRegistry) TakeCredit(sessionID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -301,7 +301,7 @@ func (r *PTYRegistry) TakeCredit(sessionID string) error {
 }
 
 // GrantCredit returns credit to a session, capped at the window so a buggy or
-// hostile operator cannot inflate it. An unknown session is a no-op: the
+// hostile user cannot inflate it. An unknown session is a no-op: the
 // session may have closed between the device sending data and the ack arriving.
 func (r *PTYRegistry) GrantCredit(sessionID string, n int) {
 	if n <= 0 {
@@ -368,7 +368,7 @@ func (r *PTYRegistry) CountForDevice(deviceID string) int {
 // ForDevice returns the live sessions for a device.
 //
 // Used when a device (re)connects to re-send an OPEN for each session, so the
-// device re-binds the shells it still holds instead of the operator having to
+// device re-binds the shells it still holds instead of the user having to
 // reopen them. The returned slice is a snapshot; the sessions themselves are
 // shared and must be treated as read-only by the caller.
 func (r *PTYRegistry) ForDevice(deviceID string) []*PTYSession {

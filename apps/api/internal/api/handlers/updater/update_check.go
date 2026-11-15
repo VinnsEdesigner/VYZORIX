@@ -342,7 +342,7 @@ func (h *Handler) DownloadProgress(c *gin.Context) {
 
 // GetDownloadProgress handles GET /v1/download-progress/:deviceId.
 //
-// The read half of the report endpoint: an operator (or the dashboard) asks how far
+// The read half of the report endpoint: a user (or the dashboard) asks how far
 // along a device's update is. Before this, `POST /download-progress` only logged the
 // report — the server accepted progress and could not answer for it, so the data had
 // no consumer.

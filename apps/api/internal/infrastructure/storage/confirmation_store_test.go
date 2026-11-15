@@ -23,7 +23,7 @@ func TestConfirmationRepository_CreateAndGet(t *testing.T) {
 	repo := newConfirmationTestRepo(t)
 	ctx := context.Background()
 	c := &confirmation.PendingConfirmation{
-		Token: "tok-1", OperatorID: "op-1", OrgID: "org-1",
+		Token: "tok-1", UserID: "op-1", OrgID: "org-1",
 		Command: "device.reboot", DeviceID: "imei-1", RiskTier: "high",
 		CreatedAt: time.Now(), ExpiresAt: time.Now().Add(5 * time.Minute),
 	}
@@ -34,7 +34,7 @@ func TestConfirmationRepository_CreateAndGet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Get: %v", err)
 	}
-	if got.OperatorID != "op-1" || got.Command != "device.reboot" || got.DeviceID != "imei-1" {
+	if got.UserID != "op-1" || got.Command != "device.reboot" || got.DeviceID != "imei-1" {
 		t.Errorf("unexpected confirmation: %+v", got)
 	}
 	if got.IsConsumed() {
@@ -53,7 +53,7 @@ func TestConfirmationRepository_Consume_Success(t *testing.T) {
 	repo := newConfirmationTestRepo(t)
 	ctx := context.Background()
 	_ = repo.Create(ctx, &confirmation.PendingConfirmation{
-		Token: "tok-2", OperatorID: "op-1", Command: "device.reboot", DeviceID: "imei-1",
+		Token: "tok-2", UserID: "op-1", Command: "device.reboot", DeviceID: "imei-1",
 		CreatedAt: time.Now(), ExpiresAt: time.Now().Add(5 * time.Minute),
 	})
 
@@ -70,7 +70,7 @@ func TestConfirmationRepository_Consume_AlreadyConsumed(t *testing.T) {
 	repo := newConfirmationTestRepo(t)
 	ctx := context.Background()
 	_ = repo.Create(ctx, &confirmation.PendingConfirmation{
-		Token: "tok-3", OperatorID: "op-1", Command: "device.reboot", DeviceID: "imei-1",
+		Token: "tok-3", UserID: "op-1", Command: "device.reboot", DeviceID: "imei-1",
 		CreatedAt: time.Now(), ExpiresAt: time.Now().Add(5 * time.Minute),
 	})
 	if _, err := repo.Consume(ctx, "tok-3", time.Now()); err != nil {
@@ -86,7 +86,7 @@ func TestConfirmationRepository_Consume_Expired(t *testing.T) {
 	repo := newConfirmationTestRepo(t)
 	ctx := context.Background()
 	_ = repo.Create(ctx, &confirmation.PendingConfirmation{
-		Token: "tok-4", OperatorID: "op-1", Command: "device.reboot", DeviceID: "imei-1",
+		Token: "tok-4", UserID: "op-1", Command: "device.reboot", DeviceID: "imei-1",
 		CreatedAt: time.Now().Add(-time.Hour), ExpiresAt: time.Now().Add(-time.Minute),
 	})
 	_, err := repo.Consume(ctx, "tok-4", time.Now())
@@ -99,7 +99,7 @@ func TestConfirmationRepository_DeleteExpired(t *testing.T) {
 	repo := newConfirmationTestRepo(t)
 	ctx := context.Background()
 	_ = repo.Create(ctx, &confirmation.PendingConfirmation{
-		Token: "tok-exp", OperatorID: "op-1", Command: "device.reboot", DeviceID: "imei-1",
+		Token: "tok-exp", UserID: "op-1", Command: "device.reboot", DeviceID: "imei-1",
 		CreatedAt: time.Now().Add(-time.Hour), ExpiresAt: time.Now().Add(-time.Minute),
 	})
 	n, err := repo.DeleteExpired(ctx)

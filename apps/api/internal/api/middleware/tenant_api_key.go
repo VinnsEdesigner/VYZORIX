@@ -11,7 +11,7 @@ import (
 	keys "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/keys"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
 	domain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/operator"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/gin-gonic/gin"
 )
 
@@ -113,13 +113,13 @@ func IsTenantPath(path string) bool {
 // =============================================================================.
 
 // TenantAPIKeyAuth provides tenant API key authentication middleware.
-// ServiceAccountAuthenticator validates service account tokens when operator
+// ServiceAccountAuthenticator validates service account tokens when user
 // API key validation fails. Implemented by serviceaccount.Service.
 type ServiceAccountAuthenticator interface {
 	Authenticate(ctx context.Context, key string) (*serviceaccount.Token, error)
 }
 
-// TenantAPIKeyAuth validates operator API keys and, as a fallback, service
+// TenantAPIKeyAuth validates user API keys and, as a fallback, service
 // account tokens so automation can authenticate without a human identity.
 type TenantAPIKeyAuth struct {
 	service     *keys.APIKeyService
@@ -161,7 +161,7 @@ func (t *TenantAPIKeyAuth) Middleware() gin.HandlerFunc {
 		}
 
 		// Check if already authenticated via session.
-		if _, exists := c.Get("operator_id"); exists {
+		if _, exists := c.Get("user_id"); exists {
 			c.Next()
 			return
 		}
@@ -179,7 +179,7 @@ func (t *TenantAPIKeyAuth) Middleware() gin.HandlerFunc {
 		key, err := t.service.ValidateKey(c.Request.Context(), apiKey)
 		if err != nil && t.saAuth != nil && strings.HasPrefix(apiKey, "vxyz_sa_") {
 			if saToken, saErr := t.saAuth.Authenticate(c.Request.Context(), apiKey); saErr == nil && saToken.IsUsable() {
-				c.Set("operator_id", "")
+				c.Set("user_id", "")
 				c.Set("api_key_id", saToken.ID)
 				c.Set("api_key_scope", saToken.Scopes[0])
 				c.Set("api_key_name", saToken.Name)
@@ -210,7 +210,7 @@ func (t *TenantAPIKeyAuth) Middleware() gin.HandlerFunc {
 				}
 				t.auditLogger.APIKeyFailed(
 					c.Request.Context(),
-					"", // operatorID unknown for failed auth.
+					"", // userID unknown for failed auth.
 					keyPrefix,
 					c.ClientIP(),
 					c.GetHeader("User-Agent"),
@@ -230,8 +230,8 @@ func (t *TenantAPIKeyAuth) Middleware() gin.HandlerFunc {
 		}
 
 		// Store key info in context for downstream use.
-		// CRITICAL: Also set operator_id for handlers that check it (like keys_handler.go).
-		c.Set("operator_id", key.OperatorID)
+		// CRITICAL: Also set user_id for handlers that check it (like keys_handler.go).
+		c.Set("user_id", key.UserID)
 		c.Set("api_key_id", key.ID)
 		c.Set("api_key_scope", string(key.Scope))
 		c.Set("api_key_name", key.Name)
@@ -246,12 +246,12 @@ func (t *TenantAPIKeyAuth) Middleware() gin.HandlerFunc {
 		// verify HMAC request signatures for API-key-authenticated requests.
 		c.Set("api_key_signing_secret", key.SigningSecret)
 
-		// Set a minimal operator in the gin context so that downstream.
+		// Set a minimal user in the gin context so that downstream.
 		// middleware (OrganizationMembership, RBAC, SuperAdmin) that call.
-		// GetOperatorFromContext work with API key auth, not just sessions.
-		// The membership check only needs operator.ID; we avoid an extra DB.
-		// fetch by constructing a minimal operator from the key's OperatorID.
-		c.Set(ContextKeyOperator, &operator.Operator{ID: key.OperatorID})
+		// GetUserFromContext work with API key auth, not just sessions.
+		// The membership check only needs user.ID; we avoid an extra DB.
+		// fetch by constructing a minimal user from the key's UserID.
+		c.Set(ContextKeyUser, &user.User{ID: key.UserID})
 
 		// Increment usage asynchronously.
 		go func() {

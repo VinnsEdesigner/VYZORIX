@@ -107,7 +107,7 @@ func logStructuredError(logger *slog.Logger, c *gin.Context, ginErr *gin.Error, 
 		slog.String("method", c.Request.Method),
 		slog.Int("status", status),
 	}
-	if userID := c.GetString("operator_id"); userID != "" {
+	if userID := c.GetString("user_id"); userID != "" {
 		args = append(args, slog.String("actor_id", userID))
 	}
 	if orgID := c.GetString("org_id"); orgID != "" {

@@ -395,7 +395,7 @@ export const usePostAuthMfaRegenerateBackupCodes = <TError = ErrorResponse,
 }
 
 /**
- * Returns whether MFA is enabled for the current operator
+ * Returns whether MFA is enabled for the current user
  * @summary Get MFA status
  */
 export const getAuthMfaStatus = async ( options?: Parameters<typeof customAxios>[1]): Promise<MFAStatusResult> => {
@@ -587,7 +587,7 @@ export const usePostAuthMfaVerify = <TError = ErrorResponse,
 }
 
 /**
- * Verifies a backup code for an operator with MFA enabled
+ * Verifies a backup code for a user with MFA enabled
  * @summary Verify MFA backup code
  */
 export const postAuthMfaVerifyBackup = async (mFABackupCodeRequest: MFABackupCodeRequest, options?: Parameters<typeof customAxios>[1]): Promise<MFABackupCodeResult> => {

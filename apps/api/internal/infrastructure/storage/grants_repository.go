@@ -87,12 +87,12 @@ func (r *GrantRepository) Save(ctx context.Context, p *permission.ResourcePermis
 	return nil
 }
 
-// ListEffective returns all grants an operator can act with in an org: their
-// operator-direct grants UNION grants on teams they belong to. A single query
+// ListEffective returns all grants a user can act with in an org: their
+// user-direct grants UNION grants on teams they belong to. A single query
 // joins through device_group_members so the evaluator sees the full effective
 // set without N+1 lookups. Results are cached within the TTL window.
-func (r *GrantRepository) ListEffective(ctx context.Context, operatorID, orgID string) ([]*permission.ResourcePermission, error) {
-	if cached := r.cache.Get(operatorID, orgID); cached != nil {
+func (r *GrantRepository) ListEffective(ctx context.Context, userID, orgID string) ([]*permission.ResourcePermission, error) {
+	if cached := r.cache.Get(userID, orgID); cached != nil {
 		return cached, nil
 	}
 	query := `
@@ -103,9 +103,9 @@ func (r *GrantRepository) ListEffective(ctx context.Context, operatorID, orgID s
 		SELECT rp.id, rp.org_id, rp.subject_type, rp.subject_id, rp.actions, rp.scope, rp.is_managed, rp.is_inherited, rp.created_at, rp.updated_at
 		FROM resource_permissions rp
 		INNER JOIN device_group_members dgm ON dgm.group_id = rp.subject_id
-		WHERE rp.org_id = ? AND rp.subject_type = 'team' AND dgm.operator_id = ?
+		WHERE rp.org_id = ? AND rp.subject_type = 'team' AND dgm.user_id = ?
 	`
-	rows, err := r.db.QueryContext(ctx, query, orgID, operatorID, orgID, operatorID)
+	rows, err := r.db.QueryContext(ctx, query, orgID, userID, orgID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (r *GrantRepository) ListEffective(ctx context.Context, operatorID, orgID s
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	r.cache.Put(operatorID, orgID, out)
+	r.cache.Put(userID, orgID, out)
 	return out, nil
 }
 
@@ -169,7 +169,7 @@ func (r *GrantRepository) RevokeForSubject(ctx context.Context, subjectType perm
 }
 
 // invalidateAfterMutation clears cache entries affected by a grant mutation.
-// An operator-direct grant invalidates that operator's entries; a team grant
+// A user-direct grant invalidates that user's entries; a team grant
 // invalidates the entire org (since team grants affect every team member).
 func (r *GrantRepository) invalidateAfterMutation(p *permission.ResourcePermission, _ context.Context) {
 	if r.cache == nil {

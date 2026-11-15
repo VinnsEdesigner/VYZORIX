@@ -17,7 +17,7 @@ delivered → cancelled
 - **delivered** — sent to the device via WebSocket or FCM, awaiting response
 - **completed** — device confirmed the command executed successfully
 - **failed** — device reported failure, or the command timed out
-- **cancelled** — operator cancelled the command before completion
+- **cancelled** — user cancelled the command before completion
 
 Terminal states (completed, failed, cancelled) cannot transition further.
 

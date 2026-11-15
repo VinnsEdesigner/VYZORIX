@@ -81,89 +81,7 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   return result;
 };
 
-export const getPostAuthAdminLockoutUnlockOperatorIdUrl = (operatorId: string,) => {
-
-
-
-
-  return `/auth/admin/lockout/unlock/${operatorId}`
-}
-
-/**
- * Clears an operator's account lockout. Requires org-scoped super_admin
- * @summary Unlock account
- */
-export const postAuthAdminLockoutUnlockOperatorId = async (operatorId: string, options?: Parameters<typeof customAxios>[1]): Promise<SuccessResult> => {
-
-  return customAxios<SuccessResult>(getPostAuthAdminLockoutUnlockOperatorIdUrl(operatorId),
-  {
-    ...options,
-    method: 'POST'
-
-
-  }
-);}
-
-
-
-
-
-export const getPostAuthAdminLockoutUnlockOperatorIdMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthAdminLockoutUnlockOperatorId>>, TError,{operatorId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
-): UseMutationOptions<Awaited<ReturnType<typeof postAuthAdminLockoutUnlockOperatorId>>, TError,{operatorId: string}, TContext> => {
-
-const mutationKey = ['postAuthAdminLockoutUnlockOperatorId'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postAuthAdminLockoutUnlockOperatorId>>, {operatorId: string}> = (props) => {
-          const {operatorId} = props ?? {};
-
-          return  postAuthAdminLockoutUnlockOperatorId(operatorId,requestOptions)
-        }
-
-  const onSuccess = (data: Awaited<ReturnType<typeof postAuthAdminLockoutUnlockOperatorId>>, variables: {operatorId: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
-        if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ queryKey: getGetAuthLockoutStatusQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetAuthMeQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetAuthOrganizationsQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetAuthPollVerificationQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetAuthResendVerificationQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetAuthVerifyEmailQueryKey() });
-        }
-        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
-      };
-
-
-
-
-  return  { ...mutationOptions, mutationFn, onSuccess }}
-
-    export type PostAuthAdminLockoutUnlockOperatorIdMutationResult = NonNullable<Awaited<ReturnType<typeof postAuthAdminLockoutUnlockOperatorId>>>
-
-    export type PostAuthAdminLockoutUnlockOperatorIdMutationError = ErrorResponse
-
-    /**
- * @summary Unlock account
- */
-export const usePostAuthAdminLockoutUnlockOperatorId = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthAdminLockoutUnlockOperatorId>>, TError,{operatorId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postAuthAdminLockoutUnlockOperatorId>>,
-        TError,
-        {operatorId: string},
-        TContext
-      > => {
-      const backupQueryClient = useQueryClient();
-      return useMutation(getPostAuthAdminLockoutUnlockOperatorIdMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
-    }
-    export const getPostAuthCancelVerificationUrl = () => {
+export const getPostAuthCancelVerificationUrl = () => {
 
 
 
@@ -348,7 +266,7 @@ export const usePostAuthForgotPassword = <TError = ErrorResponse,
 }
 
 /**
- * Returns the current account lockout status for the authenticated operator
+ * Returns the current account lockout status for the authenticated user
  * @summary Get lockout status
  */
 export const getAuthLockoutStatus = async ( options?: Parameters<typeof customAxios>[1]): Promise<LockoutStatusResult> => {
@@ -457,8 +375,8 @@ export const getPostAuthLoginUrl = () => {
 }
 
 /**
- * Authenticates an operator with email/password and starts a session
- * @summary Operator login
+ * Authenticates a user with email/password and starts a session
+ * @summary User login
  */
 export const postAuthLogin = async (loginRequest: LoginRequest, options?: Parameters<typeof customAxios>[1]): Promise<LoginResult> => {
 
@@ -523,7 +441,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostAuthLoginMutationError = ErrorResponse
 
     /**
- * @summary Operator login
+ * @summary User login
  */
 export const usePostAuthLogin = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthLogin>>, TError,{data: LoginRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
@@ -545,8 +463,8 @@ export const usePostAuthLogin = <TError = ErrorResponse,
 }
 
 /**
- * Authenticates an operator and returns access/refresh tokens instead of a cookie
- * @summary Operator login (token response)
+ * Authenticates a user and returns access/refresh tokens instead of a cookie
+ * @summary User login (token response)
  */
 export const postAuthLoginTokens = async (loginRequest: LoginRequest, options?: Parameters<typeof customAxios>[1]): Promise<LoginWithTokensResult> => {
 
@@ -611,7 +529,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostAuthLoginTokensMutationError = ErrorResponse
 
     /**
- * @summary Operator login (token response)
+ * @summary User login (token response)
  */
 export const usePostAuthLoginTokens = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthLoginTokens>>, TError,{data: LoginRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
@@ -721,8 +639,8 @@ export const usePostAuthLogout = <TError = ErrorResponse,
 }
 
 /**
- * Returns the authenticated operator's profile and organization context
- * @summary Get current operator
+ * Returns the authenticated user's profile and organization context
+ * @summary Get current user
  */
 export const getAuthMe = async ( options?: Parameters<typeof customAxios>[1]): Promise<MeResult> => {
 
@@ -790,7 +708,7 @@ export function useGetAuthMe<TData = Awaited<ReturnType<typeof getAuthMe>>, TErr
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Get current operator
+ * @summary Get current user
  */
 
 export function useGetAuthMe<TData = Awaited<ReturnType<typeof getAuthMe>>, TError = ErrorResponse>(
@@ -807,7 +725,7 @@ export function useGetAuthMe<TData = Awaited<ReturnType<typeof getAuthMe>>, TErr
 
 
 /**
- * @summary Get current operator
+ * @summary Get current user
  */
 export const invalidateGetAuthMe = async (
  queryClient: QueryClient,  options?: InvalidateOptions
@@ -1107,7 +1025,7 @@ export const getPostAuthOrganizationsSelectUrl = () => {
 }
 
 /**
- * Switches the operator's active organization context
+ * Switches the user's active organization context
  * @summary Select organization
  */
 export const postAuthOrganizationsSelect = async (selectOrganizationRequest: SelectOrganizationRequest, options?: Parameters<typeof customAxios>[1]): Promise<SelectOrganizationResult> => {
@@ -1399,8 +1317,8 @@ export const usePostAuthRefresh = <TError = ErrorResponse,
 }
 
 /**
- * Registers a new operator account and sends a verification email
- * @summary Register operator
+ * Registers a new user account and sends a verification email
+ * @summary Register user
  */
 export const postAuthRegister = async (registerRequest: RegisterRequest, options?: Parameters<typeof customAxios>[1]): Promise<RegisterResult> => {
 
@@ -1465,7 +1383,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PostAuthRegisterMutationError = ErrorResponse
 
     /**
- * @summary Register operator
+ * @summary Register user
  */
 export const usePostAuthRegister = <TError = ErrorResponse,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthRegister>>, TError,{data: RegisterRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
@@ -1691,7 +1609,7 @@ export const getPostAuthResendVerificationUrl = () => {
 }
 
 /**
- * Resends the verification email to an operator
+ * Resends the verification email to a user
  * @summary Resend verification email
  */
 export const postAuthResendVerification = async (resendVerificationRequest: ResendVerificationRequest, options?: Parameters<typeof customAxios>[1]): Promise<MessageResult> => {
@@ -1874,7 +1792,7 @@ export const usePostAuthResetPassword = <TError = ErrorResponse,
 }
 
 /**
- * Verifies an operator's email via a token query parameter (alternative to POST)
+ * Verifies a user's email via a token query parameter (alternative to POST)
  * @summary Verify email (GET)
  */
 export const getAuthVerifyEmail = async (params: GetAuthVerifyEmailParams, options?: Parameters<typeof customAxios>[1]): Promise<EmailVerifyResult> => {
@@ -1983,7 +1901,7 @@ export const getPostAuthVerifyEmailUrl = () => {
 }
 
 /**
- * Verifies an operator's email using a verification token
+ * Verifies a user's email using a verification token
  * @summary Verify email
  */
 export const postAuthVerifyEmail = async (emailVerifyRequest: EmailVerifyRequest, options?: Parameters<typeof customAxios>[1]): Promise<EmailVerifyResult> => {

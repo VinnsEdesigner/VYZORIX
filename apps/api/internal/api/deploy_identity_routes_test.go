@@ -15,13 +15,13 @@ import (
 // same registration the server uses, so the static route cannot be shadowed by
 // the /:imei sibling without a failure here.
 
-// seedOperator inserts an operator row so the identity endpoint can resolve a
+// seedUser inserts a user row so the identity endpoint can resolve a
 // name for the API-key path, which carries only an id.
-func seedOperator(t *testing.T, f *deployFixture, id, name, email string) {
+func seedUser(t *testing.T, f *deployFixture, id, name, email string) {
 	t.Helper()
 
 	_, err := f.db.DB().ExecContext(t.Context(),
-		`INSERT INTO operators (id, email, name, password_hash, created_at, updated_at) VALUES (?, ?, ?, 'x', 0, 0)`,
+		`INSERT INTO users (id, email, name, password_hash, created_at, updated_at) VALUES (?, ?, ?, 'x', 0, 0)`,
 		id, email, name)
 	if err != nil {
 		t.Fatalf("seed operator %s: %v", id, err)
@@ -41,16 +41,16 @@ func seedOrganization(t *testing.T, f *deployFixture, id, name, createdBy string
 	}
 }
 
-// TestWhoamiReportsOperatorRoleAndOrg is the happy path: a named operator in an
+// TestWhoamiReportsUserRoleAndOrg is the happy path: a named user in an
 // org gets its name, role and org name back.
-func TestWhoamiReportsOperatorRoleAndOrg(t *testing.T) {
+func TestWhoamiReportsUserRoleAndOrg(t *testing.T) {
 	t.Parallel()
 
 	f := newDeployFixture(t)
-	seedOperator(t, f, deployOp, "Ada Lovelace", "ada@example.test")
+	seedUser(t, f, deployOp, "Ada Lovelace", "ada@example.test")
 	seedOrganization(t, f, deployOrg, "Acme Devices", deployOp)
 
-	r := f.engineFor(memberOperator(organization.RoleAdmin), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleAdmin), deployOrg)
 
 	w := do(t, r, http.MethodGet, "/v1/deploy/whoami", nil, nil)
 	if w.Code != http.StatusOK {
@@ -58,7 +58,7 @@ func TestWhoamiReportsOperatorRoleAndOrg(t *testing.T) {
 	}
 
 	var got struct {
-		OperatorName string `json:"operatorName"`
+		UserName string `json:"userName"`
 		Email        string `json:"email"`
 		Role         string `json:"role"`
 		OrgID        string `json:"orgId"`
@@ -68,8 +68,8 @@ func TestWhoamiReportsOperatorRoleAndOrg(t *testing.T) {
 		t.Fatalf("decode: %v", err)
 	}
 
-	if got.OperatorName != "Ada Lovelace" {
-		t.Errorf("operatorName = %q, want Ada Lovelace", got.OperatorName)
+	if got.UserName != "Ada Lovelace" {
+		t.Errorf("operatorName = %q, want Ada Lovelace", got.UserName)
 	}
 	if got.Email != "ada@example.test" {
 		t.Errorf("email = %q, want ada@example.test", got.Email)
@@ -94,7 +94,7 @@ func TestWhoamiReportsDeviceTier(t *testing.T) {
 		t.Fatalf("set tier: %v", err)
 	}
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
 	w := do(t, r, http.MethodGet, "/v1/deploy/whoami?device="+deployDevice, nil, nil)
 	if w.Code != http.StatusOK {
@@ -123,7 +123,7 @@ func TestWhoamiReportsDeviceTier(t *testing.T) {
 }
 
 // TestWhoamiNamesADeployCredential covers the CI path: a deploy credential has no
-// operator, so it reports itself and the device it is scoped to, and it cannot be
+// user, so it reports itself and the device it is scoped to, and it cannot be
 // pointed at another device.
 func TestWhoamiNamesADeployCredential(t *testing.T) {
 	t.Parallel()
@@ -136,7 +136,7 @@ func TestWhoamiNamesADeployCredential(t *testing.T) {
 	}
 
 	r := f.engineFor(nil, "")
-	// The engineFor injects no operator and no org; a credential sets both itself.
+	// The engineFor injects no user and no org; a credential sets both itself.
 	w := do(t, r, http.MethodGet, "/v1/deploy/whoami", nil, map[string]string{
 		middleware.HeaderDeployCredential: secret,
 	})
@@ -145,7 +145,7 @@ func TestWhoamiNamesADeployCredential(t *testing.T) {
 	}
 
 	var got struct {
-		OperatorName string `json:"operatorName"`
+		UserName string `json:"userName"`
 		OrgID        string `json:"orgId"`
 		Device       *struct {
 			ID string `json:"id"`
@@ -155,8 +155,8 @@ func TestWhoamiNamesADeployCredential(t *testing.T) {
 		t.Fatalf("decode: %v", err)
 	}
 
-	if got.OperatorName != "deploy credential" {
-		t.Errorf("operatorName = %q, want deploy credential", got.OperatorName)
+	if got.UserName != "deploy credential" {
+		t.Errorf("operatorName = %q, want deploy credential", got.UserName)
 	}
 	if got.OrgID != deployOrg {
 		t.Errorf("orgId = %q, want %q", got.OrgID, deployOrg)
@@ -175,7 +175,7 @@ func TestWhoamiNamesADeployCredential(t *testing.T) {
 	}
 }
 
-// TestWhoamiRefusesAnAnonymousCall guards the auth boundary: no operator and no
+// TestWhoamiRefusesAnAnonymousCall guards the auth boundary: no user and no
 // credential is a 401.
 func TestWhoamiRefusesAnAnonymousCall(t *testing.T) {
 	t.Parallel()
@@ -192,14 +192,14 @@ func TestWhoamiRefusesAnAnonymousCall(t *testing.T) {
 // TestWhoamiIsNotReadAsADeviceID is the regression for the route seam: /whoami is
 // a static sibling of /:imei, and the static must win. If it did not, whoami would
 // be read as the device id "whoami" and answered 200 with an empty identity or
-// refused as not-in-org — never the operator's own name.
+// refused as not-in-org — never the user's own name.
 func TestWhoamiIsNotReadAsADeviceID(t *testing.T) {
 	t.Parallel()
 
 	f := newDeployFixture(t)
-	seedOperator(t, f, deployOp, "Ada Lovelace", "ada@example.test")
+	seedUser(t, f, deployOp, "Ada Lovelace", "ada@example.test")
 
-	r := f.engineFor(memberOperator(organization.RoleOperator), deployOrg)
+	r := f.engineFor(memberUser(organization.RoleOperator), deployOrg)
 
 	w := do(t, r, http.MethodGet, "/v1/deploy/whoami", nil, nil)
 	if w.Code != http.StatusOK {
@@ -207,13 +207,13 @@ func TestWhoamiIsNotReadAsADeviceID(t *testing.T) {
 	}
 
 	var got struct {
-		OperatorName string `json:"operatorName"`
+		UserName string `json:"userName"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
 
-	if got.OperatorName != "Ada Lovelace" {
-		t.Fatalf("operatorName = %q: whoami was read as a device id", got.OperatorName)
+	if got.UserName != "Ada Lovelace" {
+		t.Fatalf("operatorName = %q: whoami was read as a device id", got.UserName)
 	}
 }

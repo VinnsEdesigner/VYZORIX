@@ -14,9 +14,9 @@ export interface APIKey {
   key_prefix?: string;
   last_request_at?: number;
   name?: string;
-  operator_id?: string;
   request_count?: number;
   revoked_at?: number;
   scope?: string;
   updated_at?: number;
+  user_id?: string;
 }

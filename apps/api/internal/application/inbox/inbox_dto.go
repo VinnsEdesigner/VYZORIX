@@ -39,7 +39,7 @@ type InboxEntryResponse struct {
 	FCMToken          string `json:"fcmToken"`
 	DeviceClass       string `json:"deviceClass,omitempty"`
 	Status            string `json:"status"`
-	OperatorID        string `json:"operatorId,omitempty"`
+	UserID        string `json:"userId,omitempty"`
 	DeviceName        string `json:"deviceName,omitempty"`
 	IMEI              string `json:"imei"`
 	Notes             string `json:"notes,omitempty"`

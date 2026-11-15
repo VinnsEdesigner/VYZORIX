@@ -24,7 +24,7 @@ type StreamPublisher interface {
 	Publish(channel string, msg map[string]interface{})
 }
 
-// Annotator marks alert transitions on the fleet timeline so operators can
+// Annotator marks alert transitions on the fleet timeline so users can
 // correlate rollouts with failure spikes.
 type Annotator interface {
 	Annotate(ctx context.Context, rule *alert.Rule, transition *alert.Transition) error

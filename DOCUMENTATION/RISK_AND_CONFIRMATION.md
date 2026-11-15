@@ -48,7 +48,7 @@ X-CSRF-Token: ...
 
 The handler checks if the command actually requires confirmation (low-risk commands get `confirmation_required: false`). If it does, it creates a `PendingConfirmation` with:
 - A random token (UUID)
-- Scoped to the operator, command, and device
+- Scoped to the user, command, and device
 - A TTL from the command's `ConfirmationTTL` (5 minutes for reboot, 2 minutes for factory reset)
 
 Response:
@@ -75,7 +75,7 @@ The handler's `authorizeCommand` method calls `consumeConfirmation`, which calls
 - Token exists in the database
 - Not expired
 - Not already consumed
-- Matches the operator, command, and device
+- Matches the user, command, and device
 
 If all checks pass, the token is atomically marked consumed (via `UPDATE ... WHERE consumed_at IS NULL AND expires_at > ?`) and the command proceeds. If any check fails, the handler returns 425 with a specific message (expired, already used, mismatched, not found).
 
@@ -96,7 +96,7 @@ For critical-tier commands (`device.factory_reset`), the evaluator requires both
 
 Every command execution attempt is audited. The `Logger.CommandExecuted` method writes an audit entry with:
 
-- The operator who initiated it
+- The user who initiated it
 - The device, command, and dispatch ID
 - The risk tier
 - The result (success, blocked, failure)
@@ -114,7 +114,7 @@ The `command_confirmations` table (migration #58):
 ```sql
 CREATE TABLE command_confirmations (
   token       TEXT PRIMARY KEY,
-  operator_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
   org_id      TEXT,
   command     TEXT NOT NULL,
   device_id   TEXT,
@@ -125,7 +125,7 @@ CREATE TABLE command_confirmations (
 );
 ```
 
-Indexes on `operator_id, command` (for lookups) and `expires_at` (for cleanup).
+Indexes on `user_id, command` (for lookups) and `expires_at` (for cleanup).
 
 ## What was removed
 

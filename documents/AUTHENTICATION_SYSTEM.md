@@ -382,7 +382,7 @@ apps/web/src/
 > which the domain mappers convert to camelCase TypeScript types.
 
 ```typescript
-// Operator types (maps from GET /v1/auth/me → OperatorResponse)
+// User types (maps from GET /v1/auth/me → OperatorResponse)
 export interface AuthUser {
   id: string;
   email: string;
@@ -463,7 +463,7 @@ export interface MFAVerifyResponse {
   accessToken?: string;
   refreshToken?: string;
   expiresAt?: number;
-  operator?: {
+  user?: {
     id: string;
     email: string;
     name: string;

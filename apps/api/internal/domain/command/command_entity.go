@@ -110,7 +110,7 @@ const (
 
 	// TypeShellExec runs a single command on the device and returns its output.
 	// It is stateless: one command in, one result out, no session. Use the PTY
-	// session flow (see the operator terminal endpoint) for an interactive shell.
+	// session flow (see the user terminal endpoint) for an interactive shell.
 	//
 	// There is deliberately no server-side handler for this type, and adding one
 	// would be a design error. The server is a command plane, not an executor:
@@ -140,7 +140,7 @@ const (
 	TypeAppStop = "APP_STOP"
 	// TypeDeviceConfig delivers the device's signed configuration. It is not a
 	// command the device executes: it is the settings the server resolved once the
-	// operator claimed the device, and the device applies them and reports ready.
+	// user claimed the device, and the device applies them and reports ready.
 	// phase C and.
 	TypeDeviceConfig = "DEVICE_CONFIG"
 )

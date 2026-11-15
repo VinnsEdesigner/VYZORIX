@@ -18,10 +18,10 @@ export interface LoginResult {
   mfa_session?: string;
   name?: string;
   needs_organization?: boolean;
-  operator_id?: string;
   organizations?: OrganizationInfo[];
   requires_mfa?: boolean;
   retry_after?: number;
   selected_organization?: OrganizationInfo;
   signing_key?: string;
+  user_id?: string;
 }
