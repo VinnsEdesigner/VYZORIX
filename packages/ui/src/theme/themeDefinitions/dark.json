@@ -1,0 +1,35 @@
+{
+  "name": "Vyzorix Dark",
+  "id": "dark",
+  "colors": {
+    "mode": "dark",
+    "primary": { "main": "#e11d48" },
+    "background": {
+      "canvas": "#0d0d0d",
+      "page": "#0d0d0d",
+      "primary": "#171717",
+      "secondary": "#262626",
+      "elevated": "#262626"
+    },
+    "text": {
+      "primary": "#e5e5e5",
+      "secondary": "#a3a3a3",
+      "disabled": "#6b6b6b",
+      "link": "#fb7185",
+      "maxContrast": "#ffffff"
+    },
+    "border": {
+      "weak": "rgba(229, 229, 229, 0.12)",
+      "medium": "rgba(229, 229, 229, 0.20)",
+      "strong": "rgba(229, 229, 229, 0.30)"
+    },
+    "accent": { "main": "#f43f5e" },
+    "error": { "main": "#e11d48" },
+    "success": { "main": "#22c55e" },
+    "warning": { "main": "#f59e0b" },
+    "gradients": {
+      "brandHorizontal": "linear-gradient(270deg, #e11d48 0%, #fb7185 100%)",
+      "brandVertical": "linear-gradient(0.01deg, #e11d48 0.01%, #fb7185 99.99%)"
+    }
+  }
+}

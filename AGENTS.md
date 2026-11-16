@@ -144,9 +144,9 @@
 ## Repository layout
 - `apps/api/` — Go server (go.mod). Does NOT consume the TS SDK.
 - `apps/VyzoriX_web/` — Vite + TanStack Start web app. Consumes `@vyzorix/api-client` (workspace symlink) for connectivity only.
-- `apps/VyzoriX_mobile/` — React Native app.
 - `packages/API_Client/` — `@vyzorix/api-client` TS SDK (source-only, consumed via workspace, no published build).
-- `packages/config/`, `packages/ui/` — shared workspace packages.
+- `packages/ui/` — `@vyzorix/ui` theme system (Emotion) and shared components.
+- `tooling/` — repo scripts and shared config: `tooling/vite/config.mjs` (vite helper) and `tooling/eslint/architecture.mjs` (the `vyzo` layered-architecture ESLint plugin).
 
 ## API_Client (`packages/API_Client`) conventions
 - **TypeScript**: `npx tsc --noEmit --ignoreDeprecations 6.0` (baseUrl is deprecated in TS 7.0; the `--ignoreDeprecations 6.0` flag is REQUIRED or tsc errors). Internal path alias `@/*` → `./src/*` (defined in the package's own tsconfig, NOT in the web app's tsconfig). **Both `tsc --noEmit --ignoreDeprecations 6.0` and `eslint src` are 0-error green** as of 2026-08-15.
@@ -167,7 +167,7 @@
 - pnpm workspace (`pnpm-workspace.yaml`); root `package.json` workspaces `apps/*` + `packages/*`.
 - When typechecking the web app, pre-existing `@/domain/...` resolution errors from API_Client source are expected (web tsconfig `@/*` → its own `./src/*`, not API_Client's). These are NOT caused by SDK changes.
 - Corepack prompts block `pnpm`: always prefix `COREPACK_ENABLE_DOWNLOAD_PROMPT=0` when invoking pnpm.
-- Web app typecheck: `./node_modules/.bin/tsc --noEmit` from `apps/VyzoriX_web` (strict mode, `noUnusedLocals`/`noUnusedParameters`/`noUncheckedIndexedAccess` on). `tsc` is the authoritative check. The webapp's `eslint.config.js` imports `@vyzorix/config/dist/eslint/architecture-index.js` (the BUILT dist, not source `.ts`) — `packages/config`'s `prepare` script (`tsc --build`) emits this on `pnpm install`, so `eslint .` from `apps/VyzoriX_web` now starts and runs green (exit 0). (Earlier note about eslint failing to start is obsolete — the config was switched to the dist import.)
+- Web app typecheck: `./node_modules/.bin/tsc --noEmit` from `apps/VyzoriX_web` (strict mode, `noUnusedLocals`/`noUnusedParameters`/`noUncheckedIndexedAccess` on). `tsc` is the authoritative check. The webapp's `eslint.config.js` imports the `vyzo` plugin from `tooling/eslint/architecture.mjs` (plain JS, no build step).
 
 ## Frontend stores layer (`apps/VyzoriX_web/src/stores/`)
 - **Architecture decision (3 conflicts resolved)**:
@@ -257,8 +257,7 @@ Bugs surfaced by running the full request flow against Turso cloud and fixed. Al
 - **Mocking @vyzorix/api-client**: stores import authContext/initConnectivityMonitor at MODULE LOAD time (module-level createStore calls authContext.getState() in buildSnapshot). Mocks MUST be hoisted via vi.hoisted() and provide ALL transitively-needed exports (authContext with getState/getLockoutState/onChange/setFromLoginWithTokens/etc, initConnectivityMonitor returning a monitor, getConnectivityMonitor, getCurrentOrganizationId). Missing any -> [vitest] No "X" export is defined on the mock at store init.
 - **Throwing hooks**: with testing-library/react v16 + React 19, result.error is NOT populated when a hook throws during render. Wrap hook call in try/catch inside renderHook and return the caught error as the result value.
 - **use-connectivity.ts**: uses useShallow from zustand/react/shallow to prevent infinite re-renders when selecting multiple fields from useConnectivityStore.
-- **vite.config.ts**: cast plugins array `as never` to bypass duplicate-vite-instance type mismatch (two vite@7.3.5 instances exist due to lightningcss 1.32 vs 1.33 peer deps).
-- **VyzorixViteConfig** (packages/config/src/vite/index.ts): MUST keep the tanstackStart? property — packages/config/src/presets/ssr.ts uses it.
+- **tooling/vite/config.mjs**: the `defineViteConfig` helper (proxy map + sourcemaps). The app casts the plugins array `as never` to bypass a duplicate-vite-instance type mismatch (two vite@7.3.5 instances exist due to lightningcss 1.32 vs 1.33 peer deps).
 - **Type fixtures**: PresetCommandType values are uppercase ("FORCE_SPEAKER", "RESET_AUDIO_HAL", etc). OffsetPagination requires a hasMore: boolean field. DeviceSettings has no `name` property (use fcmEnabled, thresholds, etc).
 - **Test script**: "test": "vitest run" in webapp package.json.
 

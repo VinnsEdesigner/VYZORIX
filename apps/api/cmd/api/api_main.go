@@ -140,7 +140,7 @@ func main() {
 		diagnosticsSvc := diagnosticsapp.NewService(diagnosticsRepo, deviceRepo, deps.Hub, cfg.DiagnosticsConfig)
 
 		// Create settings-related services for GraphQL.
-		settingsService := auth.NewClientSettingsService(deps.UserRepo)
+		settingsService := auth.NewClientSettingsService(deps.UserRepo, nil)
 		notificationSvc := appuser.NewNotificationService(deps.UserRepo)
 		webhookClient := infrawebhook.NewClient(10 * time.Second)
 

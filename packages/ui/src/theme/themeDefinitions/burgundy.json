@@ -1,0 +1,35 @@
+{
+  "name": "Burgundy",
+  "id": "burgundy",
+  "colors": {
+    "mode": "dark",
+    "primary": { "main": "#8b1e3f" },
+    "background": {
+      "canvas": "#170a10",
+      "page": "#170a10",
+      "primary": "#241019",
+      "secondary": "#321522",
+      "elevated": "#3f1b2b"
+    },
+    "text": {
+      "primary": "#f2e6ea",
+      "secondary": "#c99aa8",
+      "disabled": "#9a6f7d",
+      "link": "#e8a0b4",
+      "maxContrast": "#ffffff"
+    },
+    "border": {
+      "weak": "rgba(242, 230, 234, 0.12)",
+      "medium": "rgba(242, 230, 234, 0.20)",
+      "strong": "rgba(242, 230, 234, 0.30)"
+    },
+    "accent": { "main": "#b03052" },
+    "error": { "main": "#c02638" },
+    "success": { "main": "#1f7a45" },
+    "warning": { "main": "#9c6212" },
+    "gradients": {
+      "brandHorizontal": "linear-gradient(270deg, #8b1e3f 0%, #e8a0b4 100%)",
+      "brandVertical": "linear-gradient(0.01deg, #8b1e3f 0.01%, #e8a0b4 99.99%)"
+    }
+  }
+}

@@ -10,6 +10,7 @@ import (
 	configversionapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/configversion"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/configversion"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/theme"
 )
 
 // OrganizationSettingsService handles organization settings operations.
@@ -41,6 +42,26 @@ func NewOrganizationSettingsService(
 // SettingsRepo returns the settings repository for use by other services.
 func (s *OrganizationSettingsService) SettingsRepo() organization.OrganizationSettingsRepository {
 	return s.settingsRepo
+}
+
+// OrgTheme returns the organisation's default theme id, or "" when the
+// organisation has no settings row or has cleared its theme.
+//
+// Satisfies the OrgThemeSource interface the auth settings service resolves the
+// theme cascade against. A missing settings row is not an error here: it means
+// the organisation has no default, so the cascade falls through.
+func (s *OrganizationSettingsService) OrgTheme(ctx context.Context, orgID string) (string, error) {
+	if orgID == "" {
+		return "", nil
+	}
+	settings, err := s.settingsRepo.FindByOrganizationID(ctx, orgID)
+	if err != nil {
+		if errors.Is(err, organization.ErrSettingsNotFound) {
+			return "", nil
+		}
+		return "", err
+	}
+	return settings.Theme, nil
 }
 
 // CreateSettings creates organization settings with defaults for a new organization.
@@ -129,6 +150,13 @@ func (s *OrganizationSettingsService) UpdateSettings(ctx context.Context, orgID 
 		if err := settings.UpdateThresholds(req.DefaultThresholds); err != nil {
 			return nil, err
 		}
+	}
+	// Validate the org theme against the allowlist; an empty value clears it.
+	if req.Theme != nil {
+		if !theme.IsValid(*req.Theme) {
+			return nil, organization.ErrInvalidTheme
+		}
+		settings.Theme = *req.Theme
 	}
 
 	if err := s.settingsRepo.Update(ctx, settings); err != nil {

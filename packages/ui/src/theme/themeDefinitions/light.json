@@ -1,0 +1,35 @@
+{
+  "name": "Vyzorix Light",
+  "id": "light",
+  "colors": {
+    "mode": "light",
+    "primary": { "main": "#e11d48" },
+    "background": {
+      "canvas": "#fafafa",
+      "page": "#ffffff",
+      "primary": "#ffffff",
+      "secondary": "#f5f5f5",
+      "elevated": "#ffffff"
+    },
+    "text": {
+      "primary": "#171717",
+      "secondary": "#525252",
+      "disabled": "#a3a3a3",
+      "link": "#be123c",
+      "maxContrast": "#000000"
+    },
+    "border": {
+      "weak": "rgba(23, 23, 23, 0.12)",
+      "medium": "rgba(23, 23, 23, 0.20)",
+      "strong": "rgba(23, 23, 23, 0.30)"
+    },
+    "accent": { "main": "#f43f5e" },
+    "error": { "main": "#dc2626" },
+    "success": { "main": "#16a34a" },
+    "warning": { "main": "#d97706" },
+    "gradients": {
+      "brandHorizontal": "linear-gradient(90deg, #e11d48 0%, #fb7185 100%)",
+      "brandVertical": "linear-gradient(0.01deg, #e11d48 0.01%, #fb7185 99.99%)"
+    }
+  }
+}

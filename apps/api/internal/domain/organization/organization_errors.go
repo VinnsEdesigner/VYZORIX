@@ -68,4 +68,7 @@ var (
 
 	// ErrSettingsNotFound is returned when organization settings are not found.
 	ErrSettingsNotFound = errors.New("organization settings not found")
+	// ErrInvalidTheme is returned when an organisation theme id is not in the
+	// allowlist. Mirrors the user-preference validation.
+	ErrInvalidTheme = errors.New("invalid theme")
 )

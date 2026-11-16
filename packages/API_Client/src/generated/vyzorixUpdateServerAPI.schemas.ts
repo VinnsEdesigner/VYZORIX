@@ -1284,6 +1284,7 @@ export interface OrganizationSettingsResult {
   defaultThresholds?: UserThresholds;
   id?: string;
   organizationId?: string;
+  theme?: string;
   timezone?: string;
   updatedAt?: string;
 }
@@ -1298,6 +1299,7 @@ export type PreferencesResultPreferences = {[key: string]: unknown};
 
 export interface PreferencesResult {
   preferences?: PreferencesResultPreferences;
+  theme?: string;
 }
 
 export interface RefreshTokenRequest {
@@ -1635,6 +1637,7 @@ export interface UpdateOrganizationSettingsRequest {
   alertCooldownMinutes?: number;
   dateFormat?: string;
   defaultThresholds?: UserThresholds;
+  theme?: string;
   timezone?: string;
 }
 

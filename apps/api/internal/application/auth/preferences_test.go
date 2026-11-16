@@ -27,25 +27,100 @@ func setupPrefsTestDB(t *testing.T) (*storage.UserRepository, *sql.DB) {
 func TestGetPreferences_NoData_ReturnsDefaults(t *testing.T) {
 	repo, db := setupPrefsTestDB(t)
 	defer db.Close()
-	svc := NewClientSettingsService(repo)
+	svc := NewClientSettingsService(repo, nil)
 	ctx := context.Background()
 
 	prefs, err := svc.GetPreferences(ctx, "op-nonexistent")
 	if err != nil {
 		t.Fatalf("expected nil error for missing operator, got: %v", err)
 	}
-	if prefs["theme"] != "dark" {
-		t.Errorf("expected default theme 'dark', got %v", prefs["theme"])
+	// The theme is deliberately NOT defaulted here: an absent theme means
+	// "inherit", so the cascade can fall through to the org or system default.
+	// Defaulting it would make every user look like they chose dark.
+	if _, exists := prefs["theme"]; exists {
+		t.Errorf("theme must be absent when unset, got %v", prefs["theme"])
 	}
 	if prefs["language"] != "en" {
 		t.Errorf("expected default language 'en', got %v", prefs["language"])
 	}
 }
 
+// fakeOrgTheme is a stub OrgThemeSource for the cascade tests.
+type fakeOrgTheme struct {
+	theme string
+	err   error
+}
+
+func (f fakeOrgTheme) OrgTheme(_ context.Context, _ string) (string, error) {
+	return f.theme, f.err
+}
+
+func TestResolveTheme_Cascade(t *testing.T) {
+	tests := []struct {
+		name    string
+		userSet string // "" = leave unset
+		orgID   string
+		org     OrgThemeSource
+		want    string
+	}{
+		{name: "user wins over org", userSet: "light", orgID: "org-1", org: fakeOrgTheme{theme: "tron"}, want: "light"},
+		{name: "org used when user unset", orgID: "org-1", org: fakeOrgTheme{theme: "tron"}, want: "tron"},
+		{name: "system default when both unset", orgID: "org-1", org: fakeOrgTheme{theme: ""}, want: DefaultTheme},
+		{name: "no org selected falls to default", want: DefaultTheme},
+		{name: "no org source falls to default", orgID: "org-1", want: DefaultTheme},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			repo, db := setupPrefsTestDB(t)
+			defer db.Close()
+			svc := NewClientSettingsService(repo, tc.org)
+			ctx := context.Background()
+
+			if tc.userSet != "" {
+				if _, err := svc.UpdatePreferences(ctx, "op-1", map[string]any{"theme": tc.userSet}); err != nil {
+					t.Fatalf("seed user theme: %v", err)
+				}
+			}
+
+			got, err := svc.ResolveTheme(ctx, "op-1", tc.orgID)
+			if err != nil {
+				t.Fatalf("ResolveTheme: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("ResolveTheme = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestResolveTheme_ClearingUserThemeFallsThroughToOrg(t *testing.T) {
+	repo, db := setupPrefsTestDB(t)
+	defer db.Close()
+	svc := NewClientSettingsService(repo, fakeOrgTheme{theme: "burgundy"})
+	ctx := context.Background()
+
+	// Set then clear: an empty string must delete the key, not store "".
+	if _, err := svc.UpdatePreferences(ctx, "op-1", map[string]any{"theme": "light"}); err != nil {
+		t.Fatalf("set: %v", err)
+	}
+	if _, err := svc.UpdatePreferences(ctx, "op-1", map[string]any{"theme": ""}); err != nil {
+		t.Fatalf("clear: %v", err)
+	}
+
+	got, err := svc.ResolveTheme(ctx, "op-1", "org-1")
+	if err != nil {
+		t.Fatalf("ResolveTheme: %v", err)
+	}
+	if got != "burgundy" {
+		t.Errorf("after clearing the user theme, expected the org default, got %q", got)
+	}
+}
+
 func TestUpdatePreferences_ThenGet(t *testing.T) {
 	repo, db := setupPrefsTestDB(t)
 	defer db.Close()
-	svc := NewClientSettingsService(repo)
+	svc := NewClientSettingsService(repo, nil)
 	ctx := context.Background()
 
 	updates := map[string]any{
@@ -75,7 +150,7 @@ func TestUpdatePreferences_ThenGet(t *testing.T) {
 func TestUpdatePreferences_DeleteCustomKey(t *testing.T) {
 	repo, db := setupPrefsTestDB(t)
 	defer db.Close()
-	svc := NewClientSettingsService(repo)
+	svc := NewClientSettingsService(repo, nil)
 	ctx := context.Background()
 
 	_, _ = svc.UpdatePreferences(ctx, "op-1", map[string]any{"custom_key": "custom_value"})

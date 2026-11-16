@@ -23,6 +23,10 @@ type OrganizationSettings struct {
 	Timezone             string      `json:"timezone"`
 	DateFormat           string      `json:"dateFormat"`
 	AlertCooldownMinutes int         `json:"alertCooldownMinutes"`
+	// Theme is the organisation's default UI theme id. Members without a
+	// personal override inherit it; an empty value falls through to the
+	// system default. The settings handler validates it against the allowlist.
+	Theme string `json:"theme"`
 }
 
 // Thresholds represents threshold values for alerts.
@@ -56,6 +60,7 @@ func NewOrganizationSettings(organizationID string) *OrganizationSettings {
 		Timezone:             "UTC",
 		DateFormat:           "YYYY-MM-DD",
 		AlertCooldownMinutes: 15,
+		Theme:                "",
 		DefaultThresholds:    DefaultThresholds(),
 		CreatedAt:            now,
 		UpdatedAt:            now,
@@ -107,6 +112,7 @@ type UpdateOrganizationSettingsRequest struct {
 	DateFormat           *string     `json:"dateFormat,omitempty"`
 	AlertCooldownMinutes *int        `json:"alertCooldownMinutes,omitempty"`
 	DefaultThresholds    *Thresholds `json:"defaultThresholds,omitempty"`
+	Theme                *string     `json:"theme,omitempty"`
 }
 
 // UpdateThresholdsRequest represents a request to update only thresholds.

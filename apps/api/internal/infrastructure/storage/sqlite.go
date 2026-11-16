@@ -592,6 +592,10 @@ var migrations = []Migration{
 	// The user's deployment-wide role: the instance axis, orthogonal to the org
 	// role ladder. Additive, never a superset — see permission.EffectiveScopes.
 	{Apply: migrateAddInstanceRole, Name: "add_instance_role", Version: 86},
+	// The organisation's default UI theme id. A separate migration because the
+	// organization_settings table already exists on deployed databases, so the
+	// CREATE TABLE in 041 is a no-op there and cannot add a column.
+	{Apply: migrateAddOrgSettingsTheme, Name: "add_org_settings_theme", Version: 87},
 }
 
 // runMigrations applies all pending migrations.

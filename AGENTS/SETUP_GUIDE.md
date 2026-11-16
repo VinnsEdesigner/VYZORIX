@@ -31,12 +31,9 @@ go version
 ### 3. Build the Project
 
 ```bash
-# Build config package
-cd /workspace/project/VYZORIX
-pnpm --filter @vyzorix/config run build
-
 # Build web app (generates both client + SSR server entries)
-pnpm --filter @vyzorix/web run build
+cd /workspace/project/VYZORIX
+pnpm --filter @vyzorix/vyoriX run build
 
 # Copy assets to Go public directory
 cp -r apps/web/dist/client/* apps/api/public/

@@ -9,4 +9,5 @@ import type { PreferencesResultPreferences } from './preferencesResultPreference
 
 export interface PreferencesResult {
   preferences?: PreferencesResultPreferences;
+  theme?: string;
 }

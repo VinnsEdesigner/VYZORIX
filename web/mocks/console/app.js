@@ -1,4 +1,4 @@
-/* app.js — Vyzorix UI mock (Grafana-style). Plain JS, no build step.
+/* app.js — Vyzorix UI mock. Plain JS, no build step.
  *
  * Views mirror the real VYZORIX surface (REST + GraphQL):
  * dashboard, devices, commands, telemetry, updates (OTA), alerts, logs,
@@ -425,7 +425,7 @@ const APPS = [
 ];
 
 // ---------------------------------------------------------------- home
-// Modelled on Grafana's logged-in homepage (public/app/features/home):
+// The logged-in homepage layout:
 //   HomePageFrame  -> time-based greeting + "Welcome to <edition>." subtitle
 //   HeaderActions  -> "Firing alerts" / "Active incidents" pills
 //   HomeGrid(2)    -> a Dashboards tabbed card + an Alerts & incidents tabbed card
@@ -471,7 +471,7 @@ const HOME_ALERT_TABS = [
 ];
 
 const SESSIONS = [
-  { active: true,  seen: "Now",          loggedOn: "September 12, 2026", ip: "10.4.2.19",    browser: "Chrome 153", os: "Linux",           idp: "grafana" },
+  { active: true,  seen: "Now",          loggedOn: "September 12, 2026", ip: "10.4.2.19",    browser: "Chrome 153", os: "Linux",           idp: "vyzorix" },
   { active: false, seen: "2 hours ago",  loggedOn: "September 12, 2026", ip: "10.4.2.51",    browser: "Safari 18",  os: "macOS 15.1",    idp: "google" },
   { active: false, seen: "Yesterday",    loggedOn: "September 11, 2026", ip: "203.0.113.7",  browser: "Firefox 132", os: "Windows 11",   idp: "github" },
   { active: false, seen: "3 days ago",   loggedOn: "September 9, 2026",  ip: "198.51.100.24", browser: "Chrome 152", os: "Android 15",   idp: "google" },
@@ -479,7 +479,7 @@ const SESSIONS = [
 
 const KEYS = [
   { id: "key_9c2a", client: "ci-deploy",       scopes: "devices:write, ota:read", created: "2026-08-01", last: "12:38", status: "active" },
-  { id: "key_7b10", client: "grafana-readonly", scopes: "metrics:read",            created: "2026-07-14", last: "12:41", status: "active" },
+  { id: "key_7b10", client: "readonly", scopes: "metrics:read",            created: "2026-07-14", last: "12:41", status: "active" },
   { id: "key_5d33", client: "legacy-sync",     scopes: "devices:read",            created: "2026-03-02", last: "—",     status: "revoked" },
 ];
 
@@ -514,7 +514,7 @@ const VIEWS = {
     const firing = HOME_ALERT_TABS[0].items.length;
     const incidents = HOME_ALERT_TABS[1].items.length;
 
-    // A tabbed card, exactly like Grafana's HomeTabbedCard: a tab bar over a
+    // A tabbed card: a tab bar over a
     // fixed-height body, plus a footer that links out.
     const tabbedCard = (title, icon, tabs, idPrefix, footer) => `
       <section class="panel g-card">
@@ -1525,7 +1525,7 @@ const VIEWS = {
             <div class="panel">
               <div class="panel__head"><span class="panel__title">Preferences</span><span class="panel__subtitle">Your org &amp; UI defaults</span></div>
               <div class="panel__body">
-                ${field("Interface theme", "Appearance of the Grafana UI — built-in and experimental themes", themeSelect())}
+                ${field("Interface theme", "Appearance of the console — built-in themes", themeSelect())}
                 ${field("Home Dashboard", "Landing dashboard when you sign in", select("pref-home", ["Default dashboard", "None", "Overview", "OTA adoption", "Alert activity"], "Overview"))}
                 ${field("Timezone", "Used for dashboards and alert timestamps", select("pref-timezone", ["Default", "Browser time", "UTC", "Europe/London", "America/New_York"], "Browser time"))}
                 ${field("Week start", "First day of the week", select("pref-week", ["Default", "Monday", "Sunday", "Saturday"], "Monday"))}
@@ -1559,7 +1559,7 @@ const VIEWS = {
       </div>`;
   },
 
-  // ----- Grafana "Administration" sub-pages -----
+  // ----- Administration sub-pages -----
 
   "admin-defaultprefs"() {
     return `
@@ -1597,7 +1597,7 @@ const VIEWS = {
           <div class="empty-state">
             <div class="empty-state__icon">${plugIcon()}</div>
             <div class="empty-state__title">No repositories yet</div>
-            <div class="empty-state__desc">Connect a Git repository to manage your Grafana resources as code.</div>
+            <div class="empty-state__desc">Connect a Git repository to manage your resources as code.</div>
             <button class="btn btn--primary">Connect repository</button>
           </div>
         </div></div>
@@ -1623,15 +1623,15 @@ const VIEWS = {
 
   "admin-users"() {
     const USERS = [
-      { login: "oscar.porter", email: "op@acme.io", name: "Oscar Porter", orgs: "Acme Ops", role: "Admin", last: "12:41", origin: "Grafana", prov: false },
+      { login: "oscar.porter", email: "op@acme.io", name: "Oscar Porter", orgs: "Acme Ops", role: "Admin", last: "12:41", origin: "Local", prov: false },
       { login: "nina.grzelak", email: "nina@acme.io", name: "Nina Grzelak", orgs: "Acme Ops", role: "Editor", last: "2 hours ago", origin: "Google", prov: false },
       { login: "sam.okafor", email: "sam@acme.io", name: "Sam Okafor", orgs: "Acme Ops · Northwind", role: "Viewer", last: "Yesterday", origin: "GitHub", prov: true },
-      { login: "lee.chan", email: "lee@globex.io", name: "Lee Chan", orgs: "Globex", role: "Viewer", last: "12 days ago", origin: "Grafana", prov: false },
+      { login: "lee.chan", email: "lee@globex.io", name: "Lee Chan", orgs: "Globex", role: "Viewer", last: "12 days ago", origin: "Local", prov: false },
       { login: "svc-ci", email: "—", name: "ci pipeline", orgs: "Acme Ops", role: "Editor", last: "Never", origin: "Service account", prov: true },
     ];
     return `
       <div class="page-head">
-        <div><h1>Users</h1><p>Manage users in Grafana</p></div>
+        <div><h1>Users</h1><p>Manage console users</p></div>
         <div class="page-head__actions"><button class="btn btn--primary">New user</button></div>
       </div>
       <div class="panel">
@@ -1661,12 +1661,12 @@ const VIEWS = {
   "admin-serviceaccounts"() {
     const SAS = [
       { name: "ci-deploy", id: 12, roles: "Editor", tokens: 2, created: "2026-06-01" },
-      { name: "grafana-readonly", id: 9, roles: "Viewer", tokens: 1, created: "2026-07-14" },
+      { name: "readonly", id: 9, roles: "Viewer", tokens: 1, created: "2026-07-14" },
       { name: "legacy-sync", id: 4, roles: "Editor, Viewer", tokens: 0, created: "2026-03-02" },
     ];
     return `
       <div class="page-head">
-        <div><h1>Service accounts</h1><p>Use service accounts to run automated workloads in Grafana</p></div>
+        <div><h1>Service accounts</h1><p>Use service accounts to run automated workloads</p></div>
         <div class="page-head__actions"><button class="btn btn--primary">Add service account</button></div>
       </div>
       <div class="panel">
@@ -1696,7 +1696,7 @@ const VIEWS = {
 
   "admin-auth"() {
     const PROVIDERS = [
-      ["Grafana.com", "Sign in with a Grafana.com / Grafana Cloud account", true],
+      ["SSO", "Sign in with your organisation account", true],
       ["GitHub", "Use GitHub OAuth for authentication", false],
       ["GitLab", "Use GitLab OAuth for authentication", false],
       ["Google", "Use Google OAuth for authentication", true],
@@ -1793,7 +1793,7 @@ function switchEl(id, on) {
   return `<button class="switch${on ? " is-on" : ""}" id="${id}" role="switch" aria-checked="${on}"><span class="switch__dot"></span></button>`;
 }
 
-// Grafana's selectable themes (registry.ts defaults + getSelectableThemes extras).
+// The selectable themes (mirrors the registry in packages/ui).
 function themeSelect() {
   const builtIn = ["System preference", "Dark", "Light"];
   const extras = [
@@ -2441,7 +2441,7 @@ function mountCharts(view) {
   }
 
   if (view === "home") {
-    // Each home tabbed card switches its own tab bar + body, like Grafana's
+    // Each home tabbed card switches its own tab bar + body, like the
     // HomeTabbedCard.
     document.querySelectorAll("[data-g-tabs]").forEach((bar) => {
       bar.addEventListener("click", (e) => {
@@ -2873,7 +2873,7 @@ function mountCharts(view) {
       height: 220, unit: "",
       data: [
         { label: "ci-deploy", value: 6200, color: "#fb7185" },
-        { label: "grafana", value: 5400, color: "#73bf69" },
+        { label: "vyzorix", value: 5400, color: "#73bf69" },
         { label: "legacy", value: 800, color: "#5b5b5b" },
       ],
     });
@@ -3062,10 +3062,10 @@ if (globalSearch) globalSearch.addEventListener("keydown", (e) => {
   showToast("Search", `Showing results for “${q}”`);
 });
 
-// Inject Grafana SVG icons into every [data-icon] placeholder.
+// Inject the UI icon SVGs into every [data-icon] placeholder.
 if (window.VyzIcons) { window.VyzIcons.mountIcons(); window.VyzIcons.mountUi(); }
 
-// Mega-menu overlay (Grafana-style auto-hiding drawer): open/close, no icon rail.
+// Mega-menu overlay (auto-hiding drawer): open/close, no icon rail.
 const chromeEl = $(".chrome");
 const setMenu = (open) => chromeEl.classList.toggle("is-menu-open", open);
 const isMenuOpen = () => chromeEl.classList.contains("is-menu-open");

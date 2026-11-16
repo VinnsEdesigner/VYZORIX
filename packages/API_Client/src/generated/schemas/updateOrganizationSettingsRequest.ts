@@ -11,5 +11,6 @@ export interface UpdateOrganizationSettingsRequest {
   alertCooldownMinutes?: number;
   dateFormat?: string;
   defaultThresholds?: UserThresholds;
+  theme?: string;
   timezone?: string;
 }

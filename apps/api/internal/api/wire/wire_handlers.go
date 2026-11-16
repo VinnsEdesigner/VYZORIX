@@ -137,6 +137,7 @@ func WireHandlers(deps HandlerDependencies) *HandlerSet {
 		IPIntelligence:  deps.IPIntelligence,
 		Presenter:       deps.Presenter,
 		OAuthStateRepo:  deps.OAuthStateRepo,
+		OrgThemeSource:  deps.OrgSettingsService,
 	})
 
 	// Device handlers.

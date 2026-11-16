@@ -1,0 +1,35 @@
+{
+  "name": "Rose 500",
+  "id": "rose-500",
+  "colors": {
+    "mode": "light",
+    "primary": { "main": "#be123c" },
+    "background": {
+      "canvas": "#fff5f7",
+      "page": "#fff5f7",
+      "primary": "#ffffff",
+      "secondary": "#fce7eb",
+      "elevated": "#ffffff"
+    },
+    "text": {
+      "primary": "#3f0d1c",
+      "secondary": "#6b1229",
+      "disabled": "#9f1239",
+      "link": "#e11d48",
+      "maxContrast": "#ffffff"
+    },
+    "border": {
+      "weak": "rgba(159, 18, 57, 0.15)",
+      "medium": "rgba(159, 18, 57, 0.25)",
+      "strong": "#9f1239"
+    },
+    "accent": { "main": "#f43f5e" },
+    "error": { "main": "#be123c" },
+    "success": { "main": "#15803d" },
+    "warning": { "main": "#b45309" },
+    "gradients": {
+      "brandHorizontal": "linear-gradient(270deg, #e11d48 0%, #fb7185 100%)",
+      "brandVertical": "linear-gradient(0.01deg, #e11d48 0.01%, #fb7185 99.99%)"
+    }
+  }
+}

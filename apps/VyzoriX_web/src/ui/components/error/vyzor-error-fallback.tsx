@@ -1,3 +1,5 @@
+import { css } from '@emotion/css';
+import { useStyles2, type VyzorixTheme } from '@vyzorix/ui';
 import { useVyzorErrorRecovery } from '@/hooks/error';
 import type { VyzorErrorClassification } from '@/lib/error';
 
@@ -9,6 +11,64 @@ interface VyzorErrorFallbackProps {
   onGoHome?: () => void;
   onDismiss?: () => void;
 }
+
+const getStyles = (theme: VyzorixTheme) => ({
+  root: css({
+    display: 'flex',
+    minHeight: 400,
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing(2),
+    padding: theme.spacing(4),
+    textAlign: 'center',
+  }),
+  title: css({ fontSize: theme.typography.xxl.fontSize, fontWeight: theme.typography.fontWeightBold, letterSpacing: '-0.01em', margin: 0 }),
+  message: css({ color: theme.colors.text.secondary, maxWidth: 448, margin: 0 }),
+  status: css({ color: theme.colors.text.secondary, fontSize: theme.typography.sm.fontSize, margin: 0 }),
+  actions: css({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: theme.spacing(1) }),
+  primaryBtn: css({
+    background: theme.colors.primary.main,
+    color: theme.colors.primary.contrastText,
+    border: 'none',
+    borderRadius: theme.shape.radius.default,
+    padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
+    fontSize: theme.typography.sm.fontSize,
+    fontWeight: theme.typography.fontWeightMedium,
+    cursor: 'pointer',
+    '&:hover': { background: theme.colors.primary.mainEmphasis },
+  }),
+  secondaryBtn: css({
+    background: theme.colors.secondary.main,
+    color: theme.colors.secondary.contrastText,
+    border: 'none',
+    borderRadius: theme.shape.radius.default,
+    padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
+    fontSize: theme.typography.sm.fontSize,
+    fontWeight: theme.typography.fontWeightMedium,
+    cursor: 'pointer',
+    '&:hover': { background: theme.colors.secondary.shade },
+  }),
+  linkBtn: css({
+    background: 'none',
+    border: 'none',
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.sm.fontSize,
+    fontWeight: theme.typography.fontWeightMedium,
+    textDecoration: 'underline',
+    cursor: 'pointer',
+    '&:hover': { color: theme.colors.text.primary },
+  }),
+  dismissBtn: css({
+    background: 'none',
+    border: 'none',
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.sm.fontSize,
+    fontWeight: theme.typography.fontWeightMedium,
+    cursor: 'pointer',
+    '&:hover': { color: theme.colors.text.primary },
+  }),
+});
 
 const CATEGORY_TITLES: Record<string, string> = {
   network: 'Connection Error',
@@ -27,6 +87,7 @@ export function VyzorErrorFallback({
   onGoHome,
   onDismiss,
 }: VyzorErrorFallbackProps) {
+  const styles = useStyles2(getStyles);
   const recovery = useVyzorErrorRecovery();
   const title = CATEGORY_TITLES[classification.category] ?? 'Error';
   const handleRetry = onRetry ?? recovery.retry;
@@ -38,21 +99,21 @@ export function VyzorErrorFallback({
     <div
       role="alert"
       aria-live="assertive"
-      className="flex min-h-[400px] flex-col items-center justify-center gap-4 p-8 text-center"
+      className={styles.root}
     >
-      <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-      {message && <p className="text-muted-foreground max-w-md">{message}</p>}
+      <h1 className={styles.title}>{title}</h1>
+      {message && <p className={styles.message}>{message}</p>}
       {classification.statusCode && (
-        <p className="text-muted-foreground text-sm">
+        <p className={styles.status}>
           Status: {classification.statusCode}
         </p>
       )}
-      <div className="flex flex-wrap items-center justify-center gap-2">
+      <div className={styles.actions}>
         {classification.retryable && (
           <button
             type="button"
             onClick={handleRetry}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2 text-sm font-medium"
+            className={styles.primaryBtn}
           >
             Retry
           </button>
@@ -60,14 +121,14 @@ export function VyzorErrorFallback({
         <button
           type="button"
           onClick={handleReload}
-          className="bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-md px-4 py-2 text-sm font-medium"
+          className={styles.secondaryBtn}
         >
           Reload
         </button>
         <button
           type="button"
           onClick={handleGoHome}
-          className="text-muted-foreground hover:text-foreground text-sm font-medium underline"
+          className={styles.linkBtn}
         >
           Go Home
         </button>
@@ -75,7 +136,7 @@ export function VyzorErrorFallback({
           <button
             type="button"
             onClick={handleDismiss}
-            className="text-muted-foreground hover:text-foreground text-sm font-medium"
+            className={styles.dismissBtn}
           >
             Dismiss
           </button>

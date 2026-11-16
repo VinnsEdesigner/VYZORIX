@@ -14,6 +14,7 @@ export interface OrganizationSettingsResult {
   defaultThresholds?: UserThresholds;
   id?: string;
   organizationId?: string;
+  theme?: string;
   timezone?: string;
   updatedAt?: string;
 }

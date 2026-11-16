@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useStyles2 } from '@vyzorix/ui';
+import { listPageStyles } from '@/ui/styles/list-page';
 import { createFileRoute } from '@tanstack/react-router';
 import {
   CONTACT_POINT_CHANNELS,
@@ -32,6 +34,7 @@ function ContactPointForm({
   onSubmit: (req: ContactPointRequest) => void;
   disabled: boolean;
 }) {
+  const styles = useStyles2(listPageStyles);
   const [name, setName] = useState('');
   const [channel, setChannel] = useState<ContactPointChannel>('webhook');
   const [secret, setSecret] = useState('');
@@ -60,18 +63,18 @@ function ContactPointForm({
         });
       }}
     >
-      <div className="grid grid-cols-2 gap-3">
+      <div className={styles.grid}>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Contact point name"
           required
-          className="rounded border px-3 py-2"
+          className={styles.input}
         />
         <select
           value={channel}
           onChange={(e) => setChannel(e.target.value as ContactPointChannel)}
-          className="rounded border px-3 py-2"
+          className={styles.input}
         >
           {CONTACT_POINT_CHANNELS.map((c) => (
             <option key={c} value={c}>
@@ -84,11 +87,11 @@ function ContactPointForm({
           onChange={(e) => setSecret(e.target.value)}
           type="password"
           placeholder="Webhook secret (optional)"
-          className="rounded border px-3 py-2"
+          className={styles.input}
         />
-        <label className="flex items-center gap-2 px-3 py-2">
+        <label className={styles.labelRow}>
           <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
-          <span className="text-sm">Enabled</span>
+          <span>Enabled</span>
         </label>
       </div>
       <textarea
@@ -96,12 +99,12 @@ function ContactPointForm({
         onChange={(e) => setConfig(e.target.value)}
         placeholder="Config (one per line: to=ops@example.com, url=https://hooks.slack.com/...)"
         rows={4}
-        className="mt-3 w-full rounded border px-3 py-2"
+        className={styles.textarea}
       />
       <button
         type="submit"
         disabled={disabled}
-        className="mt-4 rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
+        className={styles.submit}
       >
         Create contact point
       </button>
@@ -110,22 +113,23 @@ function ContactPointForm({
 }
 
 function ContactPointCard({ point }: { point: ContactPoint }) {
+  const styles = useStyles2(listPageStyles);
   const deletePoint = useDeleteContactPoint();
   const testPoint = useTestContactPoint();
 
   return (
-    <div className="rounded border p-4">
-      <div className="flex items-center justify-between">
+    <div className={styles.card}>
+      <div className={styles.row}>
         <div>
-          <h3 className="font-semibold">{point.name}</h3>
-          <p className="text-sm text-muted-foreground">
+          <h3 className={styles.h3}>{point.name}</h3>
+          <p className={styles.meta}>
             {CHANNEL_LABELS[point.channel as keyof typeof CHANNEL_LABELS] ?? point.channel}
             {point.secret && ' (signed)'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className={styles.rowActions}>
           <span
-            className="rounded-full px-2 py-1 text-xs font-semibold"
+            className={styles.badge}
             style={{
               backgroundColor: `${CHANNEL_COLORS[point.channel ?? ''] ?? '#6b7280'}20`,
               color: CHANNEL_COLORS[point.channel ?? ''] ?? '#6b7280',
@@ -135,21 +139,21 @@ function ContactPointCard({ point }: { point: ContactPoint }) {
           </span>
           <button
             onClick={() => point.id && testPoint.mutate({ id: point.id })}
-            className="rounded border px-2 py-1 text-xs"
+            className={styles.smallBtn}
             title="Send test notification"
           >
             Test
           </button>
           <button
             onClick={() => point.id && deletePoint.mutate({ id: point.id })}
-            className="rounded border px-2 py-1 text-xs text-red-600"
+            className={styles.smallBtnDanger}
             title="Delete"
           >
             Delete
           </button>
         </div>
       </div>
-      <div className="mt-2 text-xs text-muted-foreground">
+      <div className={styles.metaSm}>
         {Object.entries(point.config ?? {}).map(([k, v]) => (
           <div key={k}>
             <strong>{k}:</strong> {v.length > 40 ? v.slice(0, 40) + '…' : v}
@@ -161,27 +165,28 @@ function ContactPointCard({ point }: { point: ContactPoint }) {
 }
 
 function NotificationsPage() {
+  const styles = useStyles2(listPageStyles);
   const points = useContactPoints();
   const createPoint = useCreateContactPoint();
 
   return (
-    <div className="mx-auto max-w-4xl p-6">
-      <h1 className="mb-6 text-2xl font-bold">Contact Points</h1>
+    <div className={styles.page}>
+      <h1 className={styles.h1}>Contact Points</h1>
 
-      <div className="mb-8 rounded border p-4">
-        <h2 className="mb-4 font-semibold">New contact point</h2>
+      <div className={styles.panel}>
+        <h2 className={styles.h2}>New contact point</h2>
         <ContactPointForm onSubmit={(req) => createPoint.mutate({ data: req })} disabled={createPoint.isPending} />
       </div>
 
       {points.isLoading && <p>Loading contact points…</p>}
-      {points.isError && <p className="text-red-600">Failed to load contact points.</p>}
+      {points.isError && <p className={styles.error}>Failed to load contact points.</p>}
 
-      <div className="space-y-3">
+      <div className={styles.stack}>
         {(points.data?.contact_points ?? []).map((point) => (
           <ContactPointCard key={point.id} point={point} />
         ))}
         {(points.data?.contact_points ?? []).length === 0 && (
-          <p className="text-muted-foreground">No contact points yet. Create one above.</p>
+          <p className={styles.meta}>No contact points yet. Create one above.</p>
         )}
       </div>
     </div>

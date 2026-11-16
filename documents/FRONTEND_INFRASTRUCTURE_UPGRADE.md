@@ -51,7 +51,7 @@ real API contract where OpenHands mocks drift.
 ## 2. Architecture Constraints
 
 The Vyzorix web app enforces a layered architecture via a custom ESLint plugin
-(`@vyzorix/config` → `vyzo/layer-imports`). The rules are:
+(`tooling/eslint/architecture.mjs` → `vyzo/layer-imports`). The rules are:
 
 ```
 UI Layer (src/ui, src/routes)

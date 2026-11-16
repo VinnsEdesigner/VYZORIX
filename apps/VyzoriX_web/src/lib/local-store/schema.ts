@@ -1,4 +1,4 @@
-const DEFAULT_SCHEMA_VERSION = 1;
+const DEFAULT_SCHEMA_VERSION = 2;
 
 function readSchemaVersion(): number {
   const raw = import.meta.env.VITE_LOCAL_STORE_SCHEMA_VERSION;
@@ -77,6 +77,15 @@ export const TABLES: TableDefinition[] = [
     indexes: ['device_id', 'at'],
     bounded: true,
     ageColumn: 'at',
+  },
+  {
+    // Per-user UI preferences mirrored from the server (currently just the
+    // theme id). Read on load so the first paint is themed without a network
+    // round-trip. The store is already user-scoped, so `user_id` is the row key
+    // and one browser profile cannot serve another user's preference.
+    name: 'user_prefs',
+    pk: 'user_id',
+    columns: ['user_id', 'theme', 'updated_at'],
   },
 ];
 

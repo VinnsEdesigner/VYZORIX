@@ -141,7 +141,7 @@ func newPhase8State(t *testing.T) *phase8State {
 	diagnosticsRepo := storage.NewDiagnosticsRepository(db)
 	diagnosticsSvc := diagnosticsapp.NewService(diagnosticsRepo, deviceRepo, deps.Hub, cfg.DiagnosticsConfig)
 
-	settingsService := auth.NewClientSettingsService(deps.UserRepo)
+	settingsService := auth.NewClientSettingsService(deps.UserRepo, nil)
 	notificationSvc := appuser.NewNotificationService(deps.UserRepo)
 	webhookClient := infrawebhook.NewClient(10 * time.Second)
 

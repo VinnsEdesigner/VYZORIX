@@ -152,6 +152,10 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 			h.presenter.BadRequest(c, err.Error())
 			return
 		}
+		if errors.Is(err, organization.ErrInvalidTheme) {
+			h.presenter.BadRequest(c, "invalid theme")
+			return
+		}
 		h.presenter.InternalError(c, "failed to update settings")
 		return
 	}

@@ -1188,6 +1188,7 @@ type ThresholdsResult struct {
 
 type PreferencesResult struct {
 	Preferences map[string]any `json:"preferences"`
+	Theme       string         `json:"theme"`
 }
 
 type WebhookTestResult struct {
@@ -1267,6 +1268,7 @@ type OrganizationSettingsResult struct {
 	DefaultThresholds    *UserThresholds `json:"defaultThresholds,omitempty"`
 	ID                   string          `json:"id"`
 	OrganizationID       string          `json:"organizationId"`
+	Theme                string          `json:"theme"`
 	Timezone             string          `json:"timezone"`
 	UpdatedAt            string          `json:"updatedAt"`
 	AlertCooldownMinutes int             `json:"alertCooldownMinutes"`
@@ -1275,6 +1277,7 @@ type OrganizationSettingsResult struct {
 type UpdateOrganizationSettingsRequest struct {
 	DateFormat           string          `json:"dateFormat,omitempty"`
 	DefaultThresholds    *UserThresholds `json:"defaultThresholds,omitempty"`
+	Theme                string          `json:"theme,omitempty"`
 	Timezone             string          `json:"timezone,omitempty"`
 	AlertCooldownMinutes int             `json:"alertCooldownMinutes,omitempty"`
 }

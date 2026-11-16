@@ -53,7 +53,7 @@ type SettingsAuditEvent struct {
 // SettingsHandler handles /me settings endpoints.
 type SettingsHandler struct {
 	authService     *auth.AuthService
-	userRepo    user.Repository
+	userRepo        user.Repository
 	settingsService *auth.ClientSettingsService
 	presenter       *response.Presenter
 	rateLimiter     *middleware.SettingsRateLimiterMiddleware
@@ -63,6 +63,7 @@ type SettingsHandler struct {
 func NewSettingsHandler(
 	authService *auth.AuthService,
 	userRepo user.Repository,
+	orgTheme auth.OrgThemeSource,
 	presenter *response.Presenter,
 	rateLimiter *middleware.SettingsRateLimiterMiddleware,
 ) *SettingsHandler {
@@ -71,8 +72,8 @@ func NewSettingsHandler(
 	}
 	return &SettingsHandler{
 		authService:     authService,
-		userRepo:    userRepo,
-		settingsService: auth.NewClientSettingsService(userRepo),
+		userRepo:        userRepo,
+		settingsService: auth.NewClientSettingsService(userRepo, orgTheme),
 		presenter:       presenter,
 		rateLimiter:     rateLimiter,
 	}
@@ -731,7 +732,15 @@ func (h *SettingsHandler) GetPreferences(c *gin.Context) {
 		h.presenter.InternalError(c, "failed to get preferences")
 		return
 	}
-	h.presenter.OK(c, openapi.PreferencesResult{Preferences: prefs})
+	// The resolved theme is the cascade's output (user > org > default). It is
+	// returned alongside the raw preferences so the client applies the effective
+	// theme without needing to read org settings, which it cannot.
+	resolved, err := h.settingsService.ResolveTheme(c.Request.Context(), op.ID, middleware.GetOrganizationID(c))
+	if err != nil {
+		h.presenter.InternalError(c, "failed to resolve theme")
+		return
+	}
+	h.presenter.OK(c, openapi.PreferencesResult{Preferences: prefs, Theme: resolved})
 }
 
 // UpdatePreferences handles PATCH /v1/auth/me/preferences.
@@ -759,6 +768,10 @@ func (h *SettingsHandler) UpdatePreferences(c *gin.Context) {
 	}
 	prefs, err := h.settingsService.UpdatePreferences(c.Request.Context(), op.ID, updates)
 	if err != nil {
+		if errors.Is(err, auth.ErrValidationError) {
+			h.presenter.BadRequest(c, "invalid preference value")
+			return
+		}
 		h.presenter.InternalError(c, "failed to update preferences")
 		return
 	}

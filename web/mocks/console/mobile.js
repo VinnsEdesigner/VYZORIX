@@ -140,7 +140,7 @@
 
 
   /* ── 5. The panel "⋯" menus become bottom sheets ─────────────
-     Grafana puts a small dropdown under the ⋯; on a phone a dropdown at the
+     A small dropdown under the ⋯ would be cramped on a phone; a dropdown at the
      panel corner is cramped and often clipped. The same items go into the
      bottom sheet, which is full width and thumb-reachable. */
   const PANEL_MENU = (title) => [

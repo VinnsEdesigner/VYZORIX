@@ -42,10 +42,7 @@ COPY . .
 # Install all dependencies
 RUN pnpm install --frozen-lockfile
 
-# Build config package first (outputs to dist/)
-RUN pnpm --filter @vyzorix/config run build
-
-# Then build web (which depends on config)
+# Build the web app (SSR bundle served by the Go API).
 RUN pnpm --filter @vyzorix/vyoriX run build
 
 # =============================================================================

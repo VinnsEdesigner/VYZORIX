@@ -73,7 +73,6 @@ Required environment variables (see `.env.example`):
 apps/
   api/              Go server (REST + GraphQL + WebSocket)
   VyzoriX_web/      React dashboard
-  VyzoriX_mobile/   Android client
 packages/           Shared TypeScript packages
 DOCUMENTATION/      Feature and operations documentation
 ```

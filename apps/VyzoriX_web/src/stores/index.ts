@@ -27,8 +27,8 @@ export {
 
 export {
   useThemeStore,
+  subscribeToSystemTheme,
   type ThemeState,
-  type ThemeMode,
 } from './theme-store';
 
 export {

@@ -1,63 +1,79 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useThemeStore } from '@/stores/theme-store';
+import { getThemeById } from '@vyzorix/ui';
+
+function resetStore() {
+  localStorage.clear();
+  useThemeStore.setState({
+    themeId: 'dark',
+    resolvedThemeId: 'dark',
+    theme: getThemeById('dark'),
+    followSystem: false,
+  });
+}
 
 describe('useThemeStore', () => {
   beforeEach(() => {
-    localStorage.clear();
-    document.documentElement.classList.remove('dark');
-    useThemeStore.setState({
-      mode: 'system',
-      resolvedTheme: 'light',
-    });
-  });
-
-  it('starts with system mode by default', () => {
-    const fresh = useThemeStore.getState();
-    expect(fresh.mode).toBe('system');
-  });
-
-  it('setMode updates mode and resolvedTheme', () => {
-    useThemeStore.getState().setMode('dark');
-    const state = useThemeStore.getState();
-    expect(state.mode).toBe('dark');
-    expect(state.resolvedTheme).toBe('dark');
-  });
-
-  it('setMode persists to localStorage', () => {
-    useThemeStore.getState().setMode('dark');
-    expect(localStorage.getItem('vyzorix-theme')).toBe('dark');
-  });
-
-  it('setMode applies dark class to document', () => {
-    useThemeStore.getState().setMode('dark');
-    expect(document.documentElement.classList.contains('dark')).toBe(true);
-  });
-
-  it('setMode to light removes dark class', () => {
-    useThemeStore.getState().setMode('dark');
-    useThemeStore.getState().setMode('light');
-    expect(document.documentElement.classList.contains('dark')).toBe(false);
-  });
-
-  it('toggle switches between light and dark', () => {
-    useThemeStore.getState().setMode('light');
-    useThemeStore.getState().toggle();
-    expect(useThemeStore.getState().resolvedTheme).toBe('dark');
-    useThemeStore.getState().toggle();
-    expect(useThemeStore.getState().resolvedTheme).toBe('light');
-  });
-
-  it('applyToDocument syncs the document class with current mode', () => {
-    useThemeStore.setState({ mode: 'dark', resolvedTheme: 'light' });
-    useThemeStore.getState().applyToDocument();
-    expect(document.documentElement.classList.contains('dark')).toBe(true);
-  });
-
-  it('system mode resolves via matchMedia', () => {
-    const matchMediaSpy = vi.fn().mockReturnValue({ matches: true });
-    vi.stubGlobal('matchMedia', matchMediaSpy);
-    useThemeStore.getState().setMode('system');
-    expect(useThemeStore.getState().resolvedTheme).toBe('dark');
     vi.unstubAllGlobals();
+    resetStore();
+  });
+
+  it('defaults to the dark theme', () => {
+    expect(useThemeStore.getState().themeId).toBe('dark');
+    expect(useThemeStore.getState().theme.isDark).toBe(true);
+  });
+
+  it('setTheme swaps the theme object', () => {
+    useThemeStore.getState().setTheme('tron');
+    expect(useThemeStore.getState().themeId).toBe('tron');
+    expect(useThemeStore.getState().theme.isDark).toBe(true);
+    expect(useThemeStore.getState().theme.name).toBe('Tron');
+  });
+
+  it('setTheme persists to the localStorage mirror', () => {
+    useThemeStore.getState().setTheme('zen');
+    expect(localStorage.getItem('vyzorix.theme')).toBe('zen');
+  });
+
+  it('setTheme rejects an unknown id and falls back to the default', () => {
+    useThemeStore.getState().setTheme('not-a-theme');
+    expect(useThemeStore.getState().themeId).toBe('dark');
+  });
+
+  it('setTheme switches to a light theme object', () => {
+    useThemeStore.getState().setTheme('light');
+    expect(useThemeStore.getState().theme.isLight).toBe(true);
+  });
+
+  it('followSystem resolves to light when the OS prefers light', () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    useThemeStore.getState().setTheme('tron');
+    useThemeStore.getState().setFollowSystem(true);
+    expect(useThemeStore.getState().resolvedThemeId).toBe('light');
+    expect(useThemeStore.getState().theme.isLight).toBe(true);
+  });
+
+  it('followSystem resolves to dark when the OS prefers dark', () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true }));
+    useThemeStore.getState().setFollowSystem(true);
+    expect(useThemeStore.getState().resolvedThemeId).toBe('dark');
+  });
+
+  it('setFollowSystem persists the flag', () => {
+    useThemeStore.getState().setFollowSystem(true);
+    expect(localStorage.getItem('vyzorix.theme.followSystem')).toBe('true');
+  });
+
+  it('adoptServerTheme applies a server value', () => {
+    useThemeStore.getState().adoptServerTheme('synthwave');
+    expect(useThemeStore.getState().themeId).toBe('synthwave');
+    expect(useThemeStore.getState().theme.name).toBe('Synthwave');
+  });
+
+  it('adoptServerTheme ignores empty or null input', () => {
+    useThemeStore.getState().setTheme('matrix');
+    useThemeStore.getState().adoptServerTheme(null);
+    useThemeStore.getState().adoptServerTheme('');
+    expect(useThemeStore.getState().themeId).toBe('matrix');
   });
 });

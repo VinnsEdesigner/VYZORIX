@@ -17618,6 +17618,9 @@
           "organizationId": {
             "type": "string"
           },
+          "theme": {
+            "type": "string"
+          },
           "timezone": {
             "type": "string"
           },
@@ -17663,6 +17666,9 @@
           "preferences": {
             "type": "object",
             "additionalProperties": {}
+          },
+          "theme": {
+            "type": "string"
           }
         }
       },
@@ -18520,6 +18526,9 @@
           },
           "defaultThresholds": {
             "$ref": "#/components/schemas/UserThresholds"
+          },
+          "theme": {
+            "type": "string"
           },
           "timezone": {
             "type": "string"

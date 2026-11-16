@@ -1,6 +1,6 @@
 /* charts.js — lightweight SVG chart library for the Vyzorix mock.
  *
- * Grafana-style dark charts: subtle dashed grid, right-aligned value axis,
+ * Dark charts: subtle dashed grid, right-aligned value axis,
  * gradient area fills, rounded line joins, end-point markers, a legend row and
  * a hover crosshair tooltip. No dependencies; sizes to the host element.
  *

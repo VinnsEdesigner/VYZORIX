@@ -94,21 +94,21 @@ describe('schema version from the environment', () => {
   });
 
   it('falls back to the default when unset', async () => {
-    expect(await loadSchemaVersion(undefined)).toBe(1);
+    expect(await loadSchemaVersion(undefined)).toBe(2);
   });
 
   it('falls back when the value is not a number', async () => {
     // A typo must not produce a version no database can match, which would
     // rebuild the cache on every single load.
-    expect(await loadSchemaVersion('latest')).toBe(1);
+    expect(await loadSchemaVersion('latest')).toBe(2);
   });
 
   it('falls back when the value is zero or negative', async () => {
-    expect(await loadSchemaVersion('0')).toBe(1);
-    expect(await loadSchemaVersion('-3')).toBe(1);
+    expect(await loadSchemaVersion('0')).toBe(2);
+    expect(await loadSchemaVersion('-3')).toBe(2);
   });
 
   it('falls back when the value is fractional', async () => {
-    expect(await loadSchemaVersion('1.5')).toBe(1);
+    expect(await loadSchemaVersion('1.5')).toBe(2);
   });
 });

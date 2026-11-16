@@ -8,10 +8,8 @@
   ],
   "scripts": {
     "dev": "node apps/proxy-server/vyzorix-proxy-server.cjs",
-    "dev:mobile": "cd apps/VyzoriX_mobile && expo start",
     "build": "turbo run build",
     "build:web": "turbo run build --filter=VyzoriX_web",
-    "build:mobile": "turbo run build --filter=VyzoriX_mobile",
     "build:e2e": "node e2e/vyzorix-e2e-harness-build.cjs",
     "codegen:api": "node node_modules/.pnpm/orval*/node_modules/orval/dist/bin/orval.mjs --config orval.config.js",
     "codegen:hooks": "node node_modules/.pnpm/orval*/node_modules/orval/dist/bin/orval.mjs -p vyzorixRQ --config orval.config.js && python3 tooling/codegen/organize_query_hooks.py",
@@ -19,7 +17,6 @@
     "e2e": "node e2e/vyzorix-e2e-harness-build.cjs && playwright test --config playwright.config.cjs",
     "e2e:ui": "node e2e/vyzorix-e2e-harness-build.cjs && playwright test --config playwright.config.cjs --ui",
     "test": "turbo run test",
-    "prelint": "pnpm --filter @vyzorix/config exec tsc --build --force",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean && rm -rf node_modules",

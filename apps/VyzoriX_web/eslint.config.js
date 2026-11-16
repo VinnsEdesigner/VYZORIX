@@ -2,7 +2,7 @@ import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
-import { vyzo } from "../../packages/config/dist/eslint/architecture-index.js";
+import { vyzo } from "../../tooling/eslint/architecture.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

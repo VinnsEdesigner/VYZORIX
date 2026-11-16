@@ -2028,6 +2028,8 @@ definitions:
         type: string
       organizationId:
         type: string
+      theme:
+        type: string
       timezone:
         type: string
       updatedAt:
@@ -2058,6 +2060,8 @@ definitions:
       preferences:
         additionalProperties: {}
         type: object
+      theme:
+        type: string
     type: object
   openapi.PushNotifications:
     properties:
@@ -2613,6 +2617,8 @@ definitions:
         type: string
       defaultThresholds:
         $ref: '#/definitions/openapi.UserThresholds'
+      theme:
+        type: string
       timezone:
         type: string
     type: object

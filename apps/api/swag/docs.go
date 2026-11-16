@@ -14851,6 +14851,9 @@ const docTemplate = `{
                 "organizationId": {
                     "type": "string"
                 },
+                "theme": {
+                    "type": "string"
+                },
                 "timezone": {
                     "type": "string"
                 },
@@ -14896,6 +14899,9 @@ const docTemplate = `{
                 "preferences": {
                     "type": "object",
                     "additionalProperties": {}
+                },
+                "theme": {
+                    "type": "string"
                 }
             }
         },
@@ -15753,6 +15759,9 @@ const docTemplate = `{
                 },
                 "defaultThresholds": {
                     "$ref": "#/definitions/openapi.UserThresholds"
+                },
+                "theme": {
+                    "type": "string"
                 },
                 "timezone": {
                     "type": "string"

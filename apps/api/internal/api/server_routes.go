@@ -1066,6 +1066,11 @@ func (s *Server) setupOrganizationRoutes(r *gin.RouterGroup) {
 
 	mePrefs := r.Group("/me/preferences")
 	mePrefs.Use(s.cookieAuth.Middleware())
+	// Resolve the organisation so the theme cascade (user > org > default) can
+	// read the org tier. skipIfMissing: a user with no organisation selected has
+	// no org tier, which is valid for this endpoint.
+	skipOrgIfMissing := true
+	mePrefs.Use(middleware.NewOrganizationContext(&skipOrgIfMissing).Middleware())
 	mePrefs.Use(middleware.NoCache())
 	{
 		mePrefs.GET("", s.authHandlers.Settings.GetPreferences)

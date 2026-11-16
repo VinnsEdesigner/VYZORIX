@@ -150,6 +150,7 @@ package vyzorix
 // PreferencesResult.
 #PreferencesResult: {
         preferences: {[string]: _}
+        theme: string
 }
 
 // WebhookTestResult.

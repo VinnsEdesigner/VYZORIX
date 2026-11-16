@@ -1,5 +1,6 @@
-/* theme.css — Grafana dark-theme design tokens (extracted from
- * grafana/grafana packages/grafana-data/src/themes/*).
+/* theme.css — the console dark-theme design tokens.
+ *
+ * These mirror the token set in packages/ui/src/theme (the runtime theme).
  *
  * Fonts:      Inter (sans, used for all text including technical)
  * Base size:  15px, html 14px — createTypography.ts

@@ -6,7 +6,7 @@
  *     overflow) and the chrome collapses to one row. Every touch target is
  *     >=44px and every text input is >=16px so iOS does not zoom on focus.
  *
- *  2. THE NAV DOCKS END TO END. Grafana animates the menu's *width* and
+ *  2. THE NAV DOCKS END TO END. The menu animates its *width* and
  *     leaves the three bars visible above it. On a phone the nav instead
  *     covers the whole screen and slides in from the left — the MEGA
  *     pattern — with its own close button.

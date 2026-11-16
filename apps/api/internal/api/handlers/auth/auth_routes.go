@@ -35,7 +35,10 @@ type Dependencies struct {
 	Presenter           *response.Presenter
 	SettingsRateLimiter *middleware.SettingsRateLimiterMiddleware
 	AuthService         *auth.AuthService
-	Config              config.Config
+	// OrgThemeSource resolves an organisation's default theme for the theme
+	// cascade. Optional: when nil the cascade skips the org tier.
+	OrgThemeSource auth.OrgThemeSource
+	Config         config.Config
 }
 
 // AllHandlers holds references to all auth handlers.
@@ -77,7 +80,7 @@ func NewAllHandlers(deps *Dependencies) *AllHandlers {
 		Refresh:       NewRefreshHandler(deps.AuthService, deps.Presenter),
 		MFA:           NewMFAHandler(deps.AuthService, deps.UserRepo, deps.Presenter),
 		OAuth:         NewOAuthHandler(deps.AuthService, deps.SessionManager, deps.Config, deps.GoogleVerifier, deps.Presenter).WithOAuthStateRepo(deps.OAuthStateRepo),
-		Settings:      NewSettingsHandler(deps.AuthService, deps.UserRepo, deps.Presenter, settingsRateLimiter),
+		Settings:      NewSettingsHandler(deps.AuthService, deps.UserRepo, deps.OrgThemeSource, deps.Presenter, settingsRateLimiter),
 		Admin:         NewAdminHandler(deps.AuthService, deps.Presenter),
 		ClientCreds:   NewClientCredentialsHandler(deps.AuthService, deps.ClientService, deps.Presenter),
 		Lockout:       NewLockoutHandler(deps.AuthService, deps.Lockout, deps.Presenter),
