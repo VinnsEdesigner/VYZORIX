@@ -1,4 +1,4 @@
-// Package email provides email infrastructure using the Resend API.
+// Package email provides email infrastructure using the Brevo transactional API.
 package email
 
 import (
@@ -7,8 +7,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"strings"
 	"text/template"
 	"time"
 
@@ -47,7 +49,7 @@ type InvitationData struct {
 	ExpiryDays       int
 }
 
-// Service handles sending emails via Resend API.
+// Service handles sending emails via the Brevo transactional API.
 type Service struct {
 	client    *http.Client
 	apiKey    string
@@ -59,12 +61,12 @@ type Service struct {
 
 // NewService creates a new email service instance.
 func NewService() *Service {
-	apiURL := os.Getenv("RESEND_API_URL")
+	apiURL := os.Getenv("BREVO_API_URL")
 	if apiURL == "" {
-		apiURL = "https://api.resend.com"
+		apiURL = "https://api.brevo.com/v3"
 	}
 	return &Service{
-		apiKey:    os.Getenv("RESEND_API_KEY"),
+		apiKey:    os.Getenv("BREVO_API_KEY"),
 		fromEmail: os.Getenv("EMAIL_FROM"),
 		fromName:  os.Getenv("EMAIL_FROM_NAME"),
 		baseURL:   os.Getenv("BASE_URL"),
@@ -99,7 +101,7 @@ type LoginNotificationData struct {
 // SendVerificationEmail sends a welcome email with email verification link.
 func (s *Service) SendVerificationEmail(ctx context.Context, to, name, token string) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	verifyURL := fmt.Sprintf("%s/auth/waitVerify?token=%s&type=verify", s.baseURL, token)
@@ -120,7 +122,7 @@ func (s *Service) SendVerificationEmail(ctx context.Context, to, name, token str
 // SendPasswordResetEmail sends a password reset email.
 func (s *Service) SendPasswordResetEmail(ctx context.Context, to, name, token string) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	resetURL := fmt.Sprintf("%s/auth/waitVerify?token=%s&type=reset", s.baseURL, token)
@@ -141,7 +143,7 @@ func (s *Service) SendPasswordResetEmail(ctx context.Context, to, name, token st
 // SendPasswordChangedEmail sends a confirmation when password is changed.
 func (s *Service) SendPasswordChangedEmail(ctx context.Context, to, name string) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	html, err := s.parseTemplate(templates.PasswordChangedEmail, Data{
@@ -158,7 +160,7 @@ func (s *Service) SendPasswordChangedEmail(ctx context.Context, to, name string)
 // SendThresholdBreachEmail sends a threshold breach alert email.
 func (s *Service) SendThresholdBreachEmail(ctx context.Context, to string, data NotificationData) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	html, err := s.parseTemplate(templates.ThresholdBreachEmail, data)
@@ -173,7 +175,7 @@ func (s *Service) SendThresholdBreachEmail(ctx context.Context, to string, data 
 // SendDeviceOfflineEmail sends a device offline notification email.
 func (s *Service) SendDeviceOfflineEmail(ctx context.Context, to string, data NotificationData) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	html, err := s.parseTemplate(templates.DeviceOfflineEmail, data)
@@ -188,7 +190,7 @@ func (s *Service) SendDeviceOfflineEmail(ctx context.Context, to string, data No
 // SendDeviceOnlineEmail sends a device online notification email.
 func (s *Service) SendDeviceOnlineEmail(ctx context.Context, to string, data NotificationData) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	html, err := s.parseTemplate(templates.DeviceOnlineEmail, data)
@@ -203,7 +205,7 @@ func (s *Service) SendDeviceOnlineEmail(ctx context.Context, to string, data Not
 // SendCommandFailedEmail sends a command failed notification email.
 func (s *Service) SendCommandFailedEmail(ctx context.Context, to string, data NotificationData) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	html, err := s.parseTemplate(templates.CommandFailedEmail, data)
@@ -218,7 +220,7 @@ func (s *Service) SendCommandFailedEmail(ctx context.Context, to string, data No
 // SendUpdateAvailableEmail sends an update available notification email.
 func (s *Service) SendUpdateAvailableEmail(ctx context.Context, to string, data NotificationData) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	html, err := s.parseTemplate(templates.UpdateAvailableEmail, data)
@@ -233,7 +235,7 @@ func (s *Service) SendUpdateAvailableEmail(ctx context.Context, to string, data 
 // SendRegistrationRequestEmail sends a device registration request notification.
 func (s *Service) SendRegistrationRequestEmail(ctx context.Context, to string, data NotificationData) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	html, err := s.parseTemplate(templates.RegistrationRequestEmail, data)
@@ -250,7 +252,7 @@ func (s *Service) SendRegistrationRequestEmail(ctx context.Context, to string, d
 // HTML input when the template fails to parse.
 func (s *Service) SendNotificationEmail(ctx context.Context, to, subject, rawHTML string) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	tmplData := map[string]interface{}{
@@ -270,7 +272,7 @@ func (s *Service) SendNotificationEmail(ctx context.Context, to, subject, rawHTM
 // detected (Git push, payload share, or internet crawl).
 func (s *Service) SendLeakAlertEmail(ctx context.Context, to, serviceAccountName, tokenPrefix string, leakCount int) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	data := map[string]interface{}{
@@ -292,7 +294,7 @@ func (s *Service) SendLeakAlertEmail(ctx context.Context, to, serviceAccountName
 // SendErrorAlertEmail sends an error alert email.
 func (s *Service) SendErrorAlertEmail(ctx context.Context, to string, data NotificationData) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	html, err := s.parseTemplate(templates.ErrorAlertEmail, data)
@@ -308,7 +310,7 @@ func (s *Service) SendErrorAlertEmail(ctx context.Context, to string, data Notif
 // 10: Added for login notification feature.
 func (s *Service) SendNewLoginNotificationEmail(ctx context.Context, to string, data LoginNotificationData) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	// Ensure BaseURL is set for the template.
@@ -328,7 +330,7 @@ func (s *Service) SendNewLoginNotificationEmail(ctx context.Context, to string, 
 // SendInvitationEmail sends an organization invitation email to the invitee.
 func (s *Service) SendInvitationEmail(ctx context.Context, to string, data InvitationData) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	html, err := s.parseTemplate(templates.InvitationEmail, data)
@@ -343,7 +345,7 @@ func (s *Service) SendInvitationEmail(ctx context.Context, to string, data Invit
 // SendInvitationAcceptedEmail sends a notification when an invitation is accepted.
 func (s *Service) SendInvitationAcceptedEmail(ctx context.Context, to string, data InvitationData) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	html, err := s.parseTemplate(templates.InvitationAcceptedEmail, data)
@@ -358,7 +360,7 @@ func (s *Service) SendInvitationAcceptedEmail(ctx context.Context, to string, da
 // SendInvitationRejectedEmail sends a notification when an invitation is rejected.
 func (s *Service) SendInvitationRejectedEmail(ctx context.Context, to string, data InvitationData) error {
 	if s.apiKey == "" {
-		return errors.New("RESEND_API_KEY not configured")
+		return errors.New("BREVO_API_KEY not configured")
 	}
 
 	html, err := s.parseTemplate(templates.InvitationRejectedEmail, data)
@@ -370,7 +372,7 @@ func (s *Service) SendInvitationRejectedEmail(ctx context.Context, to string, da
 	return s.send(ctx, to, subject, html)
 }
 
-// send sends an email via the Resend API.
+// send sends an email via the Brevo transactional API.
 func (s *Service) send(ctx context.Context, to, subject, html string) error {
 	if s.fromEmail == "" {
 		s.fromEmail = "noreply@vyzorix.app"
@@ -380,11 +382,13 @@ func (s *Service) send(ctx context.Context, to, subject, html string) error {
 		s.fromName = "Vyzorix"
 	}
 
+	// Brevo splits the sender into name and address, and names the HTML body
+	// "htmlContent". It takes the recipient as an object, not a bare string.
 	payload := map[string]any{
-		"from":    fmt.Sprintf("%s <%s>", s.fromName, s.fromEmail),
-		"to":      []string{to},
-		"subject": subject,
-		"html":    html,
+		"sender":      map[string]string{"name": s.fromName, "email": s.fromEmail},
+		"to":          []map[string]string{{"email": to}},
+		"subject":     subject,
+		"htmlContent": html,
 	}
 
 	body, err := json.Marshal(payload)
@@ -392,13 +396,15 @@ func (s *Service) send(ctx context.Context, to, subject, html string) error {
 		return fmt.Errorf("failed to marshal email payload: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.apiURL+"/emails", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.apiURL+"/smtp/email", bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+s.apiKey)
+	// Brevo authenticates with an "api-key" header, not a bearer token.
+	req.Header.Set("api-key", s.apiKey)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -407,7 +413,10 @@ func (s *Service) send(ctx context.Context, to, subject, html string) error {
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("resend API returned status %d", resp.StatusCode)
+		// The body carries Brevo's error code and message; without it a
+		// rejected send (bad sender, unverified recipient) is a bare status.
+		detail, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		return fmt.Errorf("brevo API returned status %d: %s", resp.StatusCode, strings.TrimSpace(string(detail)))
 	}
 
 	return nil

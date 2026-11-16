@@ -218,7 +218,7 @@ On the Blueprint settings page, add these environment variables:
 |----------|-------|-------|
 | `GOOGLE_OAUTH_CLIENT_ID` | `xxx.apps.googleusercontent.com` | From Google Cloud Console |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | `xxx` | From Google Cloud Console |
-| `RESEND_API_KEY` | `re_xxx` | From Resend |
+| `BREVO_API_KEY` | `xkeysib-xxx` | From Brevo (transactional API key) |
 | `BASE_URL` | `https://vyzorix.onrender.com` | Your Render URL |
 | `EMAIL_FROM` | `noreply@vyzorix.app` | Your verified domain |
 | `EMAIL_FROM_NAME` | `Vyzorix` | Display name |
@@ -317,7 +317,7 @@ All environment variables needed for production:
 
 | Variable | Example | Required | Description |
 |----------|---------|----------|-------------|
-| `RESEND_API_KEY` | `re_xxx` | [OK] Yes | From Resend dashboard |
+| `BREVO_API_KEY` | `xkeysib-xxx` | [OK] Yes | From Brevo dashboard |
 | `EMAIL_FROM` | `noreply@vyzorix.app` | No | Default: `noreply@vyzorix.app` |
 | `EMAIL_FROM_NAME` | `Vyzorix` | No | Default: `Vyzorix` |
 

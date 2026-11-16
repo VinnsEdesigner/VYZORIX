@@ -104,7 +104,7 @@ type Config struct {
 	DatabaseBackend         string
 	TursoDatabaseURL        string
 	TursoAuthToken          string
-	ResendAPIKey            string
+	BrevoAPIKey             string
 	ServerAPIToken          string
 	GitHubReleaseRepo       string
 	EmailFromName           string
@@ -331,7 +331,7 @@ func Load() (Config, error) {
 		GitHubWebhookSecret:      os.Getenv("GITHUB_WEBHOOK_SECRET"),
 		BaseURL:                  get("BASE_URL", "http://localhost:3000"),
 		FrontendURL:              get("FRONTEND_URL", "http://localhost:5173"),
-		ResendAPIKey:             os.Getenv("RESEND_API_KEY"),
+		BrevoAPIKey:              os.Getenv("BREVO_API_KEY"),
 		EmailFrom:                get("EMAIL_FROM", "noreply@vyzorix.app"),
 		EmailFromName:            get("EMAIL_FROM_NAME", "Vyzorix"),
 		JWTDuration:              jwtDuration,

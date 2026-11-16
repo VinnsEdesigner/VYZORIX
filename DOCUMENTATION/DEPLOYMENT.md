@@ -122,7 +122,7 @@ The config at `tooling/nginx/vyzorix.conf` provides:
 | `RATE_LIMIT_PER_MIN` | `60` | General rate limit |
 | `TURSO_DB_URL` | — | Turso database URL |
 | `TURSO_AUTH_TOKEN` | — | Turso auth token |
-| `RESEND_API_KEY` | — | Email service key |
+| `BREVO_API_KEY` | — | Email service key (Brevo transactional) |
 | `FIREBASE_CREDENTIALS` | — | FCM service account JSON |
 | `GOOGLE_OAUTH_CLIENT_ID` | — | Google OAuth |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | — | Google OAuth |

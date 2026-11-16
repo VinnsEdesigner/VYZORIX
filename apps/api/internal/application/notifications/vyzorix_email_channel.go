@@ -10,7 +10,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/email"
 )
 
-// EmailChannel sends notifications through the Resend-backed email service.
+// EmailChannel sends notifications through the Brevo-backed email service.
 type EmailChannel struct {
 	service *email.Service
 }

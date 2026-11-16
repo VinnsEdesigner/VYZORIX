@@ -25,7 +25,7 @@ var FieldsToRedact = []string{
 	"cookie",
 	"credentials",
 	"firebase_credentials",
-	"resend_api_key",
+	"brevo_api_key",
 	"google_oauth_secret",
 }
 
