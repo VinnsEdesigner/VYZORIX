@@ -14,6 +14,7 @@
 
 'use strict';
 
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const stream = require('node:stream');
@@ -49,6 +50,79 @@ var MIME_TYPES = {
 };
 
 /**
+ * Content-Security-Policy for the app document.
+ *
+ * The Go API sends its own CSP, but only on JSON responses; it never serves the
+ * document, so the policy that permits WebAssembly has to live here.
+ */
+var DOCUMENT_CSP = [
+  "default-src 'self'",
+  // Required for WebAssembly.compile/instantiate. Narrower than 'unsafe-eval':
+  // it permits WASM compilation and nothing else.
+  "script-src 'self' 'wasm-unsafe-eval'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  "connect-src 'self' ws: wss:",
+  // The OPFS capability probe starts a throwaway worker from a Blob URL.
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join('; ');
+
+/**
+ * Headers for every HTML response (the document and the SPA fallback).
+ *
+ * COOP/COEP are deliberately absent: OPFS createSyncAccessHandle() does not
+ * require cross-origin isolation (only SharedArrayBuffer does), and
+ * COEP: require-corp would break cross-origin resources for no benefit.
+ */
+function documentHeaders() {
+  return {
+    'Content-Security-Policy': DOCUMENT_CSP,
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'X-Frame-Options': 'DENY',
+  };
+}
+
+/**
+ * A CSP that also permits inline scripts carrying `nonce`.
+ *
+ * A server-rendered page carries an inline hydration script whose content varies
+ * per request (it embeds match timestamps), so a static hash cannot cover it and
+ * hashing per response is fragile — the header and the body must stay paired, and
+ * any re-request breaks the pairing. A per-request nonce avoids that entirely: it
+ * authorises the scripts the renderer just emitted, whatever their content.
+ *
+ * @param {string} nonce - base64 nonce, also injected into each inline script
+ * @returns {string} the Content-Security-Policy header value
+ */
+function cspWithNonce(nonce) {
+  return DOCUMENT_CSP.split('; ')
+    .map(function (d) {
+      return d.indexOf('script-src ') === 0 ? d + " 'nonce-" + nonce + "'" : d;
+    })
+    .join('; ');
+}
+
+/**
+ * Add `nonce="…"` to every inline <script> in `html`.
+ *
+ * External scripts are left alone: 'self' already covers them, and a nonce on a
+ * tag the policy does not require it on is noise.
+ */
+function injectScriptNonce(html, nonce) {
+  return html.replace(/<script\b([^>]*)>/gi, function (whole, attrs) {
+    if (/\bsrc\s*=/i.test(attrs)) return whole;
+    if (/\bnonce\s*=/i.test(attrs)) return whole;
+    return '<script nonce="' + nonce + '"' + attrs + '>';
+  });
+}
+
+/**
  * Serve a static file or SPA fallback.
  * @param {string} pathname - URL pathname
  * @param {object} res - http.ServerResponse
@@ -68,7 +142,7 @@ async function serveStaticFile(pathname, res) {
       '<p>Then restart the proxy.</p>' +
       '</body></html>';
     warn('Web app dist not found, serving placeholder', { dir: staticDir });
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.writeHead(200, Object.assign({ 'Content-Type': 'text/html; charset=utf-8' }, documentHeaders()));
     res.end(msg);
     return;
   }
@@ -108,11 +182,18 @@ async function serveStaticFile(pathname, res) {
       cacheControl = 'no-cache';
     }
 
-    res.writeHead(200, {
+    var headers = {
       'Content-Type': contentType,
       'Cache-Control': cacheControl,
       'Content-Length': stats.size,
-    });
+    };
+
+    // The document gets the security headers; hashed assets do not need them.
+    if (contentType.indexOf('text/html') === 0) {
+      Object.assign(headers, documentHeaders());
+    }
+
+    res.writeHead(200, headers);
 
     // Stream the file.
     var fileStream = fs.createReadStream(filePath);
@@ -133,11 +214,17 @@ async function serveSpaIndex(staticDir, res) {
   var indexPath = path.join(staticDir, 'index.html');
   try {
     var stats = await fs.promises.stat(indexPath);
-    res.writeHead(200, {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'no-cache',
-      'Content-Length': stats.size,
-    });
+    res.writeHead(
+      200,
+      Object.assign(
+        {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-cache',
+          'Content-Length': stats.size,
+        },
+        documentHeaders()
+      )
+    );
     var fileStream = fs.createReadStream(indexPath);
     stream.pipeline(fileStream, res, function (err) {
       if (err) {
@@ -147,7 +234,7 @@ async function serveSpaIndex(staticDir, res) {
     });
   } catch {
     warn('index.html not found — web app may not be built');
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.writeHead(200, Object.assign({ 'Content-Type': 'text/html; charset=utf-8' }, documentHeaders()));
     res.end(
       '<!DOCTYPE html><html><body>' +
       '<h1>Vyzorix Proxy Server</h1>' +
@@ -157,4 +244,11 @@ async function serveSpaIndex(staticDir, res) {
   }
 }
 
-module.exports = { serveStaticFile, MIME_TYPES };
+module.exports = {
+  serveStaticFile,
+  MIME_TYPES,
+  DOCUMENT_CSP,
+  documentHeaders,
+  cspWithNonce,
+  injectScriptNonce,
+};

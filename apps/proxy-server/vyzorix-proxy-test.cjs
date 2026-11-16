@@ -22,6 +22,7 @@ var sessionStore = require('./vyzorix-proxy-session-store.cjs');
 var authInterceptor = require('./vyzorix-proxy-auth-interceptor.cjs');
 var cfg = require('./vyzorix-proxy-config.cjs');
 var logger = require('./vyzorix-proxy-logger.cjs');
+var webServer = require('./vyzorix-proxy-web-server.cjs');
 
 var signRequest = signing.signRequest;
 var computeSignature = signing.computeSignature;
@@ -33,7 +34,7 @@ var sessionCookieHeader = sessionStore.sessionCookieHeader;
 var extractCookie = sessionStore.extractCookie;
 var parseSetCookies = sessionStore.parseSetCookies;
 var interceptAuthResponse = authInterceptor.interceptAuthResponse;
-var isApiPath = cfg.isApiPath;
+var shouldProxyToApi = cfg.shouldProxyToApi;
 var isAuthEndpoint = cfg.isAuthEndpoint;
 var isStateChanging = cfg.isStateChanging;
 var isGraphQLPath = cfg.isGraphQLPath;
@@ -349,25 +350,25 @@ test('interceptAuthResponse captures Go session cookie from Set-Cookie', functio
 
 section('Config & Routing');
 
-test('isApiPath identifies REST API paths', function () {
-  assert(isApiPath('/v1/auth/login'), '/v1/auth/login is API path');
-  assert(isApiPath('/v1/devices'), '/v1/devices is API path');
-  assert(isApiPath('/v1/organizations'), '/v1/organizations is API path');
-  assert(isApiPath('/health'), '/health is API path');
-  assert(isApiPath('/healthz'), '/healthz is API path');
+test('shouldProxyToApi identifies REST API paths', function () {
+  assert(shouldProxyToApi('/v1/auth/login'), '/v1/auth/login is API path');
+  assert(shouldProxyToApi('/v1/devices'), '/v1/devices is API path');
+  assert(shouldProxyToApi('/v1/organizations'), '/v1/organizations is API path');
+  assert(shouldProxyToApi('/health'), '/health is API path');
+  assert(shouldProxyToApi('/healthz'), '/healthz is API path');
 });
 
-test('isApiPath identifies GraphQL paths', function () {
-  assert(isApiPath('/org-123/graphql'), '/:org/graphql is API path');
-  assert(isApiPath('/org-123/graphql/batch'), '/:org/graphql/batch is API path');
-  assert(isApiPath('/org-123/graphql/ws'), '/:org/graphql/ws is API path');
+test('shouldProxyToApi identifies GraphQL paths', function () {
+  assert(shouldProxyToApi('/org-123/graphql'), '/:org/graphql is API path');
+  assert(shouldProxyToApi('/org-123/graphql/batch'), '/:org/graphql/batch is API path');
+  assert(shouldProxyToApi('/org-123/graphql/ws'), '/:org/graphql/ws is API path');
 });
 
-test('isApiPath rejects non-API paths', function () {
-  assert(!isApiPath('/'), 'Root is not API path');
-  assert(!isApiPath('/index.html'), 'index.html is not API path');
-  assert(!isApiPath('/assets/main.js'), '/assets/main.js is not API path');
-  assert(!isApiPath('/dashboard'), '/dashboard is not API path');
+test('shouldProxyToApi rejects non-API paths', function () {
+  assert(!shouldProxyToApi('/'), 'Root is not API path');
+  assert(!shouldProxyToApi('/index.html'), 'index.html is not API path');
+  assert(!shouldProxyToApi('/assets/main.js'), '/assets/main.js is not API path');
+  assert(!shouldProxyToApi('/dashboard'), '/dashboard is not API path');
 });
 
 test('isAuthEndpoint identifies auth endpoints', function () {
@@ -503,6 +504,104 @@ function proxyFetch(port, path, method, body, headers) {
     req.end();
   });
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  Document security headers (CSP)
+// ═══════════════════════════════════════════════════════════════
+
+test('document CSP permits WebAssembly compilation', function () {
+  // Without this the browser refuses to compile a wasm module, so the local
+  // database silently fails to start.
+  assert(
+    webServer.DOCUMENT_CSP.indexOf("'wasm-unsafe-eval'") !== -1,
+    "document CSP must include 'wasm-unsafe-eval'"
+  );
+});
+
+test('document CSP permits blob: workers for the OPFS probe', function () {
+  assert(
+    webServer.DOCUMENT_CSP.indexOf('worker-src') !== -1 &&
+      webServer.DOCUMENT_CSP.indexOf('blob:') !== -1,
+    'document CSP must allow worker-src blob:'
+  );
+});
+
+test('document CSP does not fall back to unsafe-eval', function () {
+  assert(
+    webServer.DOCUMENT_CSP.indexOf("'unsafe-eval'") === -1,
+    "document CSP must not include the broad 'unsafe-eval'"
+  );
+});
+
+test('document CSP sets object-src none and frame-ancestors none', function () {
+  assert(webServer.DOCUMENT_CSP.indexOf("object-src 'none'") !== -1, 'object-src none');
+  assert(webServer.DOCUMENT_CSP.indexOf("frame-ancestors 'none'") !== -1, 'frame-ancestors none');
+});
+
+test('documentHeaders does not force cross-origin isolation', function () {
+  var headers = webServer.documentHeaders();
+  assert(headers['Cross-Origin-Embedder-Policy'] === undefined, 'no COEP header');
+  assert(headers['Cross-Origin-Opener-Policy'] === undefined, 'no COOP header');
+  assert(headers['Content-Security-Policy'] === webServer.DOCUMENT_CSP, 'CSP is the document CSP');
+});
+
+test('wasm is served with the application/wasm MIME type', function () {
+  assertEqual(
+    webServer.MIME_TYPES['.wasm'],
+    'application/wasm',
+    'wasm MIME type (instantiateStreaming requires it)'
+  );
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  Inline script nonce (server-rendered documents)
+// ═══════════════════════════════════════════════════════════════
+
+test('cspWithNonce adds the nonce to script-src only', function () {
+  var csp = webServer.cspWithNonce('abc123');
+  assert(csp.indexOf("'nonce-abc123'") !== -1, 'nonce present');
+  assert(
+    csp.indexOf("script-src 'self' 'wasm-unsafe-eval' 'nonce-abc123'") !== -1,
+    'nonce appended to script-src'
+  );
+  // The nonce must not leak into other directives.
+  assert(csp.indexOf("style-src 'self' 'unsafe-inline' 'nonce-") === -1, 'nonce not in style-src');
+  assert(csp.indexOf("default-src 'self' 'nonce-") === -1, 'nonce not in default-src');
+});
+
+test('cspWithNonce keeps the policy strict', function () {
+  var csp = webServer.cspWithNonce('abc123');
+  // A nonce is what lets us avoid 'unsafe-inline'; if it crept in, the nonce is
+  // doing nothing.
+  assert(csp.indexOf("script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline'") === -1, 'no unsafe-inline');
+});
+
+test('injectScriptNonce tags inline scripts and leaves external ones alone', function () {
+  var html = '<script>inline()</script><script src="/a.js"></script>';
+  var out = webServer.injectScriptNonce(html, 'n1');
+  assert(out.indexOf('<script nonce="n1">inline()</script>') !== -1, 'inline script tagged');
+  assert(out.indexOf('<script src="/a.js">') !== -1, 'external script untouched');
+  assert(out.indexOf('<script nonce="n1" src=') === -1, 'no nonce on external script');
+});
+
+test('injectScriptNonce preserves existing attributes', function () {
+  var html = '<script class="$tsr" id="barrier">x</script>';
+  var out = webServer.injectScriptNonce(html, 'n1');
+  assert(out.indexOf('class="$tsr"') !== -1, 'class preserved');
+  assert(out.indexOf('id="barrier"') !== -1, 'id preserved');
+  assert(out.indexOf('nonce="n1"') !== -1, 'nonce added');
+});
+
+test('injectScriptNonce does not double-tag a script that already has a nonce', function () {
+  var html = '<script nonce="existing">x</script>';
+  var out = webServer.injectScriptNonce(html, 'n1');
+  assertEqual(out, html, 'unchanged');
+});
+
+test('injectScriptNonce leaves html with no scripts alone', function () {
+  var html = '<p>no scripts here</p>';
+  assertEqual(webServer.injectScriptNonce(html, 'n1'), html, 'unchanged');
+});
 
 // ═══════════════════════════════════════════════════════════════
 //  Run All Tests

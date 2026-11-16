@@ -32,9 +32,12 @@ var core = require('./vyzorix-proxy-core.cjs');
 var webServer = require('./vyzorix-proxy-web-server.cjs');
 var wsProxy = require('./vyzorix-proxy-websocket.cjs');
 var sessionStore = require('./vyzorix-proxy-session-store.cjs');
+var ssr = require('./vyzorix-proxy-ssr.cjs');
+
+var path = require('node:path');
 
 var config = cfg.config;
-var isApiPath = cfg.isApiPath;
+var shouldProxyToApi = cfg.shouldProxyToApi;
 var banner = logger.banner;
 var divider = logger.divider;
 var kv = logger.kv;
@@ -71,6 +74,10 @@ function printBanner() {
 
 async function main() {
   printBanner();
+
+  // Load the SSR handler before serving. Failure is not fatal: the proxy falls
+  // back to static files, so a deployment without an SSR build still boots.
+  await ssr.init();
 
   var server = http.createServer(function (req, res) {
     handleRequest(req, res).catch(function (err) {
@@ -156,7 +163,7 @@ async function handleRequest(req, res) {
   }
 
   // Route to API proxy or static file server.
-  if (isApiPath(pathname)) {
+  if (shouldProxyToApi(pathname)) {
     var body = await bufferBody(req);
 
     var result = await handleApiRequest(
@@ -179,10 +186,41 @@ async function handleRequest(req, res) {
     } else {
       res.end();
     }
+  } else if (shouldRender(pathname, req)) {
+    // A document request: render it. Everything else is a static asset.
+    try {
+      await ssr.serve(req, res);
+    } catch (err) {
+      error('SSR render failed; falling back to static files', {
+        path: pathname,
+        error: err.message,
+      });
+      await serveStaticFile(pathname, res);
+    }
   } else {
     // Serve static web app file (no vite — pure fs).
     await serveStaticFile(pathname, res);
   }
+}
+
+/**
+ * Whether a request should be rendered rather than served as a file.
+ *
+ * Only navigations that expect HTML, and only when the SSR handler loaded. A
+ * request for a file that exists on disk is always served as a file, so the
+ * renderer never stands between the browser and an asset.
+ */
+function shouldRender(pathname, req) {
+  if (!ssr.isReady()) return false;
+
+  // Assets are files; a path with an extension is not a document.
+  if (path.extname(pathname)) return false;
+
+  // Render only what the browser will treat as a document.
+  var accept = req.headers.accept || '';
+  if (accept && accept.indexOf('text/html') === -1) return false;
+
+  return req.method === 'GET' || req.method === 'HEAD';
 }
 
 main().catch(function (err) {

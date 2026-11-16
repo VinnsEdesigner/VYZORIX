@@ -56,7 +56,10 @@ function isGraphQLPath(pathname) {
   return /^\/[^/]+\/graphql(\/(batch|ws))?$/.test(pathname);
 }
 
-function isApiPath(pathname) {
+// True when the path is served by the API rather than by the web app: a REST
+// prefix, or an org-scoped GraphQL endpoint. The name says "should proxy",
+// because a GraphQL path is not a REST path but is still proxied.
+function shouldProxyToApi(pathname) {
   if (API_PATH_PREFIXES.some(function (p) { return pathname.startsWith(p); })) return true;
   return isGraphQLPath(pathname);
 }
@@ -97,7 +100,7 @@ function isStateChanging(method) {
 
 module.exports = {
   config,
-  isApiPath,
+  shouldProxyToApi,
   isGraphQLPath,
   isAuthEndpoint,
   isAuthInterceptEndpoint,
