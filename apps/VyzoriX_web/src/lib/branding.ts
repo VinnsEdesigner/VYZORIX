@@ -24,6 +24,8 @@ export const brandingSettings: BrandingSettings = {
   loginBackground: env('VITE_BRAND_LOGIN_BACKGROUND'),
   menuLogo: env('VITE_BRAND_MENU_LOGO'),
   loadingLogo: env('VITE_BRAND_LOADING_LOGO'),
+  bootAnimation: env('VITE_BRAND_BOOT_ANIMATION'),
+  bootAnimationLoop: env('VITE_BRAND_BOOT_ANIMATION_LOOP'),
   favIcon: env('VITE_BRAND_FAVICON'),
   appleTouchIcon: env('VITE_BRAND_APPLE_TOUCH_ICON'),
   maskIcon: env('VITE_BRAND_MASK_ICON'),

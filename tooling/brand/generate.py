@@ -1,162 +1,137 @@
 #!/usr/bin/env python3
-"""Generate every Vyzorix brand asset from one definition of the mark.
+"""Generate every Vyzorix brand asset from the traced ORBITAL V mark.
 
-The mark's geometry is declared once, here, and every asset — the SVG icon, the
-mono icon, the Safari mask silhouette, the wordmark, and the raster favicons —
-is derived from it. Editing a coordinate in `MARK` updates all of them, so the
-assets cannot drift out of sync the way hand-maintained files do.
+`source/orbital-v.svg` is the master: the mark as traced from the supplied
+artwork. Everything else — the icon, the mono icon, the Safari mask silhouette,
+the wordmark, and the raster favicons — is derived from it here, so the assets
+cannot drift apart the way hand-maintained files do.
 
-Run from the repo root:
-    python3 tooling/brand/generate.py
+Run from the repo root with the venv that has cairosvg + Pillow + fontTools:
+    /workspace/vision-venv/bin/python tooling/brand/generate.py
 """
 import io
 import os
+import re
 
+import cairosvg
 from fontTools.misc.transform import Transform
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.ttLib import TTFont
-from PIL import Image, ImageDraw
+from PIL import Image
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+SOURCE = os.path.join(HERE, 'source', 'orbital-v.svg')
 BRAND_DIR = os.path.join('apps', 'VyzoriX_web', 'public', 'brand')
 FONT_CANDIDATES = [
     '/workspace/mega-webclient-ref/fonts/Inter-SemiBold.ttf',
-    os.path.join(os.path.dirname(__file__), 'Inter-SemiBold.ttf'),
+    os.path.join(HERE, 'Inter-SemiBold.ttf'),
 ]
 
-# ---------------------------------------------------------------------------
-# The mark. Everything is expressed on a 24x24 grid.
-# ---------------------------------------------------------------------------
-
-GRID = 24
-TILE_INSET = 1.0          # gap between the grid edge and the tile
-TILE_RADIUS = 6.0
-
-# The chevron: a single stroke forming a V. Symmetric about x=12.
-CHEVRON = [(6.6, 7.6), (12.0, 13.8), (17.4, 7.6)]
-CHEVRON_WIDTH = 2.6
-
-# A single node under the chevron: the "signal" mark. One dot reads at every size,
-# where a multi-segment pulse turns to mush at 16px (it was tried — see
-# tooling/brand/variants.py, which renders candidate directions for comparison).
-NODE = (12.0, 18.2)
-NODE_RADIUS = 1.8
-
-ROSE_LIGHT = '#fb7185'
-ROSE_DARK = '#be123c'
-ROSE_SOLID = '#e11d48'
+# The brand accent is rose-700. The artwork arrived red (#f71c4a); the app's
+# theme is rose, so the mark is recoloured to match rather than carrying two
+# reds that are nearly — but not quite — the same.
+ACCENT = '#be123c'          # rose-700
+MARK_WHITE = '#ffffff'
 
 WORD = 'Vyzorix'
 WORD_CAP_PX = 17.0
 WORD_GAP = 10.0
+WORD_DARK = '#e5e5e5'       # wordmark colour on a dark surface
+WORD_LIGHT = '#171717'      # wordmark colour on a light surface
 
 
-def chevron_path() -> str:
-    (x0, y0), (x1, y1), (x2, y2) = CHEVRON
-    return f'M{x0} {y0} L{x1} {y1} L{x2} {y2}'
+# ---------------------------------------------------------------------------
+# The mark, read from the traced source.
+# ---------------------------------------------------------------------------
+
+def read_source():
+    """Return (white_paths, accent_paths, viewbox, transform) from the master."""
+    svg = open(SOURCE).read()
+    viewbox = re.search(r'viewBox="([^"]+)"', svg).group(1)
+    transform = re.search(r'<g transform="([^"]+)"', svg).group(1)
+    # The source groups white paths first, then the accent ones, each in its own
+    # `<g fill=...>`; keep that split so each layer can be recoloured.
+    groups = re.findall(r'<g fill="(#[0-9a-fA-F]{6})">(.*?)</g>', svg, re.S)
+    white, accent = [], []
+    for fill, body in groups:
+        paths = re.findall(r'<path d="([^"]+)"', body)
+        if fill.lower() == '#ffffff':
+            white.extend(paths)
+        else:
+            accent.extend(paths)
+    return white, accent, viewbox, transform
 
 
-def node_svg() -> str:
-    return f'<circle cx="{NODE[0]}" cy="{NODE[1]}" r="{NODE_RADIUS}" fill="#ffffff" opacity="0.95"/>'
+WHITE_PATHS, ACCENT_PATHS, SOURCE_VIEWBOX, SOURCE_TRANSFORM = read_source()
 
 
-def mark_body(fill: str) -> str:
-    """The shapes that make the mark, with a caller-chosen tile fill."""
-    return (
-        f'  <rect x="{TILE_INSET}" y="{TILE_INSET}" width="{GRID - 2 * TILE_INSET}" '
-        f'height="{GRID - 2 * TILE_INSET}" rx="{TILE_RADIUS}" fill="{fill}"/>\n'
-        f'  <path d="{chevron_path()}" fill="none" stroke="#ffffff" stroke-width="{CHEVRON_WIDTH}" '
-        f'stroke-linecap="round" stroke-linejoin="round"/>\n'
-        f'  {node_svg()}'
-    )
+def _layer(paths, fill):
+    body = '\n'.join(f'      <path d="{d}"/>' for d in paths)
+    return f'    <g fill="{fill}">\n{body}\n    </g>'
 
 
-def icon_svg() -> str:
+def mark_group(accent=ACCENT, white=MARK_WHITE):
+    """The mark's two layers, for any SVG sharing the source viewBox."""
+    return '\n'.join([_layer(WHITE_PATHS, white), _layer(ACCENT_PATHS, accent)])
+
+
+def icon_svg(accent=ACCENT) -> str:
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Vyzorix app mark.
+  Vyzorix app mark — ORBITAL V.
 
-  A "V" chevron over a telemetry pulse, on the rose brand gradient. Generated by
-  tooling/brand/generate.py from the single geometry definition there — edit that
-  file, not this one.
+  A "V" (left arm white, right arm accent) with an orbital arc sweeping over the
+  top right. Generated by tooling/brand/generate.py from source/orbital-v.svg;
+  edit the source or the generator, not this file.
 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {GRID} {GRID}" width="{GRID}" height="{GRID}" role="img" aria-label="Vyzorix">
-  <defs>
-    <linearGradient id="vyzorixRose" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="{ROSE_LIGHT}"/>
-      <stop offset="1" stop-color="{ROSE_DARK}"/>
-    </linearGradient>
-  </defs>
-{mark_body('url(#vyzorixRose)')}
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="{SOURCE_VIEWBOX}" role="img" aria-label="Vyzorix">
+  <g transform="{SOURCE_TRANSFORM}">
+{mark_group(accent)}
+  </g>
 </svg>
 '''
 
 
 def icon_mono_svg() -> str:
+    """Single-colour: every layer takes `currentColor`.
+
+    The mark is two coloured layers; a mono version collapses them to one fill so
+    it can sit on any surface and be tinted by its container.
+    """
+    body = '\n'.join(f'    <path d="{d}"/>' for d in WHITE_PATHS + ACCENT_PATHS)
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Vyzorix app mark, single-colour.
-
-  The tile takes currentColor so the surrounding text colour tints it; the inner
-  strokes stay white, which is the contrast the mark needs on the fill.
-
-  Note: an SVG loaded through an img element is its own document, so CSS custom
-  properties from the page do not cross into it. The strokes therefore use a
-  literal colour rather than a var().
+  Vyzorix app mark, single-colour. Every layer takes currentColor.
+  Generated by tooling/brand/generate.py.
 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {GRID} {GRID}" width="{GRID}" height="{GRID}" role="img" aria-label="Vyzorix">
-{mark_body('currentColor')}
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="{SOURCE_VIEWBOX}" role="img" aria-label="Vyzorix">
+  <g transform="{SOURCE_TRANSFORM}" fill="currentColor">
+{body}
+  </g>
 </svg>
 '''
 
 
 def mask_icon_svg() -> str:
-    """A flat silhouette for Safari pinned tabs, which tints the shape itself.
-
-    Built as one path with even-odd fill so the tile and the strokes knock out
-    cleanly: the tile is a rounded rect, and the chevron/pulse are stroked and
-    then converted to outlines is out of scope here, so they are expressed as
-    filled quads and a thick polyline respectively.
-    """
-    r = TILE_RADIUS
-    inset = TILE_INSET
-    far = GRID - TILE_INSET
-
-    tile = (
-        f'M{inset + r} {inset} H{far - r} A{r} {r} 0 0 1 {far} {inset + r} '
-        f'V{far - r} A{r} {r} 0 0 1 {far - r} {far} H{inset + r} '
-        f'A{r} {r} 0 0 1 {inset} {far - r} V{inset + r} A{r} {r} 0 0 1 {inset + r} {inset} Z'
-    )
-
-    def stroke_outline(points, width):
-        """Convert a polyline to a closed outline path of the given width."""
-        h = width / 2
-        top = ' L'.join(f'{x} {y - h}' for x, y in points)
-        bottom = ' L'.join(f'{x} {y + h}' for x, y in reversed(points))
-        return f'M{top} L{bottom} Z'
-
-    chevron = stroke_outline(CHEVRON, CHEVRON_WIDTH)
-    # A circle as two arcs, wound so even-odd knocks it out of the tile.
-    cx, cy, r = NODE[0], NODE[1], NODE_RADIUS
-    node = (f'M{cx - r} {cy} A{r} {r} 0 1 0 {cx + r} {cy} A{r} {r} 0 1 0 {cx - r} {cy} Z')
-
+    """A flat silhouette for Safari pinned tabs, which tints the shape itself."""
+    body = '\n'.join(f'    <path d="{d}"/>' for d in WHITE_PATHS + ACCENT_PATHS)
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Vyzorix mask icon.
-
-  A solid silhouette for Safari pinned tabs (a mask-icon link). Safari ignores
-  this file's own colour and tints the shape with the link's color attribute, so
-  it must be one flat fill. fill-rule="evenodd" knocks the chevron and node out
-  of the tile. Generated by tooling/brand/generate.py.
+  Vyzorix mask icon — the ORBITAL V as a flat silhouette for Safari pinned tabs.
+  Safari tints it with the link's color attribute. Generated by
+  tooling/brand/generate.py.
 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {GRID} {GRID}" width="{GRID}" height="{GRID}">
-  <path fill="#000000" fill-rule="evenodd" d="{tile} {chevron} {node}"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="{SOURCE_VIEWBOX}" role="img" aria-label="Vyzorix">
+  <g transform="{SOURCE_TRANSFORM}" fill="#000000">
+{body}
+  </g>
 </svg>
 '''
 
 
 # ---------------------------------------------------------------------------
-# Wordmark, from real Inter outlines.
+# Wordmark: the mark beside the word, from real Inter outlines.
 # ---------------------------------------------------------------------------
 
 def find_font() -> str:
@@ -175,7 +150,6 @@ def word_outline(font: TTFont, word: str):
     for ch in word:
         name = cmap[ord(ch)]
         pen = SVGPathPen(glyphs)
-        # Font y points up, SVG y points down: flip, then advance along x.
         glyphs[name].draw(TransformPen(pen, Transform(1, 0, 0, -1, x, 0)))
         d = pen.getCommands()
         if d:
@@ -185,105 +159,77 @@ def word_outline(font: TTFont, word: str):
     return ' '.join(parts), x, cap
 
 
-def wordmark_svg(path_d: str, advance: float, cap: float, fill: str, surface: str) -> str:
+def source_size():
+    _, _, w, h = (float(v) for v in SOURCE_VIEWBOX.split())
+    return w, h
+
+
+def wordmark_svg(path_d, advance, cap, word_fill, surface) -> str:
+    mark_w, mark_h = source_size()
     scale = WORD_CAP_PX / cap
     text_w = advance * scale
-    total_w = GRID + WORD_GAP + text_w
-    baseline = (GRID + WORD_CAP_PX) / 2
-    text_x = GRID + WORD_GAP
+    total_w = mark_w + WORD_GAP + text_w
+    total_h = mark_h
+    baseline = (total_h + WORD_CAP_PX) / 2
+    text_x = mark_w + WORD_GAP
 
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <!--
   Vyzorix wordmark, for {surface} surfaces.
 
-  The mark plus the word. Letterforms are real Inter outlines, laid out with the
-  font's own advance widths and cap height, so the wordmark matches the interface
-  typeface. Generated by tooling/brand/generate.py. Inter is under the SIL Open
-  Font License 1.1.
+  The ORBITAL V beside the word. Letterforms are real Inter outlines, laid out
+  with the font's own advance widths and cap height, so the wordmark matches the
+  interface typeface. Generated by tooling/brand/generate.py. Inter is under the
+  SIL Open Font License 1.1.
 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {total_w:.2f} {GRID}" width="{total_w:.2f}" height="{GRID}" role="img" aria-label="Vyzorix">
-  <defs>
-    <linearGradient id="vyzorixWordRose" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="{ROSE_LIGHT}"/>
-      <stop offset="1" stop-color="{ROSE_DARK}"/>
-    </linearGradient>
-  </defs>
-  <g>
-{mark_body('url(#vyzorixWordRose)')}
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {total_w:.2f} {total_h:.2f}" role="img" aria-label="Vyzorix">
+  <g transform="{SOURCE_TRANSFORM}">
+{mark_group()}
   </g>
   <g transform="translate({text_x:.2f} {baseline:.2f}) scale({scale:.6f})">
-    <path d="{path_d}" fill="{fill}"/>
+    <path d="{path_d}" fill="{word_fill}"/>
   </g>
 </svg>
 '''
 
 
 # ---------------------------------------------------------------------------
-# Raster assets, drawn from the same geometry.
+# Raster assets: rasterise the same SVG, so pixels and vectors cannot disagree.
 # ---------------------------------------------------------------------------
 
-def lerp(a, b, t):
-    return tuple(round(a[i] + (b[i] - a[i]) * t) for i in range(3))
-
-
-def raster_mark(size: int) -> Image.Image:
-    ss = 8
-    px = size * ss
-    u = px / GRID
-
-    mask = Image.new('L', (px, px), 0)
-    ImageDraw.Draw(mask).rounded_rectangle(
-        [TILE_INSET * u, TILE_INSET * u, px - TILE_INSET * u, px - TILE_INSET * u],
-        radius=round(TILE_RADIUS * u), fill=255,
+def raster_icon(size: int, background: str | None = None) -> Image.Image:
+    png = cairosvg.svg2png(
+        url=SOURCE, output_width=size, output_height=size, background_color=background,
     )
-
-    light = tuple(int(ROSE_LIGHT[i:i + 2], 16) for i in (1, 3, 5))
-    dark = tuple(int(ROSE_DARK[i:i + 2], 16) for i in (1, 3, 5))
-    grad = Image.new('RGBA', (px, px))
-    gp = grad.load()
-    for y in range(px):
-        for x in range(px):
-            gp[x, y] = lerp(light, dark, (x + y) / (2 * (px - 1))) + (255,)
-
-    img = Image.new('RGBA', (px, px), (0, 0, 0, 0))
-    img.paste(grad, (0, 0), mask)
-    draw = ImageDraw.Draw(img)
-
-    draw.line([(x * u, y * u) for x, y in CHEVRON], fill=(255, 255, 255, 255),
-              width=round(CHEVRON_WIDTH * u), joint='curve')
-    nx, ny = NODE[0] * u, NODE[1] * u
-    nr = NODE_RADIUS * u
-    draw.ellipse([nx - nr, ny - nr, nx + nr, ny + nr], fill=(255, 255, 255, 242))
-
-    return img.resize((size, size), Image.LANCZOS)
+    return Image.open(io.BytesIO(png)).convert('RGBA')
 
 
 def main() -> None:
     os.makedirs(BRAND_DIR, exist_ok=True)
 
-    # SVGs
     writes = {
         'vyzorix_icon.svg': icon_svg(),
         'vyzorix_icon_mono.svg': icon_mono_svg(),
         'vyzorix_mask_icon.svg': mask_icon_svg(),
     }
+
     font = TTFont(find_font())
     path_d, advance, cap = word_outline(font, WORD)
-    writes['vyzorix_wordmark_dark.svg'] = wordmark_svg(path_d, advance, cap, '#e5e5e5', 'dark')
-    writes['vyzorix_wordmark_light.svg'] = wordmark_svg(path_d, advance, cap, '#171717', 'light')
+    writes['vyzorix_wordmark_dark.svg'] = wordmark_svg(path_d, advance, cap, WORD_DARK, 'dark')
+    writes['vyzorix_wordmark_light.svg'] = wordmark_svg(path_d, advance, cap, WORD_LIGHT, 'light')
 
     for name, content in writes.items():
         with open(os.path.join(BRAND_DIR, name), 'w') as fh:
             fh.write(content)
         print('wrote', name)
 
-    # Rasters
-    raster_mark(64).save(os.path.join(BRAND_DIR, 'favicon.ico'), sizes=[(16, 16), (32, 32), (48, 48)])
-    raster_mark(32).save(os.path.join(BRAND_DIR, 'favicon-32.png'))
-    raster_mark(16).save(os.path.join(BRAND_DIR, 'favicon-16.png'))
+    # Rasters. apple-touch must be opaque: iOS composites transparency onto white.
+    raster_icon(64).save(os.path.join(BRAND_DIR, 'favicon.ico'), sizes=[(16, 16), (32, 32), (48, 48)])
+    raster_icon(32).save(os.path.join(BRAND_DIR, 'favicon-32.png'))
+    raster_icon(16).save(os.path.join(BRAND_DIR, 'favicon-16.png'))
 
     touch = Image.new('RGB', (180, 180), (13, 13, 13))
-    touch.paste(raster_mark(180), (0, 0), raster_mark(180))
+    touch.paste(raster_icon(180), (0, 0), raster_icon(180))
     touch.save(os.path.join(BRAND_DIR, 'apple-touch-icon.png'))
     print('wrote favicon.ico, favicon-16.png, favicon-32.png, apple-touch-icon.png')
 

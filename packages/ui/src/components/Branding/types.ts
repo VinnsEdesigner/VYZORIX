@@ -20,6 +20,14 @@ export interface BrandingSettings {
   menuLogo?: string;
   /** Mark shown while the app boots. */
   loadingLogo?: string;
+  /**
+   * The app-open animation: the mark drawing itself in. Shown once on boot.
+   * Falls back to `loadingLogo` when unset or when the user prefers reduced
+   * motion.
+   */
+  bootAnimation?: string;
+  /** The looping app-open animation: the orbit sweeping the mark. */
+  bootAnimationLoop?: string;
   /** Browser tab icon. */
   favIcon?: string;
   /** iOS home-screen icon. */
@@ -44,10 +52,12 @@ export const DEFAULT_BRANDING: Required<BrandingSettings> = {
   loginBackground: '',
   menuLogo: '/brand/vyzorix_icon.svg',
   loadingLogo: '/brand/vyzorix_icon.svg',
+  bootAnimation: '/brand/vyzorix_boot_assemble.svg',
+  bootAnimationLoop: '/brand/vyzorix_boot_orbit.svg',
   favIcon: '/brand/favicon-32.png',
   appleTouchIcon: '/brand/apple-touch-icon.png',
   maskIcon: '/brand/vyzorix_mask_icon.svg',
-  maskIconColor: '#e11d48',
+  maskIconColor: '#be123c',
 };
 
 /** Merge supplied settings over the defaults. */

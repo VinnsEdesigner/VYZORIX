@@ -1,5 +1,6 @@
 import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router';
-import { BrandingProvider, resolveBranding } from '@vyzorix/ui';
+import { useEffect, useState } from 'react';
+import { BootScreen, BrandingProvider, resolveBranding } from '@vyzorix/ui';
 import { QueryProvider } from '@/providers/query-provider';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { VyzorI18nProvider } from '@/providers/vyzor-i18n-provider';
@@ -32,6 +33,28 @@ document.documentElement.style.colorScheme=mode;
 document.documentElement.style.background=mode==='dark'?'#0d0d0d':'#ffffff';
 }catch(e){}})();`;
 
+/**
+ * Holds the app-open animation on screen until the shell is interactive.
+ *
+ * The boot screen is shown from first paint (the server renders it, so it
+ * appears before any script runs) and dismissed once hydration has completed
+ * and a minimum time has passed — without the minimum, a fast load would flash
+ * the animation for a few frames, which reads as a glitch rather than an intro.
+ */
+const BOOT_MIN_MS = 900;
+
+function BootGate({ children }: { children: React.ReactNode }) {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setReady(true), BOOT_MIN_MS);
+    return () => window.clearTimeout(id);
+  }, []);
+
+  if (!ready) return <BootScreen />;
+  return <>{children}</>;
+}
+
 function RootComponent() {
   useWebSocketConnection();
   useInitConnectivity();
@@ -43,7 +66,9 @@ function RootComponent() {
           <VyzorI18nProvider>
             <VyzorAnalyticsProvider>
               <VyzorErrorBoundary>
-                <Outlet />
+                <BootGate>
+                  <Outlet />
+                </BootGate>
               </VyzorErrorBoundary>
               <VyzorConsentBanner />
             </VyzorAnalyticsProvider>
