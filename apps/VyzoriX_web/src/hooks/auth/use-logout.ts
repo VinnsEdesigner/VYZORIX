@@ -6,7 +6,7 @@ export function useLogout() {
   return usePostAuthLogout({
     mutation: {
       onSettled: () => {
-        // Clear local state whether or not the server call succeeded.
+
         clear();
       },
     },

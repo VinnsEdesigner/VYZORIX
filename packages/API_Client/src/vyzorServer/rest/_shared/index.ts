@@ -1,5 +1,7 @@
 export { restClient, axios } from './rest-client';
 
+export { parseApiError, type ApiError } from '../../auth/api-error';
+
 export {
   VyzorixRequestQueue,
   DEFAULT_REQUEST_QUEUE_CONFIG,

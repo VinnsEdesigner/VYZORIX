@@ -8,6 +8,7 @@
 import type { ClientSettings } from './clientSettings';
 
 export interface UserSettingsResultLegacy {
+  avatar_url?: string;
   client?: ClientSettings;
   email?: string;
   email_verified?: boolean;

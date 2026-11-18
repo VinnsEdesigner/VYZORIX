@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { rowsPerStatement, MAX_BOUND_VARIABLES } from '@/lib/local-store/protocol';
 import { tableDefinition, TABLES, schemaStatements } from '@/lib/local-store/schema';
 
-/** The schema version is read from the environment, so it is tested by reloading the module. */
 async function loadSchemaVersion(envValue: string | undefined): Promise<number> {
   vi.resetModules();
   if (envValue === undefined) {
@@ -20,13 +19,13 @@ afterEach(() => {
 
 describe('rowsPerStatement', () => {
   it('stays within SQLite\'s bound-variable limit', () => {
-    // A wide table binds one value per column per row.
+
     expect(rowsPerStatement(10) * 10).toBeLessThanOrEqual(MAX_BOUND_VARIABLES);
     expect(rowsPerStatement(1)).toBe(MAX_BOUND_VARIABLES);
   });
 
   it('never returns zero, so a chunk is always progress', () => {
-    // A table wider than the limit would otherwise produce an empty statement.
+
     expect(rowsPerStatement(MAX_BOUND_VARIABLES + 1)).toBe(1);
     expect(rowsPerStatement(0)).toBe(0);
   });
@@ -43,9 +42,7 @@ describe('schema', () => {
   });
 
   it('declares the primary key, so the upsert has a conflict target', () => {
-    // Without a PRIMARY KEY, ON CONFLICT has nothing to match and every upsert
-    // fails with "ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE
-    // constraint".
+
     const statements = schemaStatements();
     for (const table of TABLES) {
       const create = statements.find(
@@ -98,8 +95,7 @@ describe('schema version from the environment', () => {
   });
 
   it('falls back when the value is not a number', async () => {
-    // A typo must not produce a version no database can match, which would
-    // rebuild the cache on every single load.
+
     expect(await loadSchemaVersion('latest')).toBe(2);
   });
 

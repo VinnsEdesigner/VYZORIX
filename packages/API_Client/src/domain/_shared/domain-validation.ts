@@ -1,17 +1,8 @@
-// Shared validation primitives. ValidationResult is the canonical shape
-// across all bounded contexts; per-context validators return this type so
-// the domain barrel can re-export them without name collisions.
-
 export interface ValidationFieldError {
   field: string;
   message: string;
 }
 
-/**
- * Unified validation result. `errors` is keyed by field name, where each
- * field may carry one or more messages. Callers needing a flat list can
- * use {@link fieldErrorList}.
- */
 export interface ValidationResult {
   isValid: boolean;
   errors: Record<string, string[]>;

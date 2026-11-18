@@ -26,6 +26,7 @@ export type AuthStatus =
 export interface AuthStoreState extends AuthState, LockoutState {
   mfaChallenge: MfaChallenge | null;
   status: AuthStatus;
+  sessionChecked: boolean;
   setFromLoginWithTokens: (response: LoginWithTokensResult) => void;
   setFromMeResponse: (me: MeResult) => void;
   setFromMfaVerify: (response: MFAVerifyResult) => Promise<MeResult | null>;
@@ -34,6 +35,7 @@ export interface AuthStoreState extends AuthState, LockoutState {
   setAccessToken: (token: string | null) => void;
   refreshTokens: () => Promise<void>;
   setLockout: (state: LockoutState) => void;
+  markSessionChecked: () => void;
   clear: () => void;
 }
 
@@ -77,6 +79,9 @@ export const useAuthStore = createVyzorStore<AuthStoreState>('AuthStore', (set) 
   return {
     ...initial,
     mfaChallenge: null,
+
+    sessionChecked: false,
+    markSessionChecked: () => set({ sessionChecked: true }),
     setFromLoginWithTokens: (response) => {
       authContext.setFromLoginWithTokens(response);
       set(buildSnapshot({ mfaChallenge: null }));
@@ -88,9 +93,7 @@ export const useAuthStore = createVyzorStore<AuthStoreState>('AuthStore', (set) 
     setFromMfaVerify: async (response) => {
       authContext.setFromMfaVerify(response);
       set(buildSnapshot({ mfaChallenge: null }));
-      // The MFA verify response carries only a partial operator. Fetch /me
-      // to populate organizations/memberships/needs_organization so the
-      // derived status (needs_organization vs authenticated) is correct.
+
       if (response.success && response.access_token) {
         try {
           const me = await getAuthMe();
@@ -100,8 +103,7 @@ export const useAuthStore = createVyzorStore<AuthStoreState>('AuthStore', (set) 
             return me;
           }
         } catch {
-          // Tokens are already set; the operator may be incomplete but the
-          // session is valid. A later /me query will reconcile.
+          void 0;
         }
       }
       return null;

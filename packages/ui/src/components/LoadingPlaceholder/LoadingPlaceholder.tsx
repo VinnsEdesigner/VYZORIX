@@ -19,7 +19,6 @@ const getStyles = (theme: VyzorixTheme) => ({
   }),
 });
 
-/** A spinner with a message, for a loading region. */
 export function LoadingPlaceholder({ text, className }: LoadingPlaceholderProps) {
   const styles = useStyles2(getStyles);
   return (

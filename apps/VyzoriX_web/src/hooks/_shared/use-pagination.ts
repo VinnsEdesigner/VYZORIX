@@ -1,31 +1,14 @@
-/**
- * Use Pagination Hook
- * 
- * Generic pagination hook for offset-based pagination.
- * Works with any list data that uses page/limit/total.
- */
-
 import { useState, useCallback, useMemo } from "react";
 import type {
   OffsetPaginationParams,
   OffsetPagination,
 } from "@vyzorix/api-client";
 
-// ============================================================================
-// Types
-// ============================================================================
-
-/**
- * Pagination state
- */
 export interface PaginationState {
   page: number;
   limit: number;
 }
 
-/**
- * Use pagination options
- */
 export interface UsePaginationOptions {
   initialPage?: number;
   initialLimit?: number;
@@ -34,13 +17,6 @@ export interface UsePaginationOptions {
   onLimitChange?: (limit: number) => void;
 }
 
-// ============================================================================
-// Hook
-// ============================================================================
-
-/**
- * Generic pagination hook
- */
 export function usePagination(options: UsePaginationOptions = {}) {
   const {
     initialPage = 1,
@@ -55,7 +31,6 @@ export function usePagination(options: UsePaginationOptions = {}) {
     limit: Math.min(initialLimit, maxLimit),
   });
 
-  // Set page
   const setPage = useCallback(
     (page: number) => {
       const newPage = Math.max(1, page);
@@ -65,17 +40,15 @@ export function usePagination(options: UsePaginationOptions = {}) {
     [onPageChange]
   );
 
-  // Set limit
   const setLimit = useCallback(
     (limit: number) => {
       const newLimit = Math.min(Math.max(1, limit), maxLimit);
-      setState((prev) => ({ ...prev, limit: newLimit, page: 1 })); // Reset to page 1
+      setState((prev) => ({ ...prev, limit: newLimit, page: 1 }));
       onLimitChange?.(newLimit);
     },
     [maxLimit, onLimitChange]
   );
 
-  // Navigation helpers
   const nextPage = useCallback(() => {
     setPage(state.page + 1);
   }, [state.page, setPage]);
@@ -88,7 +61,6 @@ export function usePagination(options: UsePaginationOptions = {}) {
     setState({ page: initialPage, limit: Math.min(initialLimit, maxLimit) });
   }, [initialPage, initialLimit, maxLimit]);
 
-  // Derived state
   const params = useMemo<OffsetPaginationParams>(
     () => ({
       page: state.page,
@@ -98,34 +70,24 @@ export function usePagination(options: UsePaginationOptions = {}) {
   );
 
   return {
-    // State
+
     page: state.page,
     limit: state.limit,
     params,
 
-    // Setters
     setPage,
     setLimit,
 
-    // Navigation
     nextPage,
     prevPage,
     resetPagination,
 
-    // Helpers
     canGoNext: (pagination?: OffsetPagination) =>
       pagination ? pagination.page < pagination.totalPages : true,
     canGoPrev: () => state.page > 1,
   };
 }
 
-// ============================================================================
-// Pagination Info Hook
-// ============================================================================
-
-/**
- * Calculate pagination display info
- */
 export function usePaginationInfo(
   pagination: OffsetPagination | undefined,
   page: number,
@@ -156,13 +118,6 @@ export function usePaginationInfo(
   }, [pagination, page, limit]);
 }
 
-// ============================================================================
-// URL Sync Helper
-// ============================================================================
-
-/**
- * Parse pagination from URL search params
- */
 export function parsePaginationFromURL(
   searchParams: URLSearchParams
 ): OffsetPaginationParams {
@@ -175,9 +130,6 @@ export function parsePaginationFromURL(
   };
 }
 
-/**
- * Update pagination in URL
- */
 export function updatePaginationURL(
   page: number,
   limit: number

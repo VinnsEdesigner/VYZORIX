@@ -79,10 +79,7 @@ export const TABLES: TableDefinition[] = [
     ageColumn: 'at',
   },
   {
-    // Per-user UI preferences mirrored from the server (currently just the
-    // theme id). Read on load so the first paint is themed without a network
-    // round-trip. The store is already user-scoped, so `user_id` is the row key
-    // and one browser profile cannot serve another user's preference.
+
     name: 'user_prefs',
     pk: 'user_id',
     columns: ['user_id', 'theme', 'updated_at'],

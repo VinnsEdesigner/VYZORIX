@@ -1,4 +1,3 @@
-// Admin domain — generated types re-exported.
 export type {
   AdminUser,
   AdminUserListResult,

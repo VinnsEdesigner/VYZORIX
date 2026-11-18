@@ -13,7 +13,7 @@ export interface ConfirmModalProps {
   onConfirm: () => void;
   onDismiss: () => void;
   isOpen: boolean;
-  /** Use the destructive colour for the confirm action. */
+
   destructive?: boolean;
   isConfirming?: boolean;
 }
@@ -22,7 +22,6 @@ const getStyles = (theme: VyzorixTheme) => ({
   actions: css({ display: 'flex', justifyContent: 'flex-end', gap: theme.spacing(1), marginTop: theme.spacing(3) }),
 });
 
-/** A confirmation dialog for an action that is hard to undo. */
 export function ConfirmModal({
   title,
   body,

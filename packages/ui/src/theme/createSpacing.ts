@@ -1,10 +1,6 @@
-/**
- * Theme spacing: an 8px grid, callable and tokenised.
- *
- * `theme.spacing(2)` returns "16px"; `theme.spacing.x2` is the same value.
- */
-
 type ThemeSpacingArgument = number | string;
+
+export type ThemeSpacingTokens = 0 | 0.25 | 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 4 | 5 | 6 | 8 | 10;
 
 export interface ThemeSpacing {
   (): string;

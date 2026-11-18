@@ -38,14 +38,6 @@ function toQueryString(doc: unknown): string {
   return (doc as SubscriptionDocument)?.loc?.source.body ?? '';
 }
 
-/**
- * Subscribe to a device's live telemetry stream.
- *
- * Maintains a rolling buffer of the last `MAX_TELEMETRY_HISTORY` frames and
- * exposes the latest frame plus the full history. Also invalidates the REST
- * telemetry query caches so REST-backed components stay in sync. Frames that
- * fail domain validation are dropped (never surface malformed data to the UI).
- */
 interface UseDeviceTelemetryOptions {
   imei?: string;
 }
@@ -91,7 +83,7 @@ export function useDeviceTelemetry(
       {
         next: (data) => {
           if (!data) return;
-          // Invalidate REST telemetry caches so REST components stay in sync.
+
           queryClient.invalidateQueries({
             queryKey: getGetTelemetryLatestDeviceIdQueryKey(data.deviceId),
           });
@@ -135,14 +127,6 @@ export function useDeviceTelemetry(
   };
 }
 
-/**
- * Collect dashboard events (device connect/disconnect, threshold breach,
- * command delivered/failed) with unread tracking.
- *
- * Events are buffered up to `MAX_EVENTS`. `unreadCount` increments per new
- * event and is reset by `markAsRead` / `clearEvents`. Optional `eventTypes`
- * and `deviceImei` filters narrow the collected set.
- */
 interface UseDashboardEventsOptions {
   eventTypes?: WSEventType[];
   deviceImei?: string;
@@ -172,15 +156,9 @@ export function useDashboardEvents(
   const subscribe = useWebSocketStore((s) => s.subscribe);
   const organizationId = useCurrentOrganizationId();
 
-  // Stabilize eventTypes so the useEffect below doesn't re-subscribe on every
-  // render when the caller passes an inline array literal (e.g.
-  // useDashboardEvents({ eventTypes: ['DEVICE_CONNECTED'] })). Without this,
-  // each render produces a new array reference, the effect deps change, and
-  // the hook churns subscriptions — which compounds with the state updates
-  // from the next-callback into exponential growth.
   const stableEventTypes = useMemo(
     () => (eventTypes ? [...eventTypes] : null),
-    // Re-memoize only when the joined type values change, not the array identity.
+
     [eventTypes?.join('|')],
   );
 
@@ -202,7 +180,6 @@ export function useDashboardEvents(
         next: (data) => {
           if (!data) return;
 
-          // Keep REST-backed dashboards in sync.
           queryClient.invalidateQueries({ queryKey: getGetDashboardStatsQueryKey() });
           void invalidateGetDashboardEventsRecent(queryClient);
 
@@ -245,15 +222,6 @@ export function useDashboardEvents(
   return { events, unreadCount, markAsRead, clearEvents };
 }
 
-/**
- * Dispatch commands to a device and track their delivery status over the
- * realtime channel.
- *
- * `sendCommand` dispatches via the REST endpoint (the authoritative path) and
- * returns the `dispatchId`. The hook subscribes to command-status events for
- * the target device over WS and updates `commandStatus` + `pendingCommands` as
- * acks/status updates arrive.
- */
 interface UseCommandDispatchOptions {
   imei: string;
 }
@@ -291,7 +259,6 @@ export function useCommandDispatch(
     Map<string, 'pending' | 'delivered' | 'failed'>
   >(new Map());
 
-  // Subscribe to command-status updates for this device.
   useEffect(() => {
     if (!organizationId || !imei) return;
 
@@ -316,7 +283,6 @@ export function useCommandDispatch(
           void invalidateGetCommandDispatchIdStatus(queryClient, data.dispatchId);
           void invalidateGetDeviceImeiCommandsPending(queryClient, data.deviceId);
 
-          // Remove from pending once it reaches a terminal-ish state.
           if (status === 'delivered' || status === 'failed') {
             setPending((prev) => prev.filter((p) => p.dispatchId !== data.dispatchId));
           }
@@ -335,7 +301,6 @@ export function useCommandDispatch(
     ): Promise<string> => {
       if (!imei) throw new Error('Cannot dispatch command: no device IMEI');
 
-      // Dispatch via the authoritative REST path; status arrives over WS.
       const sent = await postDeviceImeiCommand(imei, {
         command,
         args: parameters,

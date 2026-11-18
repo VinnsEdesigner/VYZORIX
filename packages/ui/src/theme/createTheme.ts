@@ -1,11 +1,3 @@
-/**
- * Assemble a theme object from a definition.
- *
- * A definition supplies only what differs from the base; every sub-system fills
- * the rest from its own defaults. This is the single entry point the registry
- * calls.
- */
-
 import { createBreakpoints } from './breakpoints';
 import { createColors, type ThemeColorsInput } from './createColors';
 import { createShadows, type ThemeShadowsInput } from './createShadows';

@@ -1,11 +1,6 @@
 import { css } from '@emotion/css';
 import { type VyzorixTheme } from '@vyzorix/ui';
 
-/**
- * Shared styles for the simple list pages (alerts, notifications, service
- * accounts). Each page passes this to `useStyles2`; keeping one factory means
- * the placeholder pages stay visually consistent.
- */
 export const listPageStyles = (theme: VyzorixTheme) => ({
   page: css({ margin: '0 auto', maxWidth: 896, padding: theme.spacing(3) }),
   h1: css({ marginBottom: theme.spacing(3), fontSize: theme.typography.xxl.fontSize, fontWeight: theme.typography.fontWeightBold }),

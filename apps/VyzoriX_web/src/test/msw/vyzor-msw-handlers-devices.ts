@@ -34,8 +34,6 @@ export function createDevicesHandlers() {
       return HttpResponse.json(result);
     }),
 
-
-    // GET /v1/device/:imei — device-management SDK path for a single device.
     http.get('/v1/device/count', async () => {
       await delay(20);
       return HttpResponse.json({ count: devices.length });
@@ -43,8 +41,7 @@ export function createDevicesHandlers() {
     http.get('/v1/device/:imei', async ({ params }) => {
       await delay(30);
       const imei = params.imei as string;
-      // Don't shadow the inbox routes (/v1/device/inbox*) — return undefined so
-      // MSW falls through to the registration handlers.
+
       if (imei === 'inbox') {
         return undefined;
       }
@@ -66,8 +63,6 @@ export function createDevicesHandlers() {
       };
       return HttpResponse.json(detail);
     }),
-
-    // GET /v1/device/count — device count (SDK path).
 
     http.get(`${API_BASE}/:imei`, async ({ params }) => {
       await delay(30);
@@ -109,7 +104,6 @@ export function createDevicesHandlers() {
       });
     }),
 
-    // GET /v1/devices/:imei/settings
     http.get(`${API_BASE}/:imei/settings`, async ({ params }) => {
       await delay(20);
       return HttpResponse.json({
@@ -124,7 +118,6 @@ export function createDevicesHandlers() {
       });
     }),
 
-    // PATCH /v1/devices/:imei/settings
     http.patch(`${API_BASE}/:imei/settings`, async ({ request, params }) => {
       const body = (await request.json()) as Record<string, unknown>;
       return HttpResponse.json({
@@ -139,7 +132,6 @@ export function createDevicesHandlers() {
       });
     }),
 
-    // GET /v1/devices/:imei/settings/thresholds
     http.get(`${API_BASE}/:imei/settings/thresholds`, async () => {
       await delay(20);
       return HttpResponse.json({
@@ -147,7 +139,6 @@ export function createDevicesHandlers() {
       });
     }),
 
-    // PATCH /v1/devices/:imei/settings/thresholds
     http.patch(`${API_BASE}/:imei/settings/thresholds`, async ({ request }) => {
       const body = (await request.json()) as Record<string, number>;
       return HttpResponse.json({
@@ -162,7 +153,6 @@ export function createDevicesHandlers() {
       });
     }),
 
-    // DELETE /v1/devices/:imei — deregister
     http.delete(`${API_BASE}/:imei`, async ({ params }) => {
       await delay(30);
       return HttpResponse.json({ success: true, imei: params.imei });

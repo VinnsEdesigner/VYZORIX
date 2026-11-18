@@ -12,6 +12,9 @@ export default defineViteConfig({
     tsconfigPaths(),
   ] as never,
   vite: {
+    server: {
+      allowedHosts: ['.prod-runtime.all-hands.dev', 'localhost'],
+    },
     // The local store runs SQLite in a Web Worker over OPFS. The worker is
     // created with `new Worker(new URL('./db.worker.ts', import.meta.url))`,
     // which Vite only resolves when it knows the worker format; without this the
@@ -32,6 +35,26 @@ export default defineViteConfig({
       // A worker with a top-level await needs a modern target, and sqlite-wasm
       // uses BigInt internally.
       target: "es2022",
+      rollupOptions: {
+        output: {
+          // Split third-party code into vendor chunks so the app entry stays
+          // small and each vendor caches independently across deploys. The entry
+          // otherwise bundles every dependency (~800 kB), and a one-line app
+          // change re-hashes and re-downloads the lot.
+          //
+          // A function (not an object): it only re-groups modules already in the
+          // graph. The object form force-resolves each named package's entry, and
+          // `@tanstack/react-start`'s entry reaches React Native (Flow-typed and
+          // unparseable by Rollup) — which fails the build.
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined;
+            if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react';
+            if (id.includes('@apollo') || /node_modules\/graphql(-ws)?\//.test(id)) return 'graphql';
+            if (id.includes('lucide-react')) return 'icons';
+            return undefined;
+          },
+        },
+      },
     },
     // The worker must not be bundled into the server build: it touches Worker,
     // navigator.storage and OPFS, none of which exist during SSR.

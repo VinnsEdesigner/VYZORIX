@@ -22,7 +22,6 @@ const getStyles = (theme: VyzorixTheme, invalid?: boolean) => ({
   label: css({ fontSize: theme.typography.base.fontSize, color: theme.colors.text.primary }),
 });
 
-/** A checkbox. */
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
   ({ label, invalid, className, ...rest }, ref) => {
     const styles = useStyles2(getStyles, invalid);

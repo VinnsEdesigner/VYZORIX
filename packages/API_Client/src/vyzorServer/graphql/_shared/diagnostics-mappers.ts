@@ -12,7 +12,6 @@ import type {
   RawTimelineConnection,
 } from './diagnostics-types';
 
-/** Aliases kept for the web hooks' GraphQL fallback imports. */
 export type RawGraphQLDeviceInspection = RawDeviceInspection;
 export type RawGraphQLTimelineConnection = RawTimelineConnection;
 

@@ -30,15 +30,6 @@ function inRange(value: number, min: number, max: number): boolean {
   return value >= min && value <= max;
 }
 
-/**
- * Validate a telemetry frame.
- *
- * `deviceId` is required. When the optional numeric metrics are present they
- * must be within their valid ranges: riskScore and bufferLevel are 0–100
- * (bufferLevel may legitimately be absent). This guards the UI against
- * malformed/attacker-crafted frames without rejecting frames that simply
- * omit optional fields.
- */
 export function validateTelemetry(data: unknown): data is WSTelemetry {
   if (!data || typeof data !== "object") return false;
   const t = data as Record<string, unknown>;

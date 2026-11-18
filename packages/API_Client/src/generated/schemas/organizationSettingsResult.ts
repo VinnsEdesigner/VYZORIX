@@ -17,4 +17,5 @@ export interface OrganizationSettingsResult {
   theme?: string;
   timezone?: string;
   updatedAt?: string;
+  weekStart?: string;
 }

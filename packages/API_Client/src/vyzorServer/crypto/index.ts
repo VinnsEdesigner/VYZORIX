@@ -1,19 +1,13 @@
-
-
 import { createHmac, randomBytes, createCipheriv, createDecipheriv, createHash } from 'crypto';
 
 const AES256_KEY_SIZE = 32;
 const NONCE_SIZE = 12;
-
-
 
 export function deriveKey(secret: string): Buffer {
   const hash = createHash('sha512');
   hash.update(secret);
   return hash.digest().slice(0, AES256_KEY_SIZE);
 }
-
-
 
 export function encryptAES256GCM(secret: string, plaintext: Buffer | string): string {
   const key = deriveKey(secret);
@@ -27,7 +21,6 @@ export function encryptAES256GCM(secret: string, plaintext: Buffer | string): st
     const result = Buffer.concat([nonce, encrypted, authTag]);
   return result.toString('base64');
 }
-
 
 export function decryptAES256GCM(secret: string, encryptedBase64: string): Buffer {
   const key = deriveKey(secret);
@@ -46,14 +39,11 @@ export function decryptAES256GCM(secret: string, encryptedBase64: string): Buffe
   return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
 }
 
-
-
 export function sha512(data: Buffer | string): Buffer {
   const hash = createHash('sha512');
   hash.update(data);
   return hash.digest();
 }
-
 
 export function computeHttpSignature(
   method: string,
@@ -65,8 +55,6 @@ export function computeHttpSignature(
 ): string {
   const bodyBytes = typeof body === 'string' ? Buffer.from(body) : body;
 
-  // Canonical format per server: {method}\n{path}\n{nonce}\n{timestamp}\n{body}
-  // Note: No empty line between headers and body
   const canonical = [
     method.toUpperCase(),
     path,
@@ -77,10 +65,9 @@ export function computeHttpSignature(
   const hmac = createHmac('sha512', secret);
   hmac.update(canonical, 'utf8');
   hmac.update(bodyBytes);
-  
+
   return hmac.digest('base64');
 }
-
 
 export function signHttpRequest(
   method: string,
@@ -105,7 +92,6 @@ export function signHttpRequest(
   };
 }
 
-
 export function verifyHttpSignature(
   method: string,
   path: string,
@@ -119,8 +105,6 @@ export function verifyHttpSignature(
   return constantTimeCompare(expected, signature);
 }
 
-
-
 export function constantTimeCompare(a: string, b: string): boolean {
   if (a.length !== b.length) {
     return false;
@@ -132,8 +116,6 @@ export function constantTimeCompare(a: string, b: string): boolean {
   return result === 0;
 }
 
-
-
 export interface CommandFrame {
   dispatchId: string;
   command: string;
@@ -142,7 +124,6 @@ export interface CommandFrame {
   nonce?: string;
   signature?: string;
 }
-
 
 export function signCommand(
   frame: CommandFrame,
@@ -168,7 +149,6 @@ export function signCommand(
   return { nonce, signature };
 }
 
-
 export function buildCanonicalString(
   dispatchId: string,
   deviceId: string,
@@ -179,7 +159,6 @@ export function buildCanonicalString(
 ): string {
   return [dispatchId, deviceId, command, timestamp.toString(), nonce, args || '{}'].join('|');
 }
-
 
 export function validateCommandHMAC(
   frame: CommandFrame,
@@ -207,13 +186,11 @@ export function validateCommandHMAC(
   return constantTimeCompare(expected, frame.signature);
 }
 
-
 export function validateTimestamp(frame: CommandFrame, maxDriftMs: number = 30000): boolean {
   const nowMs = Date.now();
   const drift = Math.abs(nowMs - frame.timestamp);
   return drift <= maxDriftMs;
 }
-
 
 export function signWebSocketConnect(
   deviceId: string,
@@ -227,16 +204,13 @@ export function signWebSocketConnect(
   return hmac.digest('hex');
 }
 
-
 export function generateNonce(): string {
   return randomBytes(16).toString('hex');
 }
 
-
 export function generateTimestamp(): string {
   return Math.floor(Date.now() / 1000).toString();
 }
-
 
 export function generateTimestampMs(): number {
   return Date.now();

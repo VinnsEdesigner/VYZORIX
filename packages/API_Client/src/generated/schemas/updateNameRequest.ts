@@ -7,5 +7,6 @@
  */
 
 export interface UpdateNameRequest {
+  avatar_url?: string;
   name?: string;
 }

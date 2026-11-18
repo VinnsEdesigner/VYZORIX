@@ -44,11 +44,6 @@ function toDate(value?: string | null): Date {
   return Number.isNaN(d.getTime()) ? new Date() : d;
 }
 
-/**
- * Subscribes to realtime device updates + telemetry for a single device, patching the
- * `diagnostics-store` (live connection/telemetry snapshot) and the `timeline-stream-store`
- * (live event prepend). Org-gated: only subscribes when `organizationId !== null`.
- */
 export function useDiagnosticStream(imei: string | undefined) {
   const subscribe = useWebSocketStore((s) => s.subscribe);
   const organizationId = useCurrentOrganizationId();
@@ -132,8 +127,6 @@ export function useDiagnosticStream(imei: string | undefined) {
   ]);
 }
 
-// Inline subscription query strings (avoid importing gql-tagged docs that may not be
-// re-exported; keep the WS payload minimal and explicit).
 const DEVICE_UPDATED_QUERY = `
   subscription OnDeviceUpdated($deviceId: ID) {
     deviceUpdated(deviceId: $deviceId) {

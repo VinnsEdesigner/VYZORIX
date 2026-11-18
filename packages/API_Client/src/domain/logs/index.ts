@@ -1,4 +1,3 @@
-// Logs domain — generated types re-exported.
 export type {
   DeviceLogEvent,
   DeviceLogEventListResult,
@@ -7,7 +6,6 @@ export type {
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'verbose' | 'assert';
 
-// Server-authoritative event types (internal/domain/logs/logs_entity.go).
 export type LogEventType =
   | 'connection'
   | 'command'
@@ -18,8 +16,6 @@ export type LogEventType =
   | 'update'
   | 'registration'
   | 'deregistration';
-
-// ---- Hook-facing domain types (not in OpenAPI; GraphQL stream/normalized) ----
 
 export interface LogEntry {
   id: string;

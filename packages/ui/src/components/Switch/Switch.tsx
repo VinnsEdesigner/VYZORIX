@@ -51,7 +51,6 @@ const getStyles = (theme: VyzorixTheme) => ({
   label: css({ fontSize: theme.typography.base.fontSize, color: theme.colors.text.primary }),
 });
 
-/** An on/off switch. */
 export const Switch = forwardRef<HTMLInputElement, SwitchProps>(({ label, className, ...rest }, ref) => {
   const styles = useStyles2(getStyles);
   return (

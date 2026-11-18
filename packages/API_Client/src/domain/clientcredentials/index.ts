@@ -1,4 +1,3 @@
-// Client credentials domain — generated types re-exported.
 export type {
   ClientCredential,
   ClientCredentialListResult,

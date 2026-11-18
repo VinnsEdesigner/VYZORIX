@@ -6,8 +6,10 @@
  * OpenAPI spec version: 0.0.01
  */
 import type { PreferencesResultPreferences } from './preferencesResultPreferences';
+import type { PreferencesResultResolved } from './preferencesResultResolved';
 
 export interface PreferencesResult {
   preferences?: PreferencesResultPreferences;
+  resolved?: PreferencesResultResolved;
   theme?: string;
 }

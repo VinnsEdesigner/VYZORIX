@@ -1,17 +1,11 @@
-/**
- * Theme shadows (three elevations).
- *
- * Three elevations: page elements, overlays, and overlays with a backdrop.
- */
-
 import { type ThemeColors } from './createColors';
 
 export interface ThemeShadowsInput {
-  /** Elements that sit directly on the page. */
+
   z1?: string;
-  /** Overlays, e.g. dropdown, menu, tooltip. */
+
   z2?: string;
-  /** Overlays that require a backdrop, e.g. modals, drawers. */
+
   z3?: string;
 }
 

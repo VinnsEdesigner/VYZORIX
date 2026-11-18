@@ -34,7 +34,7 @@ describe('theme registry', () => {
     expect(theme.name).toBe('Vyzorix Dark');
     expect(theme.isDark).toBe(true);
     expect(theme.colors.primary.main).toBe('#e11d48');
-    // getRichColor derives the rest from main.
+
     expect(theme.colors.primary.contrastText).toBeTruthy();
     expect(theme.colors.primary.mainEmphasis).toBeTruthy();
     expect(typeof theme.spacing(2)).toBe('string');

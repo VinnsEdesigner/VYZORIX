@@ -1,5 +1,3 @@
-// Re-export the theme registry surface for the tests, plus the id list used in
-// the parametrised contrast cases.
 export {
   getThemeById,
   getBuiltInThemes,

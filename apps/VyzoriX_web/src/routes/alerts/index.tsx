@@ -14,11 +14,9 @@ import {
   useDeleteAlertRule,
   useEvaluateAlertRule,
 } from '@/hooks/alerts/use-alerts';
-
+import { Page } from '@/ui/components/layout';
 
 const getStyles = (theme: VyzorixTheme) => ({
-  page: css({ margin: '0 auto', maxWidth: 896, padding: theme.spacing(3) }),
-  h1: css({ marginBottom: theme.spacing(3), fontSize: theme.typography.xxl.fontSize, fontWeight: theme.typography.fontWeightBold }),
   h2: css({ marginBottom: theme.spacing(2), fontWeight: theme.typography.fontWeightMedium }),
   h3: css({ fontWeight: theme.typography.fontWeightMedium, margin: 0 }),
   panel: css({ marginBottom: theme.spacing(4), border: `1px solid ${theme.colors.border.medium}`, borderRadius: theme.shape.radius.default, padding: theme.spacing(2) }),
@@ -189,9 +187,7 @@ function AlertsPage() {
   const createRule = useCreateAlertRule();
 
   return (
-    <div className={styles.page}>
-      <h1 className={styles.h1}>Alert Rules</h1>
-
+    <Page title="Alerts" subTitle="Alert rules and their current state">
       <div className={styles.panel}>
         <h2 className={styles.h2}>New rule</h2>
         <RuleForm onSubmit={(req) => createRule.mutate({ data: req })} disabled={createRule.isPending} />
@@ -208,7 +204,7 @@ function AlertsPage() {
           <p className={styles.meta}>No alert rules yet. Create one above.</p>
         )}
       </div>
-    </div>
+    </Page>
   );
 }
 

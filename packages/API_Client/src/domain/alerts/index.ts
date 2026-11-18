@@ -1,6 +1,3 @@
-// Alerts domain — generated types re-exported. The previous Raw* interfaces
-// and *FromRaw mappers are eliminated; the generated schemas match the wire
-// format directly.
 export type {
   AlertRule,
   AlertRuleListResult,
@@ -10,8 +7,6 @@ export type {
   AlertHistoryResult,
   AlertEvaluateResult,
 } from '../../generated/vyzorixUpdateServerAPI.schemas';
-
-// ---- Constants (server-authoritative: internal/domain/alert) ----
 
 export const ALERT_CONDITIONS = ['gt', 'gte', 'lt', 'lte'] as const;
 export type AlertCondition = (typeof ALERT_CONDITIONS)[number];

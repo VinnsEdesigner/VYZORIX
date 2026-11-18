@@ -20,6 +20,21 @@ interface SerializedRequest {
   timestamp: number;
 }
 
+interface NetInfoModule {
+  addEventListener: (
+    listener: (state: { isConnected: boolean | null }) => void,
+  ) => () => void;
+  fetch: () => Promise<{ isConnected: boolean | null }>;
+}
+
+function loadNetInfo(): Promise<NetInfoModule> {
+  const specifier = '@react-native-community/netinfo';
+  return import( specifier).then((mod) => {
+    const m = mod as { default?: NetInfoModule } & NetInfoModule;
+    return m.default ?? m;
+  });
+}
+
 function generateRequestId(): string {
   return `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
@@ -79,18 +94,26 @@ function setupWebListeners(onChange: (online: boolean) => void): () => void {
 
 function setupReactNativeListeners(onChange: (online: boolean) => void): () => void {
   if (!isReactNative()) return () => {};
-  try {
-    const req = eval('require');
-    const NetInfo = req('@react-native-community/netinfo').default;
-    const unsubscribe = NetInfo.addEventListener((state: { isConnected: boolean | null }) => {
-      onChange(state.isConnected ?? true);
-    });
-    return () => {
-      if (typeof unsubscribe === 'function') unsubscribe();
-    };
-  } catch {
-    return () => {};
-  }
+
+  let unsubscribe: (() => void) | null = null;
+  let cancelled = false;
+
+  void (async () => {
+    try {
+      const NetInfo = await loadNetInfo();
+      if (cancelled) return;
+      unsubscribe = NetInfo.addEventListener((state) => {
+        onChange(state.isConnected ?? true);
+      });
+    } catch {
+
+    }
+  })();
+
+  return () => {
+    cancelled = true;
+    if (typeof unsubscribe === 'function') unsubscribe();
+  };
 }
 
 async function checkWebConnectivity(): Promise<boolean> {
@@ -113,8 +136,7 @@ async function checkWebConnectivity(): Promise<boolean> {
 async function checkReactNativeConnectivity(): Promise<boolean> {
   if (!isReactNative()) return checkWebConnectivity();
   try {
-    const req = eval('require');
-    const NetInfo = req('@react-native-community/netinfo').default;
+    const NetInfo = await loadNetInfo();
     const state = await NetInfo.fetch();
     return state.isConnected ?? true;
   } catch {

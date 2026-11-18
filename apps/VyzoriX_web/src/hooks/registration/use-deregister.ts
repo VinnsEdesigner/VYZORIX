@@ -32,9 +32,7 @@ export function useDeregisterRegisteredDevice() {
       }
     },
     onSuccess: (_, { imei }) => {
-      // Delete is called directly (not through the generated mutation hook) so
-      // the GraphQL fallback can run; invalidate the generated device keys
-      // explicitly.
+
       void invalidateGetDevices(queryClient);
       void invalidateGetDevicesImei(queryClient, imei);
     },

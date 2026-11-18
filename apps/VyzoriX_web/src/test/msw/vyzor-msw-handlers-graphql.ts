@@ -1,13 +1,3 @@
-/**
- * MSW handlers for GraphQL-over-HTTP requests.
- *
- * The API client's GraphQL functions (queryUpdates, mutatePushUpdate, etc.)
- * use Apollo Client which sends POST requests to /{orgId}/graphql.
- * These handlers intercept those requests and return mock GraphQL responses.
- *
- * Each handler checks the operationName in the request body to route to the
- * correct mock response, mirroring how a real GraphQL server works.
- */
 import { http, HttpResponse, delay } from 'msw';
 
 const GraphQLEndpoint = '/:orgId/graphql';
@@ -17,12 +7,10 @@ type GraphQLHandler = (variables: Record<string, unknown>) => unknown;
 
 const handlers: Record<string, GraphQLHandler> = {};
 
-/** Register a GraphQL response handler for a given operation name. */
 export function registerGraphQLResponse(operationName: string, handler: GraphQLHandler): void {
   handlers[operationName] = handler;
 }
 
-/** Clear all registered GraphQL response handlers. */
 export function clearGraphQLResponses(): void {
   for (const key of Object.keys(handlers)) {
     delete handlers[key];
@@ -46,7 +34,7 @@ function processOperation(body: {
 
 export function createGraphQLHandlers() {
   return [
-    // Single-operation GraphQL requests (standard Apollo httpLink)
+
     http.post(GraphQLEndpoint, async ({ request }) => {
       await delay(30);
       const body = (await request.json()) as {
@@ -66,7 +54,6 @@ export function createGraphQLHandlers() {
       }
     }),
 
-    // Batched GraphQL requests (Apollo createBatchingLink)
     http.post(GraphQLBatchEndpoint, async ({ request }) => {
       await delay(30);
       const body = (await request.json()) as Array<{

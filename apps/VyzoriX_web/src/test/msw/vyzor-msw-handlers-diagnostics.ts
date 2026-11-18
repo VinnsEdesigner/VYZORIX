@@ -52,7 +52,7 @@ const timelineEvents: WireTimelineEventResult[] = [
 
 export function createDiagnosticsHandlers() {
   return [
-    // GET /v1/device/:imei/inspect — device inspection
+
     http.get(`${API_BASE}/:imei/inspect`, async ({ params }) => {
       await delay(30);
       const imei = params.imei as string;
@@ -62,7 +62,6 @@ export function createDiagnosticsHandlers() {
       });
     }),
 
-    // GET /v1/device/:imei/timeline — timeline
     http.get(`${API_BASE}/:imei/timeline`, async () => {
       await delay(30);
       const result: WireTimelineResult = {

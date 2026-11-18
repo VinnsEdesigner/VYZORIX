@@ -1,9 +1,5 @@
-// Re-export shared utilities
 export * from "./_shared";
 
-// Bounded contexts. Each context owns its types and mappers with names unique
-// per context (resolved at source, not via barrel aliases), so every module is
-// re-exported with `export *` without collisions.
 export * from "./admin";
 export * from "./alerts";
 export * from "./apikey";

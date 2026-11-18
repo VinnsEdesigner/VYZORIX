@@ -1,4 +1,3 @@
-// Invitations domain — generated types + zod validation.
 import { CreateInvitationRequestSchema } from '../../generated/vyzorixUpdateServerAPI.zod';
 import type {
   Invitation,

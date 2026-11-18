@@ -1,10 +1,3 @@
-/**
- * Theme breakpoints.
- *
- * Breakpoints are not themeable, so they are a constant factory rather than an
- * input.
- */
-
 export interface ThemeBreakpoints {
   values: Breakpoints;
   up: (key: Breakpoint) => string;

@@ -9,10 +9,6 @@ import {
 } from '@/generated-rq/deploy/deploy';
 import { deployCredentialsFromWire, type DeployCredential } from '@vyzorix/api-client';
 
-/**
- * A device's deploy credentials. Names, prefixes and revocation state only —
- * a token is never returned by a GET.
- */
 export function useDeployCredentials(imei: string | undefined) {
   const organizationId = useCurrentOrganizationId();
   return useGetDeployImeiCredentials<DeployCredential[]>(imei ?? '', {
@@ -23,10 +19,6 @@ export function useDeployCredentials(imei: string | undefined) {
   });
 }
 
-/**
- * Mint a device-scoped credential. The response is the only place the token
- * appears; the caller is responsible for showing it exactly once.
- */
 export function useMintDeployCredential(imei: string) {
   const queryClient = useQueryClient();
   return usePostDeployImeiCredentials({
@@ -39,7 +31,6 @@ export function useMintDeployCredential(imei: string) {
   });
 }
 
-/** Revoke a credential; a revoked credential is refused on its next use. */
 export function useRevokeDeployCredential(imei: string) {
   const queryClient = useQueryClient();
   return useDeleteDeployImeiCredentialsId({

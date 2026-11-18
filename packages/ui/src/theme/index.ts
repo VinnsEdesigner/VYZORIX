@@ -1,11 +1,7 @@
-// @vyzorix/ui — theme system
-//
-// The theme is a plain object built by createTheme from a definition, delivered
-// through React context, and consumed with useStyles2 (Emotion).
 export { createTheme, type NewThemeOptions } from './createTheme';
 export { createColors, type ThemeColors, type ThemeColorsInput, type ThemeColorsMode } from './createColors';
 export { createShape, type ThemeShape, type Radii } from './createShape';
-export { createSpacing, type ThemeSpacing } from './createSpacing';
+export { createSpacing, type ThemeSpacing, type ThemeSpacingTokens } from './createSpacing';
 export { createTypography, type ThemeTypography, type ThemeTypographyVariant } from './createTypography';
 export { createShadows, type ThemeShadows } from './createShadows';
 export { createTransitions, type ThemeTransitions } from './createTransitions';
@@ -40,4 +36,5 @@ export {
   type ThemeRegistryItem,
 } from './registry';
 export { ThemeContext, useTheme2, useStyles2, mockThemeContext } from './ThemeContext';
+export { getFocusStyles } from './mixins';
 export { injectGlobalStyles, appShellStyles } from './globalStyles';

@@ -29,7 +29,7 @@ describe('SSR safety', () => {
 
   it('creating the worker store does no work until first use', () => {
     vi.stubGlobal('window', undefined);
-    // No Worker at module or construction time: this must not throw on the server.
+
     expect(() => createWorkerLocalStore('user-1')).not.toThrow();
   });
 });

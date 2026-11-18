@@ -1,4 +1,3 @@
-// Metrics domain — generated types re-exported.
 export type {
   GetTelemetryResponse,
   TelemetryFrameDTO,

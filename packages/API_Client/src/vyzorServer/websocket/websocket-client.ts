@@ -82,7 +82,7 @@ export class WebSocketClientImpl implements WebSocketClient {
   private static readonly SUBSCRIBE_TIMEOUT_MS = 5000;
 
   constructor(config: WSClientConfig = {}) {
-    
+
     const envConfig = getWebSocketConfig();
     this.config = {
       url: config.url ?? envConfig.url,
@@ -101,8 +101,8 @@ export class WebSocketClientImpl implements WebSocketClient {
 
     this.reconnect = new ReconnectManagerImpl(
       () => this.connectInternal(),
-      { 
-        initialDelay: this.config.reconnectInterval, 
+      {
+        initialDelay: this.config.reconnectInterval,
         maxAttempts: this.config.maxReconnectAttempts,
         maxDelay: envConfig.reconnectMaxDelay,
         multiplier: envConfig.reconnectMultiplier,
@@ -170,7 +170,7 @@ export class WebSocketClientImpl implements WebSocketClient {
       }
 
       const pendingMap = type === "SUBSCRIBE" ? this.pendingSubscriptions : this.pendingUnsubscriptions;
-      
+
       const timeout = setTimeout(() => {
         pendingMap.delete(deviceId);
         resolve({ success: false, deviceId, error: `Subscription timeout after ${WebSocketClientImpl.SUBSCRIBE_TIMEOUT_MS}ms` });
@@ -237,7 +237,7 @@ export class WebSocketClientImpl implements WebSocketClient {
 
   private buildAuthenticatedUrl(): string {
     let url = this.config.url;
-    
+
     if (this.credentials) {
       const timestamp = generateTimestamp();
       const nonce = generateNonce();
@@ -247,11 +247,11 @@ export class WebSocketClientImpl implements WebSocketClient {
         nonce,
         this.credentials.secret
       );
-      
+
       const separator = url.includes('?') ? '&' : '?';
       url = `${url}${separator}hmac_timestamp=${encodeURIComponent(timestamp)}&hmac_nonce=${encodeURIComponent(nonce)}&hmac_signature=${encodeURIComponent(signature)}&device_id=${encodeURIComponent(this.credentials.deviceId)}`;
     }
-    
+
     return url;
   }
 
@@ -323,7 +323,7 @@ export class WebSocketClientImpl implements WebSocketClient {
         this.handleUnsubscribeAck(message.payload as { success: boolean; deviceId: string; error?: string });
         break;
       default:
-        // Unknown message type - ignore for forward compatibility
+
         break;
     }
   }
@@ -380,7 +380,7 @@ export class WebSocketClientImpl implements WebSocketClient {
       try {
         await this.send({ type: "SUBSCRIBE", payload: { deviceId } });
       } catch {
-        // Ignore errors during resubscription - will retry on next connect
+
       }
     }
   }

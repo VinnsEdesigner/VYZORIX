@@ -1,5 +1,3 @@
-
-
 import { buildOAuthState, parseOAuthCallbackUrl, OAUTH_ENDPOINTS, type OAuthProvider } from "../../../domain/oauth";
 
 export const OAuthErrorCode = {
@@ -28,7 +26,6 @@ export interface OAuthCallbackResult {
   error?: OAuthErrorDetails;
 }
 
-
 export function parseOAuthCallback(url: string): OAuthCallbackResult {
   const parsed = parseOAuthCallbackUrl(url);
 
@@ -53,7 +50,6 @@ export function parseOAuthCallback(url: string): OAuthCallbackResult {
   };
 }
 
-
 export function getGoogleLoginUrl(options?: {
   state?: string;
   redirectAfterCallback?: string;
@@ -66,7 +62,6 @@ export function getGoogleLoginUrl(options?: {
   }
   return `${OAUTH_ENDPOINTS.google.login}?${params.toString()}`;
 }
-
 
 export function getGitHubLoginUrl(options?: {
   state?: string;
@@ -81,14 +76,12 @@ export function getGitHubLoginUrl(options?: {
   return `${OAUTH_ENDPOINTS.github.login}?${params.toString()}`;
 }
 
-
 export function initiateGoogleLogin(options?: {
   state?: string;
   redirectAfterCallback?: string;
 }): void {
   window.location.href = getGoogleLoginUrl(options);
 }
-
 
 export function initiateGitHubLogin(options?: {
   state?: string;

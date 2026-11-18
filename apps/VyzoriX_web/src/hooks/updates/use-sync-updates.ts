@@ -33,7 +33,7 @@ export function useSyncUpdates() {
       }
     },
     onSuccess: () => {
-      // GraphQL fallback path bypasses generated auto-invalidation.
+
       void invalidateGetUpdatesVersions(queryClient);
       void invalidateGetUpdatesStatus(queryClient);
       void invalidateGetUpdatesChangelog(queryClient);

@@ -1,33 +1,12 @@
-/**
- * Use Debounce Hook
- * 
- * Hook for debouncing values - delays updates until after a timeout.
- * Useful for search inputs and auto-save functionality.
- */
-
 import { useState, useEffect, useRef, useCallback } from "react";
 
-// ============================================================================
-// Types
-// ============================================================================
-
-/**
- * Debounce options
- */
 export interface UseDebounceOptions {
-  /** Delay in milliseconds (default: 300) */
+
   delay?: number;
-  /** Whether to immediately update on first change (default: false) */
+
   immediate?: boolean;
 }
 
-// ============================================================================
-// Hook
-// ============================================================================
-
-/**
- * Debounce a value
- */
 export function useDebounce<T>(value: T, delay: number = 300): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
@@ -44,9 +23,6 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
   return debouncedValue;
 }
 
-/**
- * Debounce with callback
- */
 export function useDebouncedCallback<T extends (...args: Parameters<T>) => void>(
   callback: T,
   delay: number = 300
@@ -54,7 +30,6 @@ export function useDebouncedCallback<T extends (...args: Parameters<T>) => void>
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const callbackRef = useRef(callback);
 
-  // Update callback ref on each render
   useEffect(() => {
     callbackRef.current = callback;
   }, [callback]);
@@ -72,7 +47,6 @@ export function useDebouncedCallback<T extends (...args: Parameters<T>) => void>
     [delay]
   ) as T;
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -84,13 +58,6 @@ export function useDebouncedCallback<T extends (...args: Parameters<T>) => void>
   return debouncedCallback;
 }
 
-// ============================================================================
-// Advanced Debounce Hook
-// ============================================================================
-
-/**
- * Advanced debounce hook with loading state
- */
 export function useDebounceAsync<T>(
   value: T,
   options: UseDebounceOptions = {}
@@ -127,13 +94,6 @@ export function useDebounceAsync<T>(
   return { debouncedValue, isPending };
 }
 
-// ============================================================================
-// Throttle Hook (Alternative)
-// ============================================================================
-
-/**
- * Throttle a value - limits how often it updates
- */
 export function useThrottle<T>(value: T, limit: number = 300): T {
   const [throttledValue, setThrottledValue] = useState<T>(value);
   const lastRan = useRef(Date.now());
@@ -152,13 +112,6 @@ export function useThrottle<T>(value: T, limit: number = 300): T {
   return throttledValue;
 }
 
-// ============================================================================
-// Media Query Hook
-// ============================================================================
-
-/**
- * Debounced media query check
- */
 export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(() => {
     if (typeof window !== "undefined") {
@@ -169,13 +122,13 @@ export function useMediaQuery(query: string): boolean {
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(query);
-    
+
     const handler = (event: MediaQueryListEvent) => {
       setMatches(event.matches);
     };
 
     mediaQuery.addEventListener("change", handler);
-    
+
     return () => {
       mediaQuery.removeEventListener("change", handler);
     };
@@ -184,13 +137,6 @@ export function useMediaQuery(query: string): boolean {
   return matches;
 }
 
-// ============================================================================
-// Local Storage with Debounce
-// ============================================================================
-
-/**
- * Debounced local storage sync
- */
 export function useLocalStorage<T>(
   key: string,
   initialValue: T,

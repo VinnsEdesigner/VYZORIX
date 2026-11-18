@@ -166,7 +166,7 @@ export function createUpdatesHandlers() {
         installType: body.installType,
         scheduledAt: body.scheduledAt,
         status: 'pending',
-        initiatedBy: 'operator-test-1',
+        initiatedBy: 'user-test-1',
         initiatedAt: Date.now(),
         devices: {
           total: body.deviceIds?.length ?? 0,
@@ -185,7 +185,7 @@ export function createUpdatesHandlers() {
         id: params.pushId as string,
         status: 'cancelled',
         cancelledAt: Date.now(),
-        cancelledBy: 'operator-test-1',
+        cancelledBy: 'user-test-1',
       };
       return HttpResponse.json(result);
     }),

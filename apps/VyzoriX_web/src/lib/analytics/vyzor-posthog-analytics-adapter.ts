@@ -46,7 +46,7 @@ export class VyzorPostHogAnalyticsAdapter implements VyzorAnalyticsAdapter {
     if (this.consent !== 'granted') return;
     this.ensureClient().then((ph) => {
       if (!ph) return;
-      // PostHog auto-flushes; this is a no-op for compatibility
+
     });
   }
 

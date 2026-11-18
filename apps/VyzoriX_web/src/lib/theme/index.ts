@@ -1,5 +1,3 @@
-// App-side theme surface. The theme system itself lives in @vyzorix/ui; this
-// module re-exports it and adds the browser-side cache mirror.
 export {
   getThemeById,
   getBuiltInThemes,

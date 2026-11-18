@@ -26,19 +26,13 @@ const MOCK_SESSION = {
   selected_organization_id: 'org-test-1',
 };
 
-/**
- * MSW handlers mirroring the Go server auth contract.
- * Field names are snake_case to match the actual API responses.
- * → Appendix: API Contract Reference.
- */
 export function createAuthHandlers() {
   return [
-    // GET /v1/auth/csrf-token — returns CSRF token for cookie-based mutations
+
     http.get(`${API_BASE}/csrf-token`, async () => {
       return HttpResponse.json({ csrf_token: 'mock-csrf-token' });
     }),
 
-    // POST /v1/auth/login — browser login (sets session cookie, no tokens in body)
     http.post(`${API_BASE}/login`, async ({ request }) => {
       await delay(50);
       const body = (await request.json()) as { email?: string; password?: string };
@@ -46,7 +40,7 @@ export function createAuthHandlers() {
         return HttpResponse.json({ error: 'invalid credentials' }, { status: 401 });
       }
       return HttpResponse.json({
-        user_id: 'operator-test-1',
+        user_id: 'user-test-1',
         email: body.email,
         name: 'Test User',
         role: 'admin',
@@ -58,7 +52,6 @@ export function createAuthHandlers() {
       });
     }),
 
-    // POST /v1/auth/login/tokens — API client login (returns JWT + refresh token)
     http.post(`${API_BASE}/login/tokens`, async ({ request }) => {
       await delay(50);
       const body = (await request.json()) as { email?: string; password?: string };
@@ -66,7 +59,7 @@ export function createAuthHandlers() {
         return HttpResponse.json({ error: 'invalid credentials' }, { status: 401 });
       }
       return HttpResponse.json({
-        user_id: 'operator-test-1',
+        user_id: 'user-test-1',
         email: body.email,
         name: 'Test User',
         role: 'admin',
@@ -89,7 +82,6 @@ export function createAuthHandlers() {
       return HttpResponse.json({ success: true });
     }),
 
-    // POST /v1/auth/refresh — requires { refresh_token } in body
     http.post(`${API_BASE}/refresh`, async ({ request }) => {
       await delay(30);
       const body = (await request.json()) as { refresh_token?: string };
@@ -104,7 +96,6 @@ export function createAuthHandlers() {
       });
     }),
 
-    // POST /v1/auth/register
     http.post(`${API_BASE}/register`, async ({ request }) => {
       await delay(50);
       const body = (await request.json()) as { email?: string; password?: string; name?: string };
@@ -112,17 +103,16 @@ export function createAuthHandlers() {
         return HttpResponse.json({ error: 'missing fields' }, { status: 400 });
       }
       return HttpResponse.json({
-        user_id: 'operator-test-2',
+        user_id: 'user-test-2',
         email: body.email,
         name: body.name,
       });
     }),
 
-    // GET /v1/auth/me — returns OperatorResponse
     http.get(`${API_BASE}/me`, async () => {
       await delay(30);
       return HttpResponse.json({
-        id: 'operator-test-1',
+        id: 'user-test-1',
         email: 'test@vyzorix.com',
         name: 'Test User',
         mfa_enabled: false,
@@ -132,7 +122,9 @@ export function createAuthHandlers() {
         memberships: [MOCK_MEMBERSHIP],
         selected_organization: MOCK_ORG,
         last_organization_id: 'org-test-1',
-        created_at: '2026-01-01T00:00:00Z',
+        avatar_url: '',
+        created_at: 1767225600000,
+        last_login_at: 1767312000000,
         thresholds: {
           riskWarn: 70,
           riskCrit: 90,
@@ -148,11 +140,10 @@ export function createAuthHandlers() {
       });
     }),
 
-    // PATCH /v1/auth/me — update name
     http.patch(`${API_BASE}/me`, async ({ request }) => {
       const body = (await request.json()) as { name?: string };
       return HttpResponse.json({
-        id: 'operator-test-1',
+        id: 'user-test-1',
         email: 'test@vyzorix.com',
         name: body.name ?? 'Test User',
         role: 'admin',
@@ -161,23 +152,33 @@ export function createAuthHandlers() {
       });
     }),
 
-    // GET /v1/me/invitations — pending invitations for the current user
+    http.get(`${API_BASE}/me/profile-summary`, async () => {
+      await delay(20);
+      return HttpResponse.json({ active_sessions: 1, actions: 42 });
+    }),
+
+    http.post(`${API_BASE}/me/avatar`, async () => {
+      await delay(20);
+      return HttpResponse.json({
+        id: 'user-test-1',
+        name: 'Test User',
+        email: 'test@vyzorix.com',
+        avatar_url: '/avatars/user-test-1-abc123.png',
+      });
+    }),
+
     http.get('/v1/me/invitations', async () => {
       return HttpResponse.json({ invitations: [] });
     }),
 
-    // GET /v1/auth/organizations
     http.get(`${API_BASE}/organizations`, async () => {
       return HttpResponse.json({ organizations: [MOCK_ORG] });
     }),
 
-    // POST /v1/auth/organizations/select
     http.post(`${API_BASE}/organizations/select`, async ({ request }) => {
       const body = (await request.json()) as { organization_id?: string };
       return HttpResponse.json({ ...MOCK_ORG, id: body.organization_id ?? MOCK_ORG.id });
     }),
-
-    // --- MFA endpoints ---
 
     http.get(`${API_BASE}/mfa/status`, async () => {
       return HttpResponse.json({ mfa_enabled: false, backup_codes: undefined });
@@ -221,7 +222,7 @@ export function createAuthHandlers() {
         expires_at: Math.floor(Date.now() / 1000) + 3600,
         signing_key: 'mock-signing-key-mfa',
         user: {
-          id: body.user_id ?? 'operator-test-1',
+          id: body.user_id ?? 'user-test-1',
           email: 'test@vyzorix.com',
           name: 'Test User',
           role: 'admin',
@@ -240,8 +241,6 @@ export function createAuthHandlers() {
         backup_codes: ['new-bc-001', 'new-bc-002', 'new-bc-003', 'new-bc-004', 'new-bc-005'],
       });
     }),
-
-    // --- Password reset endpoints ---
 
     http.post(`${API_BASE}/forgot-password`, async ({ request }) => {
       const body = (await request.json()) as { email?: string };
@@ -267,8 +266,6 @@ export function createAuthHandlers() {
       return HttpResponse.json({ success: true, message: 'reset email sent' });
     }),
 
-    // --- Email verification endpoints ---
-
     http.get(`${API_BASE}/verify-email`, async ({ request }) => {
       const url = new URL(request.url);
       const token = url.searchParams.get('token');
@@ -276,7 +273,7 @@ export function createAuthHandlers() {
     }),
 
     http.post(`${API_BASE}/verify-email`, async ({ request }) => {
-      
+
       const body = (await request.json()) as { token?: string };
       return HttpResponse.json({ verified: body.token === 'valid-token', email: 'test@vyzorix.com' });
     }),
@@ -297,8 +294,6 @@ export function createAuthHandlers() {
       return HttpResponse.json({ verified: token === 'valid-token', email: 'test@vyzorix.com' });
     }),
 
-    // --- Session endpoints ---
-
     http.get(`${API_BASE}/sessions`, async () => {
       await delay(30);
       return HttpResponse.json({
@@ -307,7 +302,6 @@ export function createAuthHandlers() {
       });
     }),
 
-    // GET /v1/auth/sessions/concurrent — check concurrent login count
     http.get(`${API_BASE}/sessions/concurrent`, async () => {
       await delay(20);
       return HttpResponse.json({

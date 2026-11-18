@@ -5,11 +5,11 @@
     "mode": "dark",
     "primary": { "main": "#e11d48" },
     "background": {
-      "canvas": "#0d0d0d",
-      "page": "#0d0d0d",
-      "primary": "#171717",
-      "secondary": "#262626",
-      "elevated": "#262626"
+      "canvas": "#161616",
+      "page": "#161616",
+      "primary": "#1c1c1c",
+      "secondary": "#242424",
+      "elevated": "#2a2a2a"
     },
     "text": {
       "primary": "#e5e5e5",

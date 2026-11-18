@@ -24,7 +24,6 @@ const getStyles = (theme: VyzorixTheme) => ({
   body: css({ flex: 1 }),
 });
 
-/** A quiet, non-urgent informational box. For problems, use `Alert`. */
 export function InfoBox({ title, children, icon = 'info', className }: InfoBoxProps) {
   const styles = useStyles2(getStyles);
   return (

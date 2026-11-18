@@ -14,17 +14,12 @@ export interface GraphQLConfig {
   getUri: () => string;
 }
 
-// Single encapsulated holder for all graphql-client mutable state (previously
-// three module-level `let` bindings — the singleton-globals smell).
 const graphqlState = {
   currentOrgId: '' as string,
   currentAuthToken: '' as string,
   apolloClient: null as ApolloClient<NormalizedCacheObject> | null,
 };
 
-// The server registers GraphQL at /:org/graphql (server_graphql.go). The REST
-// client's baseURL (VITE_API_URL, default "/api") is prepended so the vite
-// proxy forwards the request to the API server.
 function getGraphQLUri(orgId: string): string {
   const baseUrl = (import.meta.env as Record<string, string | undefined>).VITE_API_URL ?? '/api';
   return `${baseUrl}/${orgId}/graphql`;
@@ -35,11 +30,6 @@ function getGraphQLBaseUrl(): string {
   return baseUrl.replace(/\/$/, '');
 }
 
-/**
- * Extract the request path (pathname + search) from a URL. The server verifies
- * the HMAC against r.URL.RequestURI() (path + query string), so we sign
- * exactly that — mirroring the REST client's extractRequestPath.
- */
 function extractRequestPath(uri: string): string {
   if (uri.startsWith('http://') || uri.startsWith('https://')) {
     try {
@@ -52,11 +42,6 @@ function extractRequestPath(uri: string): string {
   return uri;
 }
 
-/**
- * Create a fetch wrapper that signs each outgoing GraphQL request with the
- * per-session HMAC signing key (same X-Vyzorix-* scheme as the REST client).
- * If no signing key is available yet (pre-auth), the request is sent unsigned.
- */
 function createSignedFetch(): typeof fetch {
   const signedFetch = async (input: Parameters<typeof fetch>[0], init?: RequestInit): Promise<Response> => {
     const signingKey = getSigningKey();
@@ -84,13 +69,13 @@ function createSignedFetch(): typeof fetch {
 function createBatchingLink(httpLink: ApolloLink): ApolloLink {
   return new ApolloLink((operation: Operation) => {
     const batcher = getGraphQLBatcher();
-    
+
     if (!batcher) {
       return forward(operation, httpLink);
     }
 
     const definition = getMainDefinition(operation.query);
-    const queryString = definition.kind === 'OperationDefinition' 
+    const queryString = definition.kind === 'OperationDefinition'
       ? print(operation.query)
       : '';
     const { variables, operationName } = operation;
@@ -180,7 +165,7 @@ export function setOrganizationContext(organizationId: string, authToken?: strin
   if (authToken) {
     graphqlState.currentAuthToken = authToken;
   }
-  
+
   const batcher = getGraphQLBatcher();
   if (batcher) {
     batcher.configure(getGraphQLBaseUrl(), organizationId, graphqlState.currentAuthToken);

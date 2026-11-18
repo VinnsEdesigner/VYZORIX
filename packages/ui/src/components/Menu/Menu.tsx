@@ -9,13 +9,13 @@ export interface MenuItem {
   onClick: () => void;
   icon?: IconName;
   disabled?: boolean;
-  /** Render in the destructive colour, for delete/revoke. */
+
   destructive?: boolean;
 }
 
 export interface MenuProps {
   items: MenuItem[];
-  /** The control that opens the menu. */
+
   children: React.ReactElement<{ onClick?: () => void; 'aria-haspopup'?: string; 'aria-expanded'?: boolean }>;
   className?: string;
 }
@@ -57,12 +57,6 @@ function getStyles(theme: VyzorixTheme) {
   };
 }
 
-/**
- * A dropdown menu.
- *
- * Closes on outside click and on Escape. The trigger is wired with
- * `aria-haspopup`/`aria-expanded` so its state is announced.
- */
 export function Menu({ items, children, className }: MenuProps) {
   const styles = useStyles2(getStyles);
   const [open, setOpen] = useState(false);

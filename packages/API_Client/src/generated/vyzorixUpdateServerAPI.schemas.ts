@@ -1190,10 +1190,17 @@ export interface MFAVerifySetupRequest {
   token?: string;
 }
 
+export interface MarkNotificationsReadResult {
+  unread?: number;
+}
+
 export interface MeResult {
+  avatar_url?: string;
+  created_at?: number;
   email?: string;
   email_verified?: boolean;
   id?: string;
+  last_login_at?: number;
   last_organization_id?: string;
   mfa_enabled?: boolean;
   name?: string;
@@ -1212,6 +1219,24 @@ export interface MetricAggregateResult {
   min?: number;
 }
 
+export interface NotificationHistoryEntry {
+  channel?: string;
+  deviceId?: string;
+  errorMsg?: string;
+  eventType?: string;
+  id?: string;
+  sentAt?: number;
+  success?: boolean;
+}
+
+export interface NotificationHistoryResult {
+  entries?: NotificationHistoryEntry[];
+  limit?: number;
+  offset?: number;
+  total?: number;
+  unread?: number;
+}
+
 export interface PushNotifications {
   commandFailed?: boolean;
   deviceOffline?: boolean;
@@ -1219,6 +1244,15 @@ export interface PushNotifications {
   registrationRequest?: boolean;
   thresholdBreach?: boolean;
   updateAvailable?: boolean;
+}
+
+export interface SlackNotifications {
+  channelId?: string;
+  channelName?: string;
+  connected?: boolean;
+  slackUserId?: string;
+  teamId?: string;
+  teamName?: string;
 }
 
 export interface WebhookNotifications {
@@ -1231,16 +1265,26 @@ export interface WebhookNotifications {
 export interface NotificationSettings {
   channels?: string[];
   email?: EmailNotifications;
+  emailAddress?: string;
   enabled?: boolean;
   push?: PushNotifications;
+  slack?: SlackNotifications;
   webhook?: WebhookNotifications;
+}
+
+export interface SlackNotificationInput {
+  channelId?: string;
+  channelName?: string;
+  connected?: boolean;
 }
 
 export interface NotificationUpdateRequest {
   channels?: string[];
   email?: EmailNotifications;
+  emailAddress?: string;
   enabled?: boolean;
   push?: PushNotifications;
+  slack?: SlackNotificationInput;
   webhook?: WebhookNotifications;
 }
 
@@ -1287,6 +1331,7 @@ export interface OrganizationSettingsResult {
   theme?: string;
   timezone?: string;
   updatedAt?: string;
+  weekStart?: string;
 }
 
 export interface PollVerificationResult {
@@ -1297,9 +1342,43 @@ export interface PollVerificationResult {
 
 export type PreferencesResultPreferences = {[key: string]: unknown};
 
+export type PreferencesResultResolved = {[key: string]: string};
+
 export interface PreferencesResult {
   preferences?: PreferencesResultPreferences;
+  resolved?: PreferencesResultResolved;
   theme?: string;
+}
+
+export interface ProfileActionResult {
+  avatar_url?: string;
+  email?: string;
+  id?: string;
+  name?: string;
+}
+
+export interface ProfileSummaryResult {
+  actions?: number;
+  active_sessions?: number;
+}
+
+export interface PushPublicKeyResult {
+  enabled?: boolean;
+  publicKey?: string;
+}
+
+export interface PushSubscriptionKeys {
+  auth?: string;
+  p256dh?: string;
+}
+
+export interface PushSubscriptionRequest {
+  endpoint?: string;
+  keys?: PushSubscriptionKeys;
+}
+
+export interface PushTestResult {
+  delivered?: number;
 }
 
 export interface RefreshTokenRequest {
@@ -1413,6 +1492,15 @@ export interface SettingsResponseResult {
   client?: ClientSettings;
   notifications?: NotificationSettings;
   preferences?: SettingsResponseResultPreferences;
+}
+
+export interface SlackChannel {
+  id?: string;
+  name?: string;
+}
+
+export interface SlackChannelsResult {
+  channels?: SlackChannel[];
 }
 
 export interface SuccessResult {
@@ -1624,6 +1712,7 @@ export interface UpdateMemberRoleRequest {
 }
 
 export interface UpdateNameRequest {
+  avatar_url?: string;
   name?: string;
 }
 
@@ -1639,6 +1728,7 @@ export interface UpdateOrganizationSettingsRequest {
   defaultThresholds?: UserThresholds;
   theme?: string;
   timezone?: string;
+  weekStart?: string;
 }
 
 export interface UpdatePushDetailDevice {
@@ -1801,6 +1891,7 @@ export interface UserSettingsResult {
 }
 
 export interface UserSettingsResultLegacy {
+  avatar_url?: string;
   client?: ClientSettings;
   email?: string;
   email_verified?: boolean;
@@ -1891,6 +1982,25 @@ page?: number;
  * page size (default 20)
  */
 limit?: number;
+};
+
+export type GetAuthMeNotificationsHistoryParams = {
+/**
+ * filter by channel (email, slack, webhook)
+ */
+channel?: string;
+/**
+ * filter by outcome (sent, failed)
+ */
+status?: string;
+/**
+ * page size (max 100)
+ */
+limit?: number;
+/**
+ * page offset
+ */
+offset?: number;
 };
 
 export type PostAuthOauthGithubParams = {

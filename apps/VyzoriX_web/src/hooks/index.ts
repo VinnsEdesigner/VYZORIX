@@ -14,6 +14,7 @@ export * from './realtime';
 export * from './apikey';
 export * from './registration';
 export * from './session';
+export * from './profile';
 export * from './settings';
 export * from './organization';
 export * from './connectivity';

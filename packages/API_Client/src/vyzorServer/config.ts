@@ -1,9 +1,3 @@
-
-
-
-
-
-
 export interface WebSocketConfig {
   url: string;
   reconnectInterval: number;
@@ -31,10 +25,6 @@ export interface ClientConfig {
   metrics: MetricsConfig;
 }
 
-
-
-
-
 function parseIntEnv(key: string, defaultValue: number): number {
   const value = (import.meta.env as Record<string, string | undefined>)[key];
   if (value === undefined) return defaultValue;
@@ -52,10 +42,6 @@ function parseBoolEnv(key: string, defaultValue: boolean): boolean {
   return value === "true" || value === "1";
 }
 
-
-
-
-
 export function getClientConfig(): ClientConfig {
   return {
     ws: getWebSocketConfig(),
@@ -67,10 +53,9 @@ export function getClientConfig(): ClientConfig {
 export function getWebSocketConfig(): WebSocketConfig {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const host = window.location.host;
-  // Default WebSocket URL points to the device streaming endpoint
-  // For dashboard clients: wss://host/v1/device/{clientId}/stream
+
   const wsUrl = parseStringEnv("VITE_WS_URL", `${protocol}//${host}/v1/device`);
-  
+
   return {
     url: wsUrl,
     reconnectInterval: parseIntEnv("VITE_WS_RECONNECT_INTERVAL", 3000),
@@ -82,15 +67,9 @@ export function getWebSocketConfig(): WebSocketConfig {
   };
 }
 
-/**
- * Build the WebSocket URL for device streaming.
- * @param baseUrl - The base WebSocket URL (e.g., from VITE_WS_URL or getWebSocketConfig().url)
- * @param deviceId - The device ID (IMEI) or client ID for dashboard connections
- * @returns The full WebSocket URL with the device path
- */
 export function buildDeviceStreamUrl(baseUrl: string, deviceId: string): string {
   const protocol = baseUrl.startsWith("wss") ? "wss:" : "ws:";
-  // Remove protocol prefix if present to reconstruct properly
+
   const urlWithoutProtocol = baseUrl.replace(/^(wss?|https?):\/\//, '');
   return `${protocol}//${urlWithoutProtocol}/${encodeURIComponent(deviceId)}/stream`;
 }
@@ -109,10 +88,6 @@ export function getMetricsConfig(): MetricsConfig {
     retentionDays: parseIntEnv("VITE_METRICS_RETENTION_DAYS", 30),
   };
 }
-
-
-
-
 
 export const config = {
   get ws(): WebSocketConfig {

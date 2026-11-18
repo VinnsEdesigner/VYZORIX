@@ -53,7 +53,7 @@ export function buildPush(overrides: Partial<UpdatePush> = {}): UpdatePush {
     version: 'v1.2.0',
     installType: 'immediate',
     status: 'pending',
-    initiatedBy: 'operator-test-1',
+    initiatedBy: 'user-test-1',
     initiatedAt: now,
     devices: {
       total: 5,
@@ -174,11 +174,14 @@ export function buildNotificationSettings(
       secret: 'whsec_test_secret',
       types: ['threshold_breach', 'device_offline'],
     },
+    slack: {
+      connected: false,
+    },
     ...overrides,
   };
 }
 
-export function buildOperatorSettings() {
+export function buildUserSettings() {
   return {
     client: buildClientSettings(),
     thresholds: buildThresholds(),

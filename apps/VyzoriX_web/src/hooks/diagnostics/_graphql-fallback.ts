@@ -48,7 +48,7 @@ export async function fetchTimelineViaGraphQL(
     hasMore: connection.hasMore,
     nextCursor: connection.nextCursor ?? undefined,
   });
-  // GraphQL TimelineEvent does not expose deviceId; inject the known imei.
+
   result.events = result.events.map((e) => ({ ...e, deviceId: imei }));
   return result;
 }
@@ -58,8 +58,6 @@ function toDate(value?: number | string | null): Date | undefined {
   return new Date(value);
 }
 
-/** Maps the REST wire DTO (DeviceInspectionResult, epoch-millis numbers) onto
- * the domain DeviceInspection shape so hook consumers get one type. */
 export function normalizeWireInspection(raw: DeviceInspectionResult): DeviceInspection {
   return {
     identity: {
@@ -98,8 +96,6 @@ export function normalizeWireInspection(raw: DeviceInspectionResult): DeviceInsp
   };
 }
 
-/** Maps the REST wire timeline ({events, pagination}, epoch-millis) onto
- * the domain TimelineResult (Date timestamps). */
 export function normalizeWireTimeline(
   raw: { events?: { id?: string; type?: string; timestamp?: number; data?: Record<string, unknown> }[]; pagination?: { nextCursor?: string; limit?: number; hasMore?: boolean } },
   imei: string,

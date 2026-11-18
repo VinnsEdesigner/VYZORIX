@@ -50,7 +50,6 @@ function getStyles(theme: VyzorixTheme) {
   };
 }
 
-/** A segmented control: one choice from a small set, shown inline. */
 export function RadioButtonGroup<T extends string>({
   options,
   value,

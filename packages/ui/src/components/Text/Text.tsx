@@ -13,16 +13,16 @@ export type TextAlignment = 'left' | 'center' | 'right' | 'justify';
 export type TextElement = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span' | 'div' | 'label';
 
 export interface TextProps extends React.HTMLAttributes<HTMLElement> {
-  /** Rendered tag. Defaults to `p`, or a matching `hN` for an `hN` variant. */
+
   element?: TextElement;
   variant?: TextVariant;
   color?: TextColor;
   weight?: TextWeight;
   italic?: boolean;
   textAlignment?: TextAlignment;
-  /** Clip to a single line with an ellipsis. */
+
   truncate?: boolean;
-  /** Tabular (monospaced) numerals, for aligned numeric columns. */
+
   tabular?: boolean;
 }
 
@@ -31,8 +31,7 @@ const WEIGHT: Record<TextWeight, number> = { light: 300, regular: 400, medium: 5
 const TEXT_COLOR = new Set(['primary', 'secondary', 'disabled', 'link']);
 
 function getStyles(theme: VyzorixTheme, variant: TextVariant, color: TextColor, weight: TextWeight) {
-  // `primary`/`secondary`/`disabled`/`link` live under colors.text; the semantic
-  // names (error, success, warning) are rich colours, so take their `text` token.
+
   const resolved = TEXT_COLOR.has(color)
     ? theme.colors.text[color as 'primary' | 'secondary' | 'disabled' | 'link']
     : theme.colors[color as 'error' | 'success' | 'warning'].text;
@@ -68,13 +67,6 @@ const ALIGN: Record<TextAlignment, 'left' | 'center' | 'right' | 'justify'> = {
   left: 'left', center: 'center', right: 'right', justify: 'justify',
 };
 
-/**
- * The typography primitive.
- *
- * Every piece of text should come through here so it inherits the active
- * theme's type scale and colour. Size comes from `variant` (the theme's own
- * scale), never a hard-coded pixel value.
- */
 export const Text = forwardRef<HTMLElement, TextProps>(
   (
     {

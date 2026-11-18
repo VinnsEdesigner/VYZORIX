@@ -1,6 +1,3 @@
-// Device domain — generated types + hand-rolled business rules.
-// IMEI Luhn checksum validation and FCM token validation are genuine
-// algorithms that can't be derived from the OpenAPI spec.
 import type {
   DeviceListItem,
   DeviceListResult,
@@ -43,11 +40,7 @@ export type {
   DeviceDisconnectResult,
 };
 
-// ---- Constants (hand-rolled) ----
-
 export type DeviceStatus = 'online' | 'offline' | 'deregistered';
-
-// ---- IMEI validation (Luhn checksum — genuine algorithm) ----
 
 export function validateIMEI(imei: string): boolean {
   if (!/^\d{15}$/.test(imei)) return false;
@@ -71,8 +64,6 @@ export function validateIMEIChecksum(imei: string): boolean {
   }
   return sum % 10 === 0;
 }
-
-// ---- FCM token validation (business rule: length constraints) ----
 
 export function validateFCMToken(token: string): string | null {
   if (!token) return 'FCM token is required';

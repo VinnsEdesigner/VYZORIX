@@ -1,23 +1,3 @@
-/**
- * SSL/TLS Certificate Pinning
- * 
- * NOTE: This implementation is a placeholder/layout for future use.
- * 
- * PURPOSE:
- * - Protects APK daemon server-to-server connections against MITM attacks
- * - APK daemon communicates directly with this API server (not browser-based)
- * - Will be activated once server-side SSL pin configuration is implemented
- * 
- * TO ACTIVATE: Set SSLPIN_ENABLED=true or call initSSLPinning({ enabled: true })
- * 
- * TODO (Server-side requirements before activation):
- * - Create SSL pin configuration endpoint: GET /.well-known/ssl-pins
- * - Add ssl_pin_configs table to database
- * - Implement SSLPinConfigService
- * - Add SSL pin fields to DeviceSettings for per-device pinning
- * - Server provides SHA-256 hashes of valid public keys
- */
-
 import { createHash } from 'crypto';
 
 export interface PinnedCertificate {
@@ -117,7 +97,7 @@ export class SSLPinning {
       };
     }
 
-    const isValid = this.config.pins.some(pin => 
+    const isValid = this.config.pins.some(pin =>
       constantTimeCompare(pin.toLowerCase(), certificateHash.toLowerCase())
     );
 
@@ -178,7 +158,7 @@ export class SSLPinning {
       return allowedDomains.includes(hostname);
     }
 
-    return allowedDomains.some(domain => 
+    return allowedDomains.some(domain =>
       hostname === domain || hostname.endsWith(`.${domain}`)
     );
   }
@@ -249,11 +229,11 @@ let sslPinningInstance: SSLPinning | null = null;
 
 function isSSLEnabledFromEnv(): boolean {
   if (typeof import.meta !== 'undefined') {
-    const meta = import.meta as { env?: Record<string, string | undefined> };
+    const meta = import.meta as unknown as { env?: Record<string, string | undefined> };
     const val = meta.env?.['SSLPIN_ENABLED'] || meta.env?.['VITE_SSLPIN_ENABLED'];
     if (val === 'true' || val === '1') return true;
   }
-  
+
   if (typeof globalThis !== 'undefined') {
     const g = globalThis as Record<string, unknown>;
     if (g.process && typeof g.process === 'object') {
@@ -263,7 +243,7 @@ function isSSLEnabledFromEnv(): boolean {
       if (val === 'true' || val === '1') return true;
     }
   }
-  
+
   return false;
 }
 

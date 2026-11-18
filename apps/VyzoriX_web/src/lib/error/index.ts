@@ -3,6 +3,7 @@ export {
   classifyRenderError,
   classifyRouteError,
 } from './vyzor-error-classifier';
+export { describeError } from './describe-error';
 export type {
   VyzorErrorCategory,
   VyzorErrorClassification,

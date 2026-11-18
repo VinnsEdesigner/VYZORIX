@@ -10,7 +10,6 @@ import {
   getGetDashboardEventsIdQueryKey,
 } from '@/generated-rq/devices/device-management';
 
-
 export interface DeviceEventsParams {
   limit?: number;
   before?: string;

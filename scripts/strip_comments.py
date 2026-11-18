@@ -16,21 +16,47 @@ This is a real scanner. It tracks:
 Directives kept: eslint-disable*, eslint-enable, @ts-expect-error, @ts-ignore,
 @ts-nocheck, @ts-check, prettier-ignore, biome-ignore, @__PURE__, vite-ignore.
 
+Generated sources (any `generated/` or `generated-rq/` directory, or a `*.gen.ts`
+file) are skipped by default: codegen regenerates them with their comments, so
+stripping them is undone and shows as churn. Pass --include-generated to override.
+
+After writing, the changed files are re-linted with ESLint (the "vet" step),
+grouped by the package that owns them. A stripped `eslint-disable-next-line`
+would otherwise surface only in CI. Pass --no-vet to skip it.
+
 Usage:
     python3 scripts/strip_comments.py [path ...] [--dry-run] [--check] [--quiet]
+        [--include-generated] [--no-vet]
 
 Default path is apps/VyzoriX_web/src/lib/local-store.
 
-Exit codes: 0 clean or written; 1 --check found comments; 2 bad usage.
+Exit codes: 0 clean or written; 1 --check found comments or vet failed; 2 bad usage.
 """
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 
 DEFAULT_PATH = "apps/VyzoriX_web/src/lib/local-store"
 EXTENSIONS = {".ts", ".tsx", ".mts", ".cts", ".js", ".jsx"}
+
+# Machine-generated sources are regenerated WITH their comments (orval, TanStack
+# Router). Stripping them would be undone by the next codegen run and would show
+# as churn, so they are skipped unless --include-generated is passed.
+GENERATED_DIR_NAMES = {"generated", "generated-rq"}
+GENERATED_FILE_SUFFIXES = (".gen.ts", ".gen.tsx")
+
+# ESLint flat-config filenames, used to find the package a file belongs to so
+# the vet step runs with that package's config and tsconfig.
+ESLINT_CONFIGS = ("eslint.config.js", "eslint.config.mjs", "eslint.config.cjs", "eslint.config.ts")
+
+
+def is_generated(path: Path) -> bool:
+    if any(part in GENERATED_DIR_NAMES for part in path.parts):
+        return True
+    return path.name.endswith(GENERATED_FILE_SUFFIXES)
 
 DIRECTIVE = re.compile(
     r"^\s*(eslint-(disable|enable)|@ts-(expect-error|ignore|nocheck|check)|"
@@ -213,20 +239,72 @@ def tidy(source: str) -> str:
     return "\n".join(result) + "\n"
 
 
-def collect(paths: list[str]) -> list[Path]:
+def collect(paths: list[str], include_generated: bool = False) -> list[Path]:
     files: list[Path] = []
     for raw in paths:
         path = Path(raw)
         if path.is_file():
-            if path.suffix in EXTENSIONS:
+            if path.suffix in EXTENSIONS and (include_generated or not is_generated(path)):
                 files.append(path)
             continue
         for candidate in sorted(path.rglob("*")):
             if any(part.startswith(".") for part in candidate.parts):
                 continue
             if candidate.is_file() and candidate.suffix in EXTENSIONS:
+                if not include_generated and is_generated(candidate):
+                    continue
                 files.append(candidate)
     return files
+
+
+def find_package_root(path: Path) -> Path | None:
+    """Walk up from `path` to the nearest directory holding an ESLint config.
+
+    ESLint v9 resolves its flat config relative to the working directory, so the
+    vet step must run with cwd set to the package that owns the file.
+    """
+    for directory in [path.parent, *path.parents]:
+        if any((directory / name).exists() for name in ESLINT_CONFIGS):
+            return directory
+    return None
+
+
+def vet(files: list[Path], quiet: bool) -> int:
+    """Run ESLint over the given files, grouped by owning package.
+
+    Comments carry the `eslint-disable-next-line` directives a linter relies on;
+    stripping them can surface a rule the directive was suppressing. Re-linting
+    right after the strip catches that here rather than in CI. Returns the number
+    of files ESLint reported on (0 when clean or ESLint is unavailable).
+    """
+    eslint = Path("node_modules/.bin/eslint")
+    if not eslint.exists():
+        if not quiet:
+            print("eslint not found; skipping vet", file=sys.stderr)
+        return 0
+
+    by_package: dict[Path, list[Path]] = {}
+    for file in files:
+        root = find_package_root(file)
+        if root is None:
+            continue
+        by_package.setdefault(root, []).append(file)
+
+    offending = 0
+    for root, members in by_package.items():
+        rel = [str(m.relative_to(root)) for m in members]
+        result = subprocess.run(
+            [str((root / eslint).resolve()) if (root / eslint).exists() else str(eslint.resolve()), *rel],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            offending += len(members)
+            if not quiet:
+                print(result.stdout.strip())
+                print(result.stderr.strip(), file=sys.stderr)
+    return offending
 
 
 def main() -> int:
@@ -235,15 +313,26 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--quiet", action="store_true")
+    parser.add_argument(
+        "--include-generated",
+        action="store_true",
+        help="also strip generated files (off by default: codegen restores them)",
+    )
+    parser.add_argument(
+        "--no-vet",
+        action="store_true",
+        help="skip the post-strip ESLint pass",
+    )
     args = parser.parse_args()
 
-    targets = collect(args.paths or [DEFAULT_PATH])
+    targets = collect(args.paths or [DEFAULT_PATH], include_generated=args.include_generated)
     if not targets:
         print("no files matched", file=sys.stderr)
         return 2
 
     changed = 0
     saved = 0
+    touched: list[Path] = []
 
     for path in targets:
         original = path.read_text(encoding="utf-8")
@@ -253,6 +342,7 @@ def main() -> int:
 
         changed += 1
         saved += len(original) - len(cleaned)
+        touched.append(path)
         if not args.quiet:
             print(f"  {path}: -{len(original) - len(cleaned)} bytes")
 
@@ -264,6 +354,17 @@ def main() -> int:
 
     if args.check and changed:
         return 1
+
+    # Vet the files actually written, so a comment that carried a directive is
+    # caught here. A dry run writes nothing, so there is nothing to vet.
+    if touched and not args.dry_run and not args.no_vet:
+        offending = vet(touched, args.quiet)
+        if offending:
+            print(f"\nvet: eslint reported on {offending} file(s)", file=sys.stderr)
+            return 1
+        if not args.quiet:
+            print("vet: clean")
+
     return 0
 
 

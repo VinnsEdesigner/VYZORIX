@@ -32,7 +32,6 @@ const getStyles = (theme: VyzorixTheme) => ({
   body: css({ padding: theme.spacing(1.5), borderTop: `1px solid ${theme.colors.border.weak}` }),
 });
 
-/** A collapsible section. Uncontrolled by default; pass `isOpen` to control it. */
 export function Collapse({ label, children, isOpen, onToggle, className }: CollapseProps) {
   const styles = useStyles2(getStyles);
   const [internalOpen, setInternalOpen] = useState(false);

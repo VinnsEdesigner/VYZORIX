@@ -46,14 +46,6 @@ interface UseWebSocketConnectionResult {
   connectionError: { code: number; reason: string } | null;
 }
 
-/**
- * Manage the realtime WebSocket connection lifecycle.
- *
- * Auto-connects when an organization is selected and disconnects on cleanup.
- * Returns the live connection status from the underlying graphql-ws store so
- * the UI can render connection indicators without subscribing to the store
- * directly.
- */
 export function useWebSocketConnection(): UseWebSocketConnectionResult {
   const organizationId = useCurrentOrganizationId();
   const connect = useWebSocketStore((s) => s.connect);

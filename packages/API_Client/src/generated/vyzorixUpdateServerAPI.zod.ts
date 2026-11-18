@@ -176,6 +176,12 @@ export const AnnotationRequestSchema = z.object({
 export const CancelVerificationRequestSchema = z.object({
   email: z.string().optional(),
 });
+export const CapabilitiesResultSchema = z.object({
+  instance: z.array(z.string()).optional(),
+  instance_role: z.string().optional(),
+  org: z.array(z.string()).optional(),
+  personal: z.array(z.string()).optional(),
+});
 export const ChannelStatusResultSchema = z.object({
   active_streams: z.number().int().optional(),
   org: z.string().optional(),
@@ -822,6 +828,7 @@ export const MFAVerifySetupRequestSchema = z.object({
   token: z.string().optional(),
 });
 export const MeResultSchema = z.object({
+  avatar_url: z.string().optional(),
   email: z.string().optional(),
   email_verified: z.boolean().optional(),
   id: z.string().optional(),
@@ -901,6 +908,7 @@ export const OrganizationSettingsResultSchema = z.object({
   defaultThresholds: z.lazy(() => UserThresholdsSchema).optional(),
   id: z.string().optional(),
   organizationId: z.string().optional(),
+  theme: z.string().optional(),
   timezone: z.string().optional(),
   updatedAt: z.string().optional(),
 });
@@ -917,6 +925,7 @@ export const PollVerificationResultSchema = z.object({
 });
 export const PreferencesResultSchema = z.object({
   preferences: z.record(z.string(), z.unknown()).optional(),
+  theme: z.string().optional(),
 });
 export const PushNotificationsSchema = z.object({
   commandFailed: z.boolean().optional(),
@@ -1193,6 +1202,7 @@ export const UpdateMemberRoleRequestSchema = z.object({
   role: z.string().optional(),
 });
 export const UpdateNameRequestSchema = z.object({
+  avatar_url: z.string().optional(),
   name: z.string().optional(),
 });
 export const UpdateOrganizationRequestSchema = z.object({
@@ -1204,6 +1214,7 @@ export const UpdateOrganizationSettingsRequestSchema = z.object({
   alertCooldownMinutes: z.number().int().optional(),
   dateFormat: z.string().optional(),
   defaultThresholds: z.lazy(() => UserThresholdsSchema).optional(),
+  theme: z.string().optional(),
   timezone: z.string().optional(),
 });
 export const UpdatePushDetailDeviceSchema = z.object({
@@ -1372,6 +1383,7 @@ export const UserSettingsResultSchema = z.object({
   thresholds: z.lazy(() => UserThresholdsSchema).optional(),
 });
 export const UserSettingsResultLegacySchema = z.object({
+  avatar_url: z.string().optional(),
   client: z.lazy(() => ClientSettingsSchema).optional(),
   email: z.string().optional(),
   email_verified: z.boolean().optional(),

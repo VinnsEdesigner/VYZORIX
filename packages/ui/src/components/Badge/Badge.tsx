@@ -32,7 +32,6 @@ function getStyles(theme: VyzorixTheme, color: BadgeColor) {
   };
 }
 
-/** A small status pill. Colour carries meaning, so pair it with text or an icon. */
 export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
   ({ text, color = 'secondary', icon, className, children, ...rest }, ref) => {
     const styles = useStyles2(getStyles, color);

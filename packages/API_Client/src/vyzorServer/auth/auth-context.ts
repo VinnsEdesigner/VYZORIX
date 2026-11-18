@@ -26,8 +26,6 @@ interface AuthContextState {
   lockout: LockoutState;
 }
 
-// Single encapsulated holder for all auth mutable state (previously three
-// separate module-level `let` bindings — the singleton-globals smell).
 const authContextState: AuthContextState = {
   auth: {
     isAuthenticated: false,
@@ -60,9 +58,9 @@ function scheduleTokenRefresh(expiresAt: number): void {
     if (authContextState.refreshTimer) {
     clearTimeout(authContextState.refreshTimer);
   }
-  
+
     const now = Date.now();
-  const refreshTime = (expiresAt * 1000) - 60000;   
+  const refreshTime = (expiresAt * 1000) - 60000;
   if (refreshTime > now) {
     authContextState.refreshTimer = setTimeout(() => {
       refreshTokens().catch(console.error);
@@ -88,17 +86,17 @@ async function refreshTokens(): Promise<void> {
         authContextState.auth.accessToken = response.access_token;
     authContextState.auth.refreshToken = response.refresh_token;
     authContextState.auth.tokenExpiresAt = response.expires_at;
-    
+
     setAuthToken(response.access_token);
-    
+
         scheduleTokenRefresh(response.expires_at);
-    
+
         notifyRefreshListeners({
       accessToken: response.access_token ?? null,
       refreshToken: response.refresh_token,
       expiresAt: response.expires_at,
     });
-    
+
     console.debug('[Auth] Tokens refreshed successfully');
   } catch (error) {
     console.error('[Auth] Token refresh failed:', error);
@@ -164,7 +162,7 @@ export const authContext = {
         if (response.expires_at) {
       scheduleTokenRefresh(response.expires_at);
     }
-    
+
     notifyListeners();
   },
 
@@ -191,7 +189,7 @@ export const authContext = {
         id: op.id,
         email: op.email,
         name: op.name,
-        
+
         mfa_enabled: op.mfa_enabled,
         email_verified: true,
         needs_organization: false,
@@ -248,12 +246,12 @@ export const authContext = {
       tokenExpiresAt: null,
     };
     authContextState.lockout = { isLocked: false, retryAfter: 0, lockedUntil: 0 };
-    
+
     if (authContextState.refreshTimer) {
       clearTimeout(authContextState.refreshTimer);
       authContextState.refreshTimer = null;
     }
-    
+
     setAuthToken(null);
     setCSRFToken(null);
     setSigningKey(null);

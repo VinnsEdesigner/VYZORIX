@@ -1,6 +1,3 @@
-// Telemetry domain — generated types + hand-rolled risk assessment algorithms.
-// The threshold comparison functions (isRiskWarning, isRiskCritical, getRiskStatus)
-// are genuine domain logic not expressible in OpenAPI.
 import type {
   TelemetryEntry,
   TelemetryHistoryQueryResult,
@@ -19,8 +16,6 @@ export type {
 };
 export type { MetricThreshold };
 
-// ---- Domain types (not in OpenAPI, used by hooks/stores) ----
-
 export interface TelemetryFrame {
   timestamp: Date;
   riskScore: number;
@@ -28,8 +23,6 @@ export interface TelemetryFrame {
   bufferLevel: number;
   latencyMs?: number;
 }
-
-// ---- Risk assessment algorithms (hand-rolled) ----
 
 export function isRiskWarning(value: number, threshold: MetricThreshold): boolean {
   return value >= threshold.warning && value < threshold.critical;

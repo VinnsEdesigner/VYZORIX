@@ -11,8 +11,24 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AlertsIndexRouteImport } from './routes/alerts/index'
+import { Route as AppsIndexRouteImport } from './routes/apps/index'
+import { Route as DevicesIndexRouteImport } from './routes/devices/index'
+import { Route as LogsIndexRouteImport } from './routes/logs/index'
 import { Route as NotificationsIndexRouteImport } from './routes/notifications/index'
-import { Route as ServiceAccountsIndexRouteImport } from './routes/service-accounts/index'
+import { Route as PermissionsIndexRouteImport } from './routes/permissions/index'
+import { Route as ProfileIndexRouteImport } from './routes/profile/index'
+import { Route as ProfileAvatarRouteImport } from './routes/profile/avatar'
+import { Route as SettingsIndexRouteImport } from './routes/settings/index'
+import { Route as TelemetryIndexRouteImport } from './routes/telemetry/index'
+import { Route as TerminalIndexRouteImport } from './routes/terminal/index'
+import { Route as UpdatesIndexRouteImport } from './routes/updates/index'
+import { Route as AdminAuthenticationIndexRouteImport } from './routes/admin/authentication/index'
+import { Route as AdminDefaultPreferencesIndexRouteImport } from './routes/admin/default-preferences/index'
+import { Route as AdminProvisioningIndexRouteImport } from './routes/admin/provisioning/index'
+import { Route as AdminServiceAccountsIndexRouteImport } from './routes/admin/service-accounts/index'
+import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
+import { Route as ProfileNotificationsEmailRouteImport } from './routes/profile/notifications/email'
+import { Route as ProfileNotificationsSlackRouteImport } from './routes/profile/notifications/slack'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,49 +40,259 @@ const AlertsIndexRoute = AlertsIndexRouteImport.update({
   path: '/alerts/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppsIndexRoute = AppsIndexRouteImport.update({
+  id: '/apps/',
+  path: '/apps/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevicesIndexRoute = DevicesIndexRouteImport.update({
+  id: '/devices/',
+  path: '/devices/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LogsIndexRoute = LogsIndexRouteImport.update({
+  id: '/logs/',
+  path: '/logs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NotificationsIndexRoute = NotificationsIndexRouteImport.update({
   id: '/notifications/',
   path: '/notifications/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ServiceAccountsIndexRoute = ServiceAccountsIndexRouteImport.update({
-  id: '/service-accounts/',
-  path: '/service-accounts/',
+const PermissionsIndexRoute = PermissionsIndexRouteImport.update({
+  id: '/permissions/',
+  path: '/permissions/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileIndexRoute = ProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileAvatarRoute = ProfileAvatarRouteImport.update({
+  id: '/profile/avatar',
+  path: '/profile/avatar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TelemetryIndexRoute = TelemetryIndexRouteImport.update({
+  id: '/telemetry/',
+  path: '/telemetry/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TerminalIndexRoute = TerminalIndexRouteImport.update({
+  id: '/terminal/',
+  path: '/terminal/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UpdatesIndexRoute = UpdatesIndexRouteImport.update({
+  id: '/updates/',
+  path: '/updates/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAuthenticationIndexRoute =
+  AdminAuthenticationIndexRouteImport.update({
+    id: '/admin/authentication/',
+    path: '/admin/authentication/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminDefaultPreferencesIndexRoute =
+  AdminDefaultPreferencesIndexRouteImport.update({
+    id: '/admin/default-preferences/',
+    path: '/admin/default-preferences/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminProvisioningIndexRoute = AdminProvisioningIndexRouteImport.update({
+  id: '/admin/provisioning/',
+  path: '/admin/provisioning/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminServiceAccountsIndexRoute =
+  AdminServiceAccountsIndexRouteImport.update({
+    id: '/admin/service-accounts/',
+    path: '/admin/service-accounts/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
+  id: '/admin/users/',
+  path: '/admin/users/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileNotificationsEmailRoute =
+  ProfileNotificationsEmailRouteImport.update({
+    id: '/profile/notifications/email',
+    path: '/profile/notifications/email',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ProfileNotificationsSlackRoute =
+  ProfileNotificationsSlackRouteImport.update({
+    id: '/profile/notifications/slack',
+    path: '/profile/notifications/slack',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/profile/avatar': typeof ProfileAvatarRoute
   '/alerts/': typeof AlertsIndexRoute
+  '/apps/': typeof AppsIndexRoute
+  '/devices/': typeof DevicesIndexRoute
+  '/logs/': typeof LogsIndexRoute
   '/notifications/': typeof NotificationsIndexRoute
-  '/service-accounts/': typeof ServiceAccountsIndexRoute
+  '/permissions/': typeof PermissionsIndexRoute
+  '/profile/': typeof ProfileIndexRoute
+  '/settings/': typeof SettingsIndexRoute
+  '/telemetry/': typeof TelemetryIndexRoute
+  '/terminal/': typeof TerminalIndexRoute
+  '/updates/': typeof UpdatesIndexRoute
+  '/profile/notifications/email': typeof ProfileNotificationsEmailRoute
+  '/profile/notifications/slack': typeof ProfileNotificationsSlackRoute
+  '/admin/authentication/': typeof AdminAuthenticationIndexRoute
+  '/admin/default-preferences/': typeof AdminDefaultPreferencesIndexRoute
+  '/admin/provisioning/': typeof AdminProvisioningIndexRoute
+  '/admin/service-accounts/': typeof AdminServiceAccountsIndexRoute
+  '/admin/users/': typeof AdminUsersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/profile/avatar': typeof ProfileAvatarRoute
   '/alerts': typeof AlertsIndexRoute
+  '/apps': typeof AppsIndexRoute
+  '/devices': typeof DevicesIndexRoute
+  '/logs': typeof LogsIndexRoute
   '/notifications': typeof NotificationsIndexRoute
-  '/service-accounts': typeof ServiceAccountsIndexRoute
+  '/permissions': typeof PermissionsIndexRoute
+  '/profile': typeof ProfileIndexRoute
+  '/settings': typeof SettingsIndexRoute
+  '/telemetry': typeof TelemetryIndexRoute
+  '/terminal': typeof TerminalIndexRoute
+  '/updates': typeof UpdatesIndexRoute
+  '/profile/notifications/email': typeof ProfileNotificationsEmailRoute
+  '/profile/notifications/slack': typeof ProfileNotificationsSlackRoute
+  '/admin/authentication': typeof AdminAuthenticationIndexRoute
+  '/admin/default-preferences': typeof AdminDefaultPreferencesIndexRoute
+  '/admin/provisioning': typeof AdminProvisioningIndexRoute
+  '/admin/service-accounts': typeof AdminServiceAccountsIndexRoute
+  '/admin/users': typeof AdminUsersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/profile/avatar': typeof ProfileAvatarRoute
   '/alerts/': typeof AlertsIndexRoute
+  '/apps/': typeof AppsIndexRoute
+  '/devices/': typeof DevicesIndexRoute
+  '/logs/': typeof LogsIndexRoute
   '/notifications/': typeof NotificationsIndexRoute
-  '/service-accounts/': typeof ServiceAccountsIndexRoute
+  '/permissions/': typeof PermissionsIndexRoute
+  '/profile/': typeof ProfileIndexRoute
+  '/settings/': typeof SettingsIndexRoute
+  '/telemetry/': typeof TelemetryIndexRoute
+  '/terminal/': typeof TerminalIndexRoute
+  '/updates/': typeof UpdatesIndexRoute
+  '/profile/notifications/email': typeof ProfileNotificationsEmailRoute
+  '/profile/notifications/slack': typeof ProfileNotificationsSlackRoute
+  '/admin/authentication/': typeof AdminAuthenticationIndexRoute
+  '/admin/default-preferences/': typeof AdminDefaultPreferencesIndexRoute
+  '/admin/provisioning/': typeof AdminProvisioningIndexRoute
+  '/admin/service-accounts/': typeof AdminServiceAccountsIndexRoute
+  '/admin/users/': typeof AdminUsersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/alerts/' | '/notifications/' | '/service-accounts/'
+  fullPaths:
+    | '/'
+    | '/profile/avatar'
+    | '/alerts/'
+    | '/apps/'
+    | '/devices/'
+    | '/logs/'
+    | '/notifications/'
+    | '/permissions/'
+    | '/profile/'
+    | '/settings/'
+    | '/telemetry/'
+    | '/terminal/'
+    | '/updates/'
+    | '/profile/notifications/email'
+    | '/profile/notifications/slack'
+    | '/admin/authentication/'
+    | '/admin/default-preferences/'
+    | '/admin/provisioning/'
+    | '/admin/service-accounts/'
+    | '/admin/users/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/alerts' | '/notifications' | '/service-accounts'
-  id: '__root__' | '/' | '/alerts/' | '/notifications/' | '/service-accounts/'
+  to:
+    | '/'
+    | '/profile/avatar'
+    | '/alerts'
+    | '/apps'
+    | '/devices'
+    | '/logs'
+    | '/notifications'
+    | '/permissions'
+    | '/profile'
+    | '/settings'
+    | '/telemetry'
+    | '/terminal'
+    | '/updates'
+    | '/profile/notifications/email'
+    | '/profile/notifications/slack'
+    | '/admin/authentication'
+    | '/admin/default-preferences'
+    | '/admin/provisioning'
+    | '/admin/service-accounts'
+    | '/admin/users'
+  id:
+    | '__root__'
+    | '/'
+    | '/profile/avatar'
+    | '/alerts/'
+    | '/apps/'
+    | '/devices/'
+    | '/logs/'
+    | '/notifications/'
+    | '/permissions/'
+    | '/profile/'
+    | '/settings/'
+    | '/telemetry/'
+    | '/terminal/'
+    | '/updates/'
+    | '/profile/notifications/email'
+    | '/profile/notifications/slack'
+    | '/admin/authentication/'
+    | '/admin/default-preferences/'
+    | '/admin/provisioning/'
+    | '/admin/service-accounts/'
+    | '/admin/users/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ProfileAvatarRoute: typeof ProfileAvatarRoute
   AlertsIndexRoute: typeof AlertsIndexRoute
+  AppsIndexRoute: typeof AppsIndexRoute
+  DevicesIndexRoute: typeof DevicesIndexRoute
+  LogsIndexRoute: typeof LogsIndexRoute
   NotificationsIndexRoute: typeof NotificationsIndexRoute
-  ServiceAccountsIndexRoute: typeof ServiceAccountsIndexRoute
+  PermissionsIndexRoute: typeof PermissionsIndexRoute
+  ProfileIndexRoute: typeof ProfileIndexRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
+  TelemetryIndexRoute: typeof TelemetryIndexRoute
+  TerminalIndexRoute: typeof TerminalIndexRoute
+  UpdatesIndexRoute: typeof UpdatesIndexRoute
+  ProfileNotificationsEmailRoute: typeof ProfileNotificationsEmailRoute
+  ProfileNotificationsSlackRoute: typeof ProfileNotificationsSlackRoute
+  AdminAuthenticationIndexRoute: typeof AdminAuthenticationIndexRoute
+  AdminDefaultPreferencesIndexRoute: typeof AdminDefaultPreferencesIndexRoute
+  AdminProvisioningIndexRoute: typeof AdminProvisioningIndexRoute
+  AdminServiceAccountsIndexRoute: typeof AdminServiceAccountsIndexRoute
+  AdminUsersIndexRoute: typeof AdminUsersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -85,6 +311,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AlertsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/apps/': {
+      id: '/apps/'
+      path: '/apps'
+      fullPath: '/apps/'
+      preLoaderRoute: typeof AppsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/devices/': {
+      id: '/devices/'
+      path: '/devices'
+      fullPath: '/devices/'
+      preLoaderRoute: typeof DevicesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/logs/': {
+      id: '/logs/'
+      path: '/logs'
+      fullPath: '/logs/'
+      preLoaderRoute: typeof LogsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/notifications/': {
       id: '/notifications/'
       path: '/notifications'
@@ -92,11 +339,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NotificationsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/service-accounts/': {
-      id: '/service-accounts/'
-      path: '/service-accounts'
-      fullPath: '/service-accounts/'
-      preLoaderRoute: typeof ServiceAccountsIndexRouteImport
+    '/permissions/': {
+      id: '/permissions/'
+      path: '/permissions'
+      fullPath: '/permissions/'
+      preLoaderRoute: typeof PermissionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/': {
+      id: '/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof ProfileIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/avatar': {
+      id: '/profile/avatar'
+      path: '/profile/avatar'
+      fullPath: '/profile/avatar'
+      preLoaderRoute: typeof ProfileAvatarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/': {
+      id: '/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/telemetry/': {
+      id: '/telemetry/'
+      path: '/telemetry'
+      fullPath: '/telemetry/'
+      preLoaderRoute: typeof TelemetryIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terminal/': {
+      id: '/terminal/'
+      path: '/terminal'
+      fullPath: '/terminal/'
+      preLoaderRoute: typeof TerminalIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/updates/': {
+      id: '/updates/'
+      path: '/updates'
+      fullPath: '/updates/'
+      preLoaderRoute: typeof UpdatesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/authentication/': {
+      id: '/admin/authentication/'
+      path: '/admin/authentication'
+      fullPath: '/admin/authentication/'
+      preLoaderRoute: typeof AdminAuthenticationIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/default-preferences/': {
+      id: '/admin/default-preferences/'
+      path: '/admin/default-preferences'
+      fullPath: '/admin/default-preferences/'
+      preLoaderRoute: typeof AdminDefaultPreferencesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/provisioning/': {
+      id: '/admin/provisioning/'
+      path: '/admin/provisioning'
+      fullPath: '/admin/provisioning/'
+      preLoaderRoute: typeof AdminProvisioningIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/service-accounts/': {
+      id: '/admin/service-accounts/'
+      path: '/admin/service-accounts'
+      fullPath: '/admin/service-accounts/'
+      preLoaderRoute: typeof AdminServiceAccountsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/users/': {
+      id: '/admin/users/'
+      path: '/admin/users'
+      fullPath: '/admin/users/'
+      preLoaderRoute: typeof AdminUsersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/notifications/email': {
+      id: '/profile/notifications/email'
+      path: '/profile/notifications/email'
+      fullPath: '/profile/notifications/email'
+      preLoaderRoute: typeof ProfileNotificationsEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/notifications/slack': {
+      id: '/profile/notifications/slack'
+      path: '/profile/notifications/slack'
+      fullPath: '/profile/notifications/slack'
+      preLoaderRoute: typeof ProfileNotificationsSlackRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -104,9 +442,25 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ProfileAvatarRoute: ProfileAvatarRoute,
   AlertsIndexRoute: AlertsIndexRoute,
+  AppsIndexRoute: AppsIndexRoute,
+  DevicesIndexRoute: DevicesIndexRoute,
+  LogsIndexRoute: LogsIndexRoute,
   NotificationsIndexRoute: NotificationsIndexRoute,
-  ServiceAccountsIndexRoute: ServiceAccountsIndexRoute,
+  PermissionsIndexRoute: PermissionsIndexRoute,
+  ProfileIndexRoute: ProfileIndexRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
+  TelemetryIndexRoute: TelemetryIndexRoute,
+  TerminalIndexRoute: TerminalIndexRoute,
+  UpdatesIndexRoute: UpdatesIndexRoute,
+  ProfileNotificationsEmailRoute: ProfileNotificationsEmailRoute,
+  ProfileNotificationsSlackRoute: ProfileNotificationsSlackRoute,
+  AdminAuthenticationIndexRoute: AdminAuthenticationIndexRoute,
+  AdminDefaultPreferencesIndexRoute: AdminDefaultPreferencesIndexRoute,
+  AdminProvisioningIndexRoute: AdminProvisioningIndexRoute,
+  AdminServiceAccountsIndexRoute: AdminServiceAccountsIndexRoute,
+  AdminUsersIndexRoute: AdminUsersIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

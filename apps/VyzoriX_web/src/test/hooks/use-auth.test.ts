@@ -1,14 +1,3 @@
-/**
- * Integration tests for the auth presentation hooks.
- *
- * These render the REAL hooks via React Testing Library. The hooks call the
- * REAL `@vyzorix/api-client` (real restClient/axios + domain mappers) and the
- * REAL `authContext` / `useAuthStore`. MSW intercepts the HTTP requests and
- * returns mock server responses mirroring the Go server auth contract
- * (snake_case field names).
- *
- * No vi.mock / vi.hoisted — the real code path runs end-to-end.
- */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { waitFor, act } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
@@ -30,8 +19,6 @@ const { server } = setupIntegrationTest();
 
 const API_BASE = '/v1/auth';
 
-// resetApiState() clears authContext but not the store's mfaChallenge (which is
-// store-local, not mirrored from authContext). Reset the store fully per test.
 beforeEach(() => {
   useAuthStore.getState().clear();
 });
@@ -39,7 +26,7 @@ beforeEach(() => {
 function rawLoginTokensMfaRequired() {
   return HttpResponse.json({
     requires_mfa: true,
-    user_id: 'operator-1',
+    user_id: 'user-1',
     email: 'test@vyzorix.com',
     name: 'Test User',
     mfa_enabled: true,
@@ -47,7 +34,7 @@ function rawLoginTokensMfaRequired() {
 }
 
 describe('useLogin', () => {
-  it('ingests tokens into authContext on success and clears mfaChallenge', async () => {
+  it('signs in via the cookie endpoint and hydrates the store from /me', async () => {
     const { result } = renderHookWithQueryClient(() => useLogin());
 
     await act(async () => {
@@ -57,14 +44,13 @@ describe('useLogin', () => {
 
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(true);
-    expect(state.accessToken).toBe('mock-access-token');
-    expect(state.user?.id).toBe('operator-test-1');
+    expect(state.user?.id).toBe('user-test-1');
     expect(state.mfaChallenge).toBeNull();
     expect(state.status).toBe('authenticated');
   });
 
   it('stages an MfaChallenge (status → mfa_required) when the server requires MFA', async () => {
-    server.use(http.post(`${API_BASE}/login/tokens`, () => rawLoginTokensMfaRequired()));
+    server.use(http.post(`${API_BASE}/login`, () => rawLoginTokensMfaRequired()));
 
     const { result } = renderHookWithQueryClient(() => useLogin());
 
@@ -75,14 +61,14 @@ describe('useLogin', () => {
 
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(false);
-    expect(state.mfaChallenge?.userId).toBe('operator-1');
+    expect(state.mfaChallenge?.userId).toBe('user-1');
     expect(state.mfaChallenge?.mfaEnabled).toBe(true);
     expect(state.status).toBe('mfa_required');
   });
 
   it('surfaces invalid-credentials errors without authenticating', async () => {
     server.use(
-      http.post(`${API_BASE}/login/tokens`, () =>
+      http.post(`${API_BASE}/login`, () =>
         HttpResponse.json({ error: 'invalid email or password' }, { status: 401 }),
       ),
     );
@@ -102,31 +88,28 @@ describe('useLogin', () => {
 
 describe('useMfaVerify', () => {
   it('verifies MFA, ingests tokens, and fetches /me to reconcile user', async () => {
-    // Login first to stage the challenge (userId).
-    server.use(http.post(`${API_BASE}/login/tokens`, () => rawLoginTokensMfaRequired()));
+
+    server.use(http.post(`${API_BASE}/login`, () => rawLoginTokensMfaRequired()));
     const login = renderHookWithQueryClient(() => useLogin());
     await act(async () => {
       login.result.current.mutate({ data: { email: 'test@vyzorix.com', password: 'password123' } });
     });
     await waitFor(() => expect(login.result.current.isSuccess).toBe(true));
-    expect(useAuthStore.getState().mfaChallenge?.userId).toBe('operator-1');
+    expect(useAuthStore.getState().mfaChallenge?.userId).toBe('user-1');
 
     const { result } = renderHookWithQueryClient(() => useMfaVerify());
 
     await act(async () => {
-      result.current.mutate({ data: { user_id: 'operator-1', code: '123456' } });
+      result.current.mutate({ data: { user_id: 'user-1', code: '123456' } });
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    // onSuccess hydrates asynchronously: it ingests tokens (partial user)
-    // and then fetches /me to reconcile organizations. Wait for the reconciled
-    // state so the assertion below and the next test both see a settled store.
     await waitFor(() => expect(useAuthStore.getState().user?.organizations).toHaveLength(1));
 
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(true);
     expect(state.accessToken).toBe('mock-access-token-mfa');
-    // /me reconciliation populated organizations + selected org.
+
     expect(state.user?.selected_organization?.id).toBe('org-test-1');
     expect(state.mfaChallenge).toBeNull();
     expect(state.status).toBe('authenticated');
@@ -142,7 +125,7 @@ describe('useMfaVerify', () => {
     const { result } = renderHookWithQueryClient(() => useMfaVerify());
 
     await act(async () => {
-      result.current.mutate({ data: { user_id: 'operator-1', code: '000000' } });
+      result.current.mutate({ data: { user_id: 'user-1', code: '000000' } });
     });
     await waitFor(() => expect(result.current.isError).toBe(true));
 
@@ -159,9 +142,9 @@ describe('useRegister', () => {
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(result.current.data?.user_id).toBe('operator-test-2');
+    expect(result.current.data?.user_id).toBe('user-test-2');
     expect(result.current.data?.email).toBe('new@vyzorix.com');
-    // Registration must not establish a session.
+
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
   });
 
@@ -183,7 +166,7 @@ describe('useRegister', () => {
 
 describe('useLogout', () => {
   it('clears local auth state even when the server logout succeeds', async () => {
-    // Seed an authenticated session.
+
     const login = renderHookWithQueryClient(() => useLogin());
     await act(async () => {
       login.result.current.mutate({ data: { email: 'test@vyzorix.com', password: 'password123' } });
@@ -200,7 +183,6 @@ describe('useLogout', () => {
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(false);
     expect(state.user).toBeNull();
-    expect(state.accessToken).toBeNull();
   });
 
   it('clears local auth state even when the server logout request fails', async () => {
@@ -222,7 +204,6 @@ describe('useLogout', () => {
     });
     await waitFor(() => expect(result.current.isError).toBe(true));
 
-    // Must still be logged out despite the failed API call.
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
   });
 });
@@ -283,7 +264,7 @@ describe('useAuthCallback', () => {
 
     const state = useAuthStore.getState();
     expect(state.isAuthenticated).toBe(true);
-    expect(state.user?.id).toBe('operator-test-1');
+    expect(state.user?.id).toBe('user-test-1');
   });
 
   it('surfaces an error for a failed callback URL', async () => {

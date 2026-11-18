@@ -13,7 +13,7 @@ export function useInbox(params?: { status?: InboxStatus | 'all'; page?: number;
     {
       query: {
         enabled: organizationId !== null,
-        // REST primary; fall back to GraphQL on REST failure.
+
         queryFn: async () => {
           try {
             return await import('@/generated-rq/inbox/device-inbox').then((m) =>
@@ -28,8 +28,3 @@ export function useInbox(params?: { status?: InboxStatus | 'all'; page?: number;
     },
   );
 }
-
-
-
-
-

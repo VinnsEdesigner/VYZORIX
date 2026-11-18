@@ -1,5 +1,3 @@
-// Auth domain — generated types + zod structural validation + hand-rolled
-// business rules. Entity types and Raw mappers eliminated.
 import {
   LoginRequestSchema,
   RegisterRequestSchema,
@@ -33,14 +31,10 @@ export type {
   MFAVerifyResult,
 };
 
-// ---- Constants (hand-rolled, not in OpenAPI) ----
-
-export type OperatorRole = 'super_admin' | 'admin' | 'operator' | 'viewer';
+export type UserRole = 'super_admin' | 'admin' | 'operator' | 'viewer';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MFA_CODE_REGEX = /^\d{6}$/;
-
-// ---- Login validator (business rules on generated zod) ----
 
 export const loginValidator = LoginRequestSchema
   .refine((r) => r.email && EMAIL_REGEX.test(r.email), {
@@ -55,8 +49,6 @@ export const loginValidator = LoginRequestSchema
 export function validateLogin(input: unknown) {
   return loginValidator.safeParse(input);
 }
-
-// ---- Register validator ----
 
 export const registerValidator = RegisterRequestSchema
   .refine((r) => r.email && EMAIL_REGEX.test(r.email), {
@@ -76,8 +68,6 @@ export function validateRegister(input: unknown) {
   return registerValidator.safeParse(input);
 }
 
-// ---- MFA validator ----
-
 export function validateMFACode(code: string): boolean {
   return code !== undefined && MFA_CODE_REGEX.test(code);
 }
@@ -87,8 +77,6 @@ export const mfaVerifyValidator = MFAVerifyRequestSchema
     message: 'MFA code must be 6 digits',
     path: ['code'],
   });
-
-// ---- Individual field validators (for form-level validation) ----
 
 export function validateEmail(email: string): string | null {
   if (!email) return 'Email is required';

@@ -27,7 +27,6 @@ import {
   TextArea,
 } from '@vyzorix/ui';
 
-/** Render a component inside the real theme context, as the app does. */
 function renderThemed(ui: React.ReactElement, themeId = 'dark') {
   return render(<ThemeContext.Provider value={getThemeById(themeId)}>{ui}</ThemeContext.Provider>);
 }

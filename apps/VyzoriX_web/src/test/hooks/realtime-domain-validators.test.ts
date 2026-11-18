@@ -1,9 +1,3 @@
-/**
- * Unit tests for the realtime domain validators.
- *
- * These exercise the REAL validateTelemetry / validateEvent / validateCommand
- * type guards exported from @vyzorix/api-client. No mocks — pure functions.
- */
 import { describe, it, expect } from 'vitest';
 import {
   validateTelemetry,

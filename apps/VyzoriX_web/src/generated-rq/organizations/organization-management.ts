@@ -525,7 +525,116 @@ export const usePatchOrganizationsId = <TError = ErrorResponse,
       const backupQueryClient = useQueryClient();
       return useMutation(getPatchOrganizationsIdMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
-    export const getGetOrganizationsIdSettingsUrl = (id: string,) => {
+    export const getGetOrganizationsIdPreferencesUrl = (id: string,) => {
+
+
+
+
+  return `/organizations/${id}/preferences`
+}
+
+/**
+ * Returns the organisation's inheritable preference defaults. Readable by any member (they inherit these), unlike the full settings which are admin-only.
+ * @summary Get organization preference defaults
+ */
+export const getOrganizationsIdPreferences = async (id: string, options?: Parameters<typeof customAxios>[1]): Promise<OrganizationSettingsResult> => {
+
+  return customAxios<OrganizationSettingsResult>(getGetOrganizationsIdPreferencesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetOrganizationsIdPreferencesQueryKey = (id: string,) =>
+    organizationScopedQueryKey({ id }, { url: `/organizations/${id}/preferences` });
+
+
+export const useGetOrganizationsIdPreferencesQueryOptions = <TData = Awaited<ReturnType<typeof getOrganizationsIdPreferences>>, TError = ErrorResponse>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdPreferences>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  organizationScopedQueryKey({ id }, { url: `/organizations/${id}/preferences`, queryOptions });
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOrganizationsIdPreferences>>> = ({ signal }) => getOrganizationsIdPreferences(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdPreferences>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOrganizationsIdPreferencesQueryResult = NonNullable<Awaited<ReturnType<typeof getOrganizationsIdPreferences>>>
+export type GetOrganizationsIdPreferencesQueryError = ErrorResponse
+
+
+export function useGetOrganizationsIdPreferences<TData = Awaited<ReturnType<typeof getOrganizationsIdPreferences>>, TError = ErrorResponse>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdPreferences>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrganizationsIdPreferences>>,
+          TError,
+          Awaited<ReturnType<typeof getOrganizationsIdPreferences>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOrganizationsIdPreferences<TData = Awaited<ReturnType<typeof getOrganizationsIdPreferences>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdPreferences>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrganizationsIdPreferences>>,
+          TError,
+          Awaited<ReturnType<typeof getOrganizationsIdPreferences>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOrganizationsIdPreferences<TData = Awaited<ReturnType<typeof getOrganizationsIdPreferences>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdPreferences>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get organization preference defaults
+ */
+
+export function useGetOrganizationsIdPreferences<TData = Awaited<ReturnType<typeof getOrganizationsIdPreferences>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdPreferences>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = useGetOrganizationsIdPreferencesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+/**
+ * @summary Get organization preference defaults
+ */
+export const invalidateGetOrganizationsIdPreferences = async (
+ queryClient: QueryClient, id: string, options?: InvalidateOptions
+  ): Promise<QueryClient> => {
+
+  await queryClient.invalidateQueries({ queryKey: organizationScopedQueryKey({ id }, { url: `/organizations/${id}/preferences` }) }, options);
+
+  return queryClient;
+}
+
+
+
+
+export const getGetOrganizationsIdSettingsUrl = (id: string,) => {
 
 
 

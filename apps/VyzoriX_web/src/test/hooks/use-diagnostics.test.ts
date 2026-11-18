@@ -1,16 +1,3 @@
-/**
- * Integration tests for diagnostics hooks (useDeviceInspection, useDeviceTimeline).
- *
- * These tests render the REAL hooks via React Testing Library. The hooks call
- * the REAL API client functions (diagnostics.inspectDevice, diagnostics.getTimeline)
- * which use the REAL restClient (axios) + domain mappers. MSW intercepts the HTTP
- * requests and returns mock server responses.
- *
- * GraphQL fallback paths are tested by making MSW return 500 for REST endpoints
- * and registering GraphQL response handlers for the fallback queries.
- *
- * No vi.mock — the real code path runs end-to-end.
- */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
@@ -30,7 +17,6 @@ function setOrg(orgId: string | null) {
   }
 }
 
-/** Override a REST handler to return 500, triggering GraphQL fallback. */
 function makeRestFail(method: 'get' | 'post', path: string) {
   server.use(http[method](path, () => HttpResponse.json({ error: 'REST down' }, { status: 500 })));
 }
@@ -149,7 +135,7 @@ describe('useDeviceTimeline', () => {
     const { result } = renderHookWithQueryClient(() => useDeviceTimeline('123', { limit: 50 }));
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.events).toHaveLength(1);
-    // GraphQL fallback injects the known imei into events that lack deviceId.
+
     expect(result.current.data?.events[0]?.deviceId).toBe('123');
     expect(result.current.data?.events[0]?.type).toBe('TELEMETRY');
     expect(result.current.data?.hasMore).toBe(true);
@@ -168,9 +154,9 @@ describe('useDeviceTimeline', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     const firstData = result.current.data;
     rerender({ org: 'org-2' });
-    // Switching org triggers a fresh fetch (different query key).
+
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    // Both orgs resolve to data from the same MSW handler, but a new fetch ran.
+
     expect(result.current.data).toBeDefined();
     expect(firstData).toBeDefined();
   });

@@ -1,9 +1,3 @@
-/**
- * Connectivity Monitor Types
- * 
- * Feature 4: Connectivity & Status Monitor Logic
- */
-
 export interface QueuedRequest {
   id: string;
   method: string;

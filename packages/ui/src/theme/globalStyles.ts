@@ -1,13 +1,6 @@
 import { css, injectGlobal } from '@emotion/css';
 import { type VyzorixTheme } from './types';
 
-/**
- * Global styles injected once per theme change.
- *
- * Sets the document background/foreground and typography from the active theme,
- * plus a minimal reset. Kept small: component styling lives in each component's
- * `useStyles2` block, not here.
- */
 export function injectGlobalStyles(theme: VyzorixTheme): void {
   injectGlobal`
     *, *::before, *::after { box-sizing: border-box; }
@@ -23,10 +16,19 @@ export function injectGlobalStyles(theme: VyzorixTheme): void {
     }
     a { color: ${theme.colors.text.link}; }
     ::selection { background: ${theme.colors.primary.main}; color: ${theme.colors.primary.contrastText}; }
+    @keyframes vyzorix-spin { to { transform: rotate(360deg); } }
+    :root[data-reduce-motion='true'] *, :root[data-reduce-motion='true'] *::before, :root[data-reduce-motion='true'] *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+    :root[data-underline-links='true'] a { text-decoration: underline !important; }
+    :root[data-always-show-focus='true'] :focus { outline: 2px solid ${theme.colors.primary.main}; outline-offset: 2px; }
+    :root[data-high-contrast='true'] { --vyz-contrast-boost: 1; }
+    :root[data-high-contrast='true'] a { text-decoration: underline; }
+    :root[data-high-contrast='true'] * { border-color: ${theme.colors.text.secondary} !important; }
   `;
 }
 
-/** The base style applied to the app shell. */
 export function appShellStyles(theme: VyzorixTheme): string {
   return css({
     minHeight: '100%',

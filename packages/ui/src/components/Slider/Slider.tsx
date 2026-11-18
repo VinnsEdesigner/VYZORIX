@@ -14,7 +14,6 @@ const getStyles = (theme: VyzorixTheme) => ({
   }),
 });
 
-/** A range slider. */
 export const Slider = forwardRef<HTMLInputElement, SliderProps>(({ className, ...rest }, ref) => {
   const styles = useStyles2(getStyles);
   return <input ref={ref} type="range" className={cx(styles.slider, className)} {...rest} />;

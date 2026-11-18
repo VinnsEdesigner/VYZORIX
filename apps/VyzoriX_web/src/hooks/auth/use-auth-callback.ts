@@ -7,11 +7,11 @@ import { useAuthStore } from '@/stores/auth-store';
 import { useMe } from './use-me';
 
 export interface UseAuthCallbackOptions {
-  /** The callback URL to parse (defaults to `window.location.href`). */
+
   url?: string;
-  /** Where to send the user after a successful callback (default `/dashboard`). */
+
   redirectOnSuccess?: string;
-  /** Whether to fetch `/me` after a successful callback to hydrate state. */
+
   fetchMe?: boolean;
 }
 
@@ -21,15 +21,6 @@ export interface AuthCallbackState {
   error: string | null;
 }
 
-/**
- * OAuth callback handler. Parses the provider-redirect URL the server sent the
- * browser back to, classifies success/error, and — on success — hydrates auth
- * state by fetching `/me` (the server has already established the session via
- * a cookie / tokens before redirecting).
- *
- * Pure parsing + side-effect orchestration; no UI. The component reads
- * `result` / `error` / `isLoading` to render the appropriate state and route.
- */
 export function useAuthCallback(options: UseAuthCallbackOptions = {}): AuthCallbackState {
   const { url, fetchMe = true } = options;
   const [state, setState] = useState<AuthCallbackState>({
@@ -40,9 +31,7 @@ export function useAuthCallback(options: UseAuthCallbackOptions = {}): AuthCallb
 
   const setFromMeResponse = useAuthStore((s) => s.setFromMeResponse);
   const meQuery = useMe();
-  // Extract the stable refetch fn so the effect doesn't re-run on every render
-  // (the full `meQuery` result object changes identity each render, which would
-  // cause an infinite effect → refetch → re-render loop).
+
   const meRefetch = meQuery.refetch;
 
   useEffect(() => {
@@ -74,7 +63,7 @@ export function useAuthCallback(options: UseAuthCallbackOptions = {}): AuthCallb
             setFromMeResponse(me);
           }
         } catch {
-          // Session may still be valid via cookie; non-fatal.
+          void 0;
         }
       }
 
@@ -90,18 +79,11 @@ export function useAuthCallback(options: UseAuthCallbackOptions = {}): AuthCallb
   return state;
 }
 
-/**
- * Initiate a Google OAuth login (redirects the browser to the server's
- * `/v1/auth/google` endpoint, which then bounces to Google).
- */
 export function useInitiateGoogleLogin() {
   return (redirectAfterCallback?: string) =>
     oauth.initiateGoogleLogin({ redirectAfterCallback });
 }
 
-/**
- * Initiate a GitHub OAuth login.
- */
 export function useInitiateGitHubLogin() {
   return (redirectAfterCallback?: string) =>
     oauth.initiateGitHubLogin({ redirectAfterCallback });

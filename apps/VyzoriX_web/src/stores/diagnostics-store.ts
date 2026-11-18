@@ -105,7 +105,7 @@ export const useDiagnosticsStore = createVyzorStore<DiagnosticsState>('Diagnosti
   setActiveOrganization: (organizationId) =>
     set((state) => {
       if (state.activeOrganizationId === organizationId) return state;
-      // Clear all snapshots on org switch (defense-in-depth: never leak another org's data).
+
       return {
         activeOrganizationId: organizationId,
         snapshots: {},

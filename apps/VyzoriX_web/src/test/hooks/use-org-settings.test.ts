@@ -1,15 +1,3 @@
-/**
- * Integration tests for useOrgSettings / useUpdateOrgSettings /
- * useOrgThresholds / useUpdateOrgThresholds.
- *
- * These tests render the REAL hooks via React Testing Library. The hooks call
- * the REAL API client functions (orgSettings.get/update/getThresholds/
- * updateThresholds) which use the REAL restClient (axios). MSW intercepts the
- * HTTP requests to /v1/organizations/:id/settings and returns mock server
- * responses built from shared fixtures.
- *
- * No vi.mock — the real code path runs end-to-end.
- */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { waitFor } from '@testing-library/react';
 import { renderHookWithQueryClient } from '../helpers/render-hook';

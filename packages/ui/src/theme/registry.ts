@@ -1,15 +1,3 @@
-/**
- * Theme registry.
- *
- * Theme definitions are data: each is turned into a theme object by
- * `createTheme`, and the registry is the single place the picker and resolver
- * read from. Built-ins (system, dark, light) are always present; the extras are
- * gated by an allowlist so a deployment can choose which to offer.
- *
- * Definitions are typed and in-repo, so a malformed one is a compile error
- * rather than a runtime warning.
- */
-
 import { createTheme, type NewThemeOptions } from './createTheme';
 import { type VyzorixTheme } from './types';
 
@@ -25,7 +13,7 @@ import zen from './themeDefinitions/zen.json';
 export interface ThemeRegistryItem {
   id: string;
   name: string;
-  /** True for themes beyond the built-in dark/light/system. */
+
   isExtra?: boolean;
   build: () => VyzorixTheme;
 }
@@ -41,7 +29,6 @@ const definitions: Record<string, NewThemeOptions> = {
   zen: zen as NewThemeOptions,
 };
 
-/** The eight selectable theme ids, in registry order. */
 export const THEME_IDS = [
   'dark',
   'light',
@@ -57,7 +44,6 @@ export type ThemeId = (typeof THEME_IDS)[number];
 
 export const DEFAULT_THEME_ID: ThemeId = 'dark';
 
-/** `system` is not a theme: it resolves to dark/light by OS preference. */
 export const SYSTEM_THEME_ID = 'system';
 
 function systemPreference(): VyzorixTheme {
@@ -80,18 +66,16 @@ for (const id of THEME_IDS) {
   });
 }
 
-/** Build a theme by id, falling back to the default for an unknown id. */
 export function getThemeById(id: string): VyzorixTheme {
   return (registry.get(id) ?? registry.get(DEFAULT_THEME_ID))!.build();
 }
 
-/** Every registry item, optionally filtered to the extras a caller allows. */
 export function getBuiltInThemes(allowedExtras: string[] = [...THEME_IDS]): ThemeRegistryItem[] {
   const items = [...registry.values()].filter((item) => {
     if (item.isExtra) return allowedExtras.includes(item.id);
     return true;
   });
-  // Built-ins first, then alphabetically by name.
+
   const collator = new Intl.Collator();
   return items.sort((a, b) => {
     if (a.isExtra !== b.isExtra) return a.isExtra ? 1 : -1;
@@ -99,7 +83,6 @@ export function getBuiltInThemes(allowedExtras: string[] = [...THEME_IDS]): Them
   });
 }
 
-/** The eight selectable theme ids as a mutable array (for tests and the API). */
 export function themeIds(): string[] {
   return [...THEME_IDS];
 }

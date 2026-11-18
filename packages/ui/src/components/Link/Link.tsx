@@ -6,7 +6,7 @@ import { Icon, type IconName } from '../Icon';
 
 export interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   variant?: 'default' | 'muted';
-  /** Append an external-link glyph and set the safe rel attributes. */
+
   external?: boolean;
   icon?: IconName;
   inline?: boolean;
@@ -27,10 +27,6 @@ function getStyles(theme: VyzorixTheme, variant: 'default' | 'muted', inline: bo
   };
 }
 
-/**
- * A link. `external` sets `target`/`rel` and adds an affordance, so external
- * navigation is both obvious and safe.
- */
 export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
   ({ variant = 'default', external, icon, inline, className, children, ...rest }, ref) => {
     const styles = useStyles2(getStyles, variant, Boolean(inline));

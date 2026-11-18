@@ -1,10 +1,3 @@
-/**
- * Unit tests for VyzorixRequestQueue — the transport-level request
- * deduplicator.
- *
- * Real class, no mocks. The executor is an inline counter so we assert exactly
- * how many times the underlying transport would fire.
- */
 import { describe, it, expect, vi } from 'vitest';
 import { VyzorixRequestQueue } from '@vyzorix/api-client';
 
@@ -43,7 +36,6 @@ describe('VyzorixRequestQueue', () => {
     ]);
     expect(calls).toBe(1);
 
-    // A different body is a different operation.
     await q.execute('POST', '/v1/devices/x/command', { command: 'reboot' }, executor);
     expect(calls).toBe(2);
   });
@@ -100,7 +92,7 @@ describe('VyzorixRequestQueue', () => {
       calls += 1;
       return new Promise<number>((resolve) => setTimeout(() => resolve(1), 10));
     };
-    // Concurrent, so in-flight dedup (always on) applies regardless of staleMs.
+
     await Promise.all([
       q.execute('GET', '/v1/x', { a: 1, b: 2 }, executor),
       q.execute('GET', '/v1/x', { b: 2, a: 1 }, executor),
@@ -131,7 +123,7 @@ describe('VyzorixRequestQueue', () => {
       q.execute('GET', '/v1/devices', undefined, executor, 'org-a'),
       q.execute('GET', '/v1/devices', undefined, executor, 'org-b'),
     ]);
-    // Same URL + params but different org -> must not share a response.
+
     expect(calls).toBe(2);
   });
 
@@ -147,7 +139,7 @@ describe('VyzorixRequestQueue', () => {
       q.execute('GET', '/v1/x', undefined, executor, undefined, ctrl.signal),
       q.execute('GET', '/v1/x', undefined, executor, undefined, ctrl.signal),
     ]);
-    // Each abortable caller runs its own request.
+
     expect(calls).toBe(2);
   });
 });

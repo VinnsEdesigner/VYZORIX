@@ -10,7 +10,7 @@ export interface AlertProps {
   title: string;
   severity?: AlertSeverity;
   children?: React.ReactNode;
-  /** Buttons/links that resolve the alert. */
+
   actions?: React.ReactNode;
   className?: string;
   onRemove?: () => void;
@@ -40,13 +40,6 @@ function getStyles(theme: VyzorixTheme, severity: AlertSeverity) {
   };
 }
 
-/**
- * An inline message.
- *
- * `role="alert"` announces the message immediately, which is right for errors
- * and warnings; for a purely informational note that is too aggressive, but the
- * common case here is a problem the user must see.
- */
 export function Alert({ title, severity = 'info', children, actions, className, onRemove }: AlertProps) {
   const styles = useStyles2(getStyles, severity);
 

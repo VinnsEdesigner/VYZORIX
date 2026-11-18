@@ -6,7 +6,6 @@ import {
   resetLocalStoreCapabilityCache,
 } from '@/lib/local-store/capability';
 
-/** A Worker stub that replies as a working OPFS round trip would. */
 function stubWorker(size: number): void {
   vi.stubGlobal(
     'Worker',
@@ -23,7 +22,6 @@ function stubWorker(size: number): void {
   );
 }
 
-/** A Worker stub that cannot start, standing in for a browser without OPFS. */
 function stubBrokenWorker(): void {
   vi.stubGlobal(
     'Worker',

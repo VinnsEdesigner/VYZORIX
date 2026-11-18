@@ -1,9 +1,3 @@
-/**
- * Connectivity Monitor Module
- * 
- * Feature 4: Connectivity & Status Monitor Logic
- */
-
 export type {
   QueuedRequest,
   ConnectivityConfig,

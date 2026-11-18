@@ -4,11 +4,11 @@ import { useStyles2 } from '../../theme/ThemeContext';
 import { Text } from '../Text';
 
 export interface CardProps {
-  /** Optional heading; also sets the accessible name. */
+
   heading?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
-  /** Remove the inner padding, for a card that manages its own layout. */
+
   noPadding?: boolean;
   as?: 'section' | 'article' | 'div';
 }
@@ -32,7 +32,6 @@ function getStyles(theme: VyzorixTheme, noPadding?: boolean) {
   };
 }
 
-/** A bordered surface with an optional header. */
 export function Card({ heading, children, className, noPadding, as = 'section' }: CardProps) {
   const styles = useStyles2(getStyles, noPadding);
   const Tag = as;

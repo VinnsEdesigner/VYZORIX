@@ -8,7 +8,7 @@ import type { TimelineParams } from './use-diagnostics';
 
 export interface TimelineFilterState {
   category: TimelineEventCategory | 'all';
-  rangeMs: number | null; // null = no time-window filter (server default 24h)
+  rangeMs: number | null;
   autoScroll: boolean;
 }
 
@@ -17,7 +17,7 @@ export interface TimelineFilterActions {
   setRangeMs: (rangeMs: number | null) => void;
   toggleAutoScroll: () => void;
   clear: () => void;
-  /** Derives the REST/GraphQL query params from the active filter state. */
+
   toQueryParams: () => TimelineParams;
 }
 
@@ -30,10 +30,7 @@ const DEFAULT_STATE: TimelineFilterState = {
 const CATEGORY_TO_EVENT_TYPE: Partial<
   Record<TimelineEventCategory, TimelineEventType>
 > = {
-  // The server accepts an exact TimelineEventType for `event_type`; a category filter
-  // narrows the client-side stream, but the historical query still fetches all events
-  // in the window (the UI filters the merged stream by category). Returning undefined
-  // here means "fetch everything in the window".
+
   telemetry: undefined,
   command: undefined,
   connection: undefined,

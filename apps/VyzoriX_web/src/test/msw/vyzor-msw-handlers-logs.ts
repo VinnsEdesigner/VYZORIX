@@ -1,11 +1,3 @@
-/**
- * MSW handlers for the device logs REST endpoint.
- *
- * Mirrors the Go server contract for GET /v1/dashboard/device/:imei/logs
- * (application/logs.ListLogsResponse): { events: [{ id, type, timestamp,
- * data }], pagination: { nextCursor?, limit, hasMore } } with epoch-millis
- * timestamps.
- */
 import { http, HttpResponse, delay } from 'msw';
 import type { DeviceLogEventListResult } from '@vyzorix/api-client';
 
@@ -31,7 +23,7 @@ const listLogsRaw: DeviceLogEventListResult = {
 
 export function createLogsHandlers() {
   return [
-    // GET /v1/dashboard/device/:imei/logs — list logs
+
     http.get('/v1/dashboard/device/:imei/logs', async () => {
       await delay(30);
       return HttpResponse.json(listLogsRaw);

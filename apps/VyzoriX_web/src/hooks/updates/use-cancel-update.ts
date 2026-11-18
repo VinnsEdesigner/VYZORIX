@@ -21,7 +21,7 @@ export function useCancelUpdate() {
       }
     },
     onSuccess: (_, { pushId }) => {
-      // GraphQL fallback path bypasses generated auto-invalidation.
+
       void invalidateGetUpdatesHistory(queryClient);
       void invalidateGetUpdatesHistoryPushId(queryClient, pushId);
     },

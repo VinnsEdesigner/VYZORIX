@@ -26,8 +26,7 @@ export function useDismissInbox() {
       }
     },
     onSuccess: (_, { imei }) => {
-      // GraphQL-fallback path bypasses the generated hook's automatic
-      // invalidation, so invalidate the org-scoped generated keys explicitly.
+
       void invalidateGetDeviceInbox(queryClient);
       void invalidateGetDeviceInboxImei(queryClient, imei);
     },

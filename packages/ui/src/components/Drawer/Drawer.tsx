@@ -51,7 +51,6 @@ function getStyles(theme: VyzorixTheme, size: 'sm' | 'md' | 'lg') {
   };
 }
 
-/** A side panel that slides in from the right. Closes on Escape. */
 export function Drawer({ title, isOpen, onClose, children, size = 'md', className }: DrawerProps) {
   const styles = useStyles2(getStyles, size);
 

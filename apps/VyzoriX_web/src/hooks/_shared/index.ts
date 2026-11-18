@@ -1,10 +1,3 @@
-/**
- * Hooks Shared Index
- * 
- * Re-exports all shared hooks for convenient imports.
- */
-
-// Pagination
 export {
   usePagination,
   usePaginationInfo,
@@ -14,7 +7,6 @@ export {
   type UsePaginationOptions,
 } from "./use-pagination";
 
-// Time Range
 export {
   useTimeRange,
   useResolution,
@@ -30,7 +22,6 @@ export {
   type UseTimeRangeOptions,
 } from "./use-time-range";
 
-// Debounce
 export {
   useDebounce,
   useDebouncedCallback,
@@ -41,5 +32,4 @@ export {
   type UseDebounceOptions,
 } from "./use-debounce";
 
-// Local store
-export { useLocalStore, useCurrentUserId } from './use-local-store';
+export { useLocalStore, useCurrentUserId, useCurrentUser, type CurrentUser } from './use-local-store';

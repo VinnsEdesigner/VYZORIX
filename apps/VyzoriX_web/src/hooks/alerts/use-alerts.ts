@@ -1,7 +1,3 @@
-// Thin wrappers over the generated TanStack Query hooks for alerts.
-// Cache invalidation is automatic: the generated mutations invalidate the
-// org-scoped keys their `mutationInvalidates` tag declares
-// so no manual invalidateQueries is needed.
 import {
   useGetAlertsRules,
   useGetAlertsRulesIdHistory,

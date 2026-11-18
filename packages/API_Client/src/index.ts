@@ -1,10 +1,7 @@
-// Re-export domain types and utilities
 export * from './domain';
 
-// Re-export vyzorServer
 export * from './vyzorServer';
 
-// Re-export generated endpoint function objects (orval — axios mode).
 export { getAuth } from './generated/auth/auth';
 export { getMfa } from './generated/mfa/mfa';
 export { getDevices } from './generated/devices/devices';
@@ -29,14 +26,9 @@ export { getConnections } from './generated/connections/connections';
 export { getTelemetry } from './generated/telemetry/telemetry';
 export { getUpdater } from './generated/updater/updater';
 
-// GraphQL: generated typed documents + the executor bridge over graphqlClient.
 export * as generatedGraphql from './generated/graphql';
 export { query as gqlQuery, mutate as gqlMutate, execute as gqlExecute } from './generated/graphql/executor';
 
-// Wire DTO types (spec-derived). The react-query generated hooks
-// (apps/VyzoriX_web/src/generated-rq) import these directly. The three names
-// that collide with domain types are excluded here; the domain versions
-// (camelCase) are re-exported under their own names below.
 export type {
   APIKey,
   APIKeyListResult,
@@ -201,10 +193,14 @@ export type {
   MFAVerifySetupRequest,
   MeResult,
   MessageResult,
+  ProfileActionResult,
+  ProfileSummaryResult,
   MetricAggregateResult,
   MetricStatsDTO,
   NotificationSettings,
   NotificationUpdateRequest,
+  NotificationHistoryEntry,
+  NotificationHistoryResult,
   UserAPIKeyStatsResult,
   UserSettingsResult,
   UserSettingsResultLegacy,
@@ -244,7 +240,12 @@ export type {
   SetDeviceTagsRequest,
   SettingsResponseResult,
   SettingsResponseResultPreferences,
+  SlackChannel,
+  SlackChannelsResult,
+  SlackNotificationInput,
+  SlackNotifications,
   SuccessResult,
+  PushPublicKeyResult,
   SupportBundleResult,
   TelemetryEntry,
   TelemetryEntryMetrics,
@@ -303,11 +304,8 @@ export type {
   WebhookTestResult,
 } from './generated/vyzorixUpdateServerAPI.schemas';
 
-// Domain (camelCase) versions of the colliding wire names, exported under
-// distinct aliases — generated-rq and the SDK root own the wire names.
 export type {
   DeviceStatus as DomainDeviceStatus,
   Pagination as DomainPagination,
   TimelineResult as DomainTimelineResult,
 } from './domain';
-

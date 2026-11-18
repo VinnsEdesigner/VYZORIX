@@ -1,7 +1,7 @@
 import { http, HttpResponse, delay } from 'msw';
 import {
   buildThresholds,
-  buildOperatorSettings,
+  buildUserSettings,
   buildOrgSettings,
   buildDeviceSettings,
   resetFixtureCounter,
@@ -11,66 +11,66 @@ const AUTH_BASE = '/v1/auth';
 const ORG_BASE = '/v1/organizations';
 const DEVICE_BASE = '/v1/devices';
 
-let operatorSettings = buildOperatorSettings();
+let userSettings = buildUserSettings();
 let orgSettings = buildOrgSettings();
 let deviceSettings = buildDeviceSettings();
 
 export function createSettingsHandlers() {
   resetFixtureCounter();
-  operatorSettings = buildOperatorSettings();
+  userSettings = buildUserSettings();
   orgSettings = buildOrgSettings();
   deviceSettings = buildDeviceSettings();
 
   return [
     http.get(`${AUTH_BASE}/me/settings`, async () => {
       await delay(30);
-      return HttpResponse.json(operatorSettings);
+      return HttpResponse.json(userSettings);
     }),
 
     http.patch(`${AUTH_BASE}/me/settings`, async ({ request }) => {
       await delay(30);
       const body = (await request.json()) as { client?: Record<string, unknown> };
       if (body?.client) {
-        operatorSettings = {
-          ...operatorSettings,
-          client: { ...operatorSettings.client, ...body.client },
+        userSettings = {
+          ...userSettings,
+          client: { ...userSettings.client, ...body.client },
         };
       }
-      return HttpResponse.json(operatorSettings);
+      return HttpResponse.json(userSettings);
     }),
 
     http.get(`${AUTH_BASE}/me/thresholds`, async () => {
       await delay(20);
-      return HttpResponse.json(operatorSettings.thresholds);
+      return HttpResponse.json(userSettings.thresholds);
     }),
 
     http.patch(`${AUTH_BASE}/me/thresholds`, async ({ request }) => {
       await delay(30);
       const body = (await request.json()) as Record<string, number>;
-      operatorSettings = {
-        ...operatorSettings,
-        thresholds: { ...operatorSettings.thresholds, ...body },
+      userSettings = {
+        ...userSettings,
+        thresholds: { ...userSettings.thresholds, ...body },
       };
-      return HttpResponse.json(operatorSettings.thresholds);
+      return HttpResponse.json(userSettings.thresholds);
     }),
 
     http.get(`${AUTH_BASE}/me/notifications`, async () => {
       await delay(30);
-      return HttpResponse.json(operatorSettings.notifications);
+      return HttpResponse.json(userSettings.notifications);
     }),
 
     http.patch(`${AUTH_BASE}/me/notifications`, async ({ request }) => {
       await delay(30);
       const body = (await request.json()) as Record<string, unknown>;
-      operatorSettings = {
-        ...operatorSettings,
+      userSettings = {
+        ...userSettings,
         notifications: {
-          ...operatorSettings.notifications,
+          ...userSettings.notifications,
           ...body,
-          webhook: { ...operatorSettings.notifications.webhook, ...(body.webhook as Record<string, unknown> ?? {}) },
+          webhook: { ...userSettings.notifications.webhook, ...(body.webhook as Record<string, unknown> ?? {}) },
         },
       };
-      return HttpResponse.json(operatorSettings.notifications);
+      return HttpResponse.json(userSettings.notifications);
     }),
 
     http.post(`${AUTH_BASE}/me/notifications/webhook/test`, async ({ request }) => {
@@ -92,11 +92,11 @@ export function createSettingsHandlers() {
     http.post(`${AUTH_BASE}/me/notifications/webhook/rotate`, async () => {
       await delay(50);
       const newSecret = 'whsec_rotated_' + Date.now();
-      operatorSettings = {
-        ...operatorSettings,
+      userSettings = {
+        ...userSettings,
         notifications: {
-          ...operatorSettings.notifications,
-          webhook: { ...operatorSettings.notifications.webhook, secret: newSecret },
+          ...userSettings.notifications,
+          webhook: { ...userSettings.notifications.webhook, secret: newSecret },
         },
       };
       return HttpResponse.json({ secret: newSecret });

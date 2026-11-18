@@ -5,9 +5,9 @@ import { Icon, type IconName } from '../Icon';
 import { Text } from '../Text';
 
 export interface EmptyStateProps {
-  /** A short, specific headline: what is missing, not "No data". */
+
   message: string;
-  /** The action the user can take to fix it, if any. */
+
   children?: React.ReactNode;
   icon?: IconName;
   variant?: 'success' | 'info';
@@ -31,7 +31,6 @@ function getStyles(theme: VyzorixTheme, variant: 'success' | 'info') {
   };
 }
 
-/** The empty state for a list or panel with nothing to show. */
 export function EmptyState({ message, children, icon, variant = 'info', className }: EmptyStateProps) {
   const styles = useStyles2(getStyles, variant);
   return (

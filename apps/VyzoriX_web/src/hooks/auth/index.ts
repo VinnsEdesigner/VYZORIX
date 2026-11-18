@@ -6,3 +6,4 @@ export * from './use-mfa';
 export * from './use-password-reset';
 export * from './use-auth-callback';
 export * from './use-auth-session';
+export * from './use-session-bootstrap';

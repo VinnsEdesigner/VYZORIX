@@ -15,14 +15,6 @@ let instance: LocalStoreRepository | null = null;
 let instanceScope: string | null = null;
 let chain: Promise<void> = Promise.resolve();
 
-/**
- * Wrap a store so that closing it also clears the factory's memo.
- *
- * `disposeLocalStore` is the sanctioned way to close, but `close()` is on the
- * public interface, and a caller that uses it directly would otherwise leave the
- * memo pointing at a closed store — every later `getLocalStore` would return it,
- * reporting no writer and serving empty reads.
- */
 function own(store: LocalStoreRepository): LocalStoreRepository {
   const wrapper: LocalStoreRepository = {
     ...store,
@@ -37,15 +29,6 @@ function own(store: LocalStoreRepository): LocalStoreRepository {
   return wrapper;
 }
 
-/**
- * Resolve the store for this browser and this user.
- *
- * Resolution is serialised on `chain`: two concurrent callers, or a call that
- * arrives while a previous store is closing, queue behind one another rather
- * than racing to create two workers. Creating two workers would mean two
- * connections to one OPFS file, which is what the cross-tab lock exists to
- * prevent.
- */
 export function getLocalStore(scope: string): Promise<LocalStoreRepository> {
   if (!scope) return Promise.resolve(createNullLocalStore());
 
@@ -57,13 +40,11 @@ export function getLocalStore(scope: string): Promise<LocalStoreRepository> {
   return result;
 }
 
-
 async function resolveNow(scope: string): Promise<LocalStoreRepository> {
   if (instance && instanceScope === scope) return instance;
 
   if (instance) {
-    // A different user: close the old store before opening the new one, so its
-    // worker releases the OPFS file and the writer lock.
+
     await instance.close();
     instance = null;
     instanceScope = null;

@@ -4,7 +4,7 @@ import { useBranding } from './BrandingContext';
 import { type VyzorixTheme } from '../../theme/types';
 
 export interface BrandWordmarkProps {
-  /** Cap height in px. Width scales with the artwork's aspect ratio. */
+
   height?: number;
   className?: string;
   alt?: string;
@@ -18,12 +18,6 @@ const getStyles = (_theme: VyzorixTheme, height: number) => ({
   }),
 });
 
-/**
- * The mark plus wordmark, in one asset.
- *
- * Two files exist — one for dark surfaces, one for light — and the active theme
- * picks between them, because a single-colour wordmark cannot read on both.
- */
 export function BrandWordmark({ height = 28, className, alt }: BrandWordmarkProps) {
   const theme = useTheme2();
   const branding = useBranding();

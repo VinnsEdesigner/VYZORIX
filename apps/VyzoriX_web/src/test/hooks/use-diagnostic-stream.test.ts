@@ -5,12 +5,6 @@ import { useDiagnosticsStore } from '@/stores/diagnostics-store';
 import { useTimelineStreamStore } from '@/stores/timeline-stream-store';
 import { useAuthStore } from '@/stores/auth-store';
 
-/**
- * Real hook + real stores. The only thing stubbed is the WebSocket transport:
- * we inject a fake `subscribe` into `useWebSocketStore` state so no real socket
- * is opened. This exercises the real hook wiring (store patching, subscriptions,
- * cleanup) without mocking the API client or the stores module.
- */
 let subscribeMock: ReturnType<typeof vi.fn>;
 
 const { useDiagnosticStream } = await import('@/hooks/diagnostics/use-diagnostic-stream');
@@ -62,11 +56,10 @@ describe('useDiagnosticStream', () => {
     });
 
     renderHook(() => useDiagnosticStream('123'));
-    // Two subscriptions: device-updated + telemetry-received.
+
     expect(subscribeMock).toHaveBeenCalledTimes(2);
     expect(handlersList).toHaveLength(2);
 
-    // Seed a snapshot so patchConnection has something to merge into.
     useDiagnosticsStore.getState().setSnapshot('org-1', '123', {
       identity: { imei: '123' },
       software: {},
@@ -75,13 +68,11 @@ describe('useDiagnosticStream', () => {
       telemetry: { framesToday: 0, sessionsToday: 0 },
     });
 
-    // device-updated handler (first subscription).
     act(() => {
       handlersList[0]!.next({ id: '1', imei: '123', status: 'disconnected', lastSeen: '2024-06-20T12:00:00Z' });
     });
     expect(useDiagnosticsStore.getState().getSnapshot('org-1', '123')?.connection.webSocketStatus).toBe('disconnected');
 
-    // telemetry-received handler (second subscription).
     act(() => {
       handlersList[1]!.next({
         id: 'evt-1',

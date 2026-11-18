@@ -7,16 +7,13 @@ import { FieldContext } from './FieldContext';
 
 export interface FieldProps {
   label: string;
-  /** Hide the label visually but keep it for screen readers. */
+
   labelHidden?: boolean;
   description?: string;
   error?: string;
   invalid?: boolean;
   required?: boolean;
-  /**
-   * The control. It picks up the label wiring from context (see
-   * `useFieldContext`), so a plain `<Input />` is enough — no render prop.
-   */
+
   children: React.ReactNode;
   className?: string;
 }
@@ -38,13 +35,6 @@ const getStyles = (theme: VyzorixTheme) => ({
   required: css({ color: theme.colors.error.text }),
 });
 
-/**
- * A form field: label, optional description, the control, and an error slot.
- *
- * Wires `htmlFor`/`aria-describedby` so the label and messages are announced
- * with the control. Pass the generated ids to the child via a render function if
- * you need them.
- */
 export function Field({
   label,
   labelHidden,

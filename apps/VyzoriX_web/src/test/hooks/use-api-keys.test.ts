@@ -1,18 +1,3 @@
-/**
- * Integration tests for the API key hooks (generated-rq).
- *
- * The hooks are thin wrappers over the orval react-query hooks
- * (src/generated-rq/api-keys). These render the REAL hooks via RTL; the
- * generated hooks call the REAL customAxios bridge → restClient. MSW
- * intercepts the HTTP requests mirroring the Go server contract
- * (snake_case, ISO timestamps).
- *
- * Contract change vs the old wrapper hooks: the generated hooks return raw
- * TanStack Query results — data is the orval response envelope
- * ({ status, data }) and mutations take { data: ... } / { keyId } args.
- * There is no org gating, flattening, validation, or optimistic layer in the
- * generated surface.
- */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { waitFor, act } from '@testing-library/react';
 import { renderHookWithQueryClient, createTestQueryClient } from '../helpers/render-hook';
@@ -33,7 +18,6 @@ beforeEach(() => {
   resetApiKeyFixtures();
 });
 
-// The orval response envelope: { status: 200, data: APIKeyListResult }.
 function listData(res: { data?: unknown }) {
   return res.data as { keys?: unknown[]; pagination?: { total?: number }; monthly_limit?: number; keys_created_this_month?: number } | undefined;
 }

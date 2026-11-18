@@ -6,7 +6,7 @@ import { Icon, type IconSize } from '../Icon';
 export interface SpinnerProps {
   className?: string;
   style?: React.CSSProperties;
-  /** Render inline with surrounding text rather than as a block. */
+
   inline?: boolean;
   size?: IconSize;
   'aria-label'?: string;
@@ -22,12 +22,6 @@ const getStyles = (theme: VyzorixTheme) => ({
   }),
 });
 
-/**
- * Loading indicator.
- *
- * Honours `prefers-reduced-motion` by switching the spinning glyph for a static
- * one, matching the theme's motion handling.
- */
 export function Spinner({ className, style, inline, size = 'md', 'aria-label': ariaLabel = 'Loading' }: SpinnerProps) {
   const styles = useStyles2(getStyles);
 

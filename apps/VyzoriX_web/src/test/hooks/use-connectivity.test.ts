@@ -12,7 +12,6 @@ import {
 } from '@/hooks/connectivity/use-connectivity';
 import { useConnectivityStore } from '@/stores/connectivity-store';
 
-
 describe('connectivity hooks', () => {
   beforeEach(() => {
     useConnectivityStore.setState({

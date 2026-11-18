@@ -8,9 +8,12 @@
 import type { OrganizationInfo } from './organizationInfo';
 
 export interface MeResult {
+  avatar_url?: string;
+  created_at?: number;
   email?: string;
   email_verified?: boolean;
   id?: string;
+  last_login_at?: number;
   last_organization_id?: string;
   mfa_enabled?: boolean;
   name?: string;

@@ -47,6 +47,8 @@ import type {
   PollVerificationResult,
   PostAuthOauthGithubParams,
   PostAuthOauthGoogleParams,
+  ProfileActionResult,
+  ProfileSummaryResult,
   RefreshTokenRequest,
   RefreshTokenResult,
   RegisterRequest,
@@ -732,6 +734,186 @@ export const invalidateGetAuthMe = async (
   ): Promise<QueryClient> => {
 
   await queryClient.invalidateQueries({ queryKey: organizationScopedQueryKey({  }, { url: `/auth/me` }) }, options);
+
+  return queryClient;
+}
+
+
+
+
+export const getPostAuthMeAvatarUrl = () => {
+
+
+
+
+  return `/auth/me/avatar`
+}
+
+/**
+ * Stores an uploaded profile image and points the user's avatar at it
+ * @summary Upload avatar
+ */
+export const postAuthMeAvatar = async ( options?: Parameters<typeof customAxios>[1]): Promise<ProfileActionResult> => {
+
+  return customAxios<ProfileActionResult>(getPostAuthMeAvatarUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostAuthMeAvatarMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeAvatar>>, TError,void, TContext>, request?: SecondParameter<typeof customAxios>}
+): UseMutationOptions<Awaited<ReturnType<typeof postAuthMeAvatar>>, TError,void, TContext> => {
+
+const mutationKey = ['postAuthMeAvatar'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postAuthMeAvatar>>, void> = () => {
+
+
+          return  postAuthMeAvatar(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostAuthMeAvatarMutationResult = NonNullable<Awaited<ReturnType<typeof postAuthMeAvatar>>>
+
+    export type PostAuthMeAvatarMutationError = ErrorResponse
+
+    /**
+ * @summary Upload avatar
+ */
+export const usePostAuthMeAvatar = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeAvatar>>, TError,void, TContext>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postAuthMeAvatar>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getPostAuthMeAvatarMutationOptions(options), queryClient);
+    }
+    export const getGetAuthMeProfileSummaryUrl = () => {
+
+
+
+
+  return `/auth/me/profile-summary`
+}
+
+/**
+ * Counts for the profile page: active sessions and audited actions
+ * @summary Profile summary
+ */
+export const getAuthMeProfileSummary = async ( options?: Parameters<typeof customAxios>[1]): Promise<ProfileSummaryResult> => {
+
+  return customAxios<ProfileSummaryResult>(getGetAuthMeProfileSummaryUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAuthMeProfileSummaryQueryKey = () =>
+    organizationScopedQueryKey({  }, { url: `/auth/me/profile-summary` });
+
+
+export const useGetAuthMeProfileSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getAuthMeProfileSummary>>, TError = ErrorResponse>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthMeProfileSummary>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  organizationScopedQueryKey({  }, { url: `/auth/me/profile-summary`, queryOptions });
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuthMeProfileSummary>>> = ({ signal }) => getAuthMeProfileSummary({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAuthMeProfileSummary>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAuthMeProfileSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof getAuthMeProfileSummary>>>
+export type GetAuthMeProfileSummaryQueryError = ErrorResponse
+
+
+export function useGetAuthMeProfileSummary<TData = Awaited<ReturnType<typeof getAuthMeProfileSummary>>, TError = ErrorResponse>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthMeProfileSummary>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAuthMeProfileSummary>>,
+          TError,
+          Awaited<ReturnType<typeof getAuthMeProfileSummary>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAuthMeProfileSummary<TData = Awaited<ReturnType<typeof getAuthMeProfileSummary>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthMeProfileSummary>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAuthMeProfileSummary>>,
+          TError,
+          Awaited<ReturnType<typeof getAuthMeProfileSummary>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAuthMeProfileSummary<TData = Awaited<ReturnType<typeof getAuthMeProfileSummary>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthMeProfileSummary>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Profile summary
+ */
+
+export function useGetAuthMeProfileSummary<TData = Awaited<ReturnType<typeof getAuthMeProfileSummary>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthMeProfileSummary>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = useGetAuthMeProfileSummaryQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+/**
+ * @summary Profile summary
+ */
+export const invalidateGetAuthMeProfileSummary = async (
+ queryClient: QueryClient,  options?: InvalidateOptions
+  ): Promise<QueryClient> => {
+
+  await queryClient.invalidateQueries({ queryKey: organizationScopedQueryKey({  }, { url: `/auth/me/profile-summary` }) }, options);
 
   return queryClient;
 }

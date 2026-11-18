@@ -18,7 +18,6 @@ export interface TimelineParams {
   limit?: number;
 }
 
-// Aligns with the server's per-imei:orgID inspection cache (cfg.InspectionCacheTTLSeconds, 10s).
 const INSPECTION_STALE_MS = 10_000;
 
 export function useDeviceInspection(imei: string | undefined) {

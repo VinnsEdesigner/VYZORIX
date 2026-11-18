@@ -7,12 +7,15 @@
  */
 import type { EmailNotifications } from './emailNotifications';
 import type { PushNotifications } from './pushNotifications';
+import type { SlackNotificationInput } from './slackNotificationInput';
 import type { WebhookNotifications } from './webhookNotifications';
 
 export interface NotificationUpdateRequest {
   channels?: string[];
   email?: EmailNotifications;
+  emailAddress?: string;
   enabled?: boolean;
   push?: PushNotifications;
+  slack?: SlackNotificationInput;
   webhook?: WebhookNotifications;
 }

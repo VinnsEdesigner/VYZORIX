@@ -56,13 +56,6 @@ function getStyles(theme: VyzorixTheme, placement: TooltipPlacement) {
   };
 }
 
-/**
- * A tooltip on hover/focus.
- *
- * The trigger is wired with `aria-describedby` while open, so the content is
- * announced to screen readers rather than being visual-only. Prefer a visible
- * label wherever there is room.
- */
 export function Tooltip({ content, placement = 'top', children, className }: TooltipProps) {
   const styles = useStyles2(getStyles, placement);
   const [open, setOpen] = useState(false);

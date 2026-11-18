@@ -6,7 +6,7 @@ import { useFieldContext } from '../Field/FieldContext';
 import { controlStyles } from '../_shared/inputStyles';
 
 export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'prefix'> {
-  /** Marks the field invalid: red border + `aria-invalid`. */
+
   invalid?: boolean;
   prefix?: React.ReactNode;
   suffix?: React.ReactNode;
@@ -28,12 +28,10 @@ const getStyles = (theme: VyzorixTheme, invalid?: boolean) => ({
   suffix: css({ right: theme.spacing(1.5) }),
 });
 
-/** A single-line text input. */
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ invalid, prefix, suffix, className, id, ...rest }, ref) => {
     const styles = useStyles2(getStyles, invalid);
-    // When inside a Field, take the label wiring from it so the label and any
-    // error/description are associated with this control.
+
     const field = useFieldContext();
     const controlId = id ?? field?.id;
     const describedBy = rest['aria-describedby'] ?? field?.['aria-describedby'];

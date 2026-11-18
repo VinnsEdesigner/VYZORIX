@@ -13,4 +13,5 @@ export interface UpdateOrganizationSettingsRequest {
   defaultThresholds?: UserThresholds;
   theme?: string;
   timezone?: string;
+  weekStart?: string;
 }

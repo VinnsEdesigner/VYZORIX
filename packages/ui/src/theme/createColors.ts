@@ -1,12 +1,3 @@
-/**
- * Build the theme's colour model.
- *
- * A theme definition supplies a *partial* colour set; it is merged onto a dark
- * or light base, and `getRichColor` derives the rest (emphasis, contrast text,
- * borders, subtle variants) from each colour's `main`. A theme can therefore be
- * as small as `{ mode, primary: { main } }`.
- */
-
 import { alpha, darken, emphasize, getContrastRatio, lighten } from './colorManipulator';
 import { palette } from './palette';
 import { type DeepRequired, type RichColorName, type ThemeRichColor, type ThemeRichColorInput } from './types';
@@ -77,9 +68,9 @@ type ThemeColorsBase<TColor> = DeepRequired<
 };
 
 export interface ThemeColors extends ThemeColorsBase<ThemeRichColor> {
-  /** Returns a text colour that contrasts with the given background. */
+
   getContrastText(background: string, threshold?: number): string;
-  /** Brighten or darken a colour by the given factor (0-1). */
+
   emphasize(color: string, amount?: number): string;
 }
 
@@ -257,7 +248,7 @@ export function createColors(colors: ThemeColorsInput): ThemeColors {
     rich.borderEmphasis ??= emphasize(rich.border, tonalOffset);
     rich.subtleBackground ??= alpha(rich.background, 0.15);
     rich.subtleBorder ??= alpha(rich.border, 0.25);
-    // Deprecated aliases kept so older call sites keep working.
+
     rich.shade ??= base.mode === 'light' ? darken(rich.main, tonalOffset) : lighten(rich.main, tonalOffset);
     rich.transparent ??= alpha(rich.main, 0.15);
     rich.borderTransparent ??= alpha(rich.border, 0.25);

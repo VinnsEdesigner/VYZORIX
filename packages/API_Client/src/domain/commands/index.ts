@@ -1,6 +1,3 @@
-// Commands domain — generated types + hand-rolled business rules.
-// Preset command validation, log level validation, and per-command parameter
-// validation are genuine business rules not expressible in OpenAPI.
 import type {
   CommandRequest,
   CommandDispatchResult,
@@ -28,8 +25,6 @@ export type {
   CommandConfirmRequest,
   CommandConfirmResult,
 };
-
-// ---- Constants (hand-rolled, not in OpenAPI) ----
 
 export type PresetCommandType =
   | 'FORCE_SPEAKER'
@@ -74,8 +69,6 @@ const VALID_PRESET_TYPES: PresetCommandType[] = [
 
 const VALID_LOG_LEVELS = ['debug', 'info', 'warn', 'error', 'verbose', 'assert'];
 
-// ---- Validators (business rules) ----
-
 export function validatePresetCommandType(type: string): string | null {
   if (!type) return 'Command type is required';
   if (!VALID_PRESET_TYPES.includes(type as PresetCommandType)) return `Invalid preset command type: ${type}`;
@@ -117,8 +110,6 @@ export function isCommandTerminal(status: string): boolean {
   return ['completed', 'failed', 'cancelled'].includes(status);
 }
 
-// ---- Hook-facing domain types (not in OpenAPI; GraphQL fallback shape) ----
-
 export interface Command {
   id: string;
   dispatchId: string;
@@ -142,4 +133,3 @@ export interface CommandListItem {
   status: CommandStatusType;
   createdAt: Date;
 }
-

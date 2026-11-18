@@ -1,14 +1,3 @@
-/**
- * Integration tests for the spec realtime presentation hooks (–).
- *
- * These render the REAL hooks via React Testing Library. The hooks consume the
- * REAL `useWebSocketStore` (real graphql-ws `createClient`). A fake WebSocket
- * implementation is injected so we can drive the graphql-transport-ws protocol
- * by hand — exercising the real store + real client + real hook code paths
- * end-to-end. Command dispatch hits MSW (REST), status arrives over the fake WS.
- *
- * No vi.mock of the hooks or store — only the transport socket is faked.
- */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { waitFor, act, cleanup } from '@testing-library/react';
 import { renderHookWithQueryClient } from '../helpers/render-hook';
@@ -26,7 +15,6 @@ setupIntegrationTest();
 
 type Listener = (event: Event) => void;
 
-/** Minimal fake WebSocket speaking the graphql-transport-ws protocol. */
 class FakeWebSocket {
   static instances: FakeWebSocket[] = [];
   static OPEN = 1;
@@ -80,11 +68,7 @@ class FakeWebSocket {
     this.onclose?.(event);
     this.dispatchEvent(event);
   }
-  /** Feed an incoming graphql-transport-ws message to the client.
 
-   * `dispatchEvent` already fires both the `onmessage` property handler and any
-   * `addEventListener('message', …)` listeners, so we must NOT also call
-   * `onmessage` directly here — doing so double-delivers every message. */
   receiveMessage(message: unknown) {
     this.dispatchEvent(new MessageEvent('message', { data: JSON.stringify(message) }));
   }
@@ -132,13 +116,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
-  // Unmount all rendered hooks BEFORE disposing the graphql-ws client. If hooks
-  // are still mounted when disconnect() runs, their useEffect cleanup
-  // (unsubscribe) fires against a disposed client while React Query
-  // invalidations from the next-callbacks are still settling — the combination
-  // pins the disposed client's `connecting` promise and accumulates sockets
-  // across tests until the worker OOMs. Unmounting first lets the sinks
-  // release cleanly against the live client.
+
   cleanup();
   useWebSocketStore.getState().disconnect();
   for (const socket of FakeWebSocket.instances) {
@@ -171,8 +149,7 @@ describe('useWebSocketConnection (§8.1)', () => {
     const { result } = renderHookWithQueryClient(() => useWebSocketConnection());
     await waitFor(() => expect(result.current.isConnected).toBe(true));
     expect(result.current.connectionError).toBeNull();
-    // connectionError surfaces the store's lastError verbatim — the store's own
-    // test suite (websocket-store.test.ts) covers the abnormal-close path.
+
   });
 });
 
@@ -222,9 +199,6 @@ describe('useDeviceTelemetry (§8.2)', () => {
     const socket = FakeWebSocket.instances[0]!;
     const sub = await waitForSubscribeMessage(socket);
 
-    // Send 105 frames — history should cap at 100 (most recent).
-    // riskScore must stay in 0–100 (domain validation); use modulo so all
-    // frames pass validation while still being distinguishable.
     for (let i = 0; i < 105; i++) {
       act(() => {
         socket.receiveMessage({
@@ -245,7 +219,7 @@ describe('useDeviceTelemetry (§8.2)', () => {
     }
 
     await waitFor(() => expect(result.current.telemetryHistory).toHaveLength(100));
-    // Latest frame is the last sent (i=104 → riskScore 104 % 101 = 3).
+
     expect(result.current.telemetry?.riskScore).toBe(3);
   });
 
@@ -264,7 +238,7 @@ describe('useDeviceTelemetry (§8.2)', () => {
             id: 'bad',
             deviceId: 'dev-1',
             receivedAt: new Date().toISOString(),
-            riskScore: 150, // out of range — dropped
+            riskScore: 150,
             bufferLevel: 30,
             thermalTemp: 55,
           },
@@ -272,7 +246,6 @@ describe('useDeviceTelemetry (§8.2)', () => {
       });
     });
 
-    // The invalid frame never surfaces.
     expect(result.current.telemetry).toBeNull();
     expect(result.current.telemetryHistory).toHaveLength(0);
   });
@@ -360,7 +333,6 @@ describe('useDashboardEvents (§8.3)', () => {
     const socket = FakeWebSocket.instances[0]!;
     const sub = await waitForSubscribeMessage(socket);
 
-    // A DEVICE_DISCONNECTED event should be filtered out.
     act(() => {
       socket.receiveMessage({
         id: sub.id,
@@ -371,7 +343,6 @@ describe('useDashboardEvents (§8.3)', () => {
     await waitForState(() => useWebSocketStore.getState().activeSubscriptions >= 1);
     expect(result.current.events).toHaveLength(0);
 
-    // A DEVICE_CONNECTED event passes the filter.
     act(() => {
       socket.receiveMessage({
         id: sub.id,
@@ -414,9 +385,6 @@ describe('useCommandDispatch (§8.4)', () => {
     });
     expect(result.current.commandStatus.get(dispatchId!)).toBe('pending');
 
-    // The command-status subscription is the 2nd subscribe message
-    // (the first is the telemetry-less connection; actually useCommandDispatch
-    // subscribes on mount, so find its subscribe message).
     const socket = FakeWebSocket.instances[0]!;
     const statusSub = socket.sent
       .map((raw) => JSON.parse(raw) as { type: string; id?: string })
@@ -441,7 +409,7 @@ describe('useCommandDispatch (§8.4)', () => {
     });
 
     await waitFor(() => expect(result.current.commandStatus.get(dispatchId!)).toBe('delivered'));
-    // Delivered commands are removed from the pending list.
+
     expect(result.current.pendingCommands).toHaveLength(0);
   });
 

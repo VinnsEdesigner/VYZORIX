@@ -24,6 +24,8 @@ import type {
   PollVerificationResult,
   PostAuthOauthGithubParams,
   PostAuthOauthGoogleParams,
+  ProfileActionResult,
+  ProfileSummaryResult,
   RefreshTokenRequest,
   RefreshTokenResult,
   RegisterRequest,
@@ -133,6 +135,30 @@ const getAuthMe = (
  options?: SecondParameter<typeof customAxios<MeResult>>,) => {
       return customAxios<MeResult>(
       {url: `/auth/me`, method: 'GET'
+    },
+      options);
+    }
+  /**
+ * Stores an uploaded profile image and points the user's avatar at it
+ * @summary Upload avatar
+ */
+const postAuthMeAvatar = (
+
+ options?: SecondParameter<typeof customAxios<ProfileActionResult>>,) => {
+      return customAxios<ProfileActionResult>(
+      {url: `/auth/me/avatar`, method: 'POST'
+    },
+      options);
+    }
+  /**
+ * Counts for the profile page: active sessions and audited actions
+ * @summary Profile summary
+ */
+const getAuthMeProfileSummary = (
+
+ options?: SecondParameter<typeof customAxios<ProfileSummaryResult>>,) => {
+      return customAxios<ProfileSummaryResult>(
+      {url: `/auth/me/profile-summary`, method: 'GET'
     },
       options);
     }
@@ -307,7 +333,7 @@ const postAuthVerifyEmail = (
     },
       options);
     }
-  return {postAuthCancelVerification,postAuthForgotPassword,getAuthLockoutStatus,postAuthLogin,postAuthLoginTokens,postAuthLogout,getAuthMe,postAuthOauthGithub,postAuthOauthGoogle,getAuthOrganizations,postAuthOrganizationsSelect,getAuthPollVerification,postAuthRefresh,postAuthRegister,postAuthResendPasswordReset,getAuthResendVerification,postAuthResendVerification,postAuthResetPassword,getAuthVerifyEmail,postAuthVerifyEmail}};
+  return {postAuthCancelVerification,postAuthForgotPassword,getAuthLockoutStatus,postAuthLogin,postAuthLoginTokens,postAuthLogout,getAuthMe,postAuthMeAvatar,getAuthMeProfileSummary,postAuthOauthGithub,postAuthOauthGoogle,getAuthOrganizations,postAuthOrganizationsSelect,getAuthPollVerification,postAuthRefresh,postAuthRegister,postAuthResendPasswordReset,getAuthResendVerification,postAuthResendVerification,postAuthResetPassword,getAuthVerifyEmail,postAuthVerifyEmail}};
 export type PostAuthCancelVerificationResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['postAuthCancelVerification']>>>
 export type PostAuthForgotPasswordResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['postAuthForgotPassword']>>>
 export type GetAuthLockoutStatusResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['getAuthLockoutStatus']>>>
@@ -315,6 +341,8 @@ export type PostAuthLoginResult = NonNullable<Awaited<ReturnType<ReturnType<type
 export type PostAuthLoginTokensResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['postAuthLoginTokens']>>>
 export type PostAuthLogoutResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['postAuthLogout']>>>
 export type GetAuthMeResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['getAuthMe']>>>
+export type PostAuthMeAvatarResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['postAuthMeAvatar']>>>
+export type GetAuthMeProfileSummaryResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['getAuthMeProfileSummary']>>>
 export type PostAuthOauthGithubResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['postAuthOauthGithub']>>>
 export type PostAuthOauthGoogleResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['postAuthOauthGoogle']>>>
 export type GetAuthOrganizationsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAuth>['getAuthOrganizations']>>>

@@ -1,18 +1,3 @@
-/**
- * Integration tests for registration hooks.
- *
- * These tests render the REAL hooks via React Testing Library. The hooks call
- * the REAL `registration` API client (real restClient/axios + domain mappers)
- * and the REAL GraphQL fallback functions (real Apollo Client). MSW intercepts
- * the HTTP requests and returns mock server responses mirroring the Go server
- * contract.
- *
- * GraphQL fallback paths are exercised by making MSW return 500 for the REST
- * endpoint and registering a GraphQL response handler for the fallback
- * query/mutation (the operation name the real Apollo request carries).
- *
- * No vi.mock / vi.hoisted — the real code path runs end-to-end.
- */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
@@ -43,8 +28,6 @@ function setOrg(orgId: string | null) {
     graphqlClient.setOrganization(orgId);
   }
 }
-
-// --- REST response fixtures (raw server shapes; domain mappers normalize) ---
 
 const now = Date.now();
 
@@ -83,17 +66,10 @@ const RAW_REGISTERED_DEVICE = {
   online: true,
 };
 
-/** Make MSW return 500 for a REST path, triggering the GraphQL fallback. */
 function makeRestFail(method: 'get' | 'post' | 'delete', path: string) {
   server.use(http[method](path, () => HttpResponse.json({ error: 'REST down' }, { status: 500 })));
 }
 
-/**
- * Override the shared `/v1/devices*` handlers (used by the devices client) with
- * the registered-device raw shape the registration client expects. The
- * registration REST client reuses these paths but consumes a different raw
- * shape than the devices client, so registration tests scope them per-test.
- */
 function overrideRegisteredDeviceHandlers() {
   server.use(
     http.get('/v1/devices', async ({ request }) => {

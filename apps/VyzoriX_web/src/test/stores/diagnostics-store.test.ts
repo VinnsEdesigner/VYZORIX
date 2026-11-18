@@ -63,7 +63,7 @@ describe('useDiagnosticsStore', () => {
     const snap = useDiagnosticsStore.getState().getSnapshot('org-1', '123')!;
     expect(snap.connection.webSocketStatus).toBe('disconnected');
     expect(snap.connection.clientIp).toBe('192.168.1.1');
-    // Unpatched fields preserved.
+
     expect(snap.connection.protocol).toBe('WSS');
   });
 

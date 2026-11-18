@@ -4,7 +4,6 @@ import { type VyzorixTheme } from '../../theme/types';
 import { useStyles2 } from '../../theme/ThemeContext';
 import { iconRegistry, isIconName, type IconName } from './iconNames';
 
-/** Icon sizes, on a shared scale with the rest of the design system. */
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'xxxl';
 
 const SIZE_PX: Record<IconSize, number> = {
@@ -18,10 +17,10 @@ const SIZE_PX: Record<IconSize, number> = {
 };
 
 export interface IconProps extends Omit<React.SVGProps<SVGSVGElement>, 'ref' | 'name'> {
-  /** A semantic icon name from the registry. */
+
   name: IconName;
   size?: IconSize;
-  /** Accessible label. When omitted the icon is hidden from screen readers. */
+
   title?: string;
 }
 
@@ -31,7 +30,7 @@ const getStyles = (theme: VyzorixTheme) => ({
     flexShrink: 0,
     verticalAlign: 'middle',
     label: 'Icon',
-    // line-height: 0 keeps the icon optically centred against text in Safari.
+
     lineHeight: 0,
     color: 'inherit',
   }),
@@ -42,15 +41,6 @@ const getStyles = (theme: VyzorixTheme) => ({
   }),
 });
 
-/**
- * A themed icon.
- *
- * Renders a lucide icon (ISC-licensed) by semantic name. Colour follows
- * `currentColor`, so it inherits from the surrounding text — set a colour on the
- * parent rather than passing one here.
- *
- * https://lucide.dev
- */
 export const Icon = memo(
   forwardRef<SVGSVGElement, IconProps>(({ name, size = 'md', title, className, ...rest }, ref) => {
     const styles = useStyles2(getStyles);
@@ -63,8 +53,6 @@ export const Icon = memo(
     const Glyph = iconRegistry[name];
     const px = SIZE_PX[size];
 
-    // An icon is decorative unless it is given a label; hide it from assistive
-    // tech when it is, so a screen reader does not announce a stray graphic.
     const labelled = Boolean(title) || rest['aria-label'] != null || rest['aria-labelledby'] != null;
 
     return (

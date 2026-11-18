@@ -1,13 +1,3 @@
-/**
- * Integration tests for useDevices / useDevice / useDeviceCount / etc.
- *
- * These tests render the REAL hooks via React Testing Library. The hooks call
- * the REAL API client functions (devices.list, devices.get, etc.) which use
- * the REAL restClient (axios) + domain mappers. MSW intercepts the HTTP
- * requests and returns mock server responses.
- *
- * No vi.mock — the real code path runs end-to-end.
- */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { waitFor, act } from '@testing-library/react';
 import { renderHookWithQueryClient, createTestQueryClient } from '../helpers/render-hook';
@@ -26,8 +16,7 @@ import {
 setupIntegrationTest();
 
 function setOrg(orgId: string | null) {
-  // Use authContext.setOrganization so both authContext and the store stay in sync.
-  // Using useAuthStore.setState directly would be overwritten by the next onChange event.
+
   useAuthStore.getState().setOrganization(orgId);
 }
 
@@ -54,7 +43,7 @@ describe('useDevices', () => {
     setOrg('org-1');
     const { result } = renderHookWithQueryClient(() => useDevices({ search: 'online' }));
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    // MSW returns all 3 devices regardless of filter, but the hook should succeed
+
     expect(result.current.data?.devices).toBeDefined();
   });
 
@@ -169,8 +158,7 @@ describe('useDeregisterDevice', () => {
   });
 
   it('auto-invalidates the org-scoped device list without manual wiring', async () => {
-    // Proves the generated mutation invalidates
-    // the org-scoped device query key, so the list refetches on success.
+
     const queryClient = createTestQueryClient();
     const list = renderHookWithQueryClient(() => useDevices(), { queryClient });
     await waitFor(() => expect(list.result.current.isSuccess).toBe(true));

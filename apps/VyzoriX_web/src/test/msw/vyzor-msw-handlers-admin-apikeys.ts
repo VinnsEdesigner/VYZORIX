@@ -1,18 +1,3 @@
-/**
- * MSW handlers for the super-admin API key endpoints.
- *
- * Mirrors the Go server contract in
- * apps/api/internal/api/handlers/admin/key_admin_handler.go:
- *   GET    /v1/admin/api-keys                       -> 200, { keys, pagination }
- *   GET    /v1/admin/api-keys/user/:userId  -> 200, { keys, pagination }
- *   DELETE /v1/admin/api-keys/:keyId                -> 204 No Content
- *   GET    /v1/admin/api-keys/stats                 -> 200, GlobalAPIKeyStats
- *   GET    /v1/admin/api-keys/stats/user/:userId -> 200, user stats
- *
- * Query params on list-all: page, limit, user_id, search.
- * Query params on user-keys: page, limit.
- * Timestamps are RFC3339 ISO strings (Go time.Time serialization).
- */
 import { http, HttpResponse, delay } from 'msw';
 
 const API_BASE = '/v1/admin/api-keys';
@@ -173,7 +158,7 @@ export function createAdminApiKeysHandlers() {
         if (k.is_active) entry.active += 1;
         opMap.set(k.user_id, entry);
       }
-      const topOperators = Array.from(opMap.entries())
+      const topUsers = Array.from(opMap.entries())
         .map(([id, v]) => ({
           user_id: id,
           user_name: v.name,
@@ -188,7 +173,7 @@ export function createAdminApiKeysHandlers() {
         revoked_keys: revoked.length,
         total_requests: totalRequests,
         requests_by_scope: byScope,
-        top_users: topOperators,
+        top_users: topUsers,
         total_users: opMap.size,
         max_per_month: 20,
       });

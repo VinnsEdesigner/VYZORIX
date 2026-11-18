@@ -1,7 +1,3 @@
-// @vyzorix/ui — shared components
-//
-// Styling is Emotion via useStyles2; every component reads the active theme
-// from context, so none of them hard-code a colour or a size.
 export * from './Icon';
 export * from './Text';
 export * from './Button';
@@ -16,6 +12,7 @@ export * from './EmptyState';
 export * from './Input';
 export * from './TextArea';
 export * from './Select';
+export * from './Combobox';
 export * from './Switch';
 export * from './Checkbox';
 export * from './RadioButtonGroup';
@@ -34,3 +31,4 @@ export * from './Collapse';
 export * from './Menu';
 export * from './Tabs';
 export * from './Branding';
+export * from './Layout';

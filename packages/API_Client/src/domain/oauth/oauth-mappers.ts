@@ -91,7 +91,6 @@ export function buildOAuthState(): string {
     return Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-
 export function formatOAuthErrorForDisplay(result: OAuthCallbackResult): {
     title: string;
     description: string;

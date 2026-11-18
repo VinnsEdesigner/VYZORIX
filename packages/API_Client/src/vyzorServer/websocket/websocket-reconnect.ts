@@ -50,7 +50,7 @@ export class ReconnectManagerImpl implements ReconnectManager {
       try {
         await this.connectFn();
       } catch {
-        
+
       }
     }, delay);
   }

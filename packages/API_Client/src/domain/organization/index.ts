@@ -1,4 +1,3 @@
-// Organization domain — generated types + hand-rolled business rules.
 import { CreateOrganizationRequestSchema } from '../../generated/vyzorixUpdateServerAPI.zod';
 import type {
   Organization,
@@ -30,15 +29,11 @@ export type {
   UpdateOrganizationSettingsRequest,
 };
 
-// ---- Constants (hand-rolled) ----
-
 export type OrganizationRole = 'super_admin' | 'admin' | 'operator' | 'viewer';
 export type MemberLifecycle = 'active' | 'suspended' | 'removed';
 
 const VALID_ROLES: OrganizationRole[] = ['super_admin', 'admin', 'operator', 'viewer'];
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// ---- Validators (business rules on generated zod) ----
 
 export const createOrganizationValidator = CreateOrganizationRequestSchema
   .refine((r) => r.name && r.name.trim().length > 0, {
@@ -61,8 +56,6 @@ export const createOrganizationValidator = CreateOrganizationRequestSchema
 export function validateCreateOrganization(input: unknown) {
   return createOrganizationValidator.safeParse(input);
 }
-
-// ---- Field validators ----
 
 export function isValidRole(role: string): role is OrganizationRole {
   return VALID_ROLES.includes(role as OrganizationRole);

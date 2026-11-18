@@ -8,12 +8,6 @@ export type WSEventType =
   | "COMMAND_FAILED"
   | "ERROR";
 
-/**
- * WSCommandType — the set of commands the dashboard can dispatch to a device
- * over the realtime channel. Mirrors the REST PresetCommandType values (see
- * domain/commands/commands-entity.ts) so the WS dispatch path and the REST
- * dispatch path stay in lockstep.
- */
 export type WSCommandType =
   | "FORCE_SPEAKER"
   | "RESET_AUDIO_HAL"

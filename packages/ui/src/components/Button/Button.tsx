@@ -15,6 +15,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: IconName;
   iconPlacement?: 'left' | 'right';
   fullWidth?: boolean;
+  loading?: boolean;
 }
 
 const PADDING: Record<ButtonSize, string> = {
@@ -25,11 +26,6 @@ const PADDING: Record<ButtonSize, string> = {
 const ICON_SIZE: Record<ButtonSize, IconSize> = { sm: 'sm', md: 'md', lg: 'lg' };
 const FONT: Record<ButtonSize, 'sm' | 'base' | 'lg'> = { sm: 'sm', md: 'base', lg: 'lg' };
 
-/**
- * Button variants map onto the theme's semantic colour roles. `destructive` and
- * `success` are UI names for the `error` and `success` roles; the theme itself
- * has no colour called "destructive".
- */
 const VARIANT_COLOR: Record<ButtonVariant, keyof Pick<VyzorixTheme['colors'], 'primary' | 'secondary' | 'accent' | 'error' | 'success'>> = {
   primary: 'primary',
   secondary: 'secondary',
@@ -90,15 +86,14 @@ function getStyles(theme: VyzorixTheme, variant: ButtonVariant, fill: ButtonFill
       },
     }),
     fill: fill === 'solid' ? solid : fill === 'outline' ? outline : text,
+    spinner: css({
+      [theme.transitions.handleMotion('no-preference', 'reduce')]: {
+        animation: 'vyzorix-spin 1s infinite linear',
+      },
+    }),
   };
 }
 
-/**
- * Themed button.
- *
- * `variant` picks the colour role, `fill` picks solid/outline/text. An
- * icon-only button (no children) requires an `aria-label`.
- */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
@@ -108,9 +103,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       icon,
       iconPlacement = 'left',
       fullWidth,
+      loading = false,
       className,
       children,
       type = 'button',
+      disabled,
       ...rest
     },
     ref,
@@ -121,10 +118,21 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       console.warn('Button: an icon-only button needs an aria-label');
     }
 
-    const glyph = icon ? <Icon name={icon} size={ICON_SIZE[size]} /> : null;
+    const glyph = loading ? (
+      <Icon name="spinner" size={ICON_SIZE[size]} className={styles.spinner} aria-hidden />
+    ) : icon ? (
+      <Icon name={icon} size={ICON_SIZE[size]} />
+    ) : null;
 
     return (
-      <button ref={ref} type={type} className={cx(styles.base, styles.fill, className)} {...rest}>
+      <button
+        ref={ref}
+        type={type}
+        className={cx(styles.base, styles.fill, className)}
+        disabled={disabled || loading}
+        aria-busy={loading || undefined}
+        {...rest}
+      >
         {iconPlacement === 'left' && glyph}
         {children}
         {iconPlacement === 'right' && glyph}

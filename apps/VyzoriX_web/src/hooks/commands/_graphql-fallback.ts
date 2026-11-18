@@ -53,9 +53,6 @@ function normalizeCommandListItem(raw: RawCommandFields): CommandListItem {
   };
 }
 
-
-
-
 export async function fetchPendingCommandsViaGraphQL(
   organizationId: string,
   imei: string,
@@ -75,8 +72,6 @@ export async function fetchCommandViaGraphQL(
   return normalizeCommand(raw as RawCommandFields);
 }
 
-/** Maps the REST wire DTO onto the domain Command shape so hook consumers get
- * one type regardless of the data path. */
 export function normalizeWireCommand(raw: CommandResponse): Command {
   const createdAt = toDate(raw.serverTime ? String(raw.serverTime) : undefined);
   return {

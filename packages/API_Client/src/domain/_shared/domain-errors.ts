@@ -1,39 +1,23 @@
-
-
-
-
-
-
-
 export const ERROR_CODES = {
-  
+
   UNAUTHORIZED: "unauthorized",
   FORBIDDEN: "forbidden",
   SESSION_EXPIRED: "session_expired",
-  
-  
+
   NOT_FOUND: "not_found",
   ALREADY_EXISTS: "already_exists",
-  
-  
+
   VALIDATION_ERROR: "validation_error",
   INVALID_INPUT: "invalid_input",
-  
-  
+
   BAD_REQUEST: "bad_request",
   TIMEOUT: "timeout",
-  
-  
+
   INTERNAL_ERROR: "internal_error",
   SERVICE_UNAVAILABLE: "service_unavailable",
 } as const;
 
 export type ErrorCode = typeof ERROR_CODES[keyof typeof ERROR_CODES];
-
-
-
-
-
 
 export class DomainError extends Error {
   public readonly code: ErrorCode;
@@ -64,7 +48,6 @@ export class DomainError extends Error {
   }
 }
 
-
 export class ValidationError extends DomainError {
   public readonly fieldErrors: Record<string, string[]>;
 
@@ -77,12 +60,10 @@ export class ValidationError extends DomainError {
     this.fieldErrors = fieldErrors;
   }
 
-  
   static fromField(field: string, message: string): ValidationError {
     return new ValidationError(message, { [field]: [message] });
   }
 
-  
   static fromFields(errors: Record<string, string>): ValidationError {
     const fieldErrors = Object.entries(errors).reduce(
       (acc, [field, message]) => {
@@ -102,7 +83,6 @@ export class ValidationError extends DomainError {
   }
 }
 
-
 export class NotFoundError extends DomainError {
   constructor(resource: string, identifier?: string) {
     const message = identifier
@@ -113,14 +93,12 @@ export class NotFoundError extends DomainError {
   }
 }
 
-
 export class UnauthorizedError extends DomainError {
   constructor(message: string = "Authentication required") {
     super(message, ERROR_CODES.UNAUTHORIZED, 401);
     this.name = "UnauthorizedError";
   }
 }
-
 
 export class ForbiddenError extends DomainError {
   constructor(message: string = "Access denied") {
@@ -129,7 +107,6 @@ export class ForbiddenError extends DomainError {
   }
 }
 
-
 export class NetworkError extends DomainError {
   constructor(message: string = "Network request failed") {
     super(message, ERROR_CODES.TIMEOUT, 0);
@@ -137,24 +114,18 @@ export class NetworkError extends DomainError {
   }
 }
 
-
-
-
-
-
 export interface RawAPIError {
   error?: string;
   message?: string;
   code?: string;
 }
 
-
 export function errorFromHTTP(
   status: number,
   data?: RawAPIError
 ): DomainError {
   const message = data?.message ?? data?.error ?? "An error occurred";
-  
+
   switch (status) {
     case 400:
       return new DomainError(message, ERROR_CODES.BAD_REQUEST, status);
@@ -177,20 +148,13 @@ export function errorFromHTTP(
   }
 }
 
-
-
-
-
-
 export function isDomainError(error: unknown): error is DomainError {
   return error instanceof DomainError;
 }
 
-
 export function isValidationError(error: unknown): error is ValidationError {
   return error instanceof ValidationError;
 }
-
 
 export function isNetworkError(error: unknown): error is NetworkError {
   return error instanceof NetworkError;

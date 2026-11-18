@@ -9,7 +9,7 @@ export function useInboxEntry(imei: string | undefined) {
     {
       query: {
         enabled: imei !== undefined && organizationId !== null,
-        // REST primary; fall back to GraphQL on REST failure.
+
         queryFn: async () => {
           try {
             return await getDeviceInboxImei(imei!);

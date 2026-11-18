@@ -1,11 +1,3 @@
-/**
- * Synchronous theme mirror.
- *
- * The durable cache is the SQLite local store (src/lib/local-store). This is a
- * small localStorage mirror on top of it so the anti-FOUC script in __root.tsx
- * can read the last theme id before hydration, without awaiting a worker.
- */
-
 import { isThemeId, resolveThemeId, type ThemeId } from '@vyzorix/ui';
 
 export const THEME_STORAGE_KEY = 'vyzorix.theme';
@@ -25,8 +17,7 @@ function safeSet(key: string, value: string): void {
   try {
     window.localStorage.setItem(key, value);
   } catch {
-    // Storage can be full or blocked; the mirror is an optimisation, so a
-    // failure is non-fatal — the server value still wins on load.
+    void 0;
   }
 }
 

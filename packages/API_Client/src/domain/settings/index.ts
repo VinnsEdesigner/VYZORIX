@@ -1,6 +1,3 @@
-// Settings domain — generated types + zod structural validation + hand-rolled
-// business rules (.refine). Entity types and Raw mappers are eliminated; the
-// generated schemas ARE the wire types.
 import {
   UserThresholdsSchema,
   ClientSettingsSchema,
@@ -21,7 +18,6 @@ import type {
   WebhookSecretResult,
 } from '../../generated/vyzorixUpdateServerAPI.schemas';
 
-// Re-export generated types so domain consumers don't import from generated directly.
 export type {
   UserThresholds,
   UserThresholds as Thresholds,
@@ -37,8 +33,6 @@ export type {
   WebhookTestResult,
   WebhookSecretResult,
 };
-
-// ---- Constants (hand-rolled, not in OpenAPI) ----
 
 export const THRESHOLD_LIMITS = {
   risk: { min: 0, max: 100 },
@@ -60,10 +54,8 @@ export type NotificationEvent =
   | 'command_failed'
   | 'registration_request';
 
-// ---- Threshold validators (business rules on top of generated zod) ----
-
 export const thresholdsValidator = UserThresholdsSchema
-  // Range checks: all threshold values must be 0-100
+
   .refine(
     (t) => t.riskWarn === undefined || (t.riskWarn >= 0 && t.riskWarn <= 100),
     { message: 'Risk warning must be between 0 and 100', path: ['riskWarn'] },
@@ -88,7 +80,7 @@ export const thresholdsValidator = UserThresholdsSchema
     (t) => t.bufferCrit === undefined || (t.bufferCrit >= 0 && t.bufferCrit <= 100),
     { message: 'Buffer critical must be between 0 and 100', path: ['bufferCrit'] },
   )
-  // Cross-field: warn must be less than crit for each metric
+
   .refine(
     (t) => t.riskWarn === undefined || t.riskCrit === undefined || t.riskWarn < t.riskCrit,
     { message: 'Warning threshold must be less than critical threshold', path: ['riskWarn'] },
@@ -105,8 +97,6 @@ export const thresholdsValidator = UserThresholdsSchema
 export function validateThresholds(input: unknown) {
   return thresholdsValidator.safeParse(input);
 }
-
-// ---- Client settings validators ----
 
 export const clientSettingsValidator = ClientSettingsSchema
   .refine(
@@ -134,8 +124,6 @@ export function validateClientSettings(input: unknown) {
   return clientSettingsValidator.safeParse(input);
 }
 
-// ---- Webhook validators ----
-
 export const webhookValidator = WebhookNotificationsSchema
   .refine(
     (w) => !w.url || isValidUrl(w.url),
@@ -149,8 +137,6 @@ export const webhookValidator = WebhookNotificationsSchema
 export function validateWebhook(input: unknown) {
   return webhookValidator.safeParse(input);
 }
-
-// ---- Helpers ----
 
 function isValidUrl(url: string): boolean {
   if (!url) return true;

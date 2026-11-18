@@ -1,5 +1,3 @@
-// API key domain — generated types + zod structural validation + hand-rolled
-// business rules. Entity types and Raw mappers eliminated.
 import {
   CreateAPIKeyRequestSchema,
   UpdateAPIKeyRequestSchema,
@@ -25,8 +23,6 @@ export type {
   UserAPIKeyStatsResult,
   TopUserStat,
 };
-
-// ---- Constants (hand-rolled, not in OpenAPI) ----
 
 export type ApiKeyScope = 'read' | 'write' | 'admin';
 export type ApiKeyStatus = 'active' | 'expired' | 'revoked';
@@ -59,8 +55,6 @@ export const SCOPE_PERMISSIONS: Record<ApiKeyScope, string[]> = {
 
 const NAME_PATTERN = /^[a-zA-Z0-9\s\-_]+$/;
 const VALID_SCOPES: ApiKeyScope[] = ['read', 'write', 'admin'];
-
-// ---- Validators (business rules on generated zod) ----
 
 export const createApiKeyValidator = CreateAPIKeyRequestSchema
   .refine((r) => r.name && r.name.trim().length >= MIN_NAME_LENGTH, {
@@ -102,8 +96,6 @@ export function validateUpdateApiKeyRequest(input: unknown) {
   return updateApiKeyValidator.safeParse(input);
 }
 
-// ---- Field-level validators (for forms) ----
-
 export function validateApiKeyName(name: string): string | null {
   if (!name || name.trim().length === 0) return 'Name is required';
   if (name.length > MAX_NAME_LENGTH) return `Name must be ${MAX_NAME_LENGTH} characters or less`;
@@ -127,8 +119,6 @@ export function validateScope(scope: string): string | null {
 export function parseScope(scope: string): ApiKeyScope | null {
   return VALID_SCOPES.includes(scope as ApiKeyScope) ? (scope as ApiKeyScope) : null;
 }
-
-// ---- Hook-facing input types (camelCase; mapped to wire DTOs by hooks) ----
 
 export interface CreateApiKeyInput {
   name: string;

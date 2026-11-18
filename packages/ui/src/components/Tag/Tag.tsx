@@ -11,7 +11,6 @@ export interface TagProps extends Omit<HTMLAttributes<HTMLElement>, 'onClick'> {
   onClick?: (name: string, event: React.MouseEvent<HTMLElement>) => void;
 }
 
-/** A rotating palette for tags that are not tied to a status colour. */
 const TAG_COLORS = ['primary', 'success', 'warning', 'error', 'info'] as const;
 
 function getStyles(theme: VyzorixTheme, colorIndex: number) {
@@ -37,7 +36,6 @@ function getStyles(theme: VyzorixTheme, colorIndex: number) {
   };
 }
 
-/** A label chip. Renders a `<button>` when given an `onClick`. */
 export const Tag = forwardRef<HTMLElement, TagProps>(
   ({ name, icon, colorIndex = 0, onClick, className, ...rest }, ref) => {
     const styles = useStyles2(getStyles, colorIndex);

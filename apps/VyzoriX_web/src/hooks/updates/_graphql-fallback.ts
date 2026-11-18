@@ -217,8 +217,6 @@ export type {
   UpdateStatusResponse,
 };
 
-// ---- Wire (REST DTO) -> domain normalizers ----
-
 function toDate(value?: number | string | null): Date | undefined {
   if (value === undefined || value === null) return undefined;
   return new Date(value);

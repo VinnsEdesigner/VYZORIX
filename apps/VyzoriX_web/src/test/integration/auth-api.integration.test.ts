@@ -1,12 +1,3 @@
-/**
- * Integration tests for the generated auth SDK surface (orval).
- *
- * These tests call the REAL generated endpoint functions (getAuth(), getMfa(),
- * getSessions()) which go through the REAL restClient (axios instance with
- * interceptors, CSRF preflight, org headers). MSW intercepts the HTTP requests
- * and returns mock server responses mirroring the Go server contract
- * (snake_case wire fields).
- */
 import { describe, it, expect, beforeAll, afterAll, afterEach, beforeEach, vi } from 'vitest';
 import { createVyzorMswServer } from '@/test/msw/vyzor-msw-server';
 import {
@@ -54,7 +45,7 @@ describe('auth core (generated SDK)', () => {
         email: 'test@vyzorix.com',
         password: 'password123',
       });
-      expect(result.user_id).toBe('operator-test-1');
+      expect(result.user_id).toBe('user-test-1');
       expect(result.email).toBe('test@vyzorix.com');
       expect(result.name).toBe('Test User');
       expect(result.organizations?.[0]?.id).toBe('org-test-1');
@@ -75,7 +66,7 @@ describe('auth core (generated SDK)', () => {
       });
       expect(result.access_token).toBe('mock-access-token');
       expect(result.refresh_token).toBe('mock-refresh-token');
-      expect(result.user_id).toBe('operator-test-1');
+      expect(result.user_id).toBe('user-test-1');
       expect(result.selected_organization?.id).toBe('org-test-1');
     });
 
@@ -93,7 +84,7 @@ describe('auth core (generated SDK)', () => {
         password: 'password123',
         name: 'New User',
       });
-      expect(result.user_id).toBe('operator-test-2');
+      expect(result.user_id).toBe('user-test-2');
       expect(result.email).toBe('new@vyzorix.com');
     });
 
@@ -113,7 +104,7 @@ describe('auth core (generated SDK)', () => {
   describe('getMe', () => {
     it('returns the user profile', async () => {
       const result = await getAuth().getAuthMe();
-      expect(result.id).toBe('operator-test-1');
+      expect(result.id).toBe('user-test-1');
       expect(result.email).toBe('test@vyzorix.com');
       expect(result.email_verified).toBe(true);
       expect(result.organizations?.[0]?.id).toBe('org-test-1');
@@ -194,17 +185,17 @@ describe('MFA endpoints (generated SDK)', () => {
 
   it('verify completes login and returns tokens', async () => {
     const result = await getMfa().postAuthMfaVerify({
-      user_id: 'operator-test-1',
+      user_id: 'user-test-1',
       code: '123456',
     });
     expect(result.success).toBe(true);
     expect(result.access_token).toBe('mock-access-token-mfa');
-    expect(result.user?.id).toBe('operator-test-1');
+    expect(result.user?.id).toBe('user-test-1');
   });
 
   it('verify rejects a wrong code', async () => {
     await expect(
-      getMfa().postAuthMfaVerify({ user_id: 'operator-test-1', code: '000000' }),
+      getMfa().postAuthMfaVerify({ user_id: 'user-test-1', code: '000000' }),
     ).rejects.toThrow();
   });
 

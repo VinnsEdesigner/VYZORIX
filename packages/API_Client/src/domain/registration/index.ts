@@ -1,6 +1,3 @@
-// Registration domain — generated types + hand-rolled business rules.
-// Device name length, semver validation, IMEI, FCM token, inbox status
-// transitions — all genuine business logic.
 import { InboxRequestSchema } from '../../generated/vyzorixUpdateServerAPI.zod';
 import type {
   InboxRequest,
@@ -23,10 +20,6 @@ export type {
   UpdateInboxEntryRequest,
 };
 
-// ---- Domain types (not in OpenAPI, used by hooks) ----
-
-/** Normalized inbox entry (Date|null timestamps) used by hooks/UI. The wire
- * DTO is the generated InboxEntryResponse (epoch-millis numbers). */
 export interface InboxEntry {
   id: string;
   imei: string;
@@ -48,15 +41,11 @@ export interface InboxEntry {
   createdAt: Date;
 }
 
-/** Normalized inbox list returned by hooks (domain InboxEntry[], not the
- * wire InboxEntryResponse[]). */
 export interface InboxEntriesResult {
   requests: InboxEntry[];
   pagination: Pagination;
 }
 
-/** Device-submitted registration request. Required fields are enforced by
- * registrationValidator; the generated InboxRequest keeps them optional. */
 export interface CreateInboxRequest {
   imei: string;
   deviceName?: string;
@@ -115,8 +104,6 @@ export interface CreateInboxResult {
   createdAt: Date;
 }
 
-// ---- Constants (hand-rolled, not in OpenAPI) ----
-
 export type InboxStatus = 'pending' | 'acknowledged' | 'approving' | 'approved' | 'rejected' | 'expired';
 export type AcknowledgeAction = 'acknowledge' | 'approve' | 'reject';
 
@@ -130,8 +117,6 @@ const VALID_TRANSITIONS: Record<string, InboxStatus[]> = {
   rejected: [],
   expired: [],
 };
-
-// ---- Validators (business rules on generated zod) ----
 
 export const registrationValidator = InboxRequestSchema
   .refine((r) => r.imei && /^\d{15}$/.test(r.imei), {
@@ -151,8 +136,6 @@ export function validateRegistrationRequest(input: unknown) {
   return registrationValidator.safeParse(input);
 }
 
-// ---- Field validators (for forms) ----
-
 export function validateDeviceName(name: string): string | null {
   if (!name) return 'Device name is required';
   if (name.length < 1 || name.length > 100) return 'Device name must be 1-100 characters';
@@ -170,8 +153,6 @@ export function validateAcknowledgeAction(action: string): string | null {
   if (!VALID_ACKNOWLEDGE_ACTIONS.includes(action as AcknowledgeAction)) return `Invalid action: ${action}. Valid actions: ${VALID_ACKNOWLEDGE_ACTIONS.join(', ')}`;
   return null;
 }
-
-// ---- Status transition state machine (genuine algorithm) ----
 
 export function isValidStatusTransition(currentStatus: string, newStatus: string): boolean {
   const validTargets = VALID_TRANSITIONS[currentStatus] ?? [];

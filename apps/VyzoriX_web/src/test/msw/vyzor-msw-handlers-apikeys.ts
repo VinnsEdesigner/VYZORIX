@@ -1,17 +1,3 @@
-/**
- * MSW handlers for the user-scoped API key endpoints.
- *
- * Mirrors the Go server contract in
- * apps/api/internal/api/handlers/auth/keys_handler.go:
- *   POST   /v1/auth/api-keys            -> 201, full key (api_key shown once)
- *   GET    /v1/auth/api-keys            -> 200, { keys, pagination, monthly_limit, keys_created_this_month }
- *   GET    /v1/auth/api-keys/:keyId     -> 200, single key (APIKeyResponse — no user_id)
- *   PATCH  /v1/auth/api-keys/:keyId     -> 200, updated key
- *   DELETE /v1/auth/api-keys/:keyId     -> 204 No Content
- *   POST   /v1/auth/api-keys/:keyId/rotate -> 200, new full key
- *
- * Timestamps are RFC3339 ISO strings (Go time.Time serialization).
- */
 import { http, HttpResponse, delay } from 'msw';
 
 const API_BASE = '/v1/auth/api-keys';
@@ -82,9 +68,6 @@ function seedKeys(): MockKey[] {
   ];
 }
 
-// Module-level store so handlers share state within a test run. Tests reset
-// MSW handlers via server.resetHandlers() between tests, so re-seeding happens
-// on each createApiKeysHandlers() call (wired in the index).
 let keys: MockKey[] = seedKeys();
 
 export function resetApiKeyFixtures() {
@@ -92,7 +75,7 @@ export function resetApiKeyFixtures() {
 }
 
 function toResponse(k: MockKey, includeSecret = false) {
-  // APIKeyResponse omits the full secret; create/rotate include it once.
+
   if (includeSecret && k.api_key) {
     return { ...k, api_key: k.api_key };
   }

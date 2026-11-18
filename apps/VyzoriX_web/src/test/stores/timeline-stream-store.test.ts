@@ -47,7 +47,7 @@ describe('useTimelineStreamStore', () => {
       makeEvent({ id: 'new-b' }),
     ]);
     const events = useTimelineStreamStore.getState().byDevice['123']!;
-    // Deduped batch (in arrival order) prepended before the existing tail.
+
     expect(events.map((e) => e.id)).toEqual(['new-a', 'new-b', 'existing']);
   });
 
@@ -57,9 +57,9 @@ describe('useTimelineStreamStore', () => {
   });
 
   it('REST history merged after a live append does not duplicate the event (append -> appendBatch)', () => {
-    // Live WS event arrives first…
+
     useTimelineStreamStore.getState().append('123', makeEvent({ id: 'shared' }));
-    // …then the REST history fetch (same window) includes it again.
+
     useTimelineStreamStore.getState().appendBatch('123', [
       makeEvent({ id: 'shared' }),
       makeEvent({ id: 'older' }),
@@ -73,7 +73,7 @@ describe('useTimelineStreamStore', () => {
       makeEvent({ id: 'shared' }),
       makeEvent({ id: 'older' }),
     ]);
-    // A live event re-delivers an id we already have from history.
+
     useTimelineStreamStore.getState().append('123', makeEvent({ id: 'shared' }));
     const events = useTimelineStreamStore.getState().byDevice['123']!;
     expect(events.map((e) => e.id)).toEqual(['shared', 'older']);

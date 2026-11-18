@@ -1,4 +1,3 @@
-// Service accounts domain — generated types re-exported.
 export type {
   ServiceAccount,
   ServiceAccountListResult,

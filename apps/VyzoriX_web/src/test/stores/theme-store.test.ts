@@ -9,6 +9,7 @@ function resetStore() {
     resolvedThemeId: 'dark',
     theme: getThemeById('dark'),
     followSystem: false,
+    themeSettled: false,
   });
 }
 
@@ -75,5 +76,30 @@ describe('useThemeStore', () => {
     useThemeStore.getState().adoptServerTheme(null);
     useThemeStore.getState().adoptServerTheme('');
     expect(useThemeStore.getState().themeId).toBe('matrix');
+  });
+
+  it('adoptServerTheme marks the theme settled', () => {
+    expect(useThemeStore.getState().themeSettled).toBe(false);
+    useThemeStore.getState().adoptServerTheme('zen');
+    expect(useThemeStore.getState().themeSettled).toBe(true);
+  });
+
+  it('setTheme marks the theme settled, so a late cache read cannot override it', () => {
+    useThemeStore.getState().setTheme('tron');
+    expect(useThemeStore.getState().themeSettled).toBe(true);
+
+    useThemeStore.getState().adoptCachedTheme('dark');
+    expect(useThemeStore.getState().themeId).toBe('tron');
+  });
+
+  it('adoptCachedTheme applies a value while the theme is unsettled', () => {
+    useThemeStore.getState().adoptCachedTheme('synthwave');
+    expect(useThemeStore.getState().themeId).toBe('synthwave');
+  });
+
+  it('adoptCachedTheme ignores null and empty input', () => {
+    useThemeStore.getState().adoptCachedTheme(null);
+    useThemeStore.getState().adoptCachedTheme('');
+    expect(useThemeStore.getState().themeId).toBe('dark');
   });
 });

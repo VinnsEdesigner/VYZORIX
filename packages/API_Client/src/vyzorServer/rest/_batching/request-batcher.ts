@@ -1,11 +1,3 @@
-/**
- * GraphQL request batching.
- *
- * Combines multiple GraphQL operations into one HTTP request against the
- * `/graphql/batch` endpoint. REST request de-duplication now lives in
- * `../_shared/request-queue.ts` (VyzorixRequestQueue).
- */
-
 import { getSigningKey } from '../_shared/rest-client';
 import { signHttpRequestBrowser } from '../../crypto/browser-sign';
 
@@ -20,14 +12,6 @@ function simpleHashPayload(data: unknown): string {
   return Math.abs(hash).toString(36);
 }
 
-// ==========================================
-// TYPES & INTERFACES
-// ==========================================
-
-// ==========================================
-// GRAPHQL REQUEST BATCHING
-// ==========================================
-
 export interface GraphQLBatchedOperation {
   query: string;
   variables?: Record<string, unknown>;
@@ -35,13 +19,13 @@ export interface GraphQLBatchedOperation {
 }
 
 export interface BatchConfig {
-  /** Time window in ms to collect requests before flushing (default: 50ms) */
+
   windowMs: number;
-  /** Maximum requests to batch together (default: 10) */
+
   maxBatchSize: number;
-  /** Enable REST request collapsing (default: true) */
+
   enableREST: boolean;
-  /** Enable GraphQL batching (default: true) */
+
   enableGraphQL: boolean;
 }
 
@@ -65,11 +49,6 @@ interface BatchedGraphQLOperation {
   executed: boolean;
 }
 
-/**
- * GraphQL Request Batcher
- * 
- * Combines multiple GraphQL operations into a single HTTP request using the /batch endpoint.
- */
 export class GraphQLBatcher {
   private pendingOperations: Map<string, BatchedGraphQLOperation> = new Map();
   private config: BatchConfig;
@@ -128,9 +107,6 @@ export class GraphQLBatcher {
     });
   }
 
-  /**
-   * Flush a GraphQL batch - sends all pending operations to the /batch endpoint
-   */
   private async flushBatch(): Promise<void> {
     const operations: GraphQLBatchedOperation[] = [];
     const keyedOperations: { key: string; op: BatchedGraphQLOperation }[] = [];
@@ -218,9 +194,6 @@ export class GraphQLBatcher {
     }
   }
 
-  /**
-   * Clear all pending operations
-   */
   clear(): void {
     for (const op of this.pendingOperations.values()) {
       if (op.timer) clearTimeout(op.timer);
@@ -232,27 +205,15 @@ export class GraphQLBatcher {
     this.pendingOperations.clear();
   }
 
-  /**
-   * Get pending count
-   */
   getPendingCount(): number {
     return this.pendingOperations.size;
   }
 }
 
-// ==========================================
-// COMBINED BATCHER INSTANCE
-// ==========================================
-
-// Single encapsulated holder for batcher singleton instances (previously two
-// module-level `let` bindings — the singleton-globals smell).
 const batcherState = {
   graphql: null as GraphQLBatcher | null,
 };
 
-/**
- * Get GraphQL request batcher instance
- */
 export function getGraphQLBatcher(config?: Partial<BatchConfig>): GraphQLBatcher {
   if (!batcherState.graphql) {
     batcherState.graphql = new GraphQLBatcher(config);
@@ -260,9 +221,6 @@ export function getGraphQLBatcher(config?: Partial<BatchConfig>): GraphQLBatcher
   return batcherState.graphql;
 }
 
-/**
- * Reset all batcher instances
- */
 export function resetBatchers(): void {
   if (batcherState.graphql) {
     batcherState.graphql.clear();

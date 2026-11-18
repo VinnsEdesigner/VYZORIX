@@ -89,7 +89,6 @@ function normalizePagination(raw: RawPaginationFields): Pagination {
   };
 }
 
-
 export async function fetchInboxViaGraphQL(
   organizationId: string,
   params?: { status?: InboxStatus | 'all'; page?: number; limit?: number },

@@ -1,10 +1,6 @@
-// Events domain — generated types + hand-rolled event classification logic.
-// The event type classifiers and severity defaults are genuine domain logic.
 import type { DeviceEvent, DeviceEventListResult } from '../../generated/vyzorixUpdateServerAPI.schemas';
 
 export type { DeviceEvent, DeviceEventListResult };
-
-// ---- Domain types (not in OpenAPI, used by hooks) ----
 
 export interface Event {
   id: string;
@@ -42,8 +38,6 @@ export interface EventFilter {
   endTime?: Date;
 }
 
-// ---- Constants (hand-rolled, not in OpenAPI) ----
-
 export type EventType =
   | 'DEVICE_CONNECTED'
   | 'DEVICE_DISCONNECTED'
@@ -66,8 +60,6 @@ export type EventType =
   | 'DEREGISTRATION';
 
 export type Severity = 'info' | 'warning' | 'critical';
-
-// ---- Event classifiers (genuine algorithms) ----
 
 export function isConnectivityEvent(type: EventType): boolean {
   return [

@@ -48,7 +48,6 @@ function getStyles(theme: VyzorixTheme) {
   };
 }
 
-/** Tabbed navigation. Controlled: the parent owns `value`. */
 export function Tabs<T extends string>({ tabs, value, onChange, className, 'aria-label': ariaLabel }: TabsProps<T>) {
   const styles = useStyles2(getStyles);
 

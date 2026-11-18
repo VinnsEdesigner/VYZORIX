@@ -13,7 +13,6 @@ const getStyles = (theme: VyzorixTheme, invalid?: boolean) => ({
   control: css([controlStyles(theme, invalid), { resize: 'vertical', minHeight: theme.spacing(10) }]),
 });
 
-/** A multi-line text input. */
 export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(
   ({ invalid, className, ...rest }, ref) => {
     const styles = useStyles2(getStyles, invalid);

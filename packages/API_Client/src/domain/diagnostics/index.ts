@@ -1,4 +1,3 @@
-// Diagnostics domain — generated types re-exported.
 import type {
   DeviceInspectionResult,
   DiagnosticsConnectionInfo,
@@ -21,14 +20,11 @@ export type {
   WireTimelineEventResult,
 };
 
-// ---- Hook-facing domain types (not in OpenAPI, used by hooks/stores) ----
-
 import type { DeviceStatus } from '../_shared';
 
 export type FCMStatus = 'valid' | 'invalid' | 'not_set';
 export type WebSocketStatus = 'connected' | 'disconnected';
 
-// Server-authoritative (internal/domain/diagnostics EventType* constants).
 export type TimelineEventType =
   | 'TELEMETRY'
   | 'COMMAND_SENT'

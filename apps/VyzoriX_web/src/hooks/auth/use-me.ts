@@ -6,10 +6,9 @@ import { useAuthStore } from '@/stores/auth-store';
 
 export function useMe() {
   const setFromMeResponse = useAuthStore((s) => s.setFromMeResponse);
-  return { 
+  return {
     data: undefined as MeResult | undefined,
-    // Keep using getAuth().getAuthMe() directly since auth store integration
-    // requires custom handling that generated hooks don't support.
+
     refetch: useCallback(async () => {
       try {
         const me = await getAuthMe();
@@ -31,8 +30,7 @@ export function useSelectOrganization() {
   return usePostAuthOrganizationsSelect({
     mutation: {
       onSuccess: (org) => {
-        // The generated mutation already invalidates the `getAuthMe` query tag;
-        // this hook only needs its auth-store side effect.
+
         setOrganization((org as SelectOrganizationResult).organization_id ?? null);
       },
     },

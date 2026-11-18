@@ -56,10 +56,6 @@ interface ClientState {
   axiosInstance: AxiosInstance | null;
 }
 
-// Single encapsulated holder for all per-session mutable state. Previously this
-// state was spread across ~9 module-level `let`/`const` bindings (the singleton-
-// globals smell); consolidating it into one object gives a single resettable
-// surface and makes the mutable boundary explicit.
 const clientState: ClientState = {
   organizationId: null,
   authToken: null,
@@ -82,8 +78,7 @@ const clientState: ClientState = {
 };
 
 export function setOrganizationContext(orgId: string | null): void {
-  // Any in-flight/cached GET was scoped to the previous org; drop them so a
-  // response can't cross orgs.
+
   resetRequestQueue();
   clientState.organizationId = orgId;
 }
@@ -236,10 +231,6 @@ function generateUUIDv4(): string {
   });
 }
 
-/**
- * Auth endpoints that must NOT be HMAC-signed — at these points the client
- * has no signing key yet (login/refresh) or the endpoint is pre-auth (csrf).
- */
 const AUTH_ENDPOINT_PATTERNS = [
   '/v1/auth/login',
   '/v1/auth/refresh',
@@ -253,14 +244,9 @@ function isAuthEndpoint(url: string | undefined): boolean {
   return AUTH_ENDPOINT_PATTERNS.some((p) => url.includes(p));
 }
 
-/**
- * Extract the request path (pathname + search) from a possibly-relative URL.
- * The server verifies the signature against `r.URL.RequestURI()` which is the
- * path + query string, so we must sign exactly that.
- */
 function extractRequestPath(url: string | undefined, baseURL: string | undefined): string {
   if (!url) return '/';
-  // If the URL is absolute (starts with http), parse it.
+
   if (url.startsWith('http://') || url.startsWith('https://')) {
     try {
       const parsed = new URL(url);
@@ -269,24 +255,19 @@ function extractRequestPath(url: string | undefined, baseURL: string | undefined
       return url;
     }
   }
-  // If baseURL is set and url is relative, resolve against baseURL to strip origin.
+
   if (baseURL) {
     try {
       const resolved = new URL(url, baseURL);
       return resolved.pathname + resolved.search;
     } catch {
-      // baseURL might be a relative path itself — just use url as-is.
+
     }
   }
-  // Relative URL — use as-is (should already be just path + query).
+
   return url;
 }
 
-/**
- * Serialize the request body to a string for signing. The server reads the raw
- * body bytes, so the signed string must match what's on the wire. Axios
- * serializes objects to JSON with `JSON.stringify`, so we do the same here.
- */
 function serializeBody(data: unknown): string {
   if (data === undefined || data === null) {
     return '';
@@ -412,10 +393,6 @@ function createAxiosInstance(config: RESTConfig): AxiosInstance {
         config.headers.set('Authorization', `Bearer ${clientState.authToken}`);
       }
 
-      // Auth-group mutations (login, register, MFA, password, email) require a
-      // CSRF token. Fetch it lazily on the first mutating call when none is
-      // cached — this replaces the ensureCSRFToken() preflight the deleted
-      // hand-rolled auth endpoints did explicitly.
       const requestMethod = config.method?.toUpperCase();
       const requestPath = extractRequestPath(config.url, config.baseURL);
       if (
@@ -431,7 +408,6 @@ function createAxiosInstance(config: RESTConfig): AxiosInstance {
         config.headers.set('X-CSRF-Token', clientState.csrfToken);
       }
 
-      // Generate idempotency key for mutations (reuse existing if retry)
       const method = config.method?.toUpperCase();
       if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
         const retryConfig = config as InternalAxiosRequestConfig & { __idempotencyKey?: string };
@@ -441,10 +417,6 @@ function createAxiosInstance(config: RESTConfig): AxiosInstance {
         config.headers.set('X-Idempotency-Key', retryConfig.__idempotencyKey);
       }
 
-      // HMAC request signing: sign every outgoing request with the session
-      // signing key so the server can verify the request came from an
-      // authenticated client. Skipped for auth endpoints (login/refresh/csrf)
-      // because no signing key exists yet at that point.
       if (clientState.signingKey && !isAuthEndpoint(config.url)) {
         const signMethod = (config.method || 'GET').toUpperCase();
         const signPath = extractRequestPath(config.url, config.baseURL);
@@ -556,9 +528,6 @@ export const restClient = {
       console.warn(`[REST] Offline GET: ${url}`);
     }
 
-    // GETs are stale-cached + de-duplicated by the shared request queue, keyed
-    // by the active org (org scoping rides in a header, not the URL) and
-    // bypassed when the caller supplies an AbortSignal.
     return getRequestQueue().execute(
       'GET',
       url,
@@ -589,7 +558,6 @@ export const restClient = {
       }) as Promise<T>;
     }
 
-    // In-flight dedup (all methods) via the shared request queue.
     return getRequestQueue().execute(
       'POST',
       url,
@@ -723,7 +691,6 @@ export function clearInFlightRequests(): void {
   console.log('[REST] Cleared all in-flight requests');
 }
 
-/** Reset all per-session mutable state to defaults (primarily for tests). */
 export function resetClientState(): void {
   clientState.organizationId = null;
   clientState.authToken = null;

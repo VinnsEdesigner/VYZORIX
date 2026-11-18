@@ -1,12 +1,6 @@
 import { css } from '@emotion/css';
 import { type VyzorixTheme } from '../../theme/types';
 
-/**
- * The shared control surface.
- *
- * Every text-like control (Input, TextArea, Select) uses this so their height,
- * border and focus ring cannot drift apart.
- */
 export function controlStyles(theme: VyzorixTheme, invalid?: boolean) {
   const borderColor = invalid ? theme.colors.error.border : theme.colors.border.medium;
   return css({
@@ -33,7 +27,6 @@ export function controlStyles(theme: VyzorixTheme, invalid?: boolean) {
   });
 }
 
-/** Focus ring for elements that are not form controls (buttons, links). */
 export function focusRing(theme: VyzorixTheme) {
   return css({
     '&:focus-visible': {

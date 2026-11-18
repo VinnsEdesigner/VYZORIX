@@ -1,16 +1,3 @@
-/**
- * Integration tests for updates hooks.
- *
- * These tests render the REAL hooks via React Testing Library. The hooks call
- * the REAL API client functions (updates.getVersions, updates.getStatus, etc.)
- * which use the REAL restClient (axios) + domain mappers. MSW intercepts the
- * HTTP requests and returns mock server responses.
- *
- * GraphQL fallback paths are tested by making MSW return 500 for REST endpoints
- * and registering GraphQL response handlers for the fallback queries/mutations.
- *
- * No vi.mock — the real code path runs end-to-end.
- */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
@@ -39,8 +26,6 @@ function setOrg(orgId: string | null) {
     graphqlClient.setOrganization(orgId);
   }
 }
-
-// --- GraphQL response fixtures ---
 
 function makeGraphQLVersion(version: string = 'v1.2.0', isLatest = true) {
   const now = new Date().toISOString();
@@ -77,7 +62,6 @@ function makeGraphQLPushHistory(id: string = 'push-1', status: string = 'pending
   };
 }
 
-/** Override a REST handler to return 500, triggering GraphQL fallback. */
 function makeRestFail(method: 'get' | 'post', path: string) {
   server.use(http[method](path, () => HttpResponse.json({ error: 'REST down' }, { status: 500 })));
 }

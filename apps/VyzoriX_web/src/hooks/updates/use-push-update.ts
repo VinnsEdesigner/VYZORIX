@@ -33,8 +33,7 @@ export function usePushUpdate() {
       }
     },
     onSuccess: () => {
-      // GraphQL fallback path bypasses generated auto-invalidation; invalidate
-      // the org-scoped generated keys the `postUpdatesPush` tag declares.
+
       void invalidateGetUpdatesHistory(queryClient);
       void invalidateGetUpdatesStatus(queryClient);
       void invalidateGetUpdatesVersions(queryClient);

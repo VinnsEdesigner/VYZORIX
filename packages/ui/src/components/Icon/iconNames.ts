@@ -1,18 +1,3 @@
-/**
- * Icon name registry.
- *
- * `Icon` takes a semantic name (`'dashboard'`, `'cog'`) and resolves it to a
- * component from **lucide-react**, which is ISC-licensed.
- *
- * Why a registry rather than importing lucide names directly: the semantic name
- * is the public API. Components ask for `'dashboard'`, not `'LayoutDashboard'`,
- * so the underlying glyph can be swapped without touching call sites, and the
- * valid set is enumerable for a picker or a test.
- *
- * To add an icon: import it from lucide-react and add a name here. Keep existing
- * names stable even if the underlying glyph changes.
- */
-
 import {
   Activity,
   AlertCircle,
@@ -86,6 +71,7 @@ import {
   Settings,
   Shield,
   ShieldAlert,
+  SlidersVertical,
   Smartphone,
   Square,
   Star,
@@ -103,10 +89,6 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-/**
- * The semantic name -> lucide component map. This is the single source of truth
- * for `IconName`.
- */
 export const iconRegistry = {
   activity: Activity,
   'alert-circle': AlertCircle,
@@ -179,6 +161,7 @@ export const iconRegistry = {
   settings: Settings,
   shield: Shield,
   'shield-alert': ShieldAlert,
+  sliders: SlidersVertical,
   smartphone: Smartphone,
   spinner: Loader2,
   square: Square,
@@ -196,15 +179,12 @@ export const iconRegistry = {
   zap: Zap,
 } as const satisfies Record<string, LucideIcon>;
 
-/** Every valid icon name. */
 export type IconName = keyof typeof iconRegistry;
 
-/** True when `name` is a known icon. */
 export function isIconName(name: unknown): name is IconName {
   return typeof name === 'string' && name in iconRegistry;
 }
 
-/** All registered names, sorted — for a picker or a test. */
 export function getAvailableIcons(): IconName[] {
   return (Object.keys(iconRegistry) as IconName[]).sort();
 }

@@ -1,4 +1,3 @@
-// Updates domain — generated types + constants.
 export type {
   UpdaterVersionManifestResult,
   UpdateChangelogEntryResult,
@@ -23,16 +22,10 @@ export type {
   DeviceUpdateStatusResponse,
 } from '../../generated/vyzorixUpdateServerAPI.schemas';
 
-// ---- Constants (hand-rolled) ----
-
 export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
-// Server-authoritative release types (internal/domain/updates).
+
 export type ReleaseType = 'major' | 'minor' | 'patch';
 export type InstallType = 'immediate' | 'scheduled';
-
-// ---- Hook-facing domain types (camelCase, Date-based; not in OpenAPI) ----
-// Used by the GraphQL fallback path and the updates UI. The REST wire DTOs
-// above are snake_case; these are the normalized shapes hooks work with.
 
 import type { Pagination } from '../_shared';
 export type { Pagination };
@@ -101,7 +94,6 @@ export interface ChangelogEntry {
   notes: string;
 }
 
-/** Subset of the status query the GraphQL fallback can serve. */
 export interface UpdateStatusResponse {
   sync: SyncState;
   latest?: UpdateVersion;
@@ -128,4 +120,3 @@ export function getUpdateStatusLabel(status: UpdateStatus): string {
   };
   return labels[status];
 }
-

@@ -114,12 +114,12 @@ describe('vyzor-msw-handlers', () => {
     });
     expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data.user_id).toBe('operator-test-1');
+    expect(data.user_id).toBe('user-test-1');
     expect(data.email).toBe('test@vyzorix.com');
     expect(data.role).toBe('admin');
     expect(data.mfa_enabled).toBe(false);
     expect(data.selected_organization.id).toBe('org-test-1');
-    // Browser login does NOT return tokens (session cookie is set instead)
+
     expect(data.access_token).toBeUndefined();
   });
 
@@ -131,7 +131,7 @@ describe('vyzor-msw-handlers', () => {
     });
     expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data.user_id).toBe('operator-test-1');
+    expect(data.user_id).toBe('user-test-1');
     expect(data.access_token).toBe('mock-access-token');
     expect(data.refresh_token).toBe('mock-refresh-token');
     expect(data.session_id).toBe('session-test-1');
@@ -173,7 +173,7 @@ describe('vyzor-msw-handlers', () => {
     const res = await fetch('/v1/auth/me');
     expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data.id).toBe('operator-test-1');
+    expect(data.id).toBe('user-test-1');
     expect(data.email).toBe('test@vyzorix.com');
     expect(data.name).toBe('Test User');
     expect(data.mfa_enabled).toBe(false);

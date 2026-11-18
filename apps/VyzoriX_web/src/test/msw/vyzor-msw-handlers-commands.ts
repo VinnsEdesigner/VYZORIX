@@ -41,7 +41,7 @@ const historyCommands = [
 
 export function createCommandsHandlers() {
   return [
-    // GET /v1/dashboard/device/:imei/commands — command history
+
     http.get('/v1/dashboard/device/:imei/commands', async ({ request }) => {
       await delay(30);
       const url = new URL(request.url);
@@ -60,7 +60,6 @@ export function createCommandsHandlers() {
       return HttpResponse.json(result);
     }),
 
-    // GET /v1/device/:imei/commands/pending — pending commands
     http.get('/v1/device/:imei/commands/pending', async () => {
       await delay(20);
       const pending = [
@@ -69,7 +68,6 @@ export function createCommandsHandlers() {
       return HttpResponse.json({ commands: pending });
     }),
 
-    // GET /v1/command/:dispatchId/status — command status
     http.get('/v1/command/:dispatchId/status', async ({ params }) => {
       await delay(20);
       const dispatchId = params.dispatchId as string;
@@ -78,7 +76,6 @@ export function createCommandsHandlers() {
       );
     }),
 
-    // POST /v1/device/:imei/command — send command
     http.post('/v1/device/:imei/command', async () => {
       await delay(40);
       return HttpResponse.json({
@@ -90,7 +87,6 @@ export function createCommandsHandlers() {
       });
     }),
 
-    // DELETE /v1/command/:dispatchId — cancel command
     http.delete('/v1/command/:dispatchId', async ({ params }) => {
       await delay(30);
       return HttpResponse.json({
@@ -100,7 +96,6 @@ export function createCommandsHandlers() {
       });
     }),
 
-    // POST /v1/command/:dispatchId/retry — retry command
     http.post('/v1/command/:dispatchId/retry', async ({ params }) => {
       await delay(40);
       return HttpResponse.json({

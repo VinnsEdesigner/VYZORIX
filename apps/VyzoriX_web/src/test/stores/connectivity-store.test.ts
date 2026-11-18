@@ -1,11 +1,3 @@
-/**
- * Integration tests for useConnectivityStore.
- *
- * The store wraps the REAL connectivity monitor (@vyzorix/api-client), which
- * probes /health via fetch and tracks online/offline state. MSW serves
- * the health endpoint so the real checkConnectivity() code path runs end-to-end.
- * No module mocking — real store + real monitor logic.
- */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { setupIntegrationTest } from '../helpers/integration-test-setup';
 import { http, HttpResponse } from 'msw';
@@ -15,7 +7,7 @@ import { getConnectivityMonitor } from '@vyzorix/api-client';
 const { server } = setupIntegrationTest();
 
 beforeEach(() => {
-  // Restore navigator.onLine to its default (true) and resync the monitor.
+
   Object.defineProperty(navigator, 'onLine', { configurable: true, value: true });
   window.dispatchEvent(new Event('online'));
   useConnectivityStore.setState({
@@ -77,8 +69,7 @@ describe('useConnectivityStore', () => {
       http.head('/health', () => HttpResponse.error()),
     );
     const result = await useConnectivityStore.getState().checkConnectivity();
-    // The monitor falls back to navigator.onLine when the probe errors, which
-    // is true in jsdom; what matters here is that isChecking always resets.
+
     expect(result).toBe(navigator.onLine);
     expect(useConnectivityStore.getState().isChecking).toBe(false);
   });

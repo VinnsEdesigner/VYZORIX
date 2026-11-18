@@ -1,4 +1,3 @@
-// Email verification domain — generated types re-exported.
 export type {
   EmailVerifyRequest,
   EmailVerifyResult,

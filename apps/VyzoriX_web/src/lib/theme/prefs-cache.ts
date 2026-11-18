@@ -1,12 +1,3 @@
-/**
- * Theme preference cache in the SQLite local store.
- *
- * The localStorage mirror (cache.ts) is what the anti-FOUC script reads
- * synchronously; this is the durable copy, stored with the user's other cached
- * data under the same per-user scope. Both functions take the repository so
- * they stay pure and testable, and are no-ops for a null store.
- */
-
 import type { LocalStoreRepository } from '@/lib/local-store';
 import { resolveThemeId, type ThemeId } from '@vyzorix/ui';
 
@@ -38,6 +29,6 @@ export async function writeCachedTheme(
       { user_id: userId, theme: resolveThemeId(themeId), updated_at: Date.now() },
     ]);
   } catch {
-    // Cache write failure is non-fatal; the localStorage mirror still holds it.
+    void 0;
   }
 }

@@ -49,11 +49,6 @@ function categoryOf(type: TimelineEventType): TimelineEventCategory {
   return getEventCategory(type);
 }
 
-/**
- * Merge `incoming` ahead of `existing`, newest-first, dropping any incoming event
- * whose id is already present (REST history + WS live feed the same buffer, so
- * the same event can arrive via both paths). Caps the result at `max`.
- */
 function mergeNewestFirst(
   existing: TimelineEvent[],
   incoming: TimelineEvent[],
@@ -74,7 +69,6 @@ export const useTimelineStreamStore = createVyzorStore<TimelineStreamState>('Tim
   autoScroll: true,
   activeOrganizationId: null,
 
-  // Newest-first (matches the server's desc timestamp+id ordering) at the head.
   append: (imei, event) => {
     set((state) => {
       const existing = state.byDevice[imei] ?? [];
@@ -87,7 +81,7 @@ export const useTimelineStreamStore = createVyzorStore<TimelineStreamState>('Tim
     if (events.length === 0) return;
     set((state) => {
       const existing = state.byDevice[imei] ?? [];
-      // Merge, dedupe by id, keep newest-first ordering.
+
       const next = mergeNewestFirst(existing, events);
       return next === existing ? state : { byDevice: { ...state.byDevice, [imei]: next } };
     });

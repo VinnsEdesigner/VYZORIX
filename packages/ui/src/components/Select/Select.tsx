@@ -12,7 +12,6 @@ const getStyles = (theme: VyzorixTheme, invalid?: boolean) => ({
   control: css([controlStyles(theme, invalid), { appearance: 'none', paddingRight: theme.spacing(4), cursor: 'pointer' }]),
 });
 
-/** A native select. Native is deliberate: it is accessible and works on mobile. */
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   ({ invalid, className, children, ...rest }, ref) => {
     const styles = useStyles2(getStyles, invalid);

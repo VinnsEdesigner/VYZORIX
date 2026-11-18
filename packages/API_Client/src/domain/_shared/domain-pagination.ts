@@ -1,10 +1,3 @@
-
-
-
-
-
-
-
 export interface RawOffsetPagination {
   page: number;
   limit: number;
@@ -12,12 +5,10 @@ export interface RawOffsetPagination {
   total_pages: number;
 }
 
-
 export interface OffsetPaginationParams {
   page?: number;
   limit?: number;
 }
-
 
 export interface OffsetPagination {
   page: number;
@@ -27,23 +18,16 @@ export interface OffsetPagination {
   hasMore: boolean;
 }
 
-
-
-
-
-
 export interface RawCursorPagination {
   limit: number;
   has_more: boolean;
   next_cursor: string | null;
 }
 
-
 export interface CursorPaginationParams {
   cursor?: string | null;
   limit?: number;
 }
-
 
 export interface CursorPagination {
   limit: number;
@@ -51,16 +35,10 @@ export interface CursorPagination {
   nextCursor: string | null;
 }
 
-
-
-
-
-
 export interface PaginatedResult<T> {
   items: T[];
   pagination: OffsetPagination | CursorPagination;
 }
-
 
 export function isOffsetPagination(
   pagination: OffsetPagination | CursorPagination
@@ -68,17 +46,11 @@ export function isOffsetPagination(
   return "page" in pagination && "total" in pagination;
 }
 
-
 export function isCursorPagination(
   pagination: OffsetPagination | CursorPagination
 ): pagination is CursorPagination {
   return "nextCursor" in pagination;
 }
-
-
-
-
-
 
 export function offsetPaginationFromRaw(raw: RawOffsetPagination): OffsetPagination {
   return {
@@ -90,7 +62,6 @@ export function offsetPaginationFromRaw(raw: RawOffsetPagination): OffsetPaginat
   };
 }
 
-
 export function cursorPaginationFromRaw(raw: RawCursorPagination): CursorPagination {
   return {
     limit: raw.limit,
@@ -99,16 +70,10 @@ export function cursorPaginationFromRaw(raw: RawCursorPagination): CursorPaginat
   };
 }
 
-
-
-
-
-
 export const DEFAULT_PAGINATION: OffsetPaginationParams = {
   page: 1,
   limit: 20,
 };
-
 
 export const PAGINATION_LIMITS = {
   default: 100,
@@ -117,19 +82,14 @@ export const PAGINATION_LIMITS = {
   commands: 100,
 } as const;
 
-
 export function clampLimit(limit: number, max: number = PAGINATION_LIMITS.default): number {
   return Math.min(Math.max(1, limit), max);
 }
-
 
 export function calculateOffset(page: number, limit: number): number {
   return (Math.max(1, page) - 1) * limit;
 }
 
-// Simple offset pagination (without hasMore) shared by device/registration/
-// apikey/commands/updates contexts. Kept distinct from OffsetPagination
-// (which adds hasMore) for contexts whose API does not return that flag.
 export interface Pagination {
   page: number;
   limit: number;
@@ -142,7 +102,7 @@ export interface RawPagination {
   limit: number;
   total: number;
   totalPages: number;
-  /** Some endpoints return snake_case; accepted as an alias. */
+
   total_pages?: number;
 }
 

@@ -1,0 +1,15 @@
+export const PREFERENCE_KEYS_UNDER_TEST = [
+  'density',
+  'text_scale',
+  'reduce_motion',
+  'time_format',
+  'relative_timestamps',
+  'byte_units',
+  'thousands_separator',
+  'landing_page',
+  'default_time_range',
+  'table_page_size',
+  'live_updates',
+  'confirm_destructive',
+  'idle_timeout_minutes',
+] as const;

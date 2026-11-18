@@ -131,11 +131,7 @@ async function tryAcquireLock(): Promise<boolean> {
 }
 
 function acquireWriterLock(): Promise<boolean> {
-  // ifAvailable never queues, so nothing can be left pending to acquire the lock
-  // later — which is what made a timed-out request leak it. The cost is that a
-  // transiently-held lock reads as unavailable, and a page reload is exactly
-  // that: the previous worker's terminate() is asynchronous, so its lock is
-  // still held for a moment. Retry within a small budget rather than giving up.
+
   const deadline = Date.now() + LOCK_RETRY_MS;
 
   const attempt = async (): Promise<boolean> => {

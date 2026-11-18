@@ -1,13 +1,3 @@
-/**
- * Integration tests for useWebSocketStore.
- *
- * The store uses the REAL graphql-ws `createClient`. A real WebSocket cannot
- * be opened in jsdom, so we inject a fake WebSocket *implementation* via the
- * graphql-ws `webSocketImpl` option — this is the transport layer, not the API
- * client. The store's `getCurrentOrganizationId()` runs against the REAL
- * authContext. State transitions are driven by the fake socket emitting the
- * events graphql-ws expects, exercising real store + real client logic.
- */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupIntegrationTest } from '../helpers/integration-test-setup';
 import { useWebSocketStore } from '@/stores/websocket-store';
@@ -18,12 +8,6 @@ setupIntegrationTest();
 
 type Listener = (event: Event) => void;
 
-/**
- * Minimal fake WebSocket speaking the graphql-transport-ws protocol.
- * gql-ws opens the socket, waits for `open`, then sends a ConnectionInit
- * message and expects a ConnectionAck message back before emitting
- * `connected`. Tests drive the socket via `receiveMessage`.
- */
 class FakeWebSocket {
   static instances: FakeWebSocket[] = [];
   static OPEN = 1;
@@ -43,8 +27,7 @@ class FakeWebSocket {
     this.url = url;
     this.protocol = Array.isArray(protocols) ? protocols[0] ?? '' : protocols ?? '';
     FakeWebSocket.instances.push(this);
-    // gql-ws registers listeners synchronously after `new WebSocketImpl(...)`,
-    // then checks readyState === OPEN. Defer the open event to the next tick.
+
     queueMicrotask(() => {
       this.readyState = FakeWebSocket.OPEN;
       this.dispatchEvent(new Event('open'));
@@ -69,7 +52,7 @@ class FakeWebSocket {
   send(data: string) {
     this.sent.push(data);
     const msg = JSON.parse(data) as { type: string };
-    // Respond to ConnectionInit with ConnectionAck to drive the `connected` event.
+
     if (msg.type === 'connection_init') {
       this.receiveMessage({ type: 'connection_ack' });
     }
@@ -80,7 +63,7 @@ class FakeWebSocket {
     this.onclose?.(event);
     this.dispatchEvent(event);
   }
-  /** Feed an incoming graphql-transport-ws message to the client. */
+
   receiveMessage(message: unknown) {
     this.onmessage?.({ data: JSON.stringify(message) } as MessageEvent);
     this.dispatchEvent(new MessageEvent('message', { data: JSON.stringify(message) }));
@@ -90,7 +73,7 @@ class FakeWebSocket {
 beforeEach(() => {
   FakeWebSocket.instances = [];
   vi.stubGlobal('WebSocket', FakeWebSocket);
-  // Reset the module-level wsClient singleton between tests.
+
   useWebSocketStore.getState().disconnect();
 });
 
@@ -166,14 +149,12 @@ describe('useWebSocketStore', () => {
 
   it('connect does not open a socket when no organization is selected', async () => {
     authContext.clear();
-    // gql-ws's non-lazy loop turns the url() throw into an unhandled rejection;
-    // capture and swallow it so it doesn't fail the test run.
+
     const captured: unknown[] = [];
     const handler = (reason: unknown) => captured.push(reason);
     process.on('unhandledRejection', handler);
     useWebSocketStore.getState().connect();
-    // buildWebSocketUrl throws inside gql-ws's async url resolver, before any
-    // WebSocket is constructed. Give the microtask queue a chance to run.
+
     await new Promise((r) => setTimeout(r, 50));
     (process as unknown as { off(event: string, listener: (...args: never[]) => void): void }).off('unhandledRejection', handler as (...args: never[]) => void);
     expect(captured.some((e) => String(e).includes('organization'))).toBe(true);
@@ -192,13 +173,12 @@ describe('useWebSocketStore', () => {
     const socket = FakeWebSocket.instances[0]!;
     const subMsg = await waitForSubscribeMessage(socket);
     socket.receiveMessage({ id: subMsg.id, type: 'complete' });
-    // gql-ws invokes sink.complete() asynchronously after receiving `complete`.
+
     await waitForState(() => useWebSocketStore.getState().activeSubscriptions === 0);
     unsub();
   });
 });
 
-/** Wait for gql-ws to send the `subscribe` message (the 2nd frame after connection_init). */
 function waitForSubscribeMessage(
   socket: FakeWebSocket,
   timeout = 1000,

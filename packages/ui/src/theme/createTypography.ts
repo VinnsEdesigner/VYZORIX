@@ -1,8 +1,3 @@
-// Code based on Material UI
-// The MIT License (MIT)
-// Copyright (c) 2014 Call-Em-All
-
-/** @beta */
 export interface ThemeTypography extends ThemeTypographyVariantTypes {
   fontFamily: string;
   fontFamilyMonospace: string;
@@ -12,13 +7,8 @@ export interface ThemeTypography extends ThemeTypographyVariantTypes {
   fontWeightMedium: number;
   fontWeightBold: number;
 
-  // The font-size on the html element.
   htmlFontSize?: number;
 
-  /**
-   * @deprecated
-   * from legacy old theme
-   * */
   size: {
     base: string;
     xs: string;
@@ -79,13 +69,13 @@ export function createTypography(typographyInput: ThemeTypographyInput = {}): Th
   const {
     fontFamily = defaultFontFamily,
     fontFamilyMonospace = defaultFontFamilyMonospace,
-    // The default font size of the Material Specification.
-    fontSize = 14, // px
+
+    fontSize = 14,
     fontWeightLight = 300,
     fontWeightRegular = 400,
     fontWeightMedium = 500,
     fontWeightBold = 500,
-    // The font-size on the html element; 16px is the browser default.
+
     htmlFontSize = 14,
   } = typographyInput;
 

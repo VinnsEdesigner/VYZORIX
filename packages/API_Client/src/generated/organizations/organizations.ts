@@ -90,6 +90,18 @@ const patchOrganizationsId = (
       options);
     }
   /**
+ * Returns the organisation's inheritable preference defaults. Readable by any member (they inherit these), unlike the full settings which are admin-only.
+ * @summary Get organization preference defaults
+ */
+const getOrganizationsIdPreferences = (
+    id: string,
+ options?: SecondParameter<typeof customAxios<OrganizationSettingsResult>>,) => {
+      return customAxios<OrganizationSettingsResult>(
+      {url: `/organizations/${id}/preferences`, method: 'GET'
+    },
+      options);
+    }
+  /**
  * Returns organization-level settings
  * @summary Get organization settings
  */
@@ -143,12 +155,13 @@ const patchOrganizationsIdSettingsThresholds = (
     },
       options);
     }
-  return {getOrganizations,postOrganizations,getOrganizationsId,deleteOrganizationsId,patchOrganizationsId,getOrganizationsIdSettings,patchOrganizationsIdSettings,getOrganizationsIdSettingsThresholds,patchOrganizationsIdSettingsThresholds}};
+  return {getOrganizations,postOrganizations,getOrganizationsId,deleteOrganizationsId,patchOrganizationsId,getOrganizationsIdPreferences,getOrganizationsIdSettings,patchOrganizationsIdSettings,getOrganizationsIdSettingsThresholds,patchOrganizationsIdSettingsThresholds}};
 export type GetOrganizationsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getOrganizations>['getOrganizations']>>>
 export type PostOrganizationsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getOrganizations>['postOrganizations']>>>
 export type GetOrganizationsIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getOrganizations>['getOrganizationsId']>>>
 export type DeleteOrganizationsIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getOrganizations>['deleteOrganizationsId']>>>
 export type PatchOrganizationsIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getOrganizations>['patchOrganizationsId']>>>
+export type GetOrganizationsIdPreferencesResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getOrganizations>['getOrganizationsIdPreferences']>>>
 export type GetOrganizationsIdSettingsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getOrganizations>['getOrganizationsIdSettings']>>>
 export type PatchOrganizationsIdSettingsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getOrganizations>['patchOrganizationsIdSettings']>>>
 export type GetOrganizationsIdSettingsThresholdsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getOrganizations>['getOrganizationsIdSettingsThresholds']>>>

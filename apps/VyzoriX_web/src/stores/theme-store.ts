@@ -11,18 +11,6 @@ import {
   type VyzorixTheme,
 } from '@/lib/theme';
 
-/**
- * The theme store.
- *
- * Holds the active theme id and the resolved theme object (the same object the
- * provider delivers through context), plus whether the user follows the OS
- * preference. It is the only place that writes the theme to the synchronous
- * mirror; server persistence is the theme hooks' job.
- *
- * Resolution: an explicit choice wins; with follow-system on, the OS picks a
- * light or dark theme.
- */
-
 const SYSTEM_DARK: ThemeId = 'dark';
 const SYSTEM_LIGHT: ThemeId = 'light';
 
@@ -40,22 +28,26 @@ function initialExplicitId(): ThemeId {
 }
 
 export interface ThemeState {
-  /** The user's chosen theme id. */
+
   themeId: ThemeId;
-  /** The theme actually applied (resolved through follow-system). */
+
   resolvedThemeId: ThemeId;
-  /** The built theme object for the resolved id. */
+
   theme: VyzorixTheme;
-  /** Whether the OS preference decides the light/dark theme. */
+
   followSystem: boolean;
-  /** Set the explicit theme. Applies and mirrors; does not touch the server. */
+
+  themeSettled: boolean;
+
   setTheme: (id: string) => void;
-  /** Toggle follow-system and re-resolve. */
+
   setFollowSystem: (follow: boolean) => void;
-  /** Re-resolve the current theme (e.g. after hydration). */
+
   applyToDocument: () => void;
-  /** Adopt a theme id that came from the server without re-persisting it. */
+
   adoptServerTheme: (id: string | null | undefined) => void;
+
+  adoptCachedTheme: (id: string | null | undefined) => void;
 }
 
 export const useThemeStore = createVyzorStore<ThemeState>('ThemeStore', (set, get) => {
@@ -68,11 +60,12 @@ export const useThemeStore = createVyzorStore<ThemeState>('ThemeStore', (set, ge
     resolvedThemeId: resolved,
     theme: getThemeById(resolved),
     followSystem: follow,
+    themeSettled: false,
 
     setTheme: (id) => {
       const themeId = resolveThemeId(id);
       writeCachedThemeId(themeId);
-      set({ themeId, resolvedThemeId: themeId, theme: getThemeById(themeId) });
+      set({ themeId, resolvedThemeId: themeId, theme: getThemeById(themeId), themeSettled: true });
     },
 
     setFollowSystem: (followSystem) => {
@@ -91,15 +84,18 @@ export const useThemeStore = createVyzorStore<ThemeState>('ThemeStore', (set, ge
       if (id === null || id === undefined || id === '') return;
       const themeId = resolveThemeId(id);
       writeCachedThemeId(themeId);
+      set({ themeId, resolvedThemeId: themeId, theme: getThemeById(themeId), themeSettled: true });
+    },
+
+    adoptCachedTheme: (id) => {
+      if (get().themeSettled) return;
+      if (id === null || id === undefined || id === '') return;
+      const themeId = resolveThemeId(id);
       set({ themeId, resolvedThemeId: themeId, theme: getThemeById(themeId) });
     },
   };
 });
 
-/**
- * Subscribe to OS preference changes so a follow-system theme updates live.
- * Returns an unsubscribe function; a no-op when matchMedia is unavailable (SSR).
- */
 export function subscribeToSystemTheme(): () => void {
   if (typeof window === 'undefined' || !window.matchMedia) return () => {};
   const query = window.matchMedia('(prefers-color-scheme: dark)');

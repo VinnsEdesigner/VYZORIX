@@ -22,7 +22,6 @@ function getStyles(theme: VyzorixTheme, direction: 'horizontal' | 'vertical', sp
   };
 }
 
-/** A hairline separator. */
 export function Divider({ direction = 'horizontal', spacing = 1, className }: DividerProps) {
   const styles = useStyles2(getStyles, direction, spacing);
   return <hr className={`${styles.line} ${className ?? ''}`} aria-orientation={direction} />;

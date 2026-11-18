@@ -12,7 +12,7 @@ export interface ModalProps {
   onDismiss: () => void;
   children: React.ReactNode;
   className?: string;
-  /** Width cap in px. */
+
   width?: number;
 }
 
@@ -51,13 +51,6 @@ function getStyles(theme: VyzorixTheme, width: number) {
   };
 }
 
-/**
- * A modal dialog.
- *
- * Closes on Escape and backdrop click, locks background scroll while open, and
- * uses `role="dialog"` with `aria-modal` so assistive tech treats it as a
- * dialog. Focus is moved to the dialog on open.
- */
 export function Modal({ title, isOpen, onDismiss, children, className, width = 480 }: ModalProps) {
   const styles = useStyles2(getStyles, width);
 
