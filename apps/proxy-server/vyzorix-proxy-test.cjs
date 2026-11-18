@@ -23,6 +23,7 @@ var authInterceptor = require('./vyzorix-proxy-auth-interceptor.cjs');
 var cfg = require('./vyzorix-proxy-config.cjs');
 var logger = require('./vyzorix-proxy-logger.cjs');
 var webServer = require('./vyzorix-proxy-web-server.cjs');
+var core = require('./vyzorix-proxy-core.cjs');
 
 var signRequest = signing.signRequest;
 var computeSignature = signing.computeSignature;
@@ -248,13 +249,13 @@ test('interceptAuthResponse captures signing key from login', function () {
   var loginBody = Buffer.from(JSON.stringify({
     signing_key: 'test-signing-key-123',
     access_token: 'jwt-token',
-    operator_id: 'op-123',
+    user_id: 'op-123',
   }));
   var headerMap = new Map();
   var result = interceptAuthResponse('POST', '/v1/auth/login', 200, headerMap, loginBody, sess);
   assertEqual(sess.signingKey, 'test-signing-key-123', 'Signing key captured');
   assertEqual(sess.accessToken, 'jwt-token', 'Access token captured');
-  assertEqual(sess.operatorId, 'op-123', 'Operator ID captured');
+  assertEqual(sess.userId, 'op-123', 'User ID captured');
   assert(result.modified, 'Response modified (signing key stripped)');
   var parsed = JSON.parse(result.body.toString());
   assert(parsed.signing_key === undefined, 'signing_key stripped from response');
@@ -264,7 +265,7 @@ test('interceptAuthResponse captures org ID from login response', function () {
   var sess = getOrCreateSession(undefined);
   var loginBody = Buffer.from(JSON.stringify({
     signing_key: 'key-123',
-    operator_id: 'op-123',
+    user_id: 'op-123',
     last_organization_id: 'org-from-login',
     needs_organization: false,
   }));
@@ -391,6 +392,35 @@ test('isStateChanging identifies state-changing methods', function () {
   assert(isStateChanging('PATCH'), 'PATCH is state-changing');
   assert(isStateChanging('DELETE'), 'DELETE is state-changing');
   assert(!isStateChanging('GET'), 'GET is not state-changing');
+});
+
+test('resolveForwardedFor prefers an upstream X-Forwarded-For from a loopback peer', function () {
+  assertEqual(
+    core.resolveForwardedFor({ 'x-forwarded-for': '203.0.113.9' }, '127.0.0.1'),
+    '203.0.113.9',
+    'loopback peer header wins over the socket address'
+  );
+  assertEqual(
+    core.resolveForwardedFor({ 'x-forwarded-for': '203.0.113.9' }, '::1'),
+    '203.0.113.9',
+    'IPv6 loopback peer header honoured'
+  );
+});
+
+test('resolveForwardedFor ignores a spoofable header from a remote peer', function () {
+  assertEqual(
+    core.resolveForwardedFor({ 'x-forwarded-for': '203.0.113.9' }, '198.51.100.4'),
+    '198.51.100.4',
+    'a remote browser cannot spoof its address via X-Forwarded-For'
+  );
+});
+
+test('resolveForwardedFor falls back to the browser socket address', function () {
+  assertEqual(core.resolveForwardedFor({}, '::ffff:198.51.100.4'), '::ffff:198.51.100.4', 'socket address used when no header');
+});
+
+test('resolveForwardedFor returns undefined when neither is present', function () {
+  assertEqual(core.resolveForwardedFor({}, undefined), undefined, 'no value when nothing is available');
 });
 
 test('isGraphQLPath identifies org-scoped GraphQL', function () {

@@ -32,7 +32,7 @@ func Injector(cfg config.Config) (*Server, error) {
 	sessionRepository := ProvideSessionRepository(db)
 	manager := ProvideSessionManager(cfg, sessionRepository)
 	verifier := ProvideGoogleVerifier(cfg)
-	userRepository := ProvideUserRepository(db)
+	userRepository := ProvideUserRepository(db, cfg)
 	deviceRepository := ProvideDeviceRepository(db)
 	eventRepository := ProvideEventRepository(db)
 	commandRepository := ProvideCommandRepository(db)
@@ -82,8 +82,9 @@ func Injector(cfg config.Config) (*Server, error) {
 	webhookClient := ProvideWebhookClient()
 	// Create notification repository for audit logging.
 	notificationRepository := ProvideNotificationAuditRepository(db)
+	pushSubscriptionRepository := ProvidePushSubscriptionRepository(db)
 	// Create notification service.
-	notificationService := ProvideNotificationService(userRepository, emailService, webhookClient, notificationRepository, cfg, logger)
+	notificationService := ProvideNotificationService(userRepository, emailService, webhookClient, notificationRepository, pushSubscriptionRepository, cfg, logger)
 	// Create organization repositories.
 	orgStorage := ProvideOrganizationRepository(db)
 	// Create organization services.
@@ -103,7 +104,7 @@ func Injector(cfg config.Config) (*Server, error) {
 	apiKeyService := ProvideAPIKeyService(apiKeyRepository, cfg)
 	idempotencyRepository := ProvideIdempotencyRepository(db)
 	confirmationService := ProvideConfirmationService(sqLite)
-	serverDependencies := ProvideServerDependencies(cfg, logger, sqLite, auditLogger, manager, verifier, userRepository, deviceRepository, commandRepository, sessionRepository, clientRepository, telemetryRepository, updatesStorage, emailVerificationRepository, passwordResetRepository, argon2idHasher, authService, service, clientService, commandService, emailService, metrics, hubResult, notifier, fcmRetryWorker, appCheckVerifier, deviceDeletionWorker, commandOutbox, middlewareFactory, rateLimiter, lockout, ipIntelligence, updatesService, apiKeyService, orgService, memberService, invitationService, invitationStorage, orgSettingsService, deviceSettingsService, idempotencyRepository, confirmationService)
+	serverDependencies := ProvideServerDependencies(cfg, logger, sqLite, auditLogger, manager, verifier, userRepository, deviceRepository, commandRepository, sessionRepository, clientRepository, telemetryRepository, updatesStorage, emailVerificationRepository, passwordResetRepository, argon2idHasher, authService, service, clientService, commandService, emailService, metrics, hubResult, notifier, fcmRetryWorker, appCheckVerifier, deviceDeletionWorker, commandOutbox, middlewareFactory, rateLimiter, lockout, ipIntelligence, updatesService, apiKeyService, orgService, memberService, invitationService, invitationStorage, orgSettingsService, deviceSettingsService, idempotencyRepository, confirmationService, notificationRepository, pushSubscriptionRepository, notificationService)
 	serverResult := ProvideServerResult(serverDependencies)
 	server := ProvideServer(serverDependencies, serverResult)
 	return server, nil

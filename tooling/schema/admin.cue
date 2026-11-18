@@ -67,6 +67,7 @@ package vyzorix
         id: string
         email: string
         name: string
+        avatar_url?: string
         role?: string
         mfa_enabled: bool
         email_verified: bool

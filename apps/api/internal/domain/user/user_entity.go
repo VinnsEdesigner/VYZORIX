@@ -59,6 +59,7 @@ type User struct {
 	PasswordHash       string
 	Email              string
 	ID                 string
+	AvatarURL          string
 	MFASecret          string
 	MFASecretMAC       string
 	Name               string

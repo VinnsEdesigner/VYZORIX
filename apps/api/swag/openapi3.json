@@ -3315,6 +3315,427 @@
         }
       }
     },
+    "/auth/me/avatar": {
+      "post": {
+        "summary": "Upload avatar",
+        "description": "Stores an uploaded profile image and points the user's avatar at it",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "updated profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileActionResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid image",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "storage error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me/notifications/history": {
+      "get": {
+        "summary": "List notification history",
+        "description": "Returns the current user's delivered and failed notifications, newest first",
+        "tags": [
+          "notifications"
+        ],
+        "parameters": [
+          {
+            "name": "channel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "filter by channel (email, slack, webhook)"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "filter by outcome (sent, failed)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "page size (max 100)"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "page offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationHistoryResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me/notifications/history/read": {
+      "post": {
+        "summary": "Mark notifications read",
+        "description": "Stamps the read watermark so the unread count returns to zero",
+        "tags": [
+          "notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "unread count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkNotificationsReadResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me/notifications/push/public-key": {
+      "get": {
+        "summary": "Get the Web Push public key",
+        "description": "Returns the VAPID public key the browser needs to subscribe, or enabled=false when push is not configured",
+        "tags": [
+          "notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "public key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushPublicKeyResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me/notifications/push/subscribe": {
+      "post": {
+        "summary": "Register a browser push subscription",
+        "description": "Stores the browser's PushSubscription so notifications can be delivered to it",
+        "tags": [
+          "notifications"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "push subscription",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushSubscriptionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "subscribed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid subscription",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me/notifications/push/test": {
+      "post": {
+        "summary": "Send a test push notification",
+        "description": "Delivers a test notification to every browser the user has subscribed",
+        "tags": [
+          "notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "delivery count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushTestResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me/notifications/push/unsubscribe": {
+      "post": {
+        "summary": "Remove a browser push subscription",
+        "description": "Deletes a stored PushSubscription (the user disabling this browser)",
+        "tags": [
+          "notifications"
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "push subscription",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushSubscriptionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "unsubscribed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me/notifications/slack/callback": {
+      "get": {
+        "summary": "Slack OAuth callback",
+        "description": "Exchanges the code and stores the linked Slack workspace, then redirects back to the console",
+        "tags": [
+          "notifications"
+        ],
+        "responses": {
+          "307": {
+            "description": "redirect back to the console",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me/notifications/slack/channels": {
+      "get": {
+        "summary": "List Slack channels",
+        "description": "Returns the channels the linked Slack bot can post to",
+        "tags": [
+          "notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "channels",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlackChannelsResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me/notifications/slack/connect": {
+      "get": {
+        "summary": "Connect Slack",
+        "description": "Redirects to Slack so the user can authorise Vyzorix",
+        "tags": [
+          "notifications"
+        ],
+        "responses": {
+          "307": {
+            "description": "redirect to Slack",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Slack not configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me/profile-summary": {
+      "get": {
+        "summary": "Profile summary",
+        "description": "Counts for the profile page: active sessions and audited actions",
+        "tags": [
+          "auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileSummaryResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/auth/mfa/disable": {
       "post": {
         "summary": "Disable MFA",
@@ -12371,6 +12792,87 @@
         }
       }
     },
+    "/organizations/{id}/preferences": {
+      "get": {
+        "summary": "Get organization preference defaults",
+        "description": "Returns the organisation's inheritable preference defaults. Readable by any member (they inherit these), unlike the full settings which are admin-only.",
+        "tags": [
+          "organizations"
+        ],
+        "parameters": [
+          {
+            "name": "X-Organization-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "organization ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "organization preference defaults",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationSettingsResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "org id required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not a member",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/organizations/{id}/settings": {
       "get": {
         "summary": "Get organization settings",
@@ -17374,9 +17876,23 @@
           }
         }
       },
+      "MarkNotificationsReadResult": {
+        "type": "object",
+        "properties": {
+          "unread": {
+            "type": "integer"
+          }
+        }
+      },
       "MeResult": {
         "type": "object",
         "properties": {
+          "avatar_url": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "integer"
+          },
           "email": {
             "type": "string"
           },
@@ -17385,6 +17901,9 @@
           },
           "id": {
             "type": "string"
+          },
+          "last_login_at": {
+            "type": "integer"
           },
           "last_organization_id": {
             "type": "string"
@@ -17448,6 +17967,55 @@
           }
         }
       },
+      "NotificationHistoryEntry": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "type": "string"
+          },
+          "deviceId": {
+            "type": "string"
+          },
+          "errorMsg": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "sentAt": {
+            "type": "integer"
+          },
+          "success": {
+            "type": "boolean"
+          }
+        }
+      },
+      "NotificationHistoryResult": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationHistoryEntry"
+            }
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "offset": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "unread": {
+            "type": "integer"
+          }
+        }
+      },
       "NotificationSettings": {
         "type": "object",
         "properties": {
@@ -17460,11 +18028,17 @@
           "email": {
             "$ref": "#/components/schemas/EmailNotifications"
           },
+          "emailAddress": {
+            "type": "string"
+          },
           "enabled": {
             "type": "boolean"
           },
           "push": {
             "$ref": "#/components/schemas/PushNotifications"
+          },
+          "slack": {
+            "$ref": "#/components/schemas/SlackNotifications"
           },
           "webhook": {
             "$ref": "#/components/schemas/WebhookNotifications"
@@ -17483,11 +18057,17 @@
           "email": {
             "$ref": "#/components/schemas/EmailNotifications"
           },
+          "emailAddress": {
+            "type": "string"
+          },
           "enabled": {
             "type": "boolean"
           },
           "push": {
             "$ref": "#/components/schemas/PushNotifications"
+          },
+          "slack": {
+            "$ref": "#/components/schemas/SlackNotificationInput"
           },
           "webhook": {
             "$ref": "#/components/schemas/WebhookNotifications"
@@ -17626,6 +18206,9 @@
           },
           "updatedAt": {
             "type": "string"
+          },
+          "weekStart": {
+            "type": "string"
           }
         }
       },
@@ -17667,8 +18250,42 @@
             "type": "object",
             "additionalProperties": {}
           },
+          "resolved": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
           "theme": {
             "type": "string"
+          }
+        }
+      },
+      "ProfileActionResult": {
+        "type": "object",
+        "properties": {
+          "avatar_url": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "ProfileSummaryResult": {
+        "type": "object",
+        "properties": {
+          "actions": {
+            "type": "integer"
+          },
+          "active_sessions": {
+            "type": "integer"
           }
         }
       },
@@ -17692,6 +18309,47 @@
           },
           "updateAvailable": {
             "type": "boolean"
+          }
+        }
+      },
+      "PushPublicKeyResult": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "publicKey": {
+            "type": "string"
+          }
+        }
+      },
+      "PushSubscriptionKeys": {
+        "type": "object",
+        "properties": {
+          "auth": {
+            "type": "string"
+          },
+          "p256dh": {
+            "type": "string"
+          }
+        }
+      },
+      "PushSubscriptionRequest": {
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": "string"
+          },
+          "keys": {
+            "$ref": "#/components/schemas/PushSubscriptionKeys"
+          }
+        }
+      },
+      "PushTestResult": {
+        "type": "object",
+        "properties": {
+          "delivered": {
+            "type": "integer"
           }
         }
       },
@@ -17990,6 +18648,65 @@
           "preferences": {
             "type": "object",
             "additionalProperties": {}
+          }
+        }
+      },
+      "SlackChannel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "SlackChannelsResult": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SlackChannel"
+            }
+          }
+        }
+      },
+      "SlackNotificationInput": {
+        "type": "object",
+        "properties": {
+          "channelId": {
+            "type": "string"
+          },
+          "channelName": {
+            "type": "string"
+          },
+          "connected": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SlackNotifications": {
+        "type": "object",
+        "properties": {
+          "channelId": {
+            "type": "string"
+          },
+          "channelName": {
+            "type": "string"
+          },
+          "connected": {
+            "type": "boolean"
+          },
+          "slackUserId": {
+            "type": "string"
+          },
+          "teamId": {
+            "type": "string"
+          },
+          "teamName": {
+            "type": "string"
           }
         }
       },
@@ -18496,6 +19213,9 @@
       "UpdateNameRequest": {
         "type": "object",
         "properties": {
+          "avatar_url": {
+            "type": "string"
+          },
           "name": {
             "type": "string"
           }
@@ -18531,6 +19251,9 @@
             "type": "string"
           },
           "timezone": {
+            "type": "string"
+          },
+          "weekStart": {
             "type": "string"
           }
         }
@@ -19032,6 +19755,9 @@
       "UserSettingsResultLegacy": {
         "type": "object",
         "properties": {
+          "avatar_url": {
+            "type": "string"
+          },
           "client": {
             "$ref": "#/components/schemas/ClientSettings"
           },

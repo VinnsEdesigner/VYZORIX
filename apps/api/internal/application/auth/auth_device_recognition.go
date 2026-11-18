@@ -272,7 +272,7 @@ func (s *AuthService) ShouldNotifyLogin(ctx context.Context, userID, ipAddress, 
 // 1. Tracks device fingerprints.
 // 2. Only sends notifications for new/unusual logins.
 // 3. Performs strict verification. for remembered devices.
-func (s *AuthService) LoginWithDevice(ctx context.Context, req *dto.LoginRequest, device *DeviceInfo) (*dto.LoginResponse, *session.Session, error) {
+func (s *AuthService) LoginWithDevice(ctx context.Context, req *dto.LoginRequest, device *DeviceInfo, meta SessionMeta) (*dto.LoginResponse, *session.Session, error) {
 	email := strings.ToLower(strings.TrimSpace(req.Email))
 
 	// Verify credentials.
@@ -324,7 +324,7 @@ func (s *AuthService) LoginWithDevice(ctx context.Context, req *dto.LoginRequest
 	}
 
 	// Create session.
-	sess, err := s.CreateSession(ctx, op.ID)
+	sess, err := s.CreateSession(ctx, op.ID, meta)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -116,7 +116,7 @@ func (m *AuthMiddleware) authenticateBearer(ctx context.Context, authHeader stri
 
 	op, err := m.AuthService.GetUserByID(ctx, claims.UserID)
 	if err != nil || op == nil {
-		m.Log.Debug("operator not found for token", "operatorID", claims.UserID)
+		m.Log.Debug("operator not found for token", "userID", claims.UserID)
 		return nil, gqlerrors.ErrUnauthorized
 	}
 

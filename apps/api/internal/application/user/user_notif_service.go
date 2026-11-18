@@ -53,6 +53,22 @@ func (s *NotificationService) applyNotificationUpdates(input *user.NotificationI
 		notifications.Channels = *input.Channels
 	}
 
+	if input.EmailAddress != nil {
+		notifications.EmailAddress = *input.EmailAddress
+	}
+
+	if input.Slack != nil {
+		if input.Slack.ChannelID != nil {
+			notifications.Slack.ChannelID = *input.Slack.ChannelID
+		}
+		if input.Slack.ChannelName != nil {
+			notifications.Slack.ChannelName = *input.Slack.ChannelName
+		}
+		if input.Slack.Connected != nil {
+			notifications.Slack.Connected = *input.Slack.Connected
+		}
+	}
+
 	s.applyEmailUpdates(input.Email, &notifications.Email)
 	s.applyPushUpdates(input.Push, &notifications.Push)
 	s.applyWebhookUpdates(input.Webhook, &notifications.Webhook)

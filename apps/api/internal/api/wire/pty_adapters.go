@@ -171,13 +171,13 @@ func (r *ptyCapabilityResolver) ResolveForSession(
 
 	return websockethandlers.SessionCapabilityInfo{
 		// Identity, resolved here so it cannot disagree with the capability.
-		UserID:   userID,
-		UserName: member.UserName,
-		Email:        member.UserEmail,
-		OrgID:        orgID,
-		OrgName:      orgName,
-		Role:         string(member.Role),
-		RoleLabel:    member.Role.Label(),
+		UserID:    userID,
+		UserName:  member.UserName,
+		Email:     member.UserEmail,
+		OrgID:     orgID,
+		OrgName:   orgName,
+		Role:      string(member.Role),
+		RoleLabel: member.Role.Label(),
 
 		APIAllowlist: capability.APIAllowlist,
 		Tier:         int(capability.Tier),
@@ -225,7 +225,7 @@ func NewPTYAuthorizer(authorizer *command.Authorizer) websockethandlers.PTYAutho
 // AuthorizePTYOpen evaluates the request against the PTY_SESSION_OPEN profile.
 func (a *ptyAuthorizer) AuthorizePTYOpen(ctx context.Context, req websockethandlers.PTYAuthRequest) websockethandlers.PTYAuthDecision {
 	outcome := a.authorizer.Authorize(ctx, domaincommand.ActorContext{
-		UserID:   req.UserID,
+		UserID:       req.UserID,
 		OrgID:        req.OrgID,
 		IsSuperAdmin: req.IsSuperAdmin,
 		MFAVerified:  req.MFAVerified,

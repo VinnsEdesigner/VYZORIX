@@ -24,12 +24,40 @@ var _ user.Repository = (*UserRepository)(nil)
 
 // UserRepository implements user.Repository using SQLite.
 type UserRepository struct {
-	db *sql.DB
+	db     *sql.DB
+	cipher *secretCipher
 }
 
 // NewUserRepository creates a new UserRepository.
 func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
+}
+
+// SetSecretCipher enables encryption at rest for reversible secrets (the Slack
+// bot token). Without it those values are stored as-is, which keeps tests and
+// tools that construct the repository directly working.
+func (r *UserRepository) SetSecretCipher(secret string) {
+	if secret != "" {
+		r.cipher = newSecretCipher(secret)
+	}
+}
+
+func (r *UserRepository) encryptSecret(plaintext string) string {
+	if r.cipher == nil || plaintext == "" {
+		return plaintext
+	}
+	encrypted, err := r.cipher.encrypt(plaintext)
+	if err != nil {
+		return plaintext
+	}
+	return encrypted
+}
+
+func (r *UserRepository) decryptSecret(stored string) string {
+	if r.cipher == nil {
+		return stored
+	}
+	return r.cipher.decrypt(stored)
 }
 
 // getQuerier returns the transaction from context if available, otherwise the db.
@@ -58,7 +86,7 @@ func (r *UserRepository) exec(ctx context.Context, query string, args ...interfa
 // FindByID retrieves a user by ID.
 func (r *UserRepository) FindByID(ctx context.Context, id string) (*user.User, error) {
 	query := `
-		SELECT id, email, name, password_hash, google_id, github_id, 
+		SELECT id, email, name, avatar_url, password_hash, google_id, github_id, 
 		       mfa_secret, mfa_secret_mac, mfa_enabled, mfa_enabled_at, backup_codes, email_verified, created_at, updated_at, fcm_token,
 		       last_organization_id, instance_role
 		FROM users WHERE id = ?`
@@ -71,7 +99,7 @@ func (r *UserRepository) FindByID(ctx context.Context, id string) (*user.User, e
 	var createdAt, updatedAt interface{} // Handle both TEXT and INTEGER.
 
 	err := r.queryRow(ctx, query, id).Scan(
-		&op.ID, &op.Email, &op.Name, &op.PasswordHash,
+		&op.ID, &op.Email, &op.Name, &op.AvatarURL, &op.PasswordHash,
 		&googleID, &githubID, &mfaSecret, &mfaSecretMAC, &op.MFAEnabled, &mfaEnabledAt,
 		&mfaBackupCodes, &op.EmailVerified, &createdAt, &updatedAt, &fcmToken, &lastOrgID, &instanceRole,
 	)
@@ -115,7 +143,7 @@ func (r *UserRepository) FindByID(ctx context.Context, id string) (*user.User, e
 // FindByEmail retrieves a user by email.
 func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*user.User, error) {
 	query := `
-		SELECT id, email, name, password_hash, google_id, github_id, 
+		SELECT id, email, name, avatar_url, password_hash, google_id, github_id, 
 		       mfa_secret, mfa_secret_mac, mfa_enabled, mfa_enabled_at, email_verified, created_at, updated_at, fcm_token,
 		       last_organization_id, instance_role
 		FROM users WHERE email = ?`
@@ -128,7 +156,7 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*user.U
 	var createdAt, updatedAt interface{} // Handle both TEXT and INTEGER.
 
 	err := r.queryRow(ctx, query, strings.ToLower(email)).Scan(
-		&op.ID, &op.Email, &op.Name, &op.PasswordHash,
+		&op.ID, &op.Email, &op.Name, &op.AvatarURL, &op.PasswordHash,
 		&googleID, &githubID, &mfaSecret, &mfaSecretMAC, &op.MFAEnabled, &mfaEnabledAt,
 		&op.EmailVerified, &createdAt, &updatedAt, &fcmToken, &lastOrgID, &instanceRole,
 	)
@@ -219,7 +247,7 @@ func parseTimestamp(value interface{}) time.Time {
 // FindByGoogleID retrieves a user by Google ID.
 func (r *UserRepository) FindByGoogleID(ctx context.Context, googleID string) (*user.User, error) {
 	query := `
-		SELECT id, email, name, password_hash, google_id, github_id, 
+		SELECT id, email, name, avatar_url, password_hash, google_id, github_id, 
 		       mfa_secret, mfa_secret_mac, mfa_enabled, mfa_enabled_at, backup_codes, email_verified, created_at, updated_at, fcm_token,
 		       last_organization_id, instance_role
 		FROM users WHERE google_id = ?`
@@ -232,7 +260,7 @@ func (r *UserRepository) FindByGoogleID(ctx context.Context, googleID string) (*
 	var createdAt, updatedAt interface{} // Handle both TEXT and INTEGER.
 
 	err := r.queryRow(ctx, query, googleID).Scan(
-		&op.ID, &op.Email, &op.Name, &op.PasswordHash,
+		&op.ID, &op.Email, &op.Name, &op.AvatarURL, &op.PasswordHash,
 		&googleIDVal, &githubID, &mfaSecret, &mfaSecretMAC, &op.MFAEnabled, &mfaEnabledAt,
 		&mfaBackupCodes, &op.EmailVerified, &createdAt, &updatedAt, &fcmToken, &lastOrgID, &instanceRole,
 	)
@@ -271,7 +299,7 @@ func (r *UserRepository) FindByGoogleID(ctx context.Context, googleID string) (*
 // FindByGitHubID retrieves a user by GitHub ID.
 func (r *UserRepository) FindByGitHubID(ctx context.Context, githubID string) (*user.User, error) {
 	query := `
-		SELECT id, email, name, password_hash, google_id, github_id, 
+		SELECT id, email, name, avatar_url, password_hash, google_id, github_id, 
 		       mfa_secret, mfa_secret_mac, mfa_enabled, mfa_enabled_at, backup_codes, email_verified, created_at, updated_at, fcm_token,
 		       last_organization_id, instance_role
 		FROM users WHERE github_id = ?`
@@ -284,7 +312,7 @@ func (r *UserRepository) FindByGitHubID(ctx context.Context, githubID string) (*
 	var createdAt, updatedAt interface{} // Handle both TEXT and INTEGER.
 
 	err := r.queryRow(ctx, query, githubID).Scan(
-		&op.ID, &op.Email, &op.Name, &op.PasswordHash,
+		&op.ID, &op.Email, &op.Name, &op.AvatarURL, &op.PasswordHash,
 		&googleID, &githubIDVal, &mfaSecret, &mfaSecretMAC, &op.MFAEnabled, &mfaEnabledAt,
 		&mfaBackupCodes, &op.EmailVerified, &createdAt, &updatedAt, &fcmToken, &lastOrgID, &instanceRole,
 	)
@@ -329,7 +357,7 @@ func (r *UserRepository) Create(ctx context.Context, op *user.User) error {
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err := r.exec(ctx, query,
-		op.ID, strings.ToLower(op.Email), op.Name, op.PasswordHash,
+		op.ID, strings.ToLower(op.Email), op.Name, op.AvatarURL, op.PasswordHash,
 		nullString(op.GoogleID), nullString(op.GitHubID), nullString(op.MFASecret), nullString(op.MFASecretMAC),
 		op.MFAEnabled, op.EmailVerified, op.CreatedAt.UnixMilli(), op.UpdatedAt.UnixMilli(), nullString(op.FCMToken), nullString(op.LastOrganizationID), instanceRoleOrDefault(op.InstanceRole),
 	)
@@ -345,13 +373,13 @@ func (r *UserRepository) Create(ctx context.Context, op *user.User) error {
 func (r *UserRepository) Update(ctx context.Context, op *user.User) error {
 	query := `
 		UPDATE users 
-		SET email = ?, name = ?, password_hash = ?, google_id = ?, github_id = ?,
+		SET email = ?, name = ?, avatar_url = ?, password_hash = ?, google_id = ?, github_id = ?,
 		    mfa_secret = ?, mfa_secret_mac = ?, mfa_enabled = ?, email_verified = ?, fcm_token = ?,
 		    last_organization_id = ?, updated_at = ?
 		WHERE id = ?`
 
 	result, err := r.exec(ctx, query,
-		strings.ToLower(op.Email), op.Name, op.PasswordHash,
+		strings.ToLower(op.Email), op.Name, op.AvatarURL, op.PasswordHash,
 		nullString(op.GoogleID), nullString(op.GitHubID), nullString(op.MFASecret), nullString(op.MFASecretMAC),
 		op.MFAEnabled, op.EmailVerified, nullString(op.FCMToken), nullString(op.LastOrganizationID), time.Now().UnixMilli(), op.ID,
 	)
@@ -401,7 +429,7 @@ func (r *UserRepository) Count(ctx context.Context) (int, error) {
 // List returns a paginated list of users.
 func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*user.User, int, error) {
 	query := `
-		SELECT id, email, name, password_hash, google_id, github_id, 
+		SELECT id, email, name, avatar_url, password_hash, google_id, github_id, 
 		       mfa_secret, mfa_secret_mac, mfa_enabled, mfa_enabled_at, email_verified, created_at, updated_at,
 		       last_organization_id, instance_role
 		FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?`
@@ -424,7 +452,7 @@ func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*user.U
 		var createdAt, updatedAt interface{} // Handle both TEXT and INTEGER.
 
 		if err := rows.Scan(
-			&op.ID, &op.Email, &op.Name, &op.PasswordHash,
+			&op.ID, &op.Email, &op.Name, &op.AvatarURL, &op.PasswordHash,
 			&googleID, &githubID, &mfaSecret, &mfaSecretMAC, &op.MFAEnabled, &mfaEnabledAt,
 			&op.EmailVerified, &createdAt, &updatedAt, &lastOrgID, &instanceRole,
 		); err != nil {
@@ -662,8 +690,70 @@ func (r *UserRepository) UpdateName(ctx context.Context, id, name string) error 
 	if rows == 0 {
 		return user.ErrNotFound
 	}
+	return nil
+}
+
+// UpdateAvatarURL updates the avatar image URL for a user. An empty string
+// clears it, so the client falls back to its default glyph.
+func (r *UserRepository) UpdateAvatarURL(ctx context.Context, id, avatarURL string) error {
+	result, err := r.exec(ctx,
+		"UPDATE users SET avatar_url = ?, updated_at = ? WHERE id = ?",
+		strings.TrimSpace(avatarURL), time.Now(), id,
+	)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return user.ErrNotFound
+	}
 
 	return nil
+}
+
+// RecordLogin stamps the user's most recent login time.
+func (r *UserRepository) RecordLogin(ctx context.Context, id string, at time.Time) error {
+	result, err := r.exec(ctx,
+		"UPDATE users SET last_login_at = ? WHERE id = ?",
+		at.UnixMilli(), id,
+	)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return user.ErrNotFound
+	}
+
+	return nil
+}
+
+// LastLoginAt returns the user's most recent login time. The bool is false when
+// the column is NULL (no login recorded since the column was introduced).
+func (r *UserRepository) LastLoginAt(ctx context.Context, id string) (time.Time, bool, error) {
+	var ms sql.NullInt64
+	if err := r.queryRow(ctx, "SELECT last_login_at FROM users WHERE id = ?", id).Scan(&ms); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return time.Time{}, false, user.ErrNotFound
+		}
+		return time.Time{}, false, err
+	}
+
+	if !ms.Valid {
+		return time.Time{}, false, nil
+	}
+
+	return time.UnixMilli(ms.Int64), true, nil
 }
 
 // UpdateThresholds updates the alert thresholds for a user.
@@ -800,10 +890,12 @@ func (r *UserRepository) GetPreferencesRaw(ctx context.Context, userID string) (
 
 func (r *UserRepository) SavePreferencesRaw(ctx context.Context, userID string, prefsJSON string) error {
 	_, err := r.exec(ctx,
-		`INSERT INTO user_settings (user_id, preferences, risk_warn, risk_crit, thermal_warn, thermal_crit, buffer_warn, buffer_crit)
-		 VALUES (?, ?, 70, 85, 45, 50, 30, 15)
-		 ON CONFLICT(user_id) DO UPDATE SET preferences = excluded.preferences`,
-		userID, prefsJSON)
+		`INSERT INTO user_settings (user_id, preferences, risk_warn, risk_crit, thermal_warn, thermal_crit,
+		                                 buffer_warn, buffer_crit, updated_at, created_at)
+		 VALUES (?, ?, 70, 85, 45, 50, 30, 15, ?, ?)
+		 ON CONFLICT(user_id) DO UPDATE SET preferences = excluded.preferences,
+		                                     updated_at = excluded.updated_at`,
+		userID, prefsJSON, time.Now().UnixMilli(), time.Now().UnixMilli())
 	return err
 }
 
@@ -982,7 +1074,11 @@ func (r *UserRepository) GetUserSettings(ctx context.Context, userID string) (*u
 			notify_email, notify_push, notify_webhook,
 			webhook_url, webhook_secret, webhook_types,
 			notify_threshold_breach, notify_device_offline, notify_device_online,
-			notify_update_available, notify_command_failed, notify_registration_request
+			notify_update_available, notify_command_failed, notify_registration_request,
+			notify_email_address,
+			slack_enabled, slack_team_id, slack_team_name, slack_user_id,
+			slack_access_token, slack_channel_id, slack_channel_name,
+			notify_slack
 		FROM user_settings WHERE user_id = ?`
 
 	var settings user.UserSettings
@@ -993,6 +1089,8 @@ func (r *UserRepository) GetUserSettings(ctx context.Context, userID string) (*u
 	var notifyPush, notifyWebhook int
 	var notifyThresholdBreach, notifyDeviceOffline, notifyDeviceOnline int
 	var notifyUpdateAvailable, notifyCommandFailed, notifyRegistrationRequest int
+	var notifyEmailAddress, slackTeamID, slackTeamName, slackUserID, slackAccessToken, slackChannelID, slackChannelName sql.NullString
+	var slackEnabled, notifySlack int
 
 	err := r.queryRow(ctx, query, userID).Scan(
 		// Client.
@@ -1005,6 +1103,10 @@ func (r *UserRepository) GetUserSettings(ctx context.Context, userID string) (*u
 		&webhookURL, &webhookSecret, &webhookTypes,
 		&notifyThresholdBreach, &notifyDeviceOffline, &notifyDeviceOnline,
 		&notifyUpdateAvailable, &notifyCommandFailed, &notifyRegistrationRequest,
+		&notifyEmailAddress,
+		&slackEnabled, &slackTeamID, &slackTeamName, &slackUserID,
+		&slackAccessToken, &slackChannelID, &slackChannelName,
+		&notifySlack,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		// Return defaults if no settings exist.
@@ -1042,8 +1144,18 @@ func (r *UserRepository) GetUserSettings(ctx context.Context, userID string) (*u
 
 	// Build notifications (extracted from same row).
 	ns := &user.NotificationSettings{
-		Enabled:  notificationsEnabled == 1,
-		Channels: []string{},
+		Enabled:      notificationsEnabled == 1,
+		Channels:     []string{},
+		EmailAddress: notifyEmailAddress.String,
+		Slack: user.SlackNotifications{
+			Connected:   slackEnabled == 1,
+			TeamID:      slackTeamID.String,
+			TeamName:    slackTeamName.String,
+			SlackUserID: slackUserID.String,
+			ChannelID:   slackChannelID.String,
+			ChannelName: slackChannelName.String,
+			AccessToken: r.decryptSecret(slackAccessToken.String),
+		},
 	}
 
 	// Parse channels.
@@ -1055,6 +1167,9 @@ func (r *UserRepository) GetUserSettings(ctx context.Context, userID string) (*u
 	}
 	if notifyWebhook == 1 {
 		ns.Channels = append(ns.Channels, "webhook")
+	}
+	if notifySlack == 1 {
+		ns.Channels = append(ns.Channels, "slack")
 	}
 
 	// Email settings.
@@ -1106,7 +1221,11 @@ func (r *UserRepository) GetNotifications(ctx context.Context, userID string) (*
 		SELECT notifications_enabled, notify_email, notify_push, notify_webhook,
 		       webhook_url, webhook_secret, webhook_types,
 		       notify_threshold_breach, notify_device_offline, notify_device_online,
-		       notify_update_available, notify_command_failed, notify_registration_request
+		       notify_update_available, notify_command_failed, notify_registration_request,
+		       notify_email_address,
+		       slack_enabled, slack_team_id, slack_team_name, slack_user_id,
+		       slack_access_token, slack_channel_id, slack_channel_name,
+		       notify_slack
 		FROM user_settings WHERE user_id = ?`
 
 	var ns user.NotificationSettings
@@ -1115,12 +1234,18 @@ func (r *UserRepository) GetNotifications(ctx context.Context, userID string) (*
 	var webhookURL, webhookSecret, webhookTypes sql.NullString
 	var notifyThresholdBreach, notifyDeviceOffline, notifyDeviceOnline int
 	var notifyUpdateAvailable, notifyCommandFailed, notifyRegistrationRequest int
+	var notifyEmailAddress, slackTeamID, slackTeamName, slackUserID, slackAccessToken, slackChannelID, slackChannelName sql.NullString
+	var slackEnabled, notifySlack int
 
 	err := r.queryRow(ctx, query, userID).Scan(
 		&ns.Enabled, &notifyEmail, &notifyPush, &notifyWebhook,
 		&webhookURL, &webhookSecret, &webhookTypes,
 		&notifyThresholdBreach, &notifyDeviceOffline, &notifyDeviceOnline,
 		&notifyUpdateAvailable, &notifyCommandFailed, &notifyRegistrationRequest,
+		&notifyEmailAddress,
+		&slackEnabled, &slackTeamID, &slackTeamName, &slackUserID,
+		&slackAccessToken, &slackChannelID, &slackChannelName,
+		&notifySlack,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		// Return defaults if no settings exist.
@@ -1141,6 +1266,9 @@ func (r *UserRepository) GetNotifications(ctx context.Context, userID string) (*
 	if notifyWebhook == 1 {
 		ns.Channels = append(ns.Channels, "webhook")
 	}
+	if notifySlack == 1 {
+		ns.Channels = append(ns.Channels, "slack")
+	}
 
 	// Parse email settings from notify_email JSON or use defaults.
 	ns.Email = user.EmailNotifications{
@@ -1160,6 +1288,17 @@ func (r *UserRepository) GetNotifications(ctx context.Context, userID string) (*
 		UpdateAvailable:     notifyUpdateAvailable == 1,
 		CommandFailed:       notifyCommandFailed == 1,
 		RegistrationRequest: notifyRegistrationRequest == 1,
+	}
+
+	ns.EmailAddress = notifyEmailAddress.String
+	ns.Slack = user.SlackNotifications{
+		Connected:   slackEnabled == 1,
+		TeamID:      slackTeamID.String,
+		TeamName:    slackTeamName.String,
+		SlackUserID: slackUserID.String,
+		ChannelID:   slackChannelID.String,
+		ChannelName: slackChannelName.String,
+		AccessToken: r.decryptSecret(slackAccessToken.String),
 	}
 
 	// Parse webhook settings.
@@ -1192,7 +1331,7 @@ func (r *UserRepository) UpdateNotifications(ctx context.Context, userID string,
 	}
 
 	notifyEmail := r.determineNotifyEmail(settings.Channels)
-	notifyPush, notifyWebhook := r.determineChannelFlags(settings.Channels)
+	notifyPush, notifyWebhook, notifySlack := r.determineChannelFlags(settings.Channels)
 	webhookTypesJSON := r.serializeWebhookTypes(settings.Webhook.Types)
 	hashedSecret, err := r.hashWebhookSecret(ctx, userID, settings.Webhook.Secret)
 	if err != nil {
@@ -1205,6 +1344,7 @@ func (r *UserRepository) UpdateNotifications(ctx context.Context, userID string,
 			notify_email = ?,
 			notify_push = ?,
 			notify_webhook = ?,
+			notify_slack = ?,
 			webhook_url = ?,
 			webhook_secret = ?,
 			webhook_types = ?,
@@ -1214,14 +1354,25 @@ func (r *UserRepository) UpdateNotifications(ctx context.Context, userID string,
 			notify_update_available = ?,
 			notify_command_failed = ?,
 			notify_registration_request = ?,
+			notify_email_address = ?,
+			slack_enabled = ?,
+			slack_team_id = ?,
+			slack_team_name = ?,
+			slack_user_id = ?,
+			slack_access_token = ?,
+			slack_channel_id = ?,
+			slack_channel_name = ?,
 			updated_at = ?
 		WHERE user_id = ?`
 
 	result, err := r.exec(ctx, query,
-		settings.Enabled, notifyEmail, notifyPush, notifyWebhook,
+		settings.Enabled, notifyEmail, notifyPush, notifyWebhook, notifySlack,
 		settings.Webhook.URL, hashedSecret, string(webhookTypesJSON),
 		settings.Email.ThresholdBreach, settings.Email.DeviceOffline, settings.Email.DeviceOnline,
 		settings.Email.UpdateAvailable, settings.Email.CommandFailed, settings.Email.RegistrationRequest,
+		settings.EmailAddress,
+		slackEnabledFlag(settings), settings.Slack.TeamID, settings.Slack.TeamName, settings.Slack.SlackUserID,
+		r.encryptSecret(settings.Slack.AccessToken), settings.Slack.ChannelID, settings.Slack.ChannelName,
 		time.Now().UnixMilli(), userID,
 	)
 	if err != nil {
@@ -1237,16 +1388,23 @@ func (r *UserRepository) UpdateNotifications(ctx context.Context, userID string,
 		// Settings row doesn't exist - insert with the notification settings.
 		result, err = r.exec(ctx,
 			`INSERT INTO user_settings (user_id, notifications_enabled, notify_email, notify_push, notify_webhook,
+			 notify_slack,
 			 webhook_url, webhook_secret, webhook_types,
 			 notify_threshold_breach, notify_device_offline, notify_device_online,
 			 notify_update_available, notify_command_failed, notify_registration_request,
+			 notify_email_address,
+			 slack_enabled, slack_team_id, slack_team_name, slack_user_id,
+			 slack_access_token, slack_channel_id, slack_channel_name,
 			 updated_at, created_at)
-			 SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+			 SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 			 WHERE EXISTS (SELECT 1 FROM users WHERE id = ?)`,
-			userID, settings.Enabled, notifyEmail, notifyPush, notifyWebhook,
+			userID, settings.Enabled, notifyEmail, notifyPush, notifyWebhook, notifySlack,
 			settings.Webhook.URL, hashedSecret, string(webhookTypesJSON),
 			settings.Email.ThresholdBreach, settings.Email.DeviceOffline, settings.Email.DeviceOnline,
 			settings.Email.UpdateAvailable, settings.Email.CommandFailed, settings.Email.RegistrationRequest,
+			settings.EmailAddress,
+			slackEnabledFlag(settings), settings.Slack.TeamID, settings.Slack.TeamName, settings.Slack.SlackUserID,
+			r.encryptSecret(settings.Slack.AccessToken), settings.Slack.ChannelID, settings.Slack.ChannelName,
 			time.Now().UnixMilli(), time.Now().UnixMilli(), userID,
 		)
 		if err != nil {
@@ -1359,6 +1517,38 @@ func (r *UserRepository) validateNotificationSettings(settings *user.Notificatio
 	return nil
 }
 
+// GetNotificationsReadAt returns the user's notification read watermark in Unix
+// milliseconds, or 0 when they have never marked anything read.
+func (r *UserRepository) GetNotificationsReadAt(ctx context.Context, userID string) (int64, error) {
+	var readAt sql.NullInt64
+	err := r.queryRow(ctx, `SELECT notifications_read_at FROM user_settings WHERE user_id = ?`, userID).Scan(&readAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	if !readAt.Valid {
+		return 0, nil
+	}
+	return readAt.Int64, nil
+}
+
+// SetNotificationsReadAt stamps the read watermark. A user with no settings row
+// yet is a no-op: there is nothing to mark read.
+func (r *UserRepository) SetNotificationsReadAt(ctx context.Context, userID string, at int64) error {
+	_, err := r.exec(ctx, `UPDATE user_settings SET notifications_read_at = ? WHERE user_id = ?`, at, userID)
+	return err
+}
+
+// slackEnabledFlag returns the Slack channel flag as an int for the SQLite column.
+func slackEnabledFlag(settings *user.NotificationSettings) int {
+	if settings.Slack.Connected {
+		return 1
+	}
+	return 0
+}
+
 // determineNotifyEmail determines if email notifications are enabled.
 func (r *UserRepository) determineNotifyEmail(channels []string) string {
 	for _, ch := range channels {
@@ -1370,13 +1560,15 @@ func (r *UserRepository) determineNotifyEmail(channels []string) string {
 }
 
 // determineChannelFlags determines push and webhook enabled flags from channels.
-func (r *UserRepository) determineChannelFlags(channels []string) (notifyPush, notifyWebhook int) {
+func (r *UserRepository) determineChannelFlags(channels []string) (notifyPush, notifyWebhook, notifySlack int) {
 	for _, ch := range channels {
-		if ch == "push" {
+		switch ch {
+		case "push":
 			notifyPush = 1
-		}
-		if ch == "webhook" {
+		case "webhook":
 			notifyWebhook = 1
+		case "slack":
+			notifySlack = 1
 		}
 	}
 	return

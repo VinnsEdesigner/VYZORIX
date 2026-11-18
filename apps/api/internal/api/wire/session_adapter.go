@@ -29,7 +29,7 @@ func toSecuritySession(s *domainsession.Session) *session.Session {
 
 	return &session.Session{
 		ID:                     s.ID,
-		UserID:             s.UserID,
+		UserID:                 s.UserID,
 		SelectedOrganizationID: s.SelectedOrganizationID,
 		ExpiresAt:              s.ExpiresAt,
 		CreatedAt:              s.CreatedAt,
@@ -54,7 +54,7 @@ func toDomainSession(s *session.Session) *domainsession.Session {
 
 	return &domainsession.Session{
 		ID:                     s.ID,
-		UserID:             s.UserID,
+		UserID:                 s.UserID,
 		ExpiresAt:              s.ExpiresAt,
 		CreatedAt:              s.CreatedAt,
 		SelectedOrganizationID: s.SelectedOrganizationID,
@@ -83,6 +83,10 @@ func (a *sessionRepoAdapter) FindByUserID(ctx context.Context, userID string) ([
 
 func (a *sessionRepoAdapter) Create(ctx context.Context, s *session.Session) error {
 	return a.repo.Create(ctx, toDomainSession(s))
+}
+
+func (a *sessionRepoAdapter) UpdateSessionMeta(ctx context.Context, id, ipAddress, userAgent string) error {
+	return a.repo.UpdateSessionMeta(ctx, id, ipAddress, userAgent)
 }
 
 func (a *sessionRepoAdapter) Delete(ctx context.Context, id string) error {

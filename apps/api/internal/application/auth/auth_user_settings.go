@@ -40,6 +40,24 @@ func (s *AuthService) UpdateUserName(ctx context.Context, userID, name string) (
 	return op, nil
 }
 
+// UpdateUserAvatar sets the user's avatar image URL. An empty string clears it.
+func (s *AuthService) UpdateUserAvatar(ctx context.Context, userID, avatarURL string) (*user.User, error) {
+	avatarURL = strings.TrimSpace(avatarURL)
+
+	op, err := s.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.userRepo.UpdateAvatarURL(ctx, userID, avatarURL); err != nil {
+		return nil, err
+	}
+
+	op.AvatarURL = avatarURL
+
+	return op, nil
+}
+
 // UpdateSettings updates a user's settings.
 func (s *AuthService) UpdateSettings(ctx context.Context, userID string, req *UpdateSettingsRequest) (*user.User, error) {
 	op, err := s.userRepo.FindByID(ctx, userID)

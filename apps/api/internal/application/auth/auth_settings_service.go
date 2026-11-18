@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/theme"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 )
 
@@ -40,6 +39,11 @@ type ClientSettingsInput struct {
 type OrgThemeSource interface {
 	// OrgTheme returns the organisation's theme id, or "" when none is set.
 	OrgTheme(ctx context.Context, orgID string) (string, error)
+	// OrgPreferenceDefaults returns the organisation's default values for the
+	// inheritable preferences, keyed by preference name (theme, timezone,
+	// date_format, week_start). An unset value is absent or empty, so the caller
+	// falls through to the next tier.
+	OrgPreferenceDefaults(ctx context.Context, orgID string) (map[string]string, error)
 }
 
 // ClientSettingsService handles client settings operations.
@@ -254,13 +258,65 @@ func (s *ClientSettingsService) ResolveTheme(ctx context.Context, userID, orgID 
 	return DefaultTheme, nil
 }
 
+// InheritablePreferenceKeys are the preference keys resolved through the
+// user > organisation > system-default cascade.
+var InheritablePreferenceKeys = []string{"theme", "timezone", "date_format", "week_start"}
+
+// ResolvePreferences returns the effective value of every inheritable preference
+// for a user, applying user preference > organisation default > system default.
+//
+// A key the user has not set (absent, or an empty string) falls through to the
+// organisation's default; a key the organisation has not set falls through to
+// the system default. The result always carries a value for `theme` (DefaultTheme
+// at the bottom of the cascade) so a caller never has to guess.
+func (s *ClientSettingsService) ResolvePreferences(ctx context.Context, userID, orgID string) (map[string]any, error) {
+	userPrefs, err := s.GetPreferences(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	orgDefaults := map[string]string{}
+	if orgID != "" && s.orgTheme != nil {
+		orgDefaults, err = s.orgTheme.OrgPreferenceDefaults(ctx, orgID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	resolved := make(map[string]any, len(InheritablePreferenceKeys))
+	for _, key := range InheritablePreferenceKeys {
+		if v, ok := userPrefs[key]; ok {
+			if str, isString := v.(string); isString && str != "" {
+				resolved[key] = str
+				continue
+			}
+		}
+		if v := orgDefaults[key]; v != "" {
+			resolved[key] = v
+		}
+	}
+
+	if _, ok := resolved["theme"]; !ok {
+		resolved["theme"] = DefaultTheme
+	}
+
+	return resolved, nil
+}
+
 func (s *ClientSettingsService) UpdatePreferences(ctx context.Context, userID string, updates map[string]any) (map[string]any, error) {
-	// Reject an unknown theme id before persisting. An absent key or empty
-	// string is allowed: it clears the preference so the org default (or the
-	// system default) applies.
-	if raw, ok := updates["theme"]; ok && raw != nil {
-		if id, isString := raw.(string); !isString || !theme.IsValid(id) {
-			return nil, fmt.Errorf("%w: invalid theme", ErrValidationError)
+	// Validate every key and value against the allowlist before persisting.
+	// Without this an authenticated caller could store arbitrary keys and values
+	// in the user's preferences document. An absent key or an empty string is
+	// allowed: it clears the preference so the next tier in the cascade applies.
+	for k, v := range updates {
+		if clearsPreference(v) {
+			if !IsKnownPreferenceKey(k) {
+				return nil, fmt.Errorf("%w: unknown preference %q", ErrValidationError, k)
+			}
+			continue
+		}
+		if err := validatePreference(k, v); err != nil {
+			return nil, err
 		}
 	}
 
@@ -269,10 +325,10 @@ func (s *ClientSettingsService) UpdatePreferences(ctx context.Context, userID st
 		current = make(map[string]any)
 	}
 	for k, v := range updates {
-		// A nil value, or an empty theme string, clears the key so the next tier
-		// in the cascade applies. Storing "" would be indistinguishable from
-		// "unset" but would persist a meaningless value.
-		if v == nil || (k == "theme" && v == "") {
+		// A nil value, or an empty string, clears the key so the next tier in the
+		// cascade applies. Storing "" would be indistinguishable from "unset" but
+		// would persist a meaningless value.
+		if clearsPreference(v) {
 			delete(current, k)
 		} else {
 			current[k] = v

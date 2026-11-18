@@ -48,6 +48,7 @@ type OAuthErrorDetails struct {
 type OAuthHandler struct {
 	oauthStateRepo OAuthStateProvider
 	authService    *appsvc.AuthService
+	settingsSvc    *appsvc.ClientSettingsService
 	sessionMgr     *infraauth.SessionManager
 	googleVer      *infraauth.GoogleTokenVerifier
 	logger         *slog.Logger
@@ -55,13 +56,26 @@ type OAuthHandler struct {
 	config         config.Config
 }
 
+// WithSettingsService sets the settings service used by the Slack link-up,
+// which owns notification-settings persistence.
+func (h *OAuthHandler) WithSettingsService(svc *appsvc.ClientSettingsService) *OAuthHandler {
+	h.settingsSvc = svc
+	return h
+}
+
 // OAuthStateProvider interface for OAuth state operations.
 // 8: This interface allows persisting OAuth state to prevent CSRF attacks.
 type OAuthStateProvider interface {
 	// Create stores a new OAuth state and returns the state ID.
 	Create(ctx context.Context, state, redirectURL, provider string) (string, error)
+	// CreateForUser stores a state owned by a user, for a link-up started from an
+	// authenticated session (Slack connect).
+	CreateForUser(ctx context.Context, state, redirectURL, provider, userID string) (string, error)
 	// Validate retrieves and validates an OAuth state, returning the redirect URL and state.
 	Validate(ctx context.Context, state string) (redirectURL string, stateID string, err error)
+	// ValidateWithUser is Validate that also returns the owning user id (empty for
+	// a login flow).
+	ValidateWithUser(ctx context.Context, state string) (redirectURL string, stateID string, userID string, err error)
 	// Delete removes an OAuth state after use.
 	Delete(ctx context.Context, stateID string) error
 }
@@ -299,7 +313,7 @@ func (h *OAuthHandler) GoogleCallback(c *gin.Context) {
 	}
 
 	// Create session (validates user was found/created).
-	session, err := h.authService.CreateSession(ctx, result.User.ID)
+	session, err := h.authService.CreateSession(ctx, result.User.ID, appsvc.SessionMeta{IPAddress: c.ClientIP(), UserAgent: c.GetHeader("User-Agent")})
 	if err != nil {
 		errURL := h.getOAuthRedirectURL(redirectURL, OAuthErrorDetails{
 			Code:      ErrOAuthLoginFailed,
@@ -435,7 +449,7 @@ func (h *OAuthHandler) GitHubCallback(c *gin.Context) {
 		return
 	}
 
-	session, err := h.authService.CreateSession(ctx, result.User.ID)
+	session, err := h.authService.CreateSession(ctx, result.User.ID, appsvc.SessionMeta{IPAddress: c.ClientIP(), UserAgent: c.GetHeader("User-Agent")})
 	if err != nil {
 		h.redirectWithOAuthError(c, redirectURL, ErrOAuthLoginFailed, "Failed to create session.")
 		return

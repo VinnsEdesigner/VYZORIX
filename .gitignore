@@ -87,3 +87,6 @@ apps/api/graphql-schema
 
 # Agent memory / scratch (local only)
 .openhands/
+
+# Local dev runtime: dev database, generated secrets, logs. Never commit.
+.local-dev/

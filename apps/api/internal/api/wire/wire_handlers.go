@@ -21,6 +21,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/command"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/confirmation"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/device"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/notification"
 	orgapplication "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/organization"
 	updatesapplication "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/updates"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
@@ -32,6 +33,7 @@ import (
 	emailService "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/email"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/fcm"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/github"
+	infranotification "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/notification"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/storage"
 	hub "github.com/VinnsEdesigner/vyzorix/apps/api/internal/ws"
@@ -42,7 +44,7 @@ import (
 type HandlerDependencies struct {
 	OAuthStateRepo        authhandlers.OAuthStateProvider
 	FCMNotifier           fcm.Notifier
-	UserRepo          user.Repository
+	UserRepo              user.Repository
 	IPIntelligence        *middleware.IPIntelligence
 	CommandService        *command.Service
 	Hub                   *hub.Hub
@@ -53,6 +55,9 @@ type HandlerDependencies struct {
 	Lockout               *middleware.Lockout
 	DB                    *storage.SQLite
 	AuditLogger           *audit.Logger
+	NotificationAudit     *infranotification.Repository
+	PushRepo              *storage.PushSubscriptionRepository
+	NotificationService   *notification.Service
 	GoogleVerifier        *infraauth.GoogleTokenVerifier
 	DeviceService         *device.Service
 	DeviceRepo            *storage.DeviceRepository
@@ -96,7 +101,7 @@ type HandlerSet struct {
 	Confirmation          *confirmationhandlers.Handler
 	Stream                *websockethandlers.StreamHandler
 	PTYRelay              *hub.PTYRelay
-	UserTerminal      *websockethandlers.UserTerminalHandler
+	UserTerminal          *websockethandlers.UserTerminalHandler
 	RecordingHandler      *websockethandlers.RecordingHandler
 	TelemetryHistory      *handlers.TelemetryHistoryHandler
 	ConnectionStatus      *handlers.ConnectionStatusHandler
@@ -124,20 +129,23 @@ func WireHandlers(deps HandlerDependencies) *HandlerSet {
 
 	// Auth handlers.
 	hs.Auth = authhandlers.NewAllHandlers(&authhandlers.Dependencies{
-		AuthService:     deps.AuthService,
-		SessionManager:  deps.SessionManager,
-		Config:          deps.Config,
-		GoogleVerifier:  deps.GoogleVerifier,
-		ClientService:   deps.ClientService,
-		EmailService:    deps.EmailService,
-		EmailVerifyRepo: deps.EmailVerificationRepo,
-		Lockout:         deps.Lockout,
-		UserRepo:    deps.UserRepo,
-		AuditLogger:     deps.AuditLogger,
-		IPIntelligence:  deps.IPIntelligence,
-		Presenter:       deps.Presenter,
-		OAuthStateRepo:  deps.OAuthStateRepo,
-		OrgThemeSource:  deps.OrgSettingsService,
+		AuthService:         deps.AuthService,
+		SessionManager:      deps.SessionManager,
+		Config:              deps.Config,
+		GoogleVerifier:      deps.GoogleVerifier,
+		ClientService:       deps.ClientService,
+		EmailService:        deps.EmailService,
+		EmailVerifyRepo:     deps.EmailVerificationRepo,
+		Lockout:             deps.Lockout,
+		UserRepo:            deps.UserRepo,
+		AuditLogger:         deps.AuditLogger,
+		NotificationAudit:   deps.NotificationAudit,
+		PushRepo:            deps.PushRepo,
+		NotificationService: deps.NotificationService,
+		IPIntelligence:      deps.IPIntelligence,
+		Presenter:           deps.Presenter,
+		OAuthStateRepo:      deps.OAuthStateRepo,
+		OrgThemeSource:      deps.OrgSettingsService,
 	})
 
 	// Device handlers.

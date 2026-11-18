@@ -123,6 +123,23 @@ func StrictEmailValidator() *EmailValidator {
 	}
 }
 
+// StrictMailboxValidator returns a validator that proves the address is a real,
+// deliverable mailbox without requiring a whitelisted provider.
+//
+// It is used for a user-supplied notification address, where any legitimate
+// domain must be allowed (a work address is not gmail). It rejects disposable
+// domains and verifies the domain actually publishes MX records, so a
+// well-formed but non-existent domain is refused.
+func StrictMailboxValidator() *EmailValidator {
+	return &EmailValidator{
+		AllowDisposable:            false,
+		AllowRoleBased:             true,
+		RequireTrustedProviderOnly: false,
+		VerifyMX:                   true,
+		MXLookupTimeout:            5,
+	}
+}
+
 // EmailError represents a validation error.
 type EmailError struct {
 	Field   string

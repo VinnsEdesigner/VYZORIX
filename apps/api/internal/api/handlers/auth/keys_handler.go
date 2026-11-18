@@ -18,7 +18,7 @@ func keyWithSecret(k *apikeydomain.APIKeyWithFullKey) openapi.APIKeyWithSecret {
 	out := openapi.APIKeyWithSecret{
 		APIKey:       k.FullKey,
 		ID:           k.ID,
-		UserID:   k.UserID,
+		UserID:       k.UserID,
 		Name:         k.Name,
 		KeyPrefix:    k.KeyPrefix,
 		Scope:        string(k.Scope),

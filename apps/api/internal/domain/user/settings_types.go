@@ -68,11 +68,21 @@ type WebhookNotificationInput struct {
 	Types   []string `json:"types,omitempty"`
 }
 
+// SlackNotificationInput is the client-settable part of the Slack channel. The
+// workspace/token come from the OAuth link-up, not from this input.
+type SlackNotificationInput struct {
+	ChannelID   *string `json:"channelId,omitempty"`
+	ChannelName *string `json:"channelName,omitempty"`
+	Connected   *bool   `json:"connected,omitempty"`
+}
+
 // NotificationInput represents notification settings update input from the API.
 type NotificationInput struct {
-	Enabled  *bool                     `json:"enabled,omitempty"`
-	Channels *[]string                 `json:"channels,omitempty"`
-	Email    *EmailNotificationInput   `json:"email,omitempty"`
-	Push     *PushNotificationInput    `json:"push,omitempty"`
-	Webhook  *WebhookNotificationInput `json:"webhook,omitempty"`
+	Enabled      *bool                     `json:"enabled,omitempty"`
+	Channels     *[]string                 `json:"channels,omitempty"`
+	Email        *EmailNotificationInput   `json:"email,omitempty"`
+	Push         *PushNotificationInput    `json:"push,omitempty"`
+	Webhook      *WebhookNotificationInput `json:"webhook,omitempty"`
+	Slack        *SlackNotificationInput   `json:"slack,omitempty"`
+	EmailAddress *string                   `json:"emailAddress,omitempty"`
 }

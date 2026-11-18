@@ -101,6 +101,49 @@ func (h *SettingsHandler) GetSettings(c *gin.Context) {
 	h.presenter.OK(c, settings)
 }
 
+// GetPreferences handles GET /v1/organizations/:id/preferences.
+// @Summary      Get organization preference defaults
+// @Description  Returns the organisation's inheritable preference defaults. Readable by any member (they inherit these), unlike the full settings which are admin-only.
+// @Tags         organizations
+// @Accept       json
+// @Produce      json
+// @Param        X-Organization-ID  header  string  true  "Organization ID"
+// @Param        id  path  string  true  "organization ID"
+// @Success      200  {object}  openapi.OrganizationSettingsResult  "organization preference defaults"
+// @Failure      400  {object}  openapi.ErrorResponse  "org id required"
+// @Failure      401  {object}  openapi.ErrorResponse  "authentication required"
+// @Failure      403  {object}  openapi.ErrorResponse  "not a member"
+// @Failure      500  {object}  openapi.ErrorResponse  "internal error"
+// @Router       /organizations/{id}/preferences [get]
+func (h *SettingsHandler) GetPreferences(c *gin.Context) {
+	op := middleware.GetUserFromContext(c)
+	if op == nil {
+		h.presenter.Unauthorized(c, "authentication required")
+		return
+	}
+
+	orgID := c.Param("id")
+	if orgID == "" {
+		h.presenter.BadRequest(c, "organization id is required")
+		return
+	}
+
+	// Read is wider than write: any member may read the defaults they inherit,
+	// but only an admin may change them.
+	if err := h.memberService.CheckMembership(c.Request.Context(), op.ID, orgID); err != nil {
+		h.presenter.Forbidden(c, "not a member of this organization")
+		return
+	}
+
+	settings, err := h.settingsService.GetOrCreateSettings(c.Request.Context(), orgID)
+	if err != nil {
+		h.presenter.InternalError(c, "failed to get preferences")
+		return
+	}
+
+	h.presenter.OK(c, settings)
+}
+
 // UpdateSettings handles PATCH /v1/organizations/:id/settings.
 // @Summary      Update organization settings
 // @Description  Updates organization-level settings
@@ -154,6 +197,10 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 		}
 		if errors.Is(err, organization.ErrInvalidTheme) {
 			h.presenter.BadRequest(c, "invalid theme")
+			return
+		}
+		if errors.Is(err, organization.ErrInvalidWeekStart) {
+			h.presenter.BadRequest(c, "invalid week start")
 			return
 		}
 		h.presenter.InternalError(c, "failed to update settings")

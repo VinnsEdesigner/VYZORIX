@@ -19,6 +19,9 @@ type OAuthState struct {
 	State       string
 	RedirectURL string
 	Provider    string
+	// UserID is set for a link-up started from an authenticated session (Slack
+	// connect). Empty for a login flow.
+	UserID string
 }
 
 // Ensure OAuthStateRepositoryImpl implements OAuthStateRepository interface.
@@ -27,7 +30,9 @@ var _ OAuthStateRepository = (*OAuthStateRepositoryImpl)(nil)
 // OAuthStateRepository is the interface for OAuth state operations.
 type OAuthStateRepository interface {
 	Create(ctx context.Context, state, redirectURL, provider string) (string, error)
+	CreateForUser(ctx context.Context, state, redirectURL, provider, userID string) (string, error)
 	Validate(ctx context.Context, state string) (redirectURL string, stateID string, err error)
+	ValidateWithUser(ctx context.Context, state string) (redirectURL string, stateID string, userID string, err error)
 	Delete(ctx context.Context, id string) error
 	DeleteExpired(ctx context.Context) error
 }
@@ -52,7 +57,17 @@ func NewOAuthStateRepository(db *sql.DB, encKey string) (OAuthStateRepository, e
 }
 
 // Create stores a new OAuth state.
+// CreateForUser is Create with an owning user id, for a link-up started from an
+// authenticated session.
+func (r *OAuthStateRepositoryImpl) CreateForUser(ctx context.Context, state, redirectURL, provider, userID string) (string, error) {
+	return r.create(ctx, state, redirectURL, provider, userID)
+}
+
 func (r *OAuthStateRepositoryImpl) Create(ctx context.Context, state, redirectURL, provider string) (string, error) {
+	return r.create(ctx, state, redirectURL, provider, "")
+}
+
+func (r *OAuthStateRepositoryImpl) create(ctx context.Context, state, redirectURL, provider, userID string) (string, error) {
 	// Encrypt the state for storage.
 	encryptedState, err := r.encrypt(state)
 	if err != nil {
@@ -70,9 +85,9 @@ func (r *OAuthStateRepositoryImpl) Create(ctx context.Context, state, redirectUR
 	id := hex.EncodeToString(idBytes)
 
 	_, err = r.db.ExecContext(ctx, `
-		INSERT INTO oauth_states (id, state, redirect_url, provider, expires_at, created_at)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`, id, encryptedState, redirectURL, provider, expiresAt.UnixMilli(), now.UnixMilli())
+		INSERT INTO oauth_states (id, state, redirect_url, provider, expires_at, created_at, user_id)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, id, encryptedState, redirectURL, provider, expiresAt.UnixMilli(), now.UnixMilli(), nullString(userID))
 	if err != nil {
 		return "", err
 	}
@@ -85,12 +100,13 @@ func (r *OAuthStateRepositoryImpl) GetByState(ctx context.Context, state string)
 	var oauth OAuthState
 	var encryptedState string
 	var expiresAtMillis, createdAtMillis int64
+	var userID sql.NullString
 
 	err := r.db.QueryRowContext(ctx, `
-		SELECT id, state, redirect_url, provider, expires_at, created_at
+		SELECT id, state, redirect_url, provider, expires_at, created_at, user_id
 		FROM oauth_states
 		WHERE expires_at > ?
-	`, time.Now().UnixMilli()).Scan(&oauth.ID, &encryptedState, &oauth.RedirectURL, &oauth.Provider, &expiresAtMillis, &createdAtMillis)
+	`, time.Now().UnixMilli()).Scan(&oauth.ID, &encryptedState, &oauth.RedirectURL, &oauth.Provider, &expiresAtMillis, &createdAtMillis, &userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("oauth state not found or expired")
@@ -100,6 +116,7 @@ func (r *OAuthStateRepositoryImpl) GetByState(ctx context.Context, state string)
 
 	oauth.ExpiresAt = time.UnixMilli(expiresAtMillis)
 	oauth.CreatedAt = time.UnixMilli(createdAtMillis)
+	oauth.UserID = userID.String
 
 	// Decrypt the state.
 	decryptedState, err := r.decrypt(encryptedState)
@@ -114,6 +131,16 @@ func (r *OAuthStateRepositoryImpl) GetByState(ctx context.Context, state string)
 
 	oauth.State = decryptedState
 	return &oauth, nil
+}
+
+// ValidateWithUser is Validate that also returns the owning user id (empty for a
+// login flow).
+func (r *OAuthStateRepositoryImpl) ValidateWithUser(ctx context.Context, state string) (redirectURL string, stateID string, userID string, err error) {
+	oauth, err := r.GetByState(ctx, state)
+	if err != nil {
+		return "", "", "", err
+	}
+	return oauth.RedirectURL, oauth.ID, oauth.UserID, nil
 }
 
 // Validate retrieves and validates an OAuth state for the OAuth handler.

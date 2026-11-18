@@ -85,6 +85,11 @@ function documentHeaders() {
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'X-Frame-Options': 'DENY',
+    // The HTML shell names the hashed asset files, so a cached copy keeps
+    // pointing at a previous build after a redeploy and the browser silently runs
+    // stale JavaScript. `no-store` forces a fresh fetch of the shell each time;
+    // the assets themselves are content-hashed and can be cached forever.
+    'Cache-Control': 'no-store, must-revalidate',
   };
 }
 

@@ -114,13 +114,85 @@ package vyzorix
         enabled: bool
 }
 
+// SlackNotifications is the result of the Slack OAuth link-up. The bot token is
+// never serialised to a client.
+#SlackNotifications: {
+        connected: bool
+        teamId?: string
+        teamName?: string
+        slackUserId?: string
+        channelId?: string
+        channelName?: string
+}
+
 // NotificationSettings.
 #NotificationSettings: {
         channels: [...string]
         webhook: #WebhookNotifications
         email: #EmailNotifications
         push: #PushNotifications
+        slack: #SlackNotifications
         enabled: bool
+        emailAddress?: string
+}
+
+// SlackChannel is a channel the linked bot can post to.
+#SlackChannel: {
+        id: string
+        name: string
+}
+
+// SlackChannelsResult.
+#SlackChannelsResult: {
+        channels: [...#SlackChannel]
+}
+
+// NotificationHistoryEntry is one delivered (or failed) notification.
+#NotificationHistoryEntry: {
+        id: string
+        eventType: string
+        channel: string
+        deviceId?: string
+        errorMsg?: string
+        sentAt: int64
+        success: bool
+}
+
+// NotificationHistoryResult.
+#NotificationHistoryResult: {
+        entries: [...#NotificationHistoryEntry]
+        total: int
+        unread: int
+        limit: int
+        offset: int
+}
+
+// MarkNotificationsReadResult.
+#MarkNotificationsReadResult: {
+        unread: int
+}
+
+// PushSubscriptionRequest is the browser's PushSubscription.toJSON().
+#PushSubscriptionRequest: {
+        endpoint: string
+        keys: #PushSubscriptionKeys
+}
+
+// PushSubscriptionKeys.
+#PushSubscriptionKeys: {
+        p256dh: string
+        auth: string
+}
+
+// PushPublicKeyResult carries the VAPID public key the browser needs to subscribe.
+#PushPublicKeyResult: {
+        publicKey: string
+        enabled: bool
+}
+
+// PushTestResult reports how many browser subscriptions a test push reached.
+#PushTestResult: {
+        delivered: int
 }
 
 // ClientSettings.
@@ -151,6 +223,10 @@ package vyzorix
 #PreferencesResult: {
         preferences: {[string]: _}
         theme: string
+        // The effective value of every inheritable preference (user > org >
+        // system default), so a client applies the cascade without reading the
+        // organisation's settings, which a non-admin cannot.
+        resolved?: {[string]: string}
 }
 
 // WebhookTestResult.

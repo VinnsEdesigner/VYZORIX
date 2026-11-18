@@ -2,9 +2,9 @@ package user
 
 // AuthResponse is returned on successful login or registration.
 type AuthResponse struct {
-	Token     string           `json:"token"`
-	User  UserResponse `json:"user"`
-	ExpiresAt int64            `json:"expiresAt"`
+	Token     string       `json:"token"`
+	User      UserResponse `json:"user"`
+	ExpiresAt int64        `json:"expiresAt"`
 }
 
 // UserResponse is the safe JSON representation returned to clients.

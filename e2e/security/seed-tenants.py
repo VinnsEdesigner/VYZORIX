@@ -31,7 +31,7 @@ def signing_secret(full_key: str) -> str:
 
 
 TENANTS = [
-    # (label, operator_id, org_id, member_id, api_key)
+    # (label, user_id, org_id, member_id, api_key)
     ("A", "op-aaaa-1111", "org-aaaa-1111", "mem-aaaa-1111", "vxyz_tenantA_1234567890"),
     ("B", "op-bbbb-2222", "org-bbbb-2222", "mem-bbbb-2222", "vxyz_tenantB_1234567890"),
 ]
@@ -39,28 +39,28 @@ TENANTS = [
 conn = sqlite3.connect(DB)
 c = conn.cursor()
 
-for label, op, org, mem, key in TENANTS:
+for label, user_id, org, mem, key in TENANTS:
     c.execute(
-        "INSERT OR REPLACE INTO operators (id, email, name, role, email_verified, created_at, updated_at) "
+        "INSERT OR REPLACE INTO users (id, email, name, role, email_verified, created_at, updated_at) "
         "VALUES (?,?,?,?,?,?,?)",
-        (op, f"operator-{label.lower()}@example.test", f"Operator {label}", "admin", 1, NOW, NOW),
+        (user_id, f"user-{label.lower()}@example.test", f"User {label}", "admin", 1, NOW, NOW),
     )
     c.execute(
         "INSERT OR REPLACE INTO organizations (id, name, created_by, created_at, updated_at, is_active, max_members) "
         "VALUES (?,?,?,?,?,?,?)",
-        (org, f"Org {label}", op, NOW, NOW, 1, 50),
+        (org, f"Org {label}", user_id, NOW, NOW, 1, 50),
     )
     c.execute(
-        "INSERT OR REPLACE INTO organization_members (id, organization_id, operator_id, role, joined_at, status) "
+        "INSERT OR REPLACE INTO organization_members (id, organization_id, user_id, role, joined_at, status) "
         "VALUES (?,?,?,?,?,?)",
-        (mem, org, op, "admin", NOW, "active"),
+        (mem, org, user_id, "admin", NOW, "active"),
     )
     c.execute(
         "INSERT OR REPLACE INTO api_keys "
-        "(id, operator_id, name, key_prefix, key_hash, signing_secret, scope, is_active, "
+        "(id, user_id, name, key_prefix, key_hash, signing_secret, scope, is_active, "
         " request_count, created_at, updated_at, organization_id) "
         "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-        (f"key-{label.lower()}", op, f"key {label}", key[:8], key_hash(key),
+        (f"key-{label.lower()}", user_id, f"key {label}", key[:8], key_hash(key),
          signing_secret(key), "admin", 1, 0, NOW, NOW, org),
     )
     print(f"seeded tenant {label}: org={org} key={key}")

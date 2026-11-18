@@ -1869,14 +1869,25 @@ definitions:
       token:
         type: string
     type: object
+  openapi.MarkNotificationsReadResult:
+    properties:
+      unread:
+        type: integer
+    type: object
   openapi.MeResult:
     properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: integer
       email:
         type: string
       email_verified:
         type: boolean
       id:
         type: string
+      last_login_at:
+        type: integer
       last_organization_id:
         type: string
       mfa_enabled:
@@ -1917,6 +1928,38 @@ definitions:
       min:
         type: number
     type: object
+  openapi.NotificationHistoryEntry:
+    properties:
+      channel:
+        type: string
+      deviceId:
+        type: string
+      errorMsg:
+        type: string
+      eventType:
+        type: string
+      id:
+        type: string
+      sentAt:
+        type: integer
+      success:
+        type: boolean
+    type: object
+  openapi.NotificationHistoryResult:
+    properties:
+      entries:
+        items:
+          $ref: '#/definitions/openapi.NotificationHistoryEntry'
+        type: array
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+      unread:
+        type: integer
+    type: object
   openapi.NotificationSettings:
     properties:
       channels:
@@ -1925,10 +1968,14 @@ definitions:
         type: array
       email:
         $ref: '#/definitions/openapi.EmailNotifications'
+      emailAddress:
+        type: string
       enabled:
         type: boolean
       push:
         $ref: '#/definitions/openapi.PushNotifications'
+      slack:
+        $ref: '#/definitions/openapi.SlackNotifications'
       webhook:
         $ref: '#/definitions/openapi.WebhookNotifications'
     type: object
@@ -1940,10 +1987,14 @@ definitions:
         type: array
       email:
         $ref: '#/definitions/openapi.EmailNotifications'
+      emailAddress:
+        type: string
       enabled:
         type: boolean
       push:
         $ref: '#/definitions/openapi.PushNotifications'
+      slack:
+        $ref: '#/definitions/openapi.SlackNotificationInput'
       webhook:
         $ref: '#/definitions/openapi.WebhookNotifications'
     type: object
@@ -2034,6 +2085,8 @@ definitions:
         type: string
       updatedAt:
         type: string
+      weekStart:
+        type: string
     type: object
   openapi.Pagination:
     properties:
@@ -2060,8 +2113,30 @@ definitions:
       preferences:
         additionalProperties: {}
         type: object
+      resolved:
+        additionalProperties:
+          type: string
+        type: object
       theme:
         type: string
+    type: object
+  openapi.ProfileActionResult:
+    properties:
+      avatar_url:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  openapi.ProfileSummaryResult:
+    properties:
+      actions:
+        type: integer
+      active_sessions:
+        type: integer
     type: object
   openapi.PushNotifications:
     properties:
@@ -2077,6 +2152,32 @@ definitions:
         type: boolean
       updateAvailable:
         type: boolean
+    type: object
+  openapi.PushPublicKeyResult:
+    properties:
+      enabled:
+        type: boolean
+      publicKey:
+        type: string
+    type: object
+  openapi.PushSubscriptionKeys:
+    properties:
+      auth:
+        type: string
+      p256dh:
+        type: string
+    type: object
+  openapi.PushSubscriptionRequest:
+    properties:
+      endpoint:
+        type: string
+      keys:
+        $ref: '#/definitions/openapi.PushSubscriptionKeys'
+    type: object
+  openapi.PushTestResult:
+    properties:
+      delivered:
+        type: integer
     type: object
   openapi.RefreshTokenRequest:
     properties:
@@ -2269,6 +2370,44 @@ definitions:
       preferences:
         additionalProperties: {}
         type: object
+    type: object
+  openapi.SlackChannel:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  openapi.SlackChannelsResult:
+    properties:
+      channels:
+        items:
+          $ref: '#/definitions/openapi.SlackChannel'
+        type: array
+    type: object
+  openapi.SlackNotificationInput:
+    properties:
+      channelId:
+        type: string
+      channelName:
+        type: string
+      connected:
+        type: boolean
+    type: object
+  openapi.SlackNotifications:
+    properties:
+      channelId:
+        type: string
+      channelName:
+        type: string
+      connected:
+        type: boolean
+      slackUserId:
+        type: string
+      teamId:
+        type: string
+      teamName:
+        type: string
     type: object
   openapi.SuccessResult:
     properties:
@@ -2597,6 +2736,8 @@ definitions:
     type: object
   openapi.UpdateNameRequest:
     properties:
+      avatar_url:
+        type: string
       name:
         type: string
     type: object
@@ -2620,6 +2761,8 @@ definitions:
       theme:
         type: string
       timezone:
+        type: string
+      weekStart:
         type: string
     type: object
   openapi.UpdatePushDetailDevice:
@@ -2946,6 +3089,8 @@ definitions:
     type: object
   openapi.UserSettingsResultLegacy:
     properties:
+      avatar_url:
+        type: string
       client:
         $ref: '#/definitions/openapi.ClientSettings'
       email:
@@ -4803,6 +4948,241 @@ paths:
       summary: Update user name
       tags:
       - settings
+  /auth/me/avatar:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Stores an uploaded profile image and points the user's avatar at
+        it
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: updated profile
+          schema:
+            $ref: '#/definitions/openapi.ProfileActionResult'
+        "400":
+          description: invalid image
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "500":
+          description: storage error
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Upload avatar
+      tags:
+      - auth
+  /auth/me/notifications/history:
+    get:
+      description: Returns the current user's delivered and failed notifications,
+        newest first
+      parameters:
+      - description: filter by channel (email, slack, webhook)
+        in: query
+        name: channel
+        type: string
+      - description: filter by outcome (sent, failed)
+        in: query
+        name: status
+        type: string
+      - description: page size (max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: page offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: history
+          schema:
+            $ref: '#/definitions/openapi.NotificationHistoryResult'
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: List notification history
+      tags:
+      - notifications
+  /auth/me/notifications/history/read:
+    post:
+      description: Stamps the read watermark so the unread count returns to zero
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: unread count
+          schema:
+            $ref: '#/definitions/openapi.MarkNotificationsReadResult'
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Mark notifications read
+      tags:
+      - notifications
+  /auth/me/notifications/push/public-key:
+    get:
+      description: Returns the VAPID public key the browser needs to subscribe, or
+        enabled=false when push is not configured
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: public key
+          schema:
+            $ref: '#/definitions/openapi.PushPublicKeyResult'
+      summary: Get the Web Push public key
+      tags:
+      - notifications
+  /auth/me/notifications/push/subscribe:
+    post:
+      consumes:
+      - application/json
+      description: Stores the browser's PushSubscription so notifications can be delivered
+        to it
+      parameters:
+      - description: push subscription
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/openapi.PushSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: subscribed
+          schema:
+            $ref: '#/definitions/openapi.SuccessResult'
+        "400":
+          description: invalid subscription
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Register a browser push subscription
+      tags:
+      - notifications
+  /auth/me/notifications/push/test:
+    post:
+      description: Delivers a test notification to every browser the user has subscribed
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: delivery count
+          schema:
+            $ref: '#/definitions/openapi.PushTestResult'
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Send a test push notification
+      tags:
+      - notifications
+  /auth/me/notifications/push/unsubscribe:
+    post:
+      consumes:
+      - application/json
+      description: Deletes a stored PushSubscription (the user disabling this browser)
+      parameters:
+      - description: push subscription
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/openapi.PushSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: unsubscribed
+          schema:
+            $ref: '#/definitions/openapi.SuccessResult'
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Remove a browser push subscription
+      tags:
+      - notifications
+  /auth/me/notifications/slack/callback:
+    get:
+      description: Exchanges the code and stores the linked Slack workspace, then
+        redirects back to the console
+      responses:
+        "307":
+          description: redirect back to the console
+          schema:
+            type: string
+      summary: Slack OAuth callback
+      tags:
+      - notifications
+  /auth/me/notifications/slack/channels:
+    get:
+      description: Returns the channels the linked Slack bot can post to
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: channels
+          schema:
+            $ref: '#/definitions/openapi.SlackChannelsResult'
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: List Slack channels
+      tags:
+      - notifications
+  /auth/me/notifications/slack/connect:
+    get:
+      description: Redirects to Slack so the user can authorise Vyzorix
+      responses:
+        "307":
+          description: redirect to Slack
+          schema:
+            type: string
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "501":
+          description: Slack not configured
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Connect Slack
+      tags:
+      - notifications
+  /auth/me/profile-summary:
+    get:
+      consumes:
+      - application/json
+      description: 'Counts for the profile page: active sessions and audited actions'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: counts
+          schema:
+            $ref: '#/definitions/openapi.ProfileSummaryResult'
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Profile summary
+      tags:
+      - auth
   /auth/mfa/disable:
     post:
       consumes:
@@ -9700,6 +10080,49 @@ paths:
       summary: Transfer ownership
       tags:
       - members
+  /organizations/{id}/preferences:
+    get:
+      consumes:
+      - application/json
+      description: Returns the organisation's inheritable preference defaults. Readable
+        by any member (they inherit these), unlike the full settings which are admin-only.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: organization ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: organization preference defaults
+          schema:
+            $ref: '#/definitions/openapi.OrganizationSettingsResult'
+        "400":
+          description: org id required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: not a member
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "500":
+          description: internal error
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Get organization preference defaults
+      tags:
+      - organizations
   /organizations/{id}/settings:
     get:
       consumes:

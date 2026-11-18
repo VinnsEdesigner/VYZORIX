@@ -9,10 +9,13 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/auth"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/client"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/notification"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/push"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/config"
 	emailService "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/email"
+	infranotification "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/notification"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security/ratelimit"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/storage"
@@ -31,6 +34,9 @@ type Dependencies struct {
 	EmailVerifyRepo     *storage.EmailVerificationRepository
 	SessionManager      *infraauth.SessionManager
 	AuditLogger         *audit.Logger
+	NotificationAudit   *infranotification.Repository
+	PushRepo            push.Repository
+	NotificationService *notification.Service
 	IPIntelligence      *middleware.IPIntelligence
 	Presenter           *response.Presenter
 	SettingsRateLimiter *middleware.SettingsRateLimiterMiddleware
@@ -43,22 +49,25 @@ type Dependencies struct {
 
 // AllHandlers holds references to all auth handlers.
 type AllHandlers struct {
-	AuthService   *auth.AuthService
-	Login         *LoginHandler
-	Register      *RegisterHandler
-	Logout        *LogoutHandler
-	Me            *MeHandler
-	EmailVerify   *EmailVerifyHandler
-	PasswordReset *PasswordResetHandler
-	Refresh       *RefreshHandler
-	MFA           *MFAHandler
-	OAuth         *OAuthHandler
-	Settings      *SettingsHandler
-	Admin         *AdminHandler
-	ClientCreds   *ClientCredentialsHandler
-	Lockout       *LockoutHandler
-	Sessions      *SessionsHandler
-	Organization  *OrganizationHandler
+	AuthService         *auth.AuthService
+	Login               *LoginHandler
+	Register            *RegisterHandler
+	Logout              *LogoutHandler
+	Me                  *MeHandler
+	EmailVerify         *EmailVerifyHandler
+	PasswordReset       *PasswordResetHandler
+	Refresh             *RefreshHandler
+	MFA                 *MFAHandler
+	OAuth               *OAuthHandler
+	Settings            *SettingsHandler
+	Admin               *AdminHandler
+	ClientCreds         *ClientCredentialsHandler
+	Lockout             *LockoutHandler
+	Sessions            *SessionsHandler
+	Organization        *OrganizationHandler
+	Profile             *ProfileHandler
+	NotificationHistory *NotificationHistoryHandler
+	Push                *PushHandler
 }
 
 // NewAllHandlers creates all auth handlers with proper dependencies.
@@ -70,22 +79,25 @@ func NewAllHandlers(deps *Dependencies) *AllHandlers {
 	}
 
 	return &AllHandlers{
-		AuthService:   deps.AuthService,
-		Login:         NewLoginHandler(deps.AuthService, deps.Presenter, deps.EmailService),
-		Register:      NewRegisterHandler(deps.AuthService, deps.EmailService, deps.EmailVerifyRepo, deps.Presenter, nil),
-		Logout:        NewLogoutHandler(deps.AuthService, deps.Presenter),
-		Me:            NewMeHandler(deps.AuthService, deps.Presenter),
-		EmailVerify:   NewEmailVerifyHandler(deps.AuthService, deps.EmailService, deps.Presenter),
-		PasswordReset: NewPasswordResetHandler(deps.AuthService, deps.EmailService, deps.Presenter),
-		Refresh:       NewRefreshHandler(deps.AuthService, deps.Presenter),
-		MFA:           NewMFAHandler(deps.AuthService, deps.UserRepo, deps.Presenter),
-		OAuth:         NewOAuthHandler(deps.AuthService, deps.SessionManager, deps.Config, deps.GoogleVerifier, deps.Presenter).WithOAuthStateRepo(deps.OAuthStateRepo),
-		Settings:      NewSettingsHandler(deps.AuthService, deps.UserRepo, deps.OrgThemeSource, deps.Presenter, settingsRateLimiter),
-		Admin:         NewAdminHandler(deps.AuthService, deps.Presenter),
-		ClientCreds:   NewClientCredentialsHandler(deps.AuthService, deps.ClientService, deps.Presenter),
-		Lockout:       NewLockoutHandler(deps.AuthService, deps.Lockout, deps.Presenter),
-		Sessions:      NewSessionsHandler(deps.AuthService, deps.SessionManager, deps.Presenter),
-		Organization:  NewOrganizationHandler(deps.AuthService, deps.Presenter),
+		AuthService:         deps.AuthService,
+		Login:               NewLoginHandler(deps.AuthService, deps.Presenter, deps.EmailService),
+		Register:            NewRegisterHandler(deps.AuthService, deps.EmailService, deps.EmailVerifyRepo, deps.Presenter, nil),
+		Logout:              NewLogoutHandler(deps.AuthService, deps.Presenter),
+		Me:                  NewMeHandler(deps.AuthService, deps.UserRepo, deps.Presenter),
+		EmailVerify:         NewEmailVerifyHandler(deps.AuthService, deps.EmailService, deps.Presenter),
+		PasswordReset:       NewPasswordResetHandler(deps.AuthService, deps.EmailService, deps.Presenter),
+		Refresh:             NewRefreshHandler(deps.AuthService, deps.Presenter),
+		MFA:                 NewMFAHandler(deps.AuthService, deps.UserRepo, deps.Presenter),
+		OAuth:               NewOAuthHandler(deps.AuthService, deps.SessionManager, deps.Config, deps.GoogleVerifier, deps.Presenter).WithOAuthStateRepo(deps.OAuthStateRepo).WithSettingsService(auth.NewClientSettingsService(deps.UserRepo, deps.OrgThemeSource)),
+		Settings:            NewSettingsHandler(deps.AuthService, deps.UserRepo, deps.OrgThemeSource, deps.Presenter, settingsRateLimiter),
+		Admin:               NewAdminHandler(deps.AuthService, deps.Presenter),
+		ClientCreds:         NewClientCredentialsHandler(deps.AuthService, deps.ClientService, deps.Presenter),
+		Lockout:             NewLockoutHandler(deps.AuthService, deps.Lockout, deps.Presenter),
+		Sessions:            NewSessionsHandler(deps.AuthService, deps.SessionManager, deps.Presenter),
+		Organization:        NewOrganizationHandler(deps.AuthService, deps.Presenter),
+		Profile:             NewProfileHandler(deps.AuthService, deps.SessionManager, deps.UserRepo, deps.AuditLogger, deps.Presenter, deps.Config),
+		NotificationHistory: NewNotificationHistoryHandler(deps.NotificationAudit, deps.UserRepo, deps.Presenter),
+		Push:                NewPushHandler(deps.PushRepo, deps.NotificationService, deps.Config.VAPIDPublicKey, deps.Presenter),
 	}
 }
 
@@ -144,6 +156,9 @@ func (h *AllHandlers) RegisterRoutes(rg *gin.RouterGroup, cookieAuth *middleware
 	rg.GET("/google/callback", h.OAuth.GoogleCallback)
 	rg.GET("/github", h.OAuth.GitHubLogin)
 	rg.GET("/github/callback", h.OAuth.GitHubCallback)
+	// Slack link-up callback. Public (no session cookie): Slack redirects the
+	// browser here, and the user is identified by the OAuth state, not the cookie.
+	rg.GET("/me/notifications/slack/callback", h.OAuth.SlackCallback)
 
 	// Authenticated endpoints (require session cookie).
 	authenticated := rg.Group("")
@@ -152,6 +167,8 @@ func (h *AllHandlers) RegisterRoutes(rg *gin.RouterGroup, cookieAuth *middleware
 	{
 		authenticated.GET("/me", h.Me.Handle)
 		authenticated.PATCH("/me", h.Settings.UpdateName)
+		authenticated.GET("/me/profile-summary", h.Profile.Summary)
+		authenticated.POST("/me/avatar", h.Profile.UploadAvatar)
 		authenticated.GET("/me/settings", h.Settings.GetSettings)
 		authenticated.PATCH("/me/settings", h.Settings.UpdateSettings)
 		authenticated.GET("/me/thresholds", h.Settings.GetThresholds)
@@ -160,6 +177,14 @@ func (h *AllHandlers) RegisterRoutes(rg *gin.RouterGroup, cookieAuth *middleware
 		authenticated.PATCH("/me/notifications", h.Settings.UpdateNotifications)
 		authenticated.POST("/me/notifications/webhook/test", h.Settings.TestWebhook)
 		authenticated.POST("/me/notifications/webhook/rotate", h.Settings.RotateWebhookSecret)
+		authenticated.GET("/me/notifications/slack/connect", h.OAuth.SlackConnect)
+		authenticated.GET("/me/notifications/slack/channels", h.OAuth.SlackChannels)
+		authenticated.GET("/me/notifications/history", h.NotificationHistory.List)
+		authenticated.POST("/me/notifications/history/read", h.NotificationHistory.MarkRead)
+		authenticated.GET("/me/notifications/push/public-key", h.Push.PublicKey)
+		authenticated.POST("/me/notifications/push/subscribe", h.Push.Subscribe)
+		authenticated.POST("/me/notifications/push/test", h.Push.Test)
+		authenticated.POST("/me/notifications/push/unsubscribe", h.Push.Unsubscribe)
 		authenticated.POST("/logout", h.Logout.Handle)
 		authenticated.GET("/lockout/status", h.Lockout.GetLockoutStatus)
 

@@ -174,6 +174,29 @@ func (r *SessionRepository) Create(ctx context.Context, s *session.Session) erro
 	return err
 }
 
+// UpdateSessionMeta sets the client IP address and user agent on a session.
+// It is used to backfill sessions created before those fields were captured.
+func (r *SessionRepository) UpdateSessionMeta(ctx context.Context, id, ipAddress, userAgent string) error {
+        result, err := r.db.ExecContext(ctx,
+                "UPDATE auth_sessions SET ip_address = ?, user_agent = ? WHERE id = ?",
+                nullString(ipAddress), nullString(userAgent), id,
+        )
+        if err != nil {
+                return err
+        }
+
+        rows, err := result.RowsAffected()
+        if err != nil {
+                return err
+        }
+
+        if rows == 0 {
+                return session.ErrNotFound
+        }
+
+        return nil
+}
+
 // Delete deletes a session.
 func (r *SessionRepository) Delete(ctx context.Context, id string) error {
 	result, err := r.db.ExecContext(ctx, "DELETE FROM auth_sessions WHERE id = ?", id)

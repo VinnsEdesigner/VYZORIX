@@ -596,6 +596,17 @@ var migrations = []Migration{
 	// organization_settings table already exists on deployed databases, so the
 	// CREATE TABLE in 041 is a no-op there and cannot add a column.
 	{Apply: migrateAddOrgSettingsTheme, Name: "add_org_settings_theme", Version: 87},
+	// The user's avatar image URL. Separate migration for the same reason as 087:
+	// the users table already exists on deployed databases.
+	{Apply: migrateAddUserAvatarURL, Name: "add_user_avatar_url", Version: 88},
+	// The organisation's default week start. Separate migration for the same
+	// reason as 087/088: the table already exists on deployed databases.
+	{Apply: migrateAddOrgSettingsWeekStart, Name: "add_org_settings_week_start", Version: 89},
+	// The timestamp of the user's most recent login, for the profile page.
+	{Apply: migrateAddUserLastLogin, Name: "add_user_last_login", Version: 90},
+	{Apply: migrateSlackNotifications, Name: "add_slack_notifications", Version: 91},
+	{Apply: migrateNotificationsReadAt, Name: "add_notifications_read_at", Version: 94},
+	{Apply: migratePushSubscriptions, Name: "create_push_subscriptions", Version: 95},
 }
 
 // runMigrations applies all pending migrations.

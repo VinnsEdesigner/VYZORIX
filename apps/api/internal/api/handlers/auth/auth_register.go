@@ -159,7 +159,7 @@ func (h *RegisterHandler) sendVerificationEmail(ctx context.Context, email, name
 		}
 		h.log.Error("failed to send verification email",
 			"email", redaction.DefaultRedactor.Redact(email),
-			"operatorID", userID,
+			"userID", userID,
 			"error", redaction.DefaultRedactor.Redact(err.Error()),
 		)
 		return err

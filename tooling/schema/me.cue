@@ -19,11 +19,30 @@ package vyzorix
         id: string
         email: string
         name: string
+        avatar_url?: string
         last_organization_id?: string
         organizations: [...#OrganizationInfo]
         mfa_enabled: bool
         email_verified: bool
         needs_organization: bool
+        // When the account was created (Unix millis) — the profile's "joined".
+        created_at: int64
+        // The most recent login (Unix millis). 0 when none recorded.
+        last_login_at: int64
+}
+
+// ProfileActionResult — the outcome of a profile mutation (name/avatar).
+#ProfileActionResult: {
+        id: string
+        name: string
+        avatar_url?: string
+        email: string
+}
+
+// ProfileSummaryResult — the counts shown on the profile page.
+#ProfileSummaryResult: {
+        active_sessions: int
+        actions: int
 }
 
 // TimelineEventResult — matches the runtime diagnostics EventDTO wire shape.

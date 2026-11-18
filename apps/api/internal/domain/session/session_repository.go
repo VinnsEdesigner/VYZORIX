@@ -19,6 +19,11 @@ type Repository interface {
 	// Create creates a new session.
 	Create(ctx context.Context, s *Session) error
 
+	// UpdateSessionMeta sets the client IP address and user agent on a session.
+	// Used to backfill a session created before those fields were captured, so the
+	// profile page has something to show without a fresh login.
+	UpdateSessionMeta(ctx context.Context, id, ipAddress, userAgent string) error
+
 	// Delete deletes a session.
 	Delete(ctx context.Context, id string) error
 

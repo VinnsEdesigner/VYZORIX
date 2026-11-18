@@ -120,6 +120,10 @@ func (s *Server) setupGlobalMiddleware() {
 
 func (s *Server) setupStaticRoutes() {
 	s.engine.Static("/assets", filepath.Join(s.config.PublicDir, "assets"))
+	// Uploaded profile avatars. Public (an <img> carries no auth header) and
+	// served straight from disk; the random filename is the only thing standing
+	// between a URL and the image, so the directory holds nothing sensitive.
+	s.engine.Static("/avatars", filepath.Join(s.config.PublicDir, "avatars"))
 
 	// /health - public, simple health check with JSON response.
 	s.engine.GET("/health", func(c *gin.Context) {
@@ -1005,6 +1009,10 @@ func (s *Server) setupOrganizationRoutes(r *gin.RouterGroup) {
 		// Organization settings routes.
 		if s.organizationSettingsHandler != nil {
 			orgScoped.GET("/:id/settings", s.requireScope(permission.ActionSettingsRead, permission.WildcardScope(permission.ScopeOrg)), s.organizationSettingsHandler.GetSettings)
+			// The inheritable preference defaults, readable by any member (settings.read is
+			// granted to viewer and up) so a non-admin can inherit them. The full settings
+			// above stay admin-only.
+			orgScoped.GET("/:id/preferences", s.requireScope(permission.ActionSettingsRead, permission.WildcardScope(permission.ScopeOrg)), s.organizationSettingsHandler.GetPreferences)
 			orgScoped.PATCH("/:id/settings", s.requireScope(permission.ActionSettingsWrite, permission.WildcardScope(permission.ScopeOrg)), s.organizationSettingsHandler.UpdateSettings)
 			orgScoped.GET("/:id/settings/thresholds", s.requireScope(permission.ActionSettingsRead, permission.WildcardScope(permission.ScopeOrg)), s.organizationSettingsHandler.GetThresholds)
 			orgScoped.PATCH("/:id/settings/thresholds", s.requireScope(permission.ActionSettingsWrite, permission.WildcardScope(permission.ScopeOrg)), s.organizationSettingsHandler.UpdateThresholds)

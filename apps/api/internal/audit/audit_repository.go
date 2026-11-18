@@ -133,7 +133,7 @@ func (r *Repository) Log(ctx context.Context, entry *Entry) error {
 	}
 
 	query := `
-		INSERT INTO audit_logs (id, operator_id, action, resource_type, resource_id, ip_address, user_agent, metadata, result, created_at, trace_id, risk_tier, actor_type, actor_email, old_value, new_value)
+		INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, ip_address, user_agent, metadata, result, created_at, trace_id, risk_tier, actor_type, actor_email, old_value, new_value)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
@@ -184,13 +184,13 @@ func (r *Repository) List(ctx context.Context, q Query) ([]Entry, error) {
 	}
 
 	query := `
-		SELECT id, operator_id, action, resource_type, resource_id, ip_address, user_agent, metadata, result, created_at
+		SELECT id, user_id, action, resource_type, resource_id, ip_address, user_agent, metadata, result, created_at
 		FROM audit_logs WHERE 1=1
 	`
 	args := []any{}
 
 	if q.UserID != "" {
-		query += " AND operator_id = ?"
+		query += " AND user_id = ?"
 
 		args = append(args, q.UserID)
 	}
@@ -289,7 +289,7 @@ func (r *Repository) Count(ctx context.Context, q Query) (int, error) {
 	args := []any{}
 
 	if q.UserID != "" {
-		query += " AND operator_id = ?"
+		query += " AND user_id = ?"
 
 		args = append(args, q.UserID)
 	}

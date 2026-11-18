@@ -64,6 +64,40 @@ func (s *OrganizationSettingsService) OrgTheme(ctx context.Context, orgID string
 	return settings.Theme, nil
 }
 
+// OrgPreferenceDefaults returns the organisation's inheritable preference
+// defaults, keyed by the preference names the auth resolver uses. An unset value
+// is absent, so the resolver falls through to the system default rather than
+// treating an empty string as a deliberate choice.
+func (s *OrganizationSettingsService) OrgPreferenceDefaults(ctx context.Context, orgID string) (map[string]string, error) {
+	if orgID == "" {
+		return map[string]string{}, nil
+	}
+
+	settings, err := s.settingsRepo.FindByOrganizationID(ctx, orgID)
+	if err != nil {
+		if errors.Is(err, organization.ErrSettingsNotFound) {
+			return map[string]string{}, nil
+		}
+		return nil, err
+	}
+
+	defaults := map[string]string{}
+	if settings.Theme != "" {
+		defaults["theme"] = settings.Theme
+	}
+	if settings.Timezone != "" {
+		defaults["timezone"] = settings.Timezone
+	}
+	if settings.DateFormat != "" {
+		defaults["date_format"] = settings.DateFormat
+	}
+	if settings.WeekStart != "" {
+		defaults["week_start"] = settings.WeekStart
+	}
+
+	return defaults, nil
+}
+
 // CreateSettings creates organization settings with defaults for a new organization.
 func (s *OrganizationSettingsService) CreateSettings(ctx context.Context, orgID string) (*organization.OrganizationSettings, error) {
 	// Verify organization exists.
@@ -152,6 +186,14 @@ func (s *OrganizationSettingsService) UpdateSettings(ctx context.Context, orgID 
 		}
 	}
 	// Validate the org theme against the allowlist; an empty value clears it.
+	// Validate the week start against the allowlist; an empty value clears it.
+	if req.WeekStart != nil {
+		if *req.WeekStart != "" && !organization.IsValidWeekStart(*req.WeekStart) {
+			return nil, organization.ErrInvalidWeekStart
+		}
+		settings.WeekStart = *req.WeekStart
+	}
+
 	if req.Theme != nil {
 		if !theme.IsValid(*req.Theme) {
 			return nil, organization.ErrInvalidTheme
@@ -177,6 +219,8 @@ func (s *OrganizationSettingsService) snapshot(ctx context.Context, settings *or
 		"DateFormat":           settings.DateFormat,
 		"AlertCooldownMinutes": settings.AlertCooldownMinutes,
 		"DefaultThresholds":    settings.DefaultThresholds,
+		"Theme":                settings.Theme,
+		"WeekStart":            settings.WeekStart,
 		"UpdatedAt":            settings.UpdatedAt.UnixMilli(),
 	}
 	if _, err := s.versionSvc.Snapshot(ctx, settings.OrganizationID, configversion.ResourceTypeSettings, doc, changedBy); err != nil {

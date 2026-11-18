@@ -62,6 +62,26 @@ type Repository interface {
 	// UpdateName updates the display name for a user.
 	UpdateName(ctx context.Context, id, name string) error
 
+	// UpdateAvatarURL updates the avatar image URL for a user. An empty string
+	// clears it, so the client falls back to its default glyph.
+	UpdateAvatarURL(ctx context.Context, id, avatarURL string) error
+
+	// RecordLogin stamps the user's last login time, called on every successful
+	// authentication so the profile can show "last login".
+	RecordLogin(ctx context.Context, id string, at time.Time) error
+
+	// GetNotificationsReadAt returns the notification read watermark (Unix
+	// milliseconds); 0 when the user has never marked anything read.
+	GetNotificationsReadAt(ctx context.Context, userID string) (int64, error)
+
+	// SetNotificationsReadAt stamps the notification read watermark.
+	SetNotificationsReadAt(ctx context.Context, userID string, at int64) error
+
+	// LastLoginAt returns the user's most recent login time. The bool is false
+	// when none has been recorded (an account created before the column existed),
+	// so the caller can render a dash rather than a zero time.
+	LastLoginAt(ctx context.Context, id string) (time.Time, bool, error)
+
 	// UpdateThresholds updates the alert thresholds for a user.
 	UpdateThresholds(ctx context.Context, id string, th Thresholds) error
 

@@ -50,7 +50,7 @@ func createAuditSchema(db *sql.DB) error {
 	_, err := db.ExecContext(context.Background(), `
 		CREATE TABLE IF NOT EXISTS audit_logs (
 			id            TEXT PRIMARY KEY,
-			operator_id   TEXT,
+			user_id       TEXT,
 			action        TEXT NOT NULL,
 			resource_type TEXT,
 			resource_id   TEXT,
@@ -74,7 +74,7 @@ func createAuditSchema(db *sql.DB) error {
 	// Create index for querying by user.
 	_, err = db.ExecContext(context.Background(), `
 		CREATE INDEX IF NOT EXISTS idx_audit_operator
-		ON audit_logs(operator_id, created_at DESC)
+		ON audit_logs(user_id, created_at DESC)
 	`)
 	if err != nil {
 		return err
@@ -105,7 +105,7 @@ func (r *SeparateDBRepository) Log(ctx context.Context, entry *Entry) error {
 	}
 
 	query := `
-		INSERT INTO audit_logs (id, operator_id, action, resource_type, resource_id, ip_address, user_agent, result, metadata, created_at, trace_id, risk_tier, actor_type, actor_email, old_value, new_value)
+		INSERT INTO audit_logs (id, user_id, action, resource_type, resource_id, ip_address, user_agent, result, metadata, created_at, trace_id, risk_tier, actor_type, actor_email, old_value, new_value)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 

@@ -78,7 +78,7 @@ func (s *AuthService) buildLoginResponse(op *user.User) *dto.LoginResponse {
 }
 
 // Login authenticates a user and creates a session.
-func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.LoginResponse, *session.Session, error) {
+func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest, meta SessionMeta) (*dto.LoginResponse, *session.Session, error) {
 	email := strings.ToLower(strings.TrimSpace(req.Email))
 
 	op, err := s.userRepo.FindByEmail(ctx, email)
@@ -123,7 +123,7 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Lo
 		return resp, nil, application.ErrMFARequired
 	}
 
-	sess, err := s.CreateSession(ctx, op.ID)
+	sess, err := s.CreateSession(ctx, op.ID, meta)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -152,14 +152,14 @@ func (s *AuthService) resolveAndSetOrganization(ctx context.Context, op *user.Us
 	if s.userRepo != nil && op.LastOrganizationID != orgID {
 		op.LastOrganizationID = orgID
 		if err := s.userRepo.Update(ctx, op); err != nil {
-			s.logger.Warn("failed to update operator LastOrganizationID", "operatorID", op.ID, "error", err)
+			s.logger.Warn("failed to update operator LastOrganizationID", "userID", op.ID, "error", err)
 		}
 	}
 }
 
 // LoginWithTokens authenticates a user and returns tokens for API clients.
 // This method is used for non-browser clients that need JWT access tokens and refresh tokens.
-func (s *AuthService) LoginWithTokens(ctx context.Context, req *dto.LoginRequest) (*dto.LoginWithTokensResponse, error) {
+func (s *AuthService) LoginWithTokens(ctx context.Context, req *dto.LoginRequest, meta SessionMeta) (*dto.LoginWithTokensResponse, error) {
 	email := strings.ToLower(strings.TrimSpace(req.Email))
 
 	op, err := s.userRepo.FindByEmail(ctx, email)
@@ -201,7 +201,7 @@ func (s *AuthService) LoginWithTokens(ctx context.Context, req *dto.LoginRequest
 	}
 
 	// Create session.
-	sess, err := s.CreateSession(ctx, op.ID)
+	sess, err := s.CreateSession(ctx, op.ID, meta)
 	if err != nil {
 		return nil, err
 	}
@@ -408,10 +408,19 @@ func (s *AuthService) RegisterAsSuperAdmin(ctx context.Context, req *dto.Registe
 	}, nil
 }
 
+// SessionMeta carries request-derived metadata stamped onto a new session. The
+// profile page shows the current session's IP address and browser, so the values
+// must be captured where the request is available (the handler) and stored on the
+// session row — CreateSession itself has no access to the HTTP request.
+type SessionMeta struct {
+	IPAddress string
+	UserAgent string
+}
+
 // CreateSession creates a new session for a user.
 // If the user has reached their max concurrent sessions limit,
 // the oldest session is revoked before creating a new one.
-func (s *AuthService) CreateSession(ctx context.Context, userID string) (*session.Session, error) {
+func (s *AuthService) CreateSession(ctx context.Context, userID string, meta SessionMeta) (*session.Session, error) {
 	// Get user security settings for session limit.
 	op, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
@@ -460,13 +469,50 @@ func (s *AuthService) CreateSession(ctx context.Context, userID string) (*sessio
 		CreatedAt:  now,
 		ExpiresAt:  now.Add(s.sessionTTL),
 		SigningKey: signingKey,
+		IPAddress:  meta.IPAddress,
+		UserAgent:  meta.UserAgent,
 	}
 
 	if err := s.sessionRepo.Create(ctx, sess); err != nil {
 		return nil, err
 	}
 
+	// Stamp the login time. Best-effort: a failed timestamp write must not fail
+	// an otherwise valid login, so the error is logged and swallowed.
+	if err := s.userRepo.RecordLogin(ctx, userID, now); err != nil && s.logger != nil {
+		s.logger.Warn("failed to record last login", "user_id", userID, "error", err)
+	}
+
 	return sess, nil
+}
+
+// BackfillSessionMeta fills in a session's IP address and user agent when they
+// are missing. Sessions created before those fields were captured have neither,
+// so the profile page would show blanks until the user logged in again. The
+// values come from the request that is touching the session, which is a good
+// enough stand-in for the original login request (same client, same network in
+// practice). Best-effort: a failure must not break the request, so the error is
+// logged and swallowed.
+func (s *AuthService) BackfillSessionMeta(ctx context.Context, sess *session.Session, ipAddress, userAgent string) {
+        if sess == nil || s.sessionRepo == nil {
+                return
+        }
+        if sess.IPAddress != "" && sess.UserAgent != "" {
+                return
+        }
+        if ipAddress == "" && userAgent == "" {
+                return
+        }
+        if err := s.sessionRepo.UpdateSessionMeta(ctx, sess.ID, ipAddress, userAgent); err != nil {
+                if s.logger != nil {
+                        s.logger.Warn("failed to backfill session metadata", "session_id", sess.ID, "error", err)
+                }
+                return
+        }
+        // Keep the in-request copy in step so a handler reading it in this same
+        // request (the profile page) sees the values it just wrote.
+        sess.IPAddress = ipAddress
+        sess.UserAgent = userAgent
 }
 
 // Logout destroys a session and revokes associated refresh tokens.
@@ -497,7 +543,7 @@ func (s *AuthService) Logout(ctx context.Context, sessionID string) error {
 		if err := s.RevokeAllRefreshTokens(ctx, userID); err != nil {
 			if s.logger != nil {
 				s.logger.Error("failed to revoke refresh tokens during logout - session may persist",
-					"operatorID", userID,
+					"userID", userID,
 					"error", err)
 			}
 			return fmt.Errorf("logout incomplete: failed to revoke refresh tokens: %w", err)
@@ -517,7 +563,7 @@ func (s *AuthService) LogoutAll(ctx context.Context, userID string) error {
 	if err := s.RevokeAllRefreshTokens(ctx, userID); err != nil {
 		if s.logger != nil {
 			s.logger.Error("failed to revoke refresh tokens during logout all - sessions may persist",
-				"operatorID", userID,
+				"userID", userID,
 				"error", err)
 		}
 		return fmt.Errorf("logout incomplete: failed to revoke refresh tokens: %w", err)

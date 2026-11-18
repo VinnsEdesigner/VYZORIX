@@ -20,7 +20,7 @@ type MFAEnrollResult struct {
 
 // VerifyMFACode verifies a TOTP code for a user.
 // After successful verification, it creates a session and marks it as MFA-verified.
-func (s *AuthService) VerifyMFACode(ctx context.Context, userID, code string) (*session.Session, error) {
+func (s *AuthService) VerifyMFACode(ctx context.Context, userID, code string, meta SessionMeta) (*session.Session, error) {
 	op, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (s *AuthService) VerifyMFACode(ctx context.Context, userID, code string) (*
 	}
 
 	// Create session and mark it as MFA-verified.
-	sess, err := s.CreateSession(ctx, userID)
+	sess, err := s.CreateSession(ctx, userID, meta)
 	if err != nil {
 		return nil, err
 	}

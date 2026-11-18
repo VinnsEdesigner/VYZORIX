@@ -5,6 +5,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/auth"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/dto"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 
 	"github.com/gin-gonic/gin"
@@ -32,11 +33,12 @@ var _ openapi.MeResult
 type MeHandler struct {
 	authService *auth.AuthService
 	presenter   *response.Presenter
+	userRepo    user.Repository
 }
 
 // NewMeHandler creates a new MeHandler.
-func NewMeHandler(authService *auth.AuthService, presenter *response.Presenter) *MeHandler {
-	return &MeHandler{authService: authService, presenter: presenter}
+func NewMeHandler(authService *auth.AuthService, userRepo user.Repository, presenter *response.Presenter) *MeHandler {
+	return &MeHandler{authService: authService, presenter: presenter, userRepo: userRepo}
 }
 
 // Handle handles GET /v1/auth/me.
@@ -94,15 +96,26 @@ func (h *MeHandler) Handle(c *gin.Context) {
 		needsOrg = true
 	}
 
+	// Last login is stored in its own column and is not part of the user row the
+	// context carries, so read it here. A never-recorded value stays 0, which the
+	// client renders as a dash rather than a fabricated time.
+	var lastLoginAt int64
+	if t, ok, err := h.userRepo.LastLoginAt(c.Request.Context(), op.ID); err == nil && ok {
+		lastLoginAt = t.UnixMilli()
+	}
+
 	h.presenter.OK(c, openapi.MeResult{
 		ID:                   op.ID,
 		Email:                op.Email,
 		Name:                 op.Name,
+		AvatarURL:            op.AvatarURL,
 		MFAEnabled:           op.MFAEnabled,
 		EmailVerified:        op.EmailVerified,
 		NeedsOrganization:    needsOrg,
 		Organizations:        orgInfosToOpenAPI(orgs),
 		LastOrganizationID:   op.LastOrganizationID,
 		SelectedOrganization: orgInfoToOpenAPIPtr(selectedOrg),
+		CreatedAt:            op.CreatedAt.UnixMilli(),
+		LastLoginAt:          lastLoginAt,
 	})
 }

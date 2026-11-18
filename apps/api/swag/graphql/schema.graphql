@@ -20,7 +20,7 @@ type AckResult {
   id: ID!
   """Device IMEI"""
   imei: String!
-  """Operator notes"""
+  """User notes"""
   notes: String
   """When rejected (Unix ms)"""
   rejectedAt: Int
@@ -74,7 +74,7 @@ type AlertInstance {
 
 """Alert rule with runtime state"""
 type AlertRule {
-  """Comparison operator"""
+  """Comparison user"""
   condition: String!
   """Creation time"""
   createdAt: DateTime
@@ -543,16 +543,16 @@ type InboxEntry {
   manufacturer: String
   """Device model"""
   model: String
-  """Operator notes"""
+  """User notes"""
   notes: String
-  """Handling operator ID"""
-  operatorId: String
   """Device OS version"""
   osVersion: String
   """When rejected (Unix ms)"""
   rejectedAt: Int
   """Status: pending, approved, rejected"""
   status: String!
+  """Handling user ID"""
+  userId: String
 }
 
 """Paginated inbox list response"""
@@ -594,11 +594,11 @@ type Invitation {
   expiresAt: DateTime!
   """Unique invitation identifier"""
   id: ID!
-  """ID of the invited operator (if accepted)"""
+  """ID of the invited user (if accepted)"""
   inviteeId: ID
   """Notes from the invitee"""
   inviteeNotes: String
-  """ID of the operator who sent the invitation"""
+  """ID of the user who sent the invitation"""
   inviterId: ID!
   """Name of the inviter"""
   inviterName: String!
@@ -685,8 +685,6 @@ type MemberEvent {
   memberId: ID!
   """The membership"""
   membership: Membership
-  """Operator who triggered the event"""
-  operatorId: ID!
   """The organization"""
   organization: Organization
   """Organization ID"""
@@ -695,6 +693,8 @@ type MemberEvent {
   timestamp: DateTime!
   """Event type"""
   type: MemberEventType!
+  """User who triggered the event"""
+  userId: ID!
 }
 
 """Type of member event"""
@@ -739,14 +739,10 @@ type Membership {
   id: ID!
   """When the invitation was sent"""
   invitedAt: DateTime
-  """When the operator joined"""
+  """When the user joined"""
   joinedAt: DateTime
   """Membership lifecycle state"""
   lifecycle: MemberLifecycle!
-  """The operator associated with this membership"""
-  operator: Operator
-  """Operator ID"""
-  operatorId: ID!
   """The organization"""
   organization: Organization
   """Organization ID"""
@@ -757,6 +753,10 @@ type Membership {
   role: OrgRole!
   """When the member was suspended"""
   suspendedAt: DateTime
+  """The user associated with this membership"""
+  user: User
+  """User ID"""
+  userId: ID!
 }
 
 """A single device metadata key/value pair"""
@@ -891,7 +891,7 @@ type Mutation {
   updateFCMToken(deviceId: ID!, token: String!): Device
   """Update a member's role"""
   updateMemberRole(memberId: ID!, organizationId: String!, role: OrgRole!): Membership
-  """Update current operator's notification settings"""
+  """Update current user's notification settings"""
   updateMyNotifications(input: UpdateNotificationsInput!): NotificationSettings
   """Update an organization"""
   updateOrganization(id: String!, isActive: Boolean, maxMembers: Int, name: String): Organization
@@ -929,25 +929,7 @@ type NotificationTypes {
   updateAvailable: Boolean!
 }
 
-"""An operator/user in the system"""
-type Operator {
-  """When the operator was created"""
-  createdAt: DateTime
-  """Operator's email address"""
-  email: String!
-  """Whether the email has been verified"""
-  emailVerified: Boolean!
-  """Unique operator identifier"""
-  id: ID!
-  """Whether MFA is enabled"""
-  mfaEnabled: Boolean!
-  """Operator's display name"""
-  name: String!
-  """When the operator was last updated"""
-  updatedAt: DateTime
-}
-
-"""Complete operator settings"""
+"""Complete user settings"""
 type OperatorSettings {
   """Client settings"""
   client: ClientSettings!
@@ -995,7 +977,7 @@ enum OrgRole {
 type Organization {
   """Organization creation timestamp"""
   createdAt: DateTime
-  """ID of the operator who created this organization"""
+  """ID of the user who created this organization"""
   createdBy: ID!
   """Organization deletion timestamp (soft delete)"""
   deletedAt: DateTime
@@ -1019,8 +1001,6 @@ type OrganizationEvent {
   data: JSON
   """Unique event identifier"""
   id: ID!
-  """Operator who triggered the event"""
-  operatorId: ID!
   """The organization"""
   organization: Organization
   """Organization ID"""
@@ -1029,6 +1009,8 @@ type OrganizationEvent {
   timestamp: DateTime!
   """Event type"""
   type: OrganizationEventType!
+  """User who triggered the event"""
+  userId: ID!
 }
 
 """Type of organization event"""
@@ -1135,7 +1117,7 @@ type PushHistoryEntry {
   id: ID!
   """When initiated (Unix ms)"""
   initiatedAt: Int!
-  """Operator who initiated"""
+  """User who initiated"""
   initiatedBy: String!
   """Install type"""
   installType: String!
@@ -1163,7 +1145,7 @@ type PushUpdateResponse {
   deviceCount: Int!
   """When initiated (Unix ms)"""
   initiatedAt: Int!
-  """Operator who initiated"""
+  """User who initiated"""
   initiatedBy: String!
   """Install type"""
   installType: String!
@@ -1211,7 +1193,7 @@ type Query {
   deviceSettings(deviceImei: String!, organizationId: String!): DeviceSettings
   """Get chronological event timeline for a device"""
   deviceTimeline(cursor: String, endTime: Int, eventType: TimelineEventType, imei: String!, limit: Int, organizationId: String!, startTime: Int): TimelineConnection
-  """List all devices for the authenticated operator in an organization"""
+  """List all devices for the authenticated user in an organization"""
   devices(limit: Int, offset: Int, organizationId: String!): [Device]
   """Get paginated inbox entries for an organization"""
   inbox(limit: Int, organizationId: String!, page: Int, status: String): InboxListResponse
@@ -1221,13 +1203,13 @@ type Query {
   invitation(token: String!): Invitation
   """Get the latest telemetry entry for a device within an organization"""
   latestTelemetry(deviceId: ID!, organizationId: String!): TelemetryEntry
-  """Get all pending invitations for the authenticated operator"""
+  """Get all pending invitations for the authenticated user"""
   myInvitations: [Invitation]
-  """Get all organization memberships for the authenticated operator"""
+  """Get all organization memberships for the authenticated user"""
   myMemberships(limit: Int, page: Int): MemberListResponse
-  """Get current operator's notification settings"""
+  """Get current user's notification settings"""
   myNotifications: NotificationSettings
-  """Get current operator's settings (client and notifications)"""
+  """Get current user's settings (client and notifications)"""
   mySettings: OperatorSettings
   """Get an organization by ID"""
   organization(id: ID!): Organization
@@ -1237,7 +1219,7 @@ type Query {
   organizationMembers(limit: Int, organizationId: ID!, page: Int): MemberListResponse
   """Get settings for an organization including default thresholds"""
   organizationSettings(organizationId: String!): OrganizationSettings
-  """List all organizations for the authenticated operator"""
+  """List all organizations for the authenticated user"""
   organizations(limit: Int, page: Int): OrganizationListResponse
   """Get pending commands for a device within an organization"""
   pendingCommands(deviceId: ID!, organizationId: String!): [Command]
@@ -1557,7 +1539,7 @@ type UpdateHistory {
   id: ID!
   """When the push was initiated"""
   initiatedAt: DateTime
-  """Operator who initiated the push"""
+  """User who initiated the push"""
   initiatedBy: String!
   """Install type (immediate or scheduled)"""
   installType: InstallType!
@@ -1598,7 +1580,7 @@ type UpdatePush {
   id: ID!
   """When the push was initiated"""
   initiatedAt: DateTime
-  """Operator ID who initiated the push"""
+  """User ID who initiated the push"""
   initiatedBy: String!
   """Install type (immediate or scheduled)"""
   installType: InstallType!
@@ -1670,6 +1652,24 @@ type UpdateVersionList {
   pagination: Pagination
   """List of versions"""
   versions: [UpdateVersion!]!
+}
+
+"""A user in the system"""
+type User {
+  """When the user was created"""
+  createdAt: DateTime
+  """User's email address"""
+  email: String!
+  """Whether the email has been verified"""
+  emailVerified: Boolean!
+  """Unique user identifier"""
+  id: ID!
+  """Whether MFA is enabled"""
+  mfaEnabled: Boolean!
+  """User's display name"""
+  name: String!
+  """When the user was last updated"""
+  updatedAt: DateTime
 }
 
 """Webhook notification channel settings (URL + signing secret)"""

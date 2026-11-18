@@ -77,6 +77,15 @@ func (r OrganizationRole) CanManageOrganization() bool {
 	return r.Level() >= RoleAdmin.Level()
 }
 
+// CanReadOrganizationPreferences returns true if the role may read the
+// organisation's default preferences.
+//
+// Read is deliberately wider than write: a member inherits these defaults, so
+// they must be able to read them even though only an admin may change them.
+func (r OrganizationRole) CanReadOrganizationPreferences() bool {
+	return r.Level() >= LevelViewer
+}
+
 // CanDeleteOrganization returns true if the role can delete the organization.
 func (r OrganizationRole) CanDeleteOrganization() bool {
 	return r == RoleSuperAdmin

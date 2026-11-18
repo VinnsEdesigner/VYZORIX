@@ -27,6 +27,10 @@ type OrganizationSettings struct {
 	// personal override inherit it; an empty value falls through to the
 	// system default. The settings handler validates it against the allowlist.
 	Theme string `json:"theme"`
+	// WeekStart is the organisation's default first day of the week
+	// (monday|sunday|saturday). Members without a personal override inherit
+	// it; an empty value falls through to the system default.
+	WeekStart string `json:"weekStart"`
 }
 
 // Thresholds represents threshold values for alerts.
@@ -61,6 +65,7 @@ func NewOrganizationSettings(organizationID string) *OrganizationSettings {
 		DateFormat:           "YYYY-MM-DD",
 		AlertCooldownMinutes: 15,
 		Theme:                "",
+		WeekStart:            "",
 		DefaultThresholds:    DefaultThresholds(),
 		CreatedAt:            now,
 		UpdatedAt:            now,
@@ -113,6 +118,7 @@ type UpdateOrganizationSettingsRequest struct {
 	AlertCooldownMinutes *int        `json:"alertCooldownMinutes,omitempty"`
 	DefaultThresholds    *Thresholds `json:"defaultThresholds,omitempty"`
 	Theme                *string     `json:"theme,omitempty"`
+	WeekStart            *string     `json:"weekStart,omitempty"`
 }
 
 // UpdateThresholdsRequest represents a request to update only thresholds.
@@ -150,4 +156,19 @@ func (r *UpdateThresholdsRequest) ToThresholds() *Thresholds {
 		t.BufferCrit = *r.BufferCrit
 	}
 	return t
+}
+
+// ValidWeekStarts is the allowlist for the organisation's week start. Kept in
+// the domain so the handler, the service and the resolver agree on it.
+var ValidWeekStarts = []string{"monday", "sunday", "saturday"}
+
+// IsValidWeekStart reports whether id is an allowed week start. The empty string
+// is NOT valid: callers use "" to mean "inherit", and validate that separately.
+func IsValidWeekStart(id string) bool {
+	for _, v := range ValidWeekStarts {
+		if v == id {
+			return true
+		}
+	}
+	return false
 }

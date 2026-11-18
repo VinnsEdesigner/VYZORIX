@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/adapters/response"
@@ -14,6 +15,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/auth"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
+	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/webhook"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/openapi"
 
@@ -204,7 +206,8 @@ func (h *SettingsHandler) UpdateName(c *gin.Context) {
 	}
 
 	var req struct {
-		Name *string `json:"name"`
+		Name      *string `json:"name"`
+		AvatarURL *string `json:"avatar_url"`
 	}
 
 	if err = c.ShouldBindJSON(&req); err != nil {
@@ -212,21 +215,34 @@ func (h *SettingsHandler) UpdateName(c *gin.Context) {
 		return
 	}
 
-	if req.Name == nil || *req.Name == "" {
+	if (req.Name == nil || *req.Name == "") && req.AvatarURL == nil {
 		h.presenter.BadRequest(c, "name is required")
 		return
 	}
 
-	op, err := h.authService.UpdateUserName(c.Request.Context(), userID, *req.Name)
-	if err != nil {
-		h.presenter.InternalError(c, "update failed")
-		return
+	var op *user.User
+
+	if req.Name != nil && *req.Name != "" {
+		op, err = h.authService.UpdateUserName(c.Request.Context(), userID, *req.Name)
+		if err != nil {
+			h.presenter.InternalError(c, "update failed")
+			return
+		}
+	}
+
+	if req.AvatarURL != nil {
+		op, err = h.authService.UpdateUserAvatar(c.Request.Context(), userID, *req.AvatarURL)
+		if err != nil {
+			h.presenter.InternalError(c, "update failed")
+			return
+		}
 	}
 
 	h.presenter.OK(c, openapi.UserSettingsResultLegacy{
 		ID:            op.ID,
 		Email:         op.Email,
 		Name:          op.Name,
+		AvatarURL:     op.AvatarURL,
 		Role:          h.getUserRole(c, op),
 		MFAEnabled:    op.MFAEnabled,
 		EmailVerified: op.EmailVerified,
@@ -457,16 +473,31 @@ func (h *SettingsHandler) GetNotifications(c *gin.Context) {
 		return
 	}
 
+	// Never serialise the Slack bot token to a client; Connected is enough.
+	notifications.Slack.AccessToken = ""
+
 	h.presenter.OK(c, notifications)
 }
 
-// NotificationUpdateRequest represents notification settings update request.
+// NotificationUpdateRequest is the PATCH body. The generated
+// openapi.NotificationUpdateRequest cannot express a partial update (its scalar
+// fields are values, not pointers), so the handler binds this pointer form and
+// the openapi DTO is kept only as the documented shape.
 type NotificationUpdateRequest struct {
-	Enabled  *bool                          `json:"enabled,omitempty"`
-	Channels *[]string                      `json:"channels,omitempty"`
-	Email    *user.EmailNotifications   `json:"email,omitempty"`
-	Push     *user.PushNotifications    `json:"push,omitempty"`
-	Webhook  *user.WebhookNotifications `json:"webhook,omitempty"`
+	Enabled      *bool                      `json:"enabled,omitempty"`
+	Channels     *[]string                  `json:"channels,omitempty"`
+	Email        *user.EmailNotifications   `json:"email,omitempty"`
+	Push         *user.PushNotifications    `json:"push,omitempty"`
+	Webhook      *user.WebhookNotifications `json:"webhook,omitempty"`
+	Slack        *SlackNotificationInput    `json:"slack,omitempty"`
+	EmailAddress *string                    `json:"emailAddress,omitempty"`
+}
+
+// SlackNotificationInput is the client-settable part of the Slack channel.
+type SlackNotificationInput struct {
+	ChannelID   *string `json:"channelId,omitempty"`
+	ChannelName *string `json:"channelName,omitempty"`
+	Connected   *bool   `json:"connected,omitempty"`
 }
 
 // UpdateNotifications handles PATCH /v1/auth/me/notifications.
@@ -519,6 +550,44 @@ func (h *SettingsHandler) UpdateNotifications(c *gin.Context) {
 	}
 	if req.Webhook != nil {
 		notifications.Webhook = *req.Webhook
+	}
+	if req.EmailAddress != nil {
+		address := strings.TrimSpace(*req.EmailAddress)
+		if address == "" {
+			// Empty clears the custom address and falls back to the account email.
+			notifications.EmailAddress = ""
+		} else {
+			// Strict, server-side validation: the address must be a real,
+			// deliverable mailbox, not just well-formed. Format + disposable checks
+			// first, then an MX lookup on the domain. The client cannot be trusted
+			// to have validated this.
+			normalized, err := infraauth.ValidateEmail(address)
+			if err != nil {
+				h.presenter.BadRequest(c, "invalid notification email address")
+				return
+			}
+			result := user.ValidateEmailFull(normalized, user.StrictMailboxValidator())
+			if !result.Valid {
+				message := "invalid notification email address"
+				if len(result.Errors) > 0 {
+					message = result.Errors[0].Message
+				}
+				h.presenter.BadRequest(c, message)
+				return
+			}
+			notifications.EmailAddress = normalized
+		}
+	}
+	if req.Slack != nil {
+		if req.Slack.ChannelID != nil {
+			notifications.Slack.ChannelID = *req.Slack.ChannelID
+		}
+		if req.Slack.ChannelName != nil {
+			notifications.Slack.ChannelName = *req.Slack.ChannelName
+		}
+		if req.Slack.Connected != nil {
+			notifications.Slack.Connected = *req.Slack.Connected
+		}
 	}
 
 	// Validate webhook URL if enabled.
@@ -740,7 +809,22 @@ func (h *SettingsHandler) GetPreferences(c *gin.Context) {
 		h.presenter.InternalError(c, "failed to resolve theme")
 		return
 	}
-	h.presenter.OK(c, openapi.PreferencesResult{Preferences: prefs, Theme: resolved})
+	// The whole effective set, so a client applies the cascade for timezone,
+	// date format and week start too, without reading the organisation's
+	// settings (which a non-admin cannot).
+	effective, err := h.settingsService.ResolvePreferences(c.Request.Context(), op.ID, middleware.GetOrganizationID(c))
+	if err != nil {
+		h.presenter.InternalError(c, "failed to resolve preferences")
+		return
+	}
+	flat := make(map[string]string, len(effective))
+	for k, v := range effective {
+		if str, ok := v.(string); ok {
+			flat[k] = str
+		}
+	}
+
+	h.presenter.OK(c, openapi.PreferencesResult{Preferences: prefs, Theme: resolved, Resolved: flat})
 }
 
 // UpdatePreferences handles PATCH /v1/auth/me/preferences.
@@ -761,10 +845,18 @@ func (h *SettingsHandler) UpdatePreferences(c *gin.Context) {
 		h.presenter.Unauthorized(c, "authentication required")
 		return
 	}
-	var updates map[string]any
-	if err := c.ShouldBindJSON(&updates); err != nil {
+	// The documented body is PreferencesResult ({ "preferences": { ... } }), which
+	// is what the client sends. Unwrap the inner map before handing it to the
+	// service, which merges flat keys — binding the envelope directly would store
+	// a nested "preferences" key and the change would never apply.
+	var req openapi.PreferencesResult
+	if err := c.ShouldBindJSON(&req); err != nil {
 		h.presenter.BadRequest(c, "invalid JSON body")
 		return
+	}
+	updates := req.Preferences
+	if updates == nil {
+		updates = map[string]any{}
 	}
 	prefs, err := h.settingsService.UpdatePreferences(c.Request.Context(), op.ID, updates)
 	if err != nil {

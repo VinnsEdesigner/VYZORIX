@@ -266,7 +266,7 @@ func (s *AuthService) SelectOrganization(ctx context.Context, userID, sessionID,
 			op.LastOrganizationID = organizationID
 			if err := s.userRepo.Update(ctx, op); err != nil {
 				s.logger.Warn("failed to update operator LastOrganizationID",
-					"operatorID", userID,
+					"userID", userID,
 					"organizationID", organizationID,
 					"error", err)
 			}

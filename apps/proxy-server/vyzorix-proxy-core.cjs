@@ -59,6 +59,39 @@ var FORWARD_HEADERS = [
 ];
 
 /**
+ * True for a loopback peer (::1, 127.0.0.0/8, ::ffff:127.x). Such a peer is a
+ * local reverse proxy (nginx in front of this BFF), never a remote browser.
+ */
+function isLoopbackAddress(address) {
+  if (typeof address !== 'string' || address.length === 0) return false;
+  var host = address;
+  if (host.indexOf('::ffff:') === 0) host = host.slice(7);
+  return host === '::1' || host === 'localhost' || host.indexOf('127.') === 0;
+}
+
+/**
+ * Resolve the client IP to forward to the Go API.
+ *
+ * An X-Forwarded-For is honoured ONLY when the peer is loopback — that is a
+ * local reverse proxy (e.g. nginx) that set the header from the real client. A
+ * remote peer's header is ignored, so a browser cannot spoof its own address;
+ * for a remote peer the socket address is used. The Go API records the result on
+ * the session for the profile page, and honours the header only when this host
+ * is listed in TRUSTED_PROXIES.
+ *
+ * @param {object} reqHeaders - incoming headers (lowercased keys)
+ * @param {string|undefined} remoteAddress - req.socket.remoteAddress
+ * @returns {string|undefined}
+ */
+function resolveForwardedFor(reqHeaders, remoteAddress) {
+  var forwardedFor = reqHeaders && reqHeaders['x-forwarded-for'];
+  if (isLoopbackAddress(remoteAddress) && typeof forwardedFor === 'string' && forwardedFor.length > 0) {
+    return forwardedFor;
+  }
+  return remoteAddress || undefined;
+}
+
+/**
  * Handle an incoming API request: sign, forward, intercept, return.
  * @param {string} method
  * @param {string} pathname
@@ -66,9 +99,10 @@ var FORWARD_HEADERS = [
  * @param {object} reqHeaders - incoming headers (lowercased keys)
  * @param {Buffer} reqBody - buffered request body
  * @param {string|undefined} cookieHeader - browser Cookie header
+ * @param {string|undefined} remoteAddress - socket address of the browser (req.socket.remoteAddress)
  * @returns {Promise<{status, headers, body, setCookie}>}
  */
-async function handleApiRequest(method, pathname, search, reqHeaders, reqBody, cookieHeader) {
+async function handleApiRequest(method, pathname, search, reqHeaders, reqBody, cookieHeader, remoteAddress) {
   var startTime = Date.now();
   var sess = getOrCreateSession(cookieHeader);
 
@@ -106,6 +140,13 @@ async function handleApiRequest(method, pathname, search, reqHeaders, reqBody, c
       outHeaders[h] = val.join(', ');
     }
   });
+
+  // Preserve the real client IP so the Go API records it on the session (the
+  // profile page shows it). See resolveForwardedFor.
+  var forwardedFor = resolveForwardedFor(reqHeaders, remoteAddress);
+  if (forwardedFor) {
+    outHeaders['x-forwarded-for'] = forwardedFor;
+  }
 
   // Fetch CSRF token + cookie BEFORE building the Cookie header, so the
   // double-submit cookie is available for injection.
@@ -295,4 +336,4 @@ function bufferBody(req) {
   });
 }
 
-module.exports = { handleApiRequest, bufferBody, forwardRequest };
+module.exports = { handleApiRequest, bufferBody, forwardRequest, resolveForwardedFor };

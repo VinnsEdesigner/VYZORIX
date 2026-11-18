@@ -2693,6 +2693,358 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/me/avatar": {
+            "post": {
+                "description": "Stores an uploaded profile image and points the user's avatar at it",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Upload avatar",
+                "responses": {
+                    "200": {
+                        "description": "updated profile",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ProfileActionResult"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid image",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "storage error",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me/notifications/history": {
+            "get": {
+                "description": "Returns the current user's delivered and failed notifications, newest first",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "List notification history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "filter by channel (email, slack, webhook)",
+                        "name": "channel",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "filter by outcome (sent, failed)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page size (max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page offset",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "history",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.NotificationHistoryResult"
+                        }
+                    },
+                    "401": {
+                        "description": "not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me/notifications/history/read": {
+            "post": {
+                "description": "Stamps the read watermark so the unread count returns to zero",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Mark notifications read",
+                "responses": {
+                    "200": {
+                        "description": "unread count",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.MarkNotificationsReadResult"
+                        }
+                    },
+                    "401": {
+                        "description": "not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me/notifications/push/public-key": {
+            "get": {
+                "description": "Returns the VAPID public key the browser needs to subscribe, or enabled=false when push is not configured",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Get the Web Push public key",
+                "responses": {
+                    "200": {
+                        "description": "public key",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.PushPublicKeyResult"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me/notifications/push/subscribe": {
+            "post": {
+                "description": "Stores the browser's PushSubscription so notifications can be delivered to it",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Register a browser push subscription",
+                "parameters": [
+                    {
+                        "description": "push subscription",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/openapi.PushSubscriptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "subscribed",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.SuccessResult"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid subscription",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me/notifications/push/test": {
+            "post": {
+                "description": "Delivers a test notification to every browser the user has subscribed",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Send a test push notification",
+                "responses": {
+                    "200": {
+                        "description": "delivery count",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.PushTestResult"
+                        }
+                    },
+                    "401": {
+                        "description": "not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me/notifications/push/unsubscribe": {
+            "post": {
+                "description": "Deletes a stored PushSubscription (the user disabling this browser)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Remove a browser push subscription",
+                "parameters": [
+                    {
+                        "description": "push subscription",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/openapi.PushSubscriptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "unsubscribed",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.SuccessResult"
+                        }
+                    },
+                    "401": {
+                        "description": "not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me/notifications/slack/callback": {
+            "get": {
+                "description": "Exchanges the code and stores the linked Slack workspace, then redirects back to the console",
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Slack OAuth callback",
+                "responses": {
+                    "307": {
+                        "description": "redirect back to the console",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me/notifications/slack/channels": {
+            "get": {
+                "description": "Returns the channels the linked Slack bot can post to",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "List Slack channels",
+                "responses": {
+                    "200": {
+                        "description": "channels",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.SlackChannelsResult"
+                        }
+                    },
+                    "401": {
+                        "description": "not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me/notifications/slack/connect": {
+            "get": {
+                "description": "Redirects to Slack so the user can authorise Vyzorix",
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "Connect Slack",
+                "responses": {
+                    "307": {
+                        "description": "redirect to Slack",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "501": {
+                        "description": "Slack not configured",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me/profile-summary": {
+            "get": {
+                "description": "Counts for the profile page: active sessions and audited actions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Profile summary",
+                "responses": {
+                    "200": {
+                        "description": "counts",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ProfileSummaryResult"
+                        }
+                    },
+                    "401": {
+                        "description": "not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/mfa/disable": {
             "post": {
                 "description": "Disables MFA after verifying a TOTP code",
@@ -10016,6 +10368,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/organizations/{id}/preferences": {
+            "get": {
+                "description": "Returns the organisation's inheritable preference defaults. Readable by any member (they inherit these), unlike the full settings which are admin-only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "organizations"
+                ],
+                "summary": "Get organization preference defaults",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "organization ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "organization preference defaults",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.OrganizationSettingsResult"
+                        }
+                    },
+                    "400": {
+                        "description": "org id required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "not a member",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/organizations/{id}/settings": {
             "get": {
                 "description": "Returns organization-level settings",
@@ -14607,9 +15022,23 @@ const docTemplate = `{
                 }
             }
         },
+        "openapi.MarkNotificationsReadResult": {
+            "type": "object",
+            "properties": {
+                "unread": {
+                    "type": "integer"
+                }
+            }
+        },
         "openapi.MeResult": {
             "type": "object",
             "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
                 "email": {
                     "type": "string"
                 },
@@ -14618,6 +15047,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "last_login_at": {
+                    "type": "integer"
                 },
                 "last_organization_id": {
                     "type": "string"
@@ -14681,6 +15113,55 @@ const docTemplate = `{
                 }
             }
         },
+        "openapi.NotificationHistoryEntry": {
+            "type": "object",
+            "properties": {
+                "channel": {
+                    "type": "string"
+                },
+                "deviceId": {
+                    "type": "string"
+                },
+                "errorMsg": {
+                    "type": "string"
+                },
+                "eventType": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "sentAt": {
+                    "type": "integer"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "openapi.NotificationHistoryResult": {
+            "type": "object",
+            "properties": {
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/openapi.NotificationHistoryEntry"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "unread": {
+                    "type": "integer"
+                }
+            }
+        },
         "openapi.NotificationSettings": {
             "type": "object",
             "properties": {
@@ -14693,11 +15174,17 @@ const docTemplate = `{
                 "email": {
                     "$ref": "#/definitions/openapi.EmailNotifications"
                 },
+                "emailAddress": {
+                    "type": "string"
+                },
                 "enabled": {
                     "type": "boolean"
                 },
                 "push": {
                     "$ref": "#/definitions/openapi.PushNotifications"
+                },
+                "slack": {
+                    "$ref": "#/definitions/openapi.SlackNotifications"
                 },
                 "webhook": {
                     "$ref": "#/definitions/openapi.WebhookNotifications"
@@ -14716,11 +15203,17 @@ const docTemplate = `{
                 "email": {
                     "$ref": "#/definitions/openapi.EmailNotifications"
                 },
+                "emailAddress": {
+                    "type": "string"
+                },
                 "enabled": {
                     "type": "boolean"
                 },
                 "push": {
                     "$ref": "#/definitions/openapi.PushNotifications"
+                },
+                "slack": {
+                    "$ref": "#/definitions/openapi.SlackNotificationInput"
                 },
                 "webhook": {
                     "$ref": "#/definitions/openapi.WebhookNotifications"
@@ -14859,6 +15352,9 @@ const docTemplate = `{
                 },
                 "updatedAt": {
                     "type": "string"
+                },
+                "weekStart": {
+                    "type": "string"
                 }
             }
         },
@@ -14900,8 +15396,42 @@ const docTemplate = `{
                     "type": "object",
                     "additionalProperties": {}
                 },
+                "resolved": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "theme": {
                     "type": "string"
+                }
+            }
+        },
+        "openapi.ProfileActionResult": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "openapi.ProfileSummaryResult": {
+            "type": "object",
+            "properties": {
+                "actions": {
+                    "type": "integer"
+                },
+                "active_sessions": {
+                    "type": "integer"
                 }
             }
         },
@@ -14925,6 +15455,47 @@ const docTemplate = `{
                 },
                 "updateAvailable": {
                     "type": "boolean"
+                }
+            }
+        },
+        "openapi.PushPublicKeyResult": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "publicKey": {
+                    "type": "string"
+                }
+            }
+        },
+        "openapi.PushSubscriptionKeys": {
+            "type": "object",
+            "properties": {
+                "auth": {
+                    "type": "string"
+                },
+                "p256dh": {
+                    "type": "string"
+                }
+            }
+        },
+        "openapi.PushSubscriptionRequest": {
+            "type": "object",
+            "properties": {
+                "endpoint": {
+                    "type": "string"
+                },
+                "keys": {
+                    "$ref": "#/definitions/openapi.PushSubscriptionKeys"
+                }
+            }
+        },
+        "openapi.PushTestResult": {
+            "type": "object",
+            "properties": {
+                "delivered": {
+                    "type": "integer"
                 }
             }
         },
@@ -15223,6 +15794,65 @@ const docTemplate = `{
                 "preferences": {
                     "type": "object",
                     "additionalProperties": {}
+                }
+            }
+        },
+        "openapi.SlackChannel": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "openapi.SlackChannelsResult": {
+            "type": "object",
+            "properties": {
+                "channels": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/openapi.SlackChannel"
+                    }
+                }
+            }
+        },
+        "openapi.SlackNotificationInput": {
+            "type": "object",
+            "properties": {
+                "channelId": {
+                    "type": "string"
+                },
+                "channelName": {
+                    "type": "string"
+                },
+                "connected": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "openapi.SlackNotifications": {
+            "type": "object",
+            "properties": {
+                "channelId": {
+                    "type": "string"
+                },
+                "channelName": {
+                    "type": "string"
+                },
+                "connected": {
+                    "type": "boolean"
+                },
+                "slackUserId": {
+                    "type": "string"
+                },
+                "teamId": {
+                    "type": "string"
+                },
+                "teamName": {
+                    "type": "string"
                 }
             }
         },
@@ -15729,6 +16359,9 @@ const docTemplate = `{
         "openapi.UpdateNameRequest": {
             "type": "object",
             "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 }
@@ -15764,6 +16397,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "timezone": {
+                    "type": "string"
+                },
+                "weekStart": {
                     "type": "string"
                 }
             }
@@ -16265,6 +16901,9 @@ const docTemplate = `{
         "openapi.UserSettingsResultLegacy": {
             "type": "object",
             "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
                 "client": {
                     "$ref": "#/definitions/openapi.ClientSettings"
                 },

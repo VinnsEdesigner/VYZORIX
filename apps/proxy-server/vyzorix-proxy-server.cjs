@@ -52,6 +52,8 @@ var serveStaticFile = webServer.serveStaticFile;
 var attachWebSocketProxy = wsProxy.attachWebSocketProxy;
 var cleanupExpiredSessions = sessionStore.cleanupExpiredSessions;
 var activeSessionCount = sessionStore.activeSessionCount;
+var loadSessions = sessionStore.loadSessions;
+var flushSessions = sessionStore.flushSessions;
 
 function printBanner() {
   banner([
@@ -101,6 +103,10 @@ async function main() {
     console.log('');
   });
 
+  // Restore persisted sessions before serving, so a request that arrives in the
+  // first moments still finds its session.
+  loadSessions();
+
   // Periodic session cleanup (every hour).
   setInterval(function () {
     cleanupExpiredSessions();
@@ -116,6 +122,9 @@ async function main() {
   // Graceful shutdown.
   function shutdown(signal) {
     console.log('\n  ' + pc.yellow('@') + ' ' + signal + ' received, shutting down...');
+    // Write any debounced session change before exiting, so a login made in the
+    // last second is not lost to the restart.
+    flushSessions();
     server.close(function () {
       success('Proxy server closed');
       process.exit(0);
@@ -172,7 +181,8 @@ async function handleRequest(req, res) {
       search,
       req.headers,
       body,
-      req.headers.cookie
+      req.headers.cookie,
+      req.socket && req.socket.remoteAddress
     );
 
     if (result.setCookie) {

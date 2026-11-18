@@ -13,6 +13,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/confirmation"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/device"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/keys"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/notification"
 	orgapplication "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/organization"
 	updatesapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/updates"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
@@ -24,6 +25,7 @@ import (
 	emailService "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/email"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/fcm"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/metrics"
+	infranotification "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/notification"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/storage"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/worker"
@@ -35,7 +37,7 @@ import (
 
 // ServerDependencies contains all dependencies needed to create a Server.
 type ServerDependencies struct {
-	UserRepo          user.Repository
+	UserRepo              user.Repository
 	FCMNotifier           fcm.Notifier
 	FCMRetryWorker        *worker.FCMRetryWorker
 	Hub                   *hub.Hub
@@ -59,6 +61,9 @@ type ServerDependencies struct {
 	ClientService         *client.Service
 	Metrics               *metrics.Metrics
 	AuditLogger           *audit.Logger
+	NotificationAudit     *infranotification.Repository
+	PushRepo              *storage.PushSubscriptionRepository
+	NotificationService   *notification.Service
 	TelemetryRepo         *storage.TelemetryRepository
 	UpdatesStorage        *storage.UpdatesStorage
 	UpdatesService        *updatesapp.Service
@@ -145,7 +150,7 @@ func WireServer(deps ServerDependencies) *ServerResult {
 		EmailService:          deps.EmailService,
 		EmailVerificationRepo: deps.EmailVerificationRepo,
 		Lockout:               deps.Lockout,
-		UserRepo:          deps.UserRepo,
+		UserRepo:              deps.UserRepo,
 		AuditLogger:           deps.AuditLogger,
 		IPIntelligence:        deps.IPIntelligence,
 		Presenter:             result.Presenter,
@@ -166,6 +171,9 @@ func WireServer(deps ServerDependencies) *ServerResult {
 		DeviceSettingsService: deps.DeviceSettingsService,
 		DeviceRepo:            deps.DeviceRepo,
 		ConfirmationService:   deps.ConfirmationService,
+		NotificationAudit:     deps.NotificationAudit,
+		PushRepo:              deps.PushRepo,
+		NotificationService:   deps.NotificationService,
 		// Built here rather than through the provider set: it depends only on
 		// config, and threading it through the wire graph would add a node for a
 		// value constructed once. Nil when no key is configured, which the

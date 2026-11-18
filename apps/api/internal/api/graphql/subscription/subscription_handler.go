@@ -39,11 +39,17 @@ func allowedOrigins(cfg config.Config) func(r *http.Request) bool {
 			if strings.EqualFold(allowed, origin) {
 				return true
 			}
-			// Wildcard subdomain, e.g. "*.example.com". The host must be the bare
-			// domain or a true subdomain of it; a plain suffix match would also
-			// accept "evil-example.com" and "notexample.com".
-			if rest, ok := strings.CutPrefix(allowed, "*."); ok {
-				if hostMatchesDomain(host, rest) {
+			// Wildcard subdomain. Accept both "*.example.com" and
+			// "https://*.example.com": the config validator requires a scheme on every
+			// entry, but the bare form is what the tests and older configs use. Matching
+			// only the bare form would make the wildcard dead for any valid config, and
+			// matching only the schemed form would break the bare form.
+			wildcardDomain := strings.TrimPrefix(allowed, "*.")
+			if parsed, parseErr := url.Parse(allowed); parseErr == nil && parsed.Scheme != "" {
+				wildcardDomain = strings.TrimPrefix(parsed.Hostname(), "*.")
+			}
+			if strings.HasPrefix(allowed, "*.") || strings.Contains(allowed, "://*.") {
+				if hostMatchesDomain(host, wildcardDomain) {
 					return true
 				}
 			}
@@ -63,6 +69,12 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin:     nil, // Set during initialization.
+	// The browser client (graphql-ws) requests the "graphql-transport-ws"
+	// subprotocol and rejects the handshake unless the server echoes it. Without
+	// this the upgrade fails with "Sent non-empty 'Sec-WebSocket-Protocol' header
+	// but no response was received", which surfaces in the client as a failed
+	// connection rather than a protocol error.
+	Subprotocols: []string{"graphql-transport-ws", "graphql-ws"},
 }
 
 // AuditLogger interface for audit logging.

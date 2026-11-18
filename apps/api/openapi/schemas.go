@@ -63,6 +63,7 @@ type UserSettingsResult struct {
 }
 
 type UserSettingsResultLegacy struct {
+	AvatarURL     string          `json:"avatar_url,omitempty"`
 	Client        *ClientSettings `json:"client,omitempty"`
 	Email         string          `json:"email"`
 	ID            string          `json:"id"`
@@ -933,15 +934,30 @@ type MessageResult struct {
 }
 
 type MeResult struct {
+	AvatarURL            string             `json:"avatar_url,omitempty"`
 	Email                string             `json:"email"`
 	ID                   string             `json:"id"`
 	LastOrganizationID   string             `json:"last_organization_id,omitempty"`
 	Name                 string             `json:"name"`
 	SelectedOrganization *OrganizationInfo  `json:"selected_organization,omitempty"`
 	Organizations        []OrganizationInfo `json:"organizations"`
+	CreatedAt            int64              `json:"created_at"`
+	LastLoginAt          int64              `json:"last_login_at"`
 	EmailVerified        bool               `json:"email_verified"`
 	MFAEnabled           bool               `json:"mfa_enabled"`
 	NeedsOrganization    bool               `json:"needs_organization"`
+}
+
+type ProfileActionResult struct {
+	AvatarURL string `json:"avatar_url,omitempty"`
+	Email     string `json:"email"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+}
+
+type ProfileSummaryResult struct {
+	Actions        int `json:"actions"`
+	ActiveSessions int `json:"active_sessions"`
 }
 
 type TimelineEventResult struct {
@@ -1157,12 +1173,73 @@ type WebhookNotifications struct {
 	Enabled bool     `json:"enabled"`
 }
 
+type SlackNotifications struct {
+	ChannelID   string `json:"channelId,omitempty"`
+	ChannelName string `json:"channelName,omitempty"`
+	SlackUserID string `json:"slackUserId,omitempty"`
+	TeamID      string `json:"teamId,omitempty"`
+	TeamName    string `json:"teamName,omitempty"`
+	Connected   bool   `json:"connected"`
+}
+
 type NotificationSettings struct {
-	Email    EmailNotifications   `json:"email"`
-	Push     PushNotifications    `json:"push"`
-	Webhook  WebhookNotifications `json:"webhook"`
-	Channels []string             `json:"channels"`
-	Enabled  bool                 `json:"enabled"`
+	Email        EmailNotifications   `json:"email"`
+	EmailAddress string               `json:"emailAddress,omitempty"`
+	Push         PushNotifications    `json:"push"`
+	Slack        SlackNotifications   `json:"slack"`
+	Webhook      WebhookNotifications `json:"webhook"`
+	Channels     []string             `json:"channels"`
+	Enabled      bool                 `json:"enabled"`
+}
+
+type SlackChannel struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type SlackChannelsResult struct {
+	Channels []SlackChannel `json:"channels"`
+}
+
+type NotificationHistoryEntry struct {
+	Channel   string `json:"channel"`
+	DeviceID  string `json:"deviceId,omitempty"`
+	ErrorMsg  string `json:"errorMsg,omitempty"`
+	EventType string `json:"eventType"`
+	ID        string `json:"id"`
+	SentAt    int64  `json:"sentAt"`
+	Success   bool   `json:"success"`
+}
+
+type NotificationHistoryResult struct {
+	Entries []NotificationHistoryEntry `json:"entries"`
+	Limit   int                        `json:"limit"`
+	Offset  int                        `json:"offset"`
+	Total   int                        `json:"total"`
+	Unread  int                        `json:"unread"`
+}
+
+type MarkNotificationsReadResult struct {
+	Unread int `json:"unread"`
+}
+
+type PushSubscriptionRequest struct {
+	Endpoint string               `json:"endpoint"`
+	Keys     PushSubscriptionKeys `json:"keys"`
+}
+
+type PushSubscriptionKeys struct {
+	Auth   string `json:"auth"`
+	P256dh string `json:"p256dh"`
+}
+
+type PushPublicKeyResult struct {
+	PublicKey string `json:"publicKey"`
+	Enabled   bool   `json:"enabled"`
+}
+
+type PushTestResult struct {
+	Delivered int `json:"delivered"`
 }
 
 type ClientSettings struct {
@@ -1187,8 +1264,9 @@ type ThresholdsResult struct {
 }
 
 type PreferencesResult struct {
-	Preferences map[string]any `json:"preferences"`
-	Theme       string         `json:"theme"`
+	Preferences map[string]any    `json:"preferences"`
+	Resolved    map[string]string `json:"resolved,omitempty"`
+	Theme       string            `json:"theme"`
 }
 
 type WebhookTestResult struct {
@@ -1271,6 +1349,7 @@ type OrganizationSettingsResult struct {
 	Theme                string          `json:"theme"`
 	Timezone             string          `json:"timezone"`
 	UpdatedAt            string          `json:"updatedAt"`
+	WeekStart            string          `json:"weekStart"`
 	AlertCooldownMinutes int             `json:"alertCooldownMinutes"`
 }
 
@@ -1279,6 +1358,7 @@ type UpdateOrganizationSettingsRequest struct {
 	DefaultThresholds    *UserThresholds `json:"defaultThresholds,omitempty"`
 	Theme                string          `json:"theme,omitempty"`
 	Timezone             string          `json:"timezone,omitempty"`
+	WeekStart            string          `json:"weekStart,omitempty"`
 	AlertCooldownMinutes int             `json:"alertCooldownMinutes,omitempty"`
 }
 
@@ -1480,16 +1560,25 @@ type ThresholdUpdateRequest struct {
 	ThermalWarn int `json:"thermalWarn,omitempty"`
 }
 
+type SlackNotificationInput struct {
+	ChannelID   string `json:"channelId,omitempty"`
+	ChannelName string `json:"channelName,omitempty"`
+	Connected   bool   `json:"connected,omitempty"`
+}
+
 type NotificationUpdateRequest struct {
-	Email    *EmailNotifications   `json:"email,omitempty"`
-	Push     *PushNotifications    `json:"push,omitempty"`
-	Webhook  *WebhookNotifications `json:"webhook,omitempty"`
-	Channels []string              `json:"channels,omitempty"`
-	Enabled  bool                  `json:"enabled,omitempty"`
+	Email        *EmailNotifications     `json:"email,omitempty"`
+	EmailAddress string                  `json:"emailAddress,omitempty"`
+	Push         *PushNotifications      `json:"push,omitempty"`
+	Slack        *SlackNotificationInput `json:"slack,omitempty"`
+	Webhook      *WebhookNotifications   `json:"webhook,omitempty"`
+	Channels     []string                `json:"channels,omitempty"`
+	Enabled      bool                    `json:"enabled,omitempty"`
 }
 
 type UpdateNameRequest struct {
-	Name string `json:"name"`
+	AvatarURL string `json:"avatar_url,omitempty"`
+	Name      string `json:"name,omitempty"`
 }
 
 type UpdateInboxEntryRequest struct {

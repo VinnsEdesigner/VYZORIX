@@ -82,7 +82,7 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 
 	c.JSON(http.StatusOK, openapi.AdminUserListResult{
 		Users: dtoUsersToOpenAPI(users),
-		Total:     total,
+		Total: total,
 	})
 }
 

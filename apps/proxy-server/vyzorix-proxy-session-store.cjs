@@ -14,11 +14,34 @@
 'use strict';
 
 const crypto = require('node:crypto');
+const fs = require('node:fs');
+const path = require('node:path');
 var cfg = require('./vyzorix-proxy-config.cjs');
 var logger = require('./vyzorix-proxy-logger.cjs');
 var config = cfg.config;
 var debug = logger.debug;
+var info = logger.info;
 var warn = logger.warn;
+
+/**
+ * The session fields worth keeping. Everything a session holds is server-side
+ * only, and all of it is needed to resume after a restart — a session restored
+ * without its signing key or tokens would be signed out in practice.
+ */
+var PERSISTED_FIELDS = [
+  'id',
+  'createdAt',
+  'lastAccess',
+  'signingKey',
+  'accessToken',
+  'refreshToken',
+  'tokenExpiresAt',
+  'csrfToken',
+  'csrfCookie',
+  'organizationId',
+  'userId',
+  'apiSessionCookie',
+];
 
 function newSessionId() {
   return crypto.randomBytes(32).toString('hex');
@@ -37,12 +60,106 @@ function createSession() {
     csrfToken: null,
     csrfCookie: null,
     organizationId: null,
-    operatorId: null,
+    userId: null,
     apiSessionCookie: null,
   };
 }
 
 var sessions = new Map();
+
+/**
+ * Persistence.
+ *
+ * Sessions live in memory and are mirrored to a JSON file. A restart is common
+ * during development and a redeploy is routine in production, and without this
+ * every one of them signs every user out.
+ *
+ * The write is atomic (temp file + rename) so a crash mid-write cannot leave a
+ * truncated file that fails to parse on the next start, and it is debounced
+ * because a session is touched on every request.
+ */
+var PERSIST_DEBOUNCE_MS = 1000;
+var persistTimer = null;
+var persistPending = false;
+
+function snapshot() {
+  var now = Date.now();
+  var out = [];
+  sessions.forEach(function (sess) {
+    if (now - sess.lastAccess > config.sessionTtlMs) return;
+    var record = {};
+    PERSISTED_FIELDS.forEach(function (field) {
+      record[field] = sess[field];
+    });
+    out.push(record);
+  });
+  return out;
+}
+
+function persistNow() {
+  persistPending = false;
+  if (persistTimer) {
+    clearTimeout(persistTimer);
+    persistTimer = null;
+  }
+
+  var file = config.sessionFile;
+  if (!file) return;
+
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
+    var tmp = file + '.tmp';
+    // mode 0600: the file holds signing keys and tokens, never world-readable.
+    fs.writeFileSync(tmp, JSON.stringify(snapshot()), { encoding: 'utf8', mode: 0o600 });
+    fs.renameSync(tmp, file);
+  } catch (err) {
+    warn('Could not persist sessions', { file: file, error: err.message });
+  }
+}
+
+function schedulePersist() {
+  persistPending = true;
+  if (persistTimer) return;
+  persistTimer = setTimeout(persistNow, PERSIST_DEBOUNCE_MS);
+  if (persistTimer.unref) persistTimer.unref();
+}
+
+/**
+ * Load persisted sessions, dropping any that have already expired.
+ */
+function loadSessions() {
+  var file = config.sessionFile;
+  if (!file || !fs.existsSync(file)) return;
+
+  try {
+    var raw = fs.readFileSync(file, 'utf8');
+    if (!raw.trim()) return;
+    var parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return;
+
+    var now = Date.now();
+    var loaded = 0;
+    parsed.forEach(function (record) {
+      if (!record || typeof record.id !== 'string') return;
+      if (now - (record.lastAccess || 0) > config.sessionTtlMs) return;
+      var sess = createSession();
+      PERSISTED_FIELDS.forEach(function (field) {
+        if (field in record) sess[field] = record[field];
+      });
+      sess.id = record.id;
+      sessions.set(sess.id, sess);
+      loaded++;
+    });
+
+    if (loaded > 0) {
+      info('Restored sessions from disk', { count: loaded, file: file });
+    }
+  } catch (err) {
+    // A corrupt file must not stop the proxy from starting: warn and carry on
+    // with an empty store, which only costs the users a re-login.
+    warn('Could not read the session file, starting empty', { file: file, error: err.message });
+  }
+}
 
 /**
  * Get or create a session for the given cookie header.
@@ -60,11 +177,13 @@ function getOrCreateSession(cookieHeader) {
     if (sess) {
       debug('Session expired, removing', { id: existingId.slice(0, 12) });
       sessions.delete(existingId);
+      schedulePersist();
     }
   }
   var newSess = createSession();
   sessions.set(newSess.id, newSess);
   debug('Created new proxy session', { id: newSess.id.slice(0, 12) });
+  schedulePersist();
   return newSess;
 }
 
@@ -78,10 +197,16 @@ function getSession(cookieHeader) {
   if (!id) return null;
   var sess = sessions.get(id);
   if (!sess || isExpired(sess)) {
-    if (sess) sessions.delete(id);
+    if (sess) {
+      sessions.delete(id);
+      schedulePersist();
+    }
     return null;
   }
   sess.lastAccess = Date.now();
+  // The last-access stamp is what the TTL is measured from, so it must survive a
+  // restart; a debounced write keeps this off the request path.
+  schedulePersist();
   return sess;
 }
 
@@ -93,6 +218,7 @@ function destroySession(cookieHeader) {
   if (id) {
     sessions.delete(id);
     debug('Destroyed proxy session', { id: id.slice(0, 12) });
+    schedulePersist();
   }
 }
 
@@ -136,6 +262,7 @@ function cleanupExpiredSessions() {
   });
   if (removed > 0) {
     warn('Cleaned up expired sessions', { count: removed });
+    schedulePersist();
   }
   return removed;
 }
@@ -171,6 +298,8 @@ function activeSessionCount() {
 }
 
 module.exports = {
+  loadSessions,
+  flushSessions: persistNow,
   getOrCreateSession,
   getSession,
   destroySession,

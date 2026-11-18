@@ -99,6 +99,11 @@ type Config struct {
 	MetricsToken            string
 	JWTSecret               string
 	GitHubOAuthClientID     string
+	SlackOAuthClientID      string
+	SlackOAuthClientSecret  string
+	VAPIDPublicKey          string
+	VAPIDPrivateKey         string
+	VAPIDSubject            string
 	Env                     string
 	DatabaseURL             string
 	DatabaseBackend         string
@@ -323,6 +328,11 @@ func Load() (Config, error) {
 		GoogleOAuthClientSecret:   os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"),
 		GitHubOAuthClientID:       os.Getenv("GITHUB_OAUTH_CLIENT_ID"),
 		GitHubOAuthClientSecret:   os.Getenv("GITHUB_OAUTH_CLIENT_SECRET"),
+		SlackOAuthClientID:        os.Getenv("SLACK_OAUTH_CLIENT_ID"),
+		SlackOAuthClientSecret:    os.Getenv("SLACK_OAUTH_CLIENT_SECRET"),
+		VAPIDPublicKey:            os.Getenv("VAPID_PUBLIC_KEY"),
+		VAPIDPrivateKey:           os.Getenv("VAPID_PRIVATE_KEY"),
+		VAPIDSubject:              os.Getenv("VAPID_SUBJECT"),
 		GitHubReleaseRepo:         os.Getenv("GITHUB_RELEASE_REPO"),
 		// GITHUB_RELEASE_TOKEN, falling back to GITHUB_TOKEN. A public release repo
 		// needs no token (the anonymous GitHub API works); a private one does, and

@@ -29,8 +29,8 @@ import (
 	orgapplication "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/organization"
 	updatesapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/updates"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/transaction"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/appcheck"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/config"
 	cryptohmac "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/crypto"
@@ -177,9 +177,13 @@ func ProvideGoogleVerifier(cfg config.Config) *infraauth.GoogleTokenVerifier {
 	return infraauth.NewGoogleTokenVerifier(cfg.GoogleOAuthClientID)
 }
 
-// ProvideUserRepository creates the user repository.
-func ProvideUserRepository(db *sql.DB) *storage.UserRepository {
-	return storage.NewUserRepository(db)
+// ProvideUserRepository creates the user repository and enables encryption at
+// rest for the reversible secrets it stores (the Slack bot token), keyed from
+// the session secret.
+func ProvideUserRepository(db *sql.DB, cfg config.Config) *storage.UserRepository {
+	repo := storage.NewUserRepository(db)
+	repo.SetSecretCipher(cfg.SessionSecret)
+	return repo
 }
 
 // ProvideDeviceRepository creates the device repository.
@@ -251,16 +255,24 @@ func ProvideEventProcessor(
 	return processor
 }
 
+// ProvidePushSubscriptionRepository creates the browser push subscription store.
+func ProvidePushSubscriptionRepository(db *sql.DB) *storage.PushSubscriptionRepository {
+	return storage.NewPushSubscriptionRepository(db)
+}
+
 // ProvideNotificationService creates the notification service.
 func ProvideNotificationService(
 	userRepo *storage.UserRepository,
 	emailSvc *emailService.Service,
 	webhookClient *webhook.Client,
 	auditRepo *infranotification.Repository,
+	pushRepo *storage.PushSubscriptionRepository,
 	cfg config.Config,
 	log *slog.Logger,
 ) *appnotification.Service {
-	return appnotification.NewService(userRepo, emailSvc, webhookClient, auditRepo, cfg.BaseURL, log)
+	svc := appnotification.NewServiceWithSlack(userRepo, emailSvc, webhookClient, auditRepo, cfg.BaseURL, cfg.SlackConfig.WebhookURL, log)
+	svc.SetPushDelivery(pushRepo, cfg.VAPIDPublicKey, cfg.VAPIDPrivateKey, cfg.VAPIDSubject)
+	return svc
 }
 
 // WireNotificationServiceToProcessor wires the notification service to the event processor.
@@ -767,20 +779,24 @@ func ProvideHandlerSet(
 	hmacVerifier *cryptohmac.Verifier,
 	serverSigner *cryptohmac.ServerSigner,
 	db *sql.DB,
+	notificationAudit *infranotification.Repository,
+	pushRepo *storage.PushSubscriptionRepository,
 	updatesHandler *updateshandlers.UpdatesHandler,
 ) *HandlerSet {
 	hs := &HandlerSet{}
 
 	hs.Auth = authhandlers.NewAllHandlers(&authhandlers.Dependencies{
-		AuthService:    authService,
-		SessionManager: sessionManager,
-		Config:         cfg,
-		GoogleVerifier: googleVerifier,
-		ClientService:  clientService,
-		EmailService:   emailService,
-		Lockout:        lockout,
-		UserRepo:   userRepo,
-		AuditLogger:    auditLogger,
+		AuthService:       authService,
+		SessionManager:    sessionManager,
+		Config:            cfg,
+		GoogleVerifier:    googleVerifier,
+		ClientService:     clientService,
+		EmailService:      emailService,
+		Lockout:           lockout,
+		UserRepo:          userRepo,
+		AuditLogger:       auditLogger,
+		NotificationAudit: notificationAudit,
+		PushRepo:          pushRepo,
 	})
 
 	hs.DeviceStatus = devicehandlers.NewStatusHandler(deviceService)
@@ -924,6 +940,9 @@ func ProvideServerDependencies(
 	deviceSettingsService *device.DeviceSettingsService,
 	idempotencyRepo *storage.IdempotencyRepository,
 	confirmationService *confirmation.Service,
+	notificationAudit *infranotification.Repository,
+	pushRepo *storage.PushSubscriptionRepository,
+	notificationSvc *appnotification.Service,
 ) *ServerDependencies {
 	return &ServerDependencies{
 		FCMNotifier:           fcmNotifier,
@@ -932,7 +951,7 @@ func ProvideServerDependencies(
 		DeviceDeletionWorker:  deviceDeletionWorker,
 		CommandOutbox:         commandOutbox,
 		DeviceRepo:            deviceRepo,
-		UserRepo:          userRepo,
+		UserRepo:              userRepo,
 		RateLimiter:           rateLimiter,
 		Hub:                   hubResult.Hub,
 		AuthService:           authService,
@@ -950,6 +969,9 @@ func ProvideServerDependencies(
 		DeviceService:         deviceService,
 		Metrics:               metrics,
 		AuditLogger:           auditLogger,
+		NotificationAudit:     notificationAudit,
+		PushRepo:              pushRepo,
+		NotificationService:   notificationSvc,
 		Config:                cfg,
 		UpdatesStorage:        updatesStorage,
 		UpdatesService:        updatesService,

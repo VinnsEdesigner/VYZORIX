@@ -32,10 +32,10 @@ var (
 
 // MFAHandler handles MFA endpoints.
 type MFAHandler struct {
-	authService  *appauth.AuthService
-	userRepo user.Repository
-	presenter    *response.Presenter
-	auditLogger  *audit.Logger
+	authService *appauth.AuthService
+	userRepo    user.Repository
+	presenter   *response.Presenter
+	auditLogger *audit.Logger
 }
 
 // NewMFAHandler creates a new MFAHandler.
@@ -149,7 +149,7 @@ func (h *MFAHandler) VerifySetupMFA(c *gin.Context) {
 	}
 
 	// Verify TOTP code.
-	_, err = h.authService.VerifyMFACode(c.Request.Context(), opID, req.Token)
+	_, err = h.authService.VerifyMFACode(c.Request.Context(), opID, req.Token, appauth.SessionMeta{IPAddress: c.ClientIP(), UserAgent: c.GetHeader("User-Agent")})
 	if err != nil {
 		h.presenter.Unauthorized(c, "")
 		return
@@ -188,7 +188,7 @@ func (h *MFAHandler) EnableMFA(c *gin.Context) {
 	}
 
 	// Verify TOTP code first.
-	_, err = h.authService.VerifyMFACode(c.Request.Context(), opID, req.Token)
+	_, err = h.authService.VerifyMFACode(c.Request.Context(), opID, req.Token, appauth.SessionMeta{IPAddress: c.ClientIP(), UserAgent: c.GetHeader("User-Agent")})
 	if err != nil {
 		h.presenter.Unauthorized(c, "")
 		return
@@ -247,7 +247,7 @@ func (h *MFAHandler) DisableMFA(c *gin.Context) {
 	}
 
 	// Verify TOTP code before disabling MFA.
-	_, err = h.authService.VerifyMFACode(c.Request.Context(), opID, req.Code)
+	_, err = h.authService.VerifyMFACode(c.Request.Context(), opID, req.Code, appauth.SessionMeta{IPAddress: c.ClientIP(), UserAgent: c.GetHeader("User-Agent")})
 	if err != nil {
 		h.presenter.Unauthorized(c, "Invalid MFA code")
 		return
@@ -349,11 +349,11 @@ func (h *MFAHandler) RegenerateBackupCodes(c *gin.Context) {
 func (h *MFAHandler) VerifyMFA(c *gin.Context) {
 	var req struct {
 		UserID string `json:"user_id" binding:"required"`
-		Code       string `json:"code" binding:"required"`
+		Code   string `json:"code" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.presenter.BadRequest(c, "operator_id and code are required")
+		h.presenter.BadRequest(c, "user_id and code are required")
 		return
 	}
 
@@ -363,7 +363,7 @@ func (h *MFAHandler) VerifyMFA(c *gin.Context) {
 	}
 
 	// Verify the MFA code first.
-	session, err := h.authService.VerifyMFACode(c.Request.Context(), req.UserID, req.Code)
+	session, err := h.authService.VerifyMFACode(c.Request.Context(), req.UserID, req.Code, appauth.SessionMeta{IPAddress: c.ClientIP(), UserAgent: c.GetHeader("User-Agent")})
 	if err != nil {
 		// 2: Log failed MFA attempt.
 		if h.auditLogger != nil {

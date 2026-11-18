@@ -46,10 +46,15 @@ const config = {
   stripSigningKey: envBool('PROXY_STRIP_SIGNING_KEY', true),
   sessionCookieName: '_vyz_proxy_sid',
   sessionTtlMs: envInt('PROXY_SESSION_TTL_MS', 24 * 60 * 60 * 1000),
+  // Where sessions are persisted. Without this the store is memory-only, so every
+  // restart signs every user out — and a restart during development is common.
+  // The file holds signing keys and tokens, so it is written 0600; in a container
+  // point it at a mounted volume.
+  sessionFile: envStr('PROXY_SESSION_FILE', path.resolve(__dirname, '.sessions', 'proxy-sessions.json')),
 };
 
 // Paths that should be proxied to the Go API (not served as static assets).
-const API_PATH_PREFIXES = ['/v1/', '/api/', '/health', '/healthz', '/bin/'];
+const API_PATH_PREFIXES = ['/v1/', '/api/', '/health', '/healthz', '/bin/', '/avatars/'];
 
 function isGraphQLPath(pathname) {
   // Org-scoped GraphQL: /:org/graphql, /:org/graphql/batch, /:org/graphql/ws

@@ -20,7 +20,7 @@ func clientRespToOpenAPI(in *dto.ClientResponse) *openapi.ClientCredential {
 	}
 	return &openapi.ClientCredential{
 		ID:             in.ID,
-		UserID:     in.UserID,
+		UserID:         in.UserID,
 		Name:           in.Name,
 		Platform:       in.Platform,
 		AllowedOrigins: in.AllowedOrigins,
@@ -64,7 +64,7 @@ func NewClientCredentialsHandler(authService *auth.AuthService, clientService *c
 func clientCredToSchema(r *dto.ClientResponse) openapi.ClientCredential {
 	return openapi.ClientCredential{
 		ID:             r.ID,
-		UserID:     r.UserID,
+		UserID:         r.UserID,
 		Name:           r.Name,
 		Platform:       r.Platform,
 		AllowedOrigins: r.AllowedOrigins,
@@ -135,7 +135,7 @@ func (h *ClientCredentialsHandler) Create(c *gin.Context) {
 	}
 
 	clientResp, secret, err := h.clientService.Create(c.Request.Context(), &client.CreateClientRequest{
-		UserID:     userID,
+		UserID:         userID,
 		Name:           req.Name,
 		Platform:       req.Platform,
 		AllowedOrigins: req.AllowedOrigins,

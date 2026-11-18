@@ -56,6 +56,7 @@ package vyzorix
         updatedAt: string
         alertCooldownMinutes: int
         theme: string
+        weekStart: string
 }
 
 // UpdateOrganizationSettingsRequest.
@@ -65,6 +66,7 @@ package vyzorix
         alertCooldownMinutes?: int
         defaultThresholds?: #UserThresholds
         theme?: string
+        weekStart?: string
 }
 
 // UpdateOrganizationRequest.

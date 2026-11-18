@@ -36,7 +36,7 @@ func NewService(repo domainconfirmation.Repository) *Service {
 // the TTL via ConsumeForCommand.
 func (s *Service) RequestConfirmation(ctx context.Context, userID, orgID, commandName, deviceID string) (*domainconfirmation.PendingConfirmation, error) {
 	if userID == "" || commandName == "" {
-		return nil, errors.New("operatorID and commandName are required")
+		return nil, errors.New("userID and commandName are required")
 	}
 
 	profile := command.LookupRiskProfile(commandName)

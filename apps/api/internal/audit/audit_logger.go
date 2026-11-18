@@ -165,6 +165,18 @@ func (l *Logger) writeEntry(entry *Entry) {
 // LogEvent logs a security event to the audit repository via buffered channel.
 
 // writer goroutine, ensuring proper shutdown drainage.
+// CountForUser returns how many audit entries the user has, i.e. how many
+// audited actions they have taken. A read-only convenience over the repository
+// so a profile summary can show an activity count without the caller reaching
+// for the repository directly. A nil repo (no audit store configured) counts 0.
+func (l *Logger) CountForUser(ctx context.Context, userID string) (int, error) {
+	if l.repo == nil {
+		return 0, nil
+	}
+
+	return l.repo.Count(ctx, Query{UserID: userID})
+}
+
 func (l *Logger) LogEvent(ctx context.Context, entry *Entry) {
 	if entry.ID == "" {
 		entry.ID = uuid.New()

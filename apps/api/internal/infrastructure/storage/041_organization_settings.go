@@ -59,9 +59,9 @@ func (r *OrganizationSettingsRepository) Create(ctx context.Context, settings *o
 	}
 
 	_, err = r.db.ExecContext(ctx, `
-		INSERT INTO organization_settings (id, organization_id, timezone, date_format, alert_cooldown_minutes, theme, default_thresholds, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, settings.ID, settings.OrganizationID, settings.Timezone, settings.DateFormat, settings.AlertCooldownMinutes, settings.Theme, thresholdsJSON, settings.CreatedAt.Unix(), settings.UpdatedAt.Unix())
+		INSERT INTO organization_settings (id, organization_id, timezone, date_format, alert_cooldown_minutes, theme, week_start, default_thresholds, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, settings.ID, settings.OrganizationID, settings.Timezone, settings.DateFormat, settings.AlertCooldownMinutes, settings.Theme, settings.WeekStart, thresholdsJSON, settings.CreatedAt.Unix(), settings.UpdatedAt.Unix())
 
 	return err
 }
@@ -69,7 +69,7 @@ func (r *OrganizationSettingsRepository) Create(ctx context.Context, settings *o
 // FindByID retrieves settings by ID.
 func (r *OrganizationSettingsRepository) FindByID(ctx context.Context, id string) (*organization.OrganizationSettings, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, organization_id, timezone, date_format, alert_cooldown_minutes, theme, default_thresholds, created_at, updated_at
+		SELECT id, organization_id, timezone, date_format, alert_cooldown_minutes, theme, week_start, default_thresholds, created_at, updated_at
 		FROM organization_settings
 		WHERE id = ?
 	`, id)
@@ -80,7 +80,7 @@ func (r *OrganizationSettingsRepository) FindByID(ctx context.Context, id string
 // FindByOrganizationID retrieves settings by organization ID.
 func (r *OrganizationSettingsRepository) FindByOrganizationID(ctx context.Context, orgID string) (*organization.OrganizationSettings, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, organization_id, timezone, date_format, alert_cooldown_minutes, theme, default_thresholds, created_at, updated_at
+		SELECT id, organization_id, timezone, date_format, alert_cooldown_minutes, theme, week_start, default_thresholds, created_at, updated_at
 		FROM organization_settings
 		WHERE organization_id = ?
 	`, orgID)
@@ -101,9 +101,9 @@ func (r *OrganizationSettingsRepository) Update(ctx context.Context, settings *o
 
 	_, err = r.db.ExecContext(ctx, `
 		UPDATE organization_settings
-		SET timezone = ?, date_format = ?, alert_cooldown_minutes = ?, theme = ?, default_thresholds = ?, updated_at = ?
+		SET timezone = ?, date_format = ?, alert_cooldown_minutes = ?, theme = ?, week_start = ?, default_thresholds = ?, updated_at = ?
 		WHERE id = ?
-	`, settings.Timezone, settings.DateFormat, settings.AlertCooldownMinutes, settings.Theme, thresholdsJSON, time.Now().Unix(), settings.ID)
+	`, settings.Timezone, settings.DateFormat, settings.AlertCooldownMinutes, settings.Theme, settings.WeekStart, thresholdsJSON, time.Now().Unix(), settings.ID)
 
 	return err
 }
@@ -122,12 +122,12 @@ func (r *OrganizationSettingsRepository) DeleteByOrganizationID(ctx context.Cont
 
 // scanSettings scans a row into OrganizationSettings.
 func (r *OrganizationSettingsRepository) scanSettings(row *sql.Row) (*organization.OrganizationSettings, error) {
-	var id, orgID, timezone, dateFormat, theme string
+	var id, orgID, timezone, dateFormat, theme, weekStart string
 	var alertCooldownMinutes int
 	var thresholdsJSON []byte
 	var createdAt, updatedAt int64
 
-	err := row.Scan(&id, &orgID, &timezone, &dateFormat, &alertCooldownMinutes, &theme, &thresholdsJSON, &createdAt, &updatedAt)
+	err := row.Scan(&id, &orgID, &timezone, &dateFormat, &alertCooldownMinutes, &theme, &weekStart, &thresholdsJSON, &createdAt, &updatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, organization.ErrSettingsNotFound
@@ -142,6 +142,7 @@ func (r *OrganizationSettingsRepository) scanSettings(row *sql.Row) (*organizati
 		DateFormat:           dateFormat,
 		AlertCooldownMinutes: alertCooldownMinutes,
 		Theme:                theme,
+		WeekStart:            weekStart,
 		CreatedAt:            time.Unix(createdAt, 0),
 		UpdatedAt:            time.Unix(updatedAt, 0),
 	}

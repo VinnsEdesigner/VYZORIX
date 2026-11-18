@@ -71,4 +71,8 @@ var (
 	// ErrInvalidTheme is returned when an organisation theme id is not in the
 	// allowlist. Mirrors the user-preference validation.
 	ErrInvalidTheme = errors.New("invalid theme")
+
+	// ErrInvalidWeekStart is returned when an organisation week start is not one
+	// of the allowed values.
+	ErrInvalidWeekStart = errors.New("invalid week start")
 )

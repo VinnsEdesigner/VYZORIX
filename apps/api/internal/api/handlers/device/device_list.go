@@ -182,7 +182,7 @@ func (h *ListHandler) ListByUser(c *gin.Context) {
 
 	userID := c.Query("userId")
 	if userID == "" {
-		_ = c.Error(apperrors.NewServerError(apperrors.CodeValidationFailed, "operatorId is required"))
+		_ = c.Error(apperrors.NewServerError(apperrors.CodeValidationFailed, "userId is required"))
 		return
 	}
 

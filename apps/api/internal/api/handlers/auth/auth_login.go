@@ -278,7 +278,7 @@ func (h *LoginHandler) Handle(c *gin.Context) {
 		IPAddress:         ipAddress,
 		UserAgent:         userAgent,
 		DeviceFingerprint: deviceFingerprint,
-	})
+	}, auth.SessionMeta{IPAddress: ipAddress, UserAgent: userAgent})
 
 	success := err == nil
 	metrics.Get().RecordLogin(success)
@@ -297,7 +297,7 @@ func (h *LoginHandler) Handle(c *gin.Context) {
 			h.lockout.Clear(req.Email)
 			h.presenter.OK(c, openapi.LoginResult{
 				RequiresMFA: true,
-				UserID:  result.UserID,
+				UserID:      result.UserID,
 			})
 		case errors.Is(err, application.ErrAccountLocked):
 			h.presenter.OK(c, openapi.ErrorResponse{
@@ -322,12 +322,12 @@ func (h *LoginHandler) Handle(c *gin.Context) {
 		go func() {
 			if h.emailService != nil && result != nil {
 				loginData := emailService.LoginNotificationData{
-					UserName: result.Name,
-					IPAddress:    ipAddress,
-					UserAgent:    userAgent,
-					Location:     "Unknown",
-					Device:       userAgent,
-					Timestamp:    time.Now().Format(time.RFC1123),
+					UserName:  result.Name,
+					IPAddress: ipAddress,
+					UserAgent: userAgent,
+					Location:  "Unknown",
+					Device:    userAgent,
+					Timestamp: time.Now().Format(time.RFC1123),
 				}
 
 				if err := h.emailService.SendNewLoginNotificationEmail(context.Background(), result.Email, loginData); err != nil {
@@ -384,6 +384,10 @@ func (h *LoginHandler) HandleWithTokens(c *gin.Context) {
 		return
 	}
 
+	// Capture the client address and user agent so the session row records them,
+	// matching the cookie login path (the profile page reads them).
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
 	// Check lockout BEFORE any expensive operations.
 	if h.lockout.IsLocked(req.Email) {
 		retryAfter := h.lockout.RetryAfter(req.Email)
@@ -402,7 +406,7 @@ func (h *LoginHandler) HandleWithTokens(c *gin.Context) {
 	defer cancel()
 
 	// Login with tokens.
-	result, err := h.authService.LoginWithTokens(ctx, &req)
+	result, err := h.authService.LoginWithTokens(ctx, &req, auth.SessionMeta{IPAddress: ipAddress, UserAgent: userAgent})
 	if err != nil {
 		switch {
 		case errors.Is(err, application.ErrMFARequired):
@@ -410,7 +414,7 @@ func (h *LoginHandler) HandleWithTokens(c *gin.Context) {
 			// MFA is about user's own account security, not organization role.
 			h.presenter.OK(c, openapi.LoginWithTokensResult{
 				RequiresMFA: true,
-				UserID:  result.UserID,
+				UserID:      result.UserID,
 				Email:       result.Email,
 				Name:        result.Name,
 				MFAEnabled:  true,

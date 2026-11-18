@@ -90,3 +90,47 @@ func TestAllowedOrigins_TrailingDotDomain(t *testing.T) {
 		t.Error("a trailing dot on the configured domain should still match")
 	}
 }
+
+// TestAllowedOrigins_WildcardWithScheme is the regression guard for a dead
+// branch: the config validator requires every ALLOWED_ORIGINS entry to carry a
+// scheme, but the matcher only looked for a "*." prefix on the whole string. For
+// a valid entry like "https://*.example.com" that prefix is never at position 0,
+// so the wildcard never matched anything and every cross-origin request was
+// rejected with 403 — while the schemeless form the tests used was rejected by
+// the validator. Both forms must work.
+func TestAllowedOrigins_WildcardWithScheme(t *testing.T) {
+	allow := originChecker("https://*.example.com")
+
+	for _, ok := range []string{
+		"https://app.example.com",
+		"https://a.b.example.com",
+		"https://example.com",
+	} {
+		if !allow(requestWithOrigin(ok)) {
+			t.Errorf("%s should be allowed for https://*.example.com", ok)
+		}
+	}
+
+	for _, bad := range []string{
+		"https://evil-example.com",
+		"https://notexample.com",
+		"https://example.com.attacker.net",
+		"http://app.other.com",
+	} {
+		if allow(requestWithOrigin(bad)) {
+			t.Errorf("%s must NOT be allowed for https://*.example.com", bad)
+		}
+	}
+}
+
+// TestAllowedOrigins_SchemeQualifiedEntry confirms an exact entry with a scheme
+// still matches only its own origin.
+func TestAllowedOrigins_SchemeQualifiedEntry(t *testing.T) {
+	allow := originChecker("https://work-1.example.dev")
+	if !allow(requestWithOrigin("https://work-1.example.dev")) {
+		t.Error("the exact schemed origin should be allowed")
+	}
+	if allow(requestWithOrigin("https://work-2.example.dev")) {
+		t.Error("a different host must not be allowed")
+	}
+}

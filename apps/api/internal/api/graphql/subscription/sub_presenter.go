@@ -40,14 +40,14 @@ func NewPresenter(log Logger, auditLogger AuditLogger) *Presenter {
 // LogConnect logs a subscription connection.
 func (p *Presenter) LogConnect(ctx context.Context, op *user.User) {
 	if p.log != nil {
-		p.log.Info("subscription client connected", "operatorID", op.ID)
+		p.log.Info("subscription client connected", "userID", op.ID)
 	}
 }
 
 // LogDisconnect logs a subscription disconnection.
 func (p *Presenter) LogDisconnect(ctx context.Context, op *user.User) {
 	if p.log != nil {
-		p.log.Info("subscription client disconnected", "operatorID", op.ID)
+		p.log.Info("subscription client disconnected", "userID", op.ID)
 	}
 }
 

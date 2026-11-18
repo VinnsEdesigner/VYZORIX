@@ -33,6 +33,9 @@ type Repository interface {
 	FindByID(ctx context.Context, id string) (*Session, error)
 	FindByUserID(ctx context.Context, userID string) ([]*Session, error)
 	Create(ctx context.Context, s *Session) error
+	// UpdateSessionMeta backfills the client IP and user agent on a session
+	// created before those fields were captured.
+	UpdateSessionMeta(ctx context.Context, id, ipAddress, userAgent string) error
 	Delete(ctx context.Context, id string) error
 	DeleteByUserID(ctx context.Context, userID string) error
 	DeleteExpired(ctx context.Context) (int, error)

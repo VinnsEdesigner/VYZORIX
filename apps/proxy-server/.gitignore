@@ -1,0 +1,2 @@
+# Persisted proxy sessions: hold signing keys and tokens. Never commit.
+.sessions/

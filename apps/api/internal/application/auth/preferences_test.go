@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/storage"
@@ -16,7 +17,9 @@ func setupPrefsTestDB(t *testing.T) (*storage.UserRepository, *sql.DB) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	_, err = db.Exec(`CREATE TABLE user_settings (user_id TEXT PRIMARY KEY, risk_warn INTEGER DEFAULT 70, risk_crit INTEGER DEFAULT 85, thermal_warn INTEGER DEFAULT 45, thermal_crit INTEGER DEFAULT 50, buffer_warn INTEGER DEFAULT 30, buffer_crit INTEGER DEFAULT 15, preferences TEXT DEFAULT '{}')`)
+	// The columns the real schema has and SavePreferencesRaw writes. A fixture that
+	// omits updated_at/created_at passes only until the insert supplies them.
+	_, err = db.Exec(`CREATE TABLE user_settings (user_id TEXT PRIMARY KEY, risk_warn INTEGER DEFAULT 70, risk_crit INTEGER DEFAULT 85, thermal_warn INTEGER DEFAULT 45, thermal_crit INTEGER DEFAULT 50, buffer_warn INTEGER DEFAULT 30, buffer_crit INTEGER DEFAULT 15, preferences TEXT DEFAULT '{}', updated_at INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL DEFAULT 0)`)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
@@ -47,12 +50,23 @@ func TestGetPreferences_NoData_ReturnsDefaults(t *testing.T) {
 
 // fakeOrgTheme is a stub OrgThemeSource for the cascade tests.
 type fakeOrgTheme struct {
-	theme string
-	err   error
+	theme    string
+	defaults map[string]string
+	err      error
 }
 
 func (f fakeOrgTheme) OrgTheme(_ context.Context, _ string) (string, error) {
 	return f.theme, f.err
+}
+
+func (f fakeOrgTheme) OrgPreferenceDefaults(_ context.Context, _ string) (map[string]string, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	if f.defaults == nil {
+		return map[string]string{}, nil
+	}
+	return f.defaults, nil
 }
 
 func TestResolveTheme_Cascade(t *testing.T) {
@@ -147,16 +161,35 @@ func TestUpdatePreferences_ThenGet(t *testing.T) {
 	}
 }
 
-func TestUpdatePreferences_DeleteCustomKey(t *testing.T) {
+// TestUpdatePreferences_RejectsUnknownKey is the allowlist guarantee: a key
+// outside preferenceSchema is refused rather than persisted, so an
+// authenticated caller cannot grow the stored document with arbitrary keys.
+func TestUpdatePreferences_RejectsUnknownKey(t *testing.T) {
 	repo, db := setupPrefsTestDB(t)
 	defer db.Close()
 	svc := NewClientSettingsService(repo, nil)
 	ctx := context.Background()
 
-	_, _ = svc.UpdatePreferences(ctx, "op-1", map[string]any{"custom_key": "custom_value"})
-	_, err := svc.UpdatePreferences(ctx, "op-1", map[string]any{"custom_key": nil})
-	if err != nil {
-		t.Fatalf("update with nil: %v", err)
+	if _, err := svc.UpdatePreferences(ctx, "op-1", map[string]any{"custom_key": "custom_value"}); err == nil {
+		t.Fatal("expected an unknown key to be rejected")
+	} else if !errors.Is(err, ErrValidationError) {
+		t.Fatalf("error %v does not wrap ErrValidationError", err)
+	}
+}
+
+// TestUpdatePreferences_ClearsKey proves an empty value unsets an allowed key so
+// the next tier in the cascade applies.
+func TestUpdatePreferences_ClearsKey(t *testing.T) {
+	repo, db := setupPrefsTestDB(t)
+	defer db.Close()
+	svc := NewClientSettingsService(repo, nil)
+	ctx := context.Background()
+
+	if _, err := svc.UpdatePreferences(ctx, "op-1", map[string]any{"theme": "tron"}); err != nil {
+		t.Fatalf("set theme: %v", err)
+	}
+	if _, err := svc.UpdatePreferences(ctx, "op-1", map[string]any{"theme": ""}); err != nil {
+		t.Fatalf("clear theme: %v", err)
 	}
 
 	raw, _ := repo.GetPreferencesRaw(ctx, "op-1")
@@ -167,7 +200,68 @@ func TestUpdatePreferences_DeleteCustomKey(t *testing.T) {
 	if err := json.Unmarshal([]byte(raw), &stored); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	if _, exists := stored["custom_key"]; exists {
-		t.Error("custom_key should be absent in stored JSON after nil update")
+	if _, exists := stored["theme"]; exists {
+		t.Error("theme should be absent in stored JSON after an empty update")
+	}
+}
+
+// TestResolvePreferences_Cascade covers the general resolver: a user value wins,
+// an unset user value inherits the organisation default, and an unset
+// organisation value falls through to the system default.
+func TestResolvePreferences_Cascade(t *testing.T) {
+	repo, db := setupPrefsTestDB(t)
+	defer db.Close()
+	ctx := context.Background()
+
+	org := fakeOrgTheme{defaults: map[string]string{
+		"theme":       "tron",
+		"timezone":    "Europe/Berlin",
+		"date_format": "DD/MM/YYYY",
+		"week_start":  "monday",
+	}}
+	svc := NewClientSettingsService(repo, org)
+
+	// The user sets only the theme; everything else must inherit.
+	if _, err := svc.UpdatePreferences(ctx, "op-1", map[string]any{"theme": "light"}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	got, err := svc.ResolvePreferences(ctx, "op-1", "org-1")
+	if err != nil {
+		t.Fatalf("ResolvePreferences: %v", err)
+	}
+
+	want := map[string]string{
+		"theme":       "light",
+		"timezone":    "Europe/Berlin",
+		"date_format": "DD/MM/YYYY",
+		"week_start":  "monday",
+	}
+	for k, v := range want {
+		if got[k] != v {
+			t.Errorf("%s = %v, want %q", k, got[k], v)
+		}
+	}
+}
+
+// TestResolvePreferences_DefaultsWhenNothingSet is the empty case: neither tier
+// sets anything, so only the theme carries a value (the system default).
+func TestResolvePreferences_DefaultsWhenNothingSet(t *testing.T) {
+	repo, db := setupPrefsTestDB(t)
+	defer db.Close()
+
+	svc := NewClientSettingsService(repo, fakeOrgTheme{})
+	got, err := svc.ResolvePreferences(context.Background(), "op-1", "org-1")
+	if err != nil {
+		t.Fatalf("ResolvePreferences: %v", err)
+	}
+
+	if got["theme"] != DefaultTheme {
+		t.Errorf("theme = %v, want %q", got["theme"], DefaultTheme)
+	}
+	for _, k := range []string{"timezone", "date_format", "week_start"} {
+		if _, present := got[k]; present {
+			t.Errorf("%s should be absent when neither tier sets it, got %v", k, got[k])
+		}
 	}
 }

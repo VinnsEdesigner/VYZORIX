@@ -41,6 +41,14 @@ package vyzorix
         bufferCrit?: int
 }
 
+// SlackNotificationInput is the client-settable part of the Slack channel. The
+// workspace and token come from the OAuth link-up, not from this input.
+#SlackNotificationInput: {
+        channelId?: string
+        channelName?: string
+        connected?: bool
+}
+
 // NotificationUpdateRequest.
 #NotificationUpdateRequest: {
         enabled?: bool
@@ -48,11 +56,14 @@ package vyzorix
         email?: #EmailNotifications
         push?: #PushNotifications
         webhook?: #WebhookNotifications
+        slack?: #SlackNotificationInput
+        emailAddress?: string
 }
 
 // UpdateNameRequest.
 #UpdateNameRequest: {
-        name: string
+        name?: string
+        avatar_url?: string
 }
 
 // UpdateInboxEntryRequest.

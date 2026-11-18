@@ -135,13 +135,51 @@ func handleSSRRequest(log *slog.Logger, proxy *httputil.ReverseProxy, ssrHealthy
 	}
 }
 
+// isStaticPath reports whether the API serves this path itself rather than the
+// web app. The name is historical: it means "not an app route", which includes
+// the REST prefixes and the org-scoped GraphQL endpoints.
+//
+// GraphQL must be listed. This middleware is mounted globally, so it runs before
+// route matching; without the check, /:org/graphql/ws never reaches the
+// subscription handler and is redirected to /login as if it were an app route.
 func isStaticPath(path string) bool {
 	return strings.HasPrefix(path, "/api/") ||
 		strings.HasPrefix(path, "/v1/") ||
 		strings.HasPrefix(path, "/health") ||
 		strings.HasPrefix(path, "/metrics") ||
 		strings.HasPrefix(path, "/bin/") ||
+		isGraphQLPath(path) ||
 		strings.Contains(path, ".")
+}
+
+// isGraphQLPath matches the org-scoped GraphQL endpoints the API registers:
+//
+// /:org/graphql
+// /:org/graphql/batch
+// /:org/graphql/ws
+// /:org/playground
+//
+// The org segment is exactly one path component, so /a/b/graphql is not
+// matched. A path like /settings/graphql IS matched, because Gin's
+// /:org/graphql route captures "settings" as the org — this mirrors the API's
+// own routing rather than second-guessing it.
+func isGraphQLPath(path string) bool {
+	segments := strings.Split(strings.Trim(path, "/"), "/")
+	if len(segments) < 2 || len(segments) > 3 {
+		return false
+	}
+
+	switch segments[1] {
+	case "graphql":
+		if len(segments) == 2 {
+			return true
+		}
+		return segments[2] == "batch" || segments[2] == "ws"
+	case "playground":
+		return len(segments) == 2
+	default:
+		return false
+	}
 }
 
 func isSSRHealthy(healthy bool, mu *sync.RWMutex) bool {

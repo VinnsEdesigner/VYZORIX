@@ -94,7 +94,7 @@ func (h *OrganizationHandler) Create(c *gin.Context) {
 
 	org, err := h.orgService.CreateOrganization(c.Request.Context(), op.ID, req.Name, req.Description, req.MaxMembers, req.Role)
 	if err != nil {
-		slog.Error("CreateOrganization failed", "operatorID", op.ID, "name", req.Name, "error", err)
+		slog.Error("CreateOrganization failed", "userID", op.ID, "name", req.Name, "error", err)
 		if errors.Is(err, appOrganization.ErrMaxOrgsReached) {
 			h.presenter.Forbidden(c, "maximum 2 active organizations allowed")
 			return

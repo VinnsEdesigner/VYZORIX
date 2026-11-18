@@ -63,6 +63,10 @@ services:
       - VYZORIX_PUBLIC_DIR=/app/public
       - ENFORCE_HMAC=true
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:?ALLOWED_ORIGINS must be set}
+      # Trust the reverse proxy's X-Forwarded-For so the session row records the
+      # real client IP (shown on the profile page). Set to the proxy's address,
+      # e.g. the nginx container's IP/CIDR. Empty = trust nothing (safe default).
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES:-}
     volumes:
       - vyzorix-data:/data
     healthcheck:

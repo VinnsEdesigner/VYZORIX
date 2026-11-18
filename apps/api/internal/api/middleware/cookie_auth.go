@@ -85,6 +85,11 @@ func (c *CookieAuth) Middleware() gin.HandlerFunc {
 			return
 		}
 
+		// Backfill IP/user-agent for a session created before they were captured,
+		// so the profile page shows them without a fresh login. Best-effort and
+		// only when missing; see BackfillSessionMeta.
+		c.authService.BackfillSessionMeta(timeout, sess, ctx.ClientIP(), ctx.GetHeader("User-Agent"))
+
 		// Set user and session in context for downstream handlers.
 		ctx.Set(ContextKeyUser, op)
 		ctx.Set("user_id", op.ID)

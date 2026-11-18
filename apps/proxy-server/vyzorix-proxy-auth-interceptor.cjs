@@ -63,7 +63,7 @@ function interceptAuthResponse(method, pathname, status, responseHeaders, body, 
 
   // ── Logout ──
   if (method === 'POST' && pathname === '/v1/auth/logout') {
-    info('Logout intercepted, clearing session credentials', { operatorId: sess.operatorId });
+    info('Logout intercepted, clearing session credentials', { userId: sess.userId });
     sess.signingKey = null;
     sess.accessToken = null;
     sess.refreshToken = null;
@@ -94,9 +94,9 @@ function interceptLogin(body, setCookies, sess) {
   if (typeof parsed.refresh_token === 'string') sess.refreshToken = parsed.refresh_token;
   if (typeof parsed.expires_at === 'number') sess.tokenExpiresAt = parsed.expires_at * 1000;
 
-  // Capture operator info.
-  if (typeof parsed.operator_id === 'string') sess.operatorId = parsed.operator_id;
-  if (parsed.operator && typeof parsed.operator.id === 'string') sess.operatorId = parsed.operator.id;
+  // Capture user info.
+  if (typeof parsed.user_id === 'string') sess.userId = parsed.user_id;
+  if (parsed.user && typeof parsed.user.id === 'string') sess.userId = parsed.user.id;
 
   // Capture organization ID (auto-selected during login if user has one).
   var orgId = parsed.last_organization_id

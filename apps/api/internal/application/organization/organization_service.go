@@ -240,7 +240,7 @@ func (s *OrganizationService) updateUserLastOrg(ctx context.Context, userID, org
 	}
 	op.LastOrganizationID = orgID
 	if err := s.userRepo.Update(ctx, op); err != nil {
-		s.logger.Warn("failed to update operator LastOrganizationID", "operatorID", userID, "error", err)
+		s.logger.Warn("failed to update operator LastOrganizationID", "userID", userID, "error", err)
 	}
 }
 
