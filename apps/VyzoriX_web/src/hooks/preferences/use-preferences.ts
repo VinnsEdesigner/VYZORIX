@@ -140,9 +140,7 @@ export function useUpdateOrgPreferences() {
       });
 
       void queryClient.invalidateQueries({ queryKey: getGetOrganizationsIdSettingsQueryKey(organizationId) });
-      // The live theme is the resolved cascade from /me/preferences, not the org
-      // settings row. Refresh it too, or a theme change here would not apply
-      // until that query happened to refetch on its own.
+
       void queryClient.invalidateQueries({ queryKey: getGetMePreferencesQueryKey() });
     },
     isSaving: mutation.isPending,

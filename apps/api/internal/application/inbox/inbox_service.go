@@ -117,7 +117,7 @@ func (s *Service) GetInbox(ctx context.Context, userID, orgID, status string, pa
 			CreatedAt:         e.CreatedAt,
 			ApprovedAt:        e.ApprovedAt,
 			RejectedAt:        e.RejectedAt,
-			UserID:        e.UserID,
+			UserID:            e.UserID,
 		})
 	}
 
@@ -167,7 +167,7 @@ func (s *Service) GetInboxEntry(ctx context.Context, imei, orgID string) (*Inbox
 		ApprovedAt:        entry.ApprovedAt,
 		RejectedAt:        entry.RejectedAt,
 		Notes:             entry.Notes,
-		UserID:        entry.UserID,
+		UserID:            entry.UserID,
 	}, nil
 }
 
@@ -556,7 +556,7 @@ func (s *Service) buildInboxEntryResponse(entry *inbox.InboxEntry) *InboxEntryRe
 		ApprovedAt:        entry.ApprovedAt,
 		RejectedAt:        entry.RejectedAt,
 		Notes:             entry.Notes,
-		UserID:        entry.UserID,
+		UserID:            entry.UserID,
 		CreatedAt:         entry.CreatedAt,
 	}
 }
@@ -568,15 +568,15 @@ func (s *Service) logRegistrationAction(ctx context.Context, entry *inbox.InboxE
 	}
 
 	log := &inbox.RegistrationLog{
-		ID:         generateID(),
-		DeviceID:   "",
-		IMEI:       entry.IMEI,
-		Action:     action,
-		UserID: userID,
-		Details:    details,
-		Timestamp:  time.Now().UnixMilli(),
-		ClientIP:   extractClientIP(ctx),
-		UserAgent:  extractUserAgent(ctx),
+		ID:        generateID(),
+		DeviceID:  "",
+		IMEI:      entry.IMEI,
+		Action:    action,
+		UserID:    userID,
+		Details:   details,
+		Timestamp: time.Now().UnixMilli(),
+		ClientIP:  extractClientIP(ctx),
+		UserAgent: extractUserAgent(ctx),
 	}
 
 	if err := s.logRepo.Create(ctx, log); err != nil {
@@ -708,7 +708,7 @@ func (s *Service) UpdateInboxEntry(ctx context.Context, imei, userID, orgID, not
 		ApprovedAt:        entry.ApprovedAt,
 		RejectedAt:        entry.RejectedAt,
 		Notes:             entry.Notes,
-		UserID:        entry.UserID,
+		UserID:            entry.UserID,
 	}, nil
 }
 

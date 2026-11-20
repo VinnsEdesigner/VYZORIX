@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 )
 
 func writeYAMLProvisioningFile(t *testing.T, content string) string {

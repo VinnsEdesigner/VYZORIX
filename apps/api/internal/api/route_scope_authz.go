@@ -2,12 +2,12 @@ package api
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/responses"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/serviceaccount"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,11 +22,10 @@ func (s *Server) requireScope(action permission.Action, scope string) gin.Handle
 	s.recordGuard(guardStoreOrg, action, scope)
 
 	return func(c *gin.Context) {
-		// Service accounts authenticate without a user; evaluate scope
-		// based on the token's own scope list instead.
+		// Service accounts have no user; evaluate the token's own permissions.
 		if c.GetString("auth_type") == "service_account" {
-			scopes := c.GetStringSlice("service_account_scopes")
-			if !serviceAccountGrants(scopes, action) {
+			saToken := middleware.GetServiceAccountToken(c)
+			if !serviceAccountGrants(saToken, middleware.GetOrganizationID(c), action) {
 				responses.RespondStructured(c, http.StatusForbidden, "insufficient permissions")
 				c.Abort()
 				return
@@ -117,20 +116,15 @@ func (s *Server) requireInstanceScope(action permission.Action) gin.HandlerFunc 
 // serviceAccountGrants maps token scopes (read/write/admin) to the required
 // action class: read satisfies *.read, write adds *.write, admin adds every
 // remaining scope prefix.
-func serviceAccountGrants(scopes []string, action permission.Action) bool {
-	highest := "read"
-	for _, s := range scopes {
-		switch s {
-		case "admin":
-			return true
-		case "write":
-			highest = "write"
-		}
+// serviceAccountGrants evaluates a token's effective permissions: coarse scopes,
+// its basic role's defaults, and its fixed-role grants.
+func serviceAccountGrants(token *serviceaccount.Token, orgID string, action permission.Action) bool {
+	if token == nil {
+		return false
 	}
-	switch highest {
-	case "write":
-		return strings.HasSuffix(string(action), ".read") || strings.HasSuffix(string(action), ".write")
-	default:
-		return strings.HasSuffix(string(action), ".read")
+	scope := permission.BuildScope(permission.RequiredScope(action), orgID)
+	if scope == "" {
+		return false
 	}
+	return token.EffectivePermissions().Grants(action, scope)
 }

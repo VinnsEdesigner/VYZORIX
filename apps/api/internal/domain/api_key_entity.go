@@ -47,7 +47,7 @@ type APIKey struct {
 	LastRequest *time.Time `json:"last_request"`
 	RevokedAt   *time.Time `json:"revoked_at"`
 	ID          string     `json:"id"`
-	UserID  string     `json:"user_id"`
+	UserID      string     `json:"user_id"`
 	// OrganizationID binds this key to a specific organization. Org context is
 	// resolved from this binding server-side rather than a client header.
 	OrganizationID string `json:"organization_id,omitempty"`
@@ -160,21 +160,21 @@ type AdminAPIKeyResponse struct {
 // per-request log, so time-windowed "today"/"this month" totals are not tracked;
 // total_requests is the sum of every key's lifetime request_count.
 type GlobalAPIKeyStats struct {
-	RequestsByScope map[string]int64  `json:"requests_by_scope"`
-	TopUsers    []TopUserStat `json:"top_users"`
-	TotalKeys       int               `json:"total_keys"`
-	ActiveKeys      int               `json:"active_keys"`
-	RevokedKeys     int               `json:"revoked_keys"`
-	TotalUsers  int               `json:"total_users"`
-	MaxPerMonth     int               `json:"max_per_month"`
-	TotalRequests   int64             `json:"total_requests"`
+	RequestsByScope map[string]int64 `json:"requests_by_scope"`
+	TopUsers        []TopUserStat    `json:"top_users"`
+	TotalKeys       int              `json:"total_keys"`
+	ActiveKeys      int              `json:"active_keys"`
+	RevokedKeys     int              `json:"revoked_keys"`
+	TotalUsers      int              `json:"total_users"`
+	MaxPerMonth     int              `json:"max_per_month"`
+	TotalRequests   int64            `json:"total_requests"`
 }
 
 // TopUserStat is a per-user cumulative request aggregate returned in.
 // GlobalAPIKeyStats.TopUsers.
 type TopUserStat struct {
-	UserID     string `json:"user_id"`
-	UserName   string `json:"user_name"`
+	UserID         string `json:"user_id"`
+	UserName       string `json:"user_name"`
 	TotalRequests  int64  `json:"total_requests"`
 	ActiveKeyCount int    `json:"active_key_count"`
 }

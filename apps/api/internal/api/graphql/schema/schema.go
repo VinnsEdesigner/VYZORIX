@@ -715,12 +715,12 @@ func organizationQueries(res *resolver.Resolver) graphql.Fields {
 				"page": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 1,
-					Description: "Page number",
+					Description:  "Page number",
 				},
 				"limit": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 50,
-					Description: "Maximum number of organizations to return (max 100)",
+					Description:  "Maximum number of organizations to return (max 100)",
 				},
 			},
 			Resolve: res.GetOrganizations,
@@ -732,12 +732,12 @@ func organizationQueries(res *resolver.Resolver) graphql.Fields {
 				"page": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 1,
-					Description: "Page number",
+					Description:  "Page number",
 				},
 				"limit": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 50,
-					Description: "Maximum number of memberships to return (max 100)",
+					Description:  "Maximum number of memberships to return (max 100)",
 				},
 			},
 			Resolve: res.GetMyMemberships,
@@ -753,12 +753,12 @@ func organizationQueries(res *resolver.Resolver) graphql.Fields {
 				"page": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 1,
-					Description: "Page number",
+					Description:  "Page number",
 				},
 				"limit": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 50,
-					Description: "Maximum number of members to return (max 100)",
+					Description:  "Maximum number of members to return (max 100)",
 				},
 			},
 			Resolve: res.GetOrganizationMembers,
@@ -774,12 +774,12 @@ func organizationQueries(res *resolver.Resolver) graphql.Fields {
 				"page": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 1,
-					Description: "Page number",
+					Description:  "Page number",
 				},
 				"limit": &graphql.ArgumentConfig{
 					Type:         graphql.Int,
 					DefaultValue: 50,
-					Description: "Maximum number of invitations to return (max 100)",
+					Description:  "Maximum number of invitations to return (max 100)",
 				},
 			},
 			Resolve: res.GetOrganizationInvitations,

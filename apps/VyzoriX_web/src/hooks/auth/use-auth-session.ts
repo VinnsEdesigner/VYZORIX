@@ -3,7 +3,6 @@ import { authContext } from '@vyzorix/api-client';
 import { useAuthStore } from '@/stores/auth-store';
 import { usePreferencesStore } from '@/stores/preferences-store';
 
-
 const ACTIVITY_EVENTS = ['mousedown', 'keydown', 'scroll', 'touchstart'] as const;
 
 export interface UseAuthSessionOptions {
@@ -27,8 +26,6 @@ export function useAuthSession(
   const idleTimeoutMinutes = usePreferencesStore((s) => s.idleTimeoutMinutes);
   const activityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 0 means "never sign out on inactivity"; otherwise the user's preference wins
-  // and an explicit option (tests) overrides it.
   const sessionTimeoutMs = overrideMs ?? idleTimeoutMinutes * 60 * 1000;
 
   const refreshSession = useCallback(async () => {

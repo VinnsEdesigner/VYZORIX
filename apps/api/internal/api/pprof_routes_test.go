@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/config"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +21,6 @@ import (
 // and the pprof routes registered.
 func pprofTestServer(t *testing.T, enablePprof bool) *gin.Engine {
 	t.Helper()
-	gin.SetMode(gin.TestMode)
 
 	s := &Server{
 		config: config.Config{EnablePprof: enablePprof},
@@ -74,7 +73,6 @@ func TestPprofRoutes_DisabledByDefault(t *testing.T) {
 // TestPprofRoutes_RequireSuperAdmin proves the enabled routes are behind the
 // super-admin guard: without a user in context they must not serve a profile.
 func TestPprofRoutes_RequireSuperAdmin(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	s := &Server{
 		config: config.Config{EnablePprof: true},

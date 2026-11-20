@@ -46,7 +46,7 @@ type Repository interface {
 // Session represents an authentication session.
 type Session struct {
 	ID                     string
-	UserID             string
+	UserID                 string
 	SelectedOrganizationID string
 	ExpiresAt              time.Time
 	CreatedAt              time.Time

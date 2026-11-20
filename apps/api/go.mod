@@ -4,6 +4,7 @@ go 1.27.3
 
 require (
 	firebase.google.com/go/v4 v4.21.0
+	github.com/SherClockHolmes/webpush-go v1.4.0
 	github.com/VinnsEdesigner/libv/go v0.0.0-20261101223253-61e45396f71a
 	github.com/VinnsEdesigner/vyzorix-spec v0.2.0
 	github.com/gin-gonic/gin v1.9.1
@@ -68,7 +69,6 @@ require (
 	github.com/OpenPeeDeeP/depguard/v2 v2.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
-	github.com/SherClockHolmes/webpush-go v1.4.0 // indirect
 	github.com/alecthomas/chroma/v2 v2.27.0 // indirect
 	github.com/alecthomas/go-check-sumtype v0.5.1-0.20260828200218-ae6904d28606 // indirect
 	github.com/alexkohler/nakedret/v2 v2.0.6 // indirect

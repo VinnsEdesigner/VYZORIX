@@ -9,7 +9,14 @@ const MENU_ITEM_LINE_HEIGHT = 1.5;
 
 export const MENU_MAX_HEIGHT = 320;
 
-export const getComboboxStyles = (theme: VyzorixTheme) => ({
+const SHEET_ITEM_PADDING_X = 16;
+
+export const SHEET_ROW_HEIGHT = 56;
+export const SHEET_ROW_GAP = 8;
+
+export type ComboboxDensity = 'popover' | 'sheet';
+
+export const getComboboxStyles = (theme: VyzorixTheme, density: ComboboxDensity = 'popover') => ({
   menu: css({
     label: 'combobox-menu',
     position: 'fixed',
@@ -22,6 +29,9 @@ export const getComboboxStyles = (theme: VyzorixTheme) => ({
     pointerEvents: 'auto',
   }),
 
+  sheetList: css({
+    label: 'combobox-sheet-list',
+  }),
   menuScroll: css({
     label: 'combobox-menu-scroll',
     overflowY: 'auto',
@@ -45,8 +55,11 @@ export const getComboboxStyles = (theme: VyzorixTheme) => ({
     alignItems: 'center',
     gap: theme.spacing(1),
     width: '100%',
-    padding: MENU_ITEM_PADDING,
-    marginBottom: MENU_ITEM_GAP,
+
+    boxSizing: 'border-box',
+    height: density === 'sheet' ? SHEET_ROW_HEIGHT : undefined,
+    padding: density === 'sheet' ? `0 ${SHEET_ITEM_PADDING_X}px` : MENU_ITEM_PADDING,
+    marginBottom: density === 'sheet' ? SHEET_ROW_GAP : MENU_ITEM_GAP,
     borderRadius: theme.shape.radius.default,
     fontSize: theme.typography.base.fontSize,
     fontWeight: theme.typography.fontWeightMedium,
@@ -73,16 +86,19 @@ export const getComboboxStyles = (theme: VyzorixTheme) => ({
   optionFocusRing: css({ ...getFocusStyles(theme), outlineOffset: '-2px' }),
   optionSelected: css({
     background: theme.colors.action.selected,
-    '&::before': {
-      content: '" "',
-      position: 'absolute',
-      left: 0,
-      top: 0,
-      height: '100%',
-      width: theme.spacing(0.5),
-      borderRadius: theme.shape.radius.default,
-      background: theme.colors.primary.main,
-    },
+
+    '&::before': density === 'sheet'
+      ? { content: 'none' }
+      : {
+          content: '" "',
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          height: '100%',
+          width: theme.spacing(0.5),
+          borderRadius: theme.shape.radius.default,
+          background: theme.colors.primary.main,
+        },
   }),
   optionInfo: css({
     color: theme.colors.text.disabled,

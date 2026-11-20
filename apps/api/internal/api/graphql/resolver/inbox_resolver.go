@@ -70,7 +70,7 @@ func (r *Resolver) GetInbox(p graphql.ResolveParams) (interface{}, error) {
 			"approvedAt":        req.ApprovedAt,
 			"rejectedAt":        req.RejectedAt,
 			"notes":             req.Notes,
-			"userId":        req.UserID,
+			"userId":            req.UserID,
 		})
 	}
 
@@ -129,7 +129,7 @@ func (r *Resolver) GetInboxEntry(p graphql.ResolveParams) (interface{}, error) {
 		"approvedAt":        entry.ApprovedAt,
 		"rejectedAt":        entry.RejectedAt,
 		"notes":             entry.Notes,
-		"userId":        entry.UserID,
+		"userId":            entry.UserID,
 	}, nil
 }
 

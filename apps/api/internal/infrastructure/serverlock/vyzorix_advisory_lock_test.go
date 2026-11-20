@@ -14,14 +14,28 @@ import (
 
 func setupTestDB(t *testing.T) *sql.DB {
 	t.Helper()
-	db, err := sql.Open("sqlite3", ":memory:")
+
+	// file::memory:?cache=shared gives every pooled connection the same database.
+	// A plain ":memory:" DSN gives each connection its OWN private database, so a
+	// concurrent test writes the row on one connection and reads nothing on another —
+	// which showed up as "0 winners" rather than a wrong-winner count. A single
+	// connection would also hide the bug by serialising the goroutines.
+	dsn := "file:" + t.Name() + "?mode=memory&cache=shared"
+	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
+
+	// The shared cache is dropped when the last connection closes, so hold one open
+	// for the life of the test and cap the pool to keep the database alive.
+	db.SetMaxOpenConns(1)
+	t.Cleanup(func() { _ = db.Close() })
+
 	_, err = db.Exec(`CREATE TABLE server_locks (name TEXT PRIMARY KEY, holder TEXT NOT NULL, acquired_at INTEGER NOT NULL, expires_at INTEGER NOT NULL)`)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}
+
 	return db
 }
 

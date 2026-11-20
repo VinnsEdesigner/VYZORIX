@@ -194,6 +194,13 @@ func (h *AllHandlers) RegisterRoutes(rg *gin.RouterGroup, cookieAuth *middleware
 	}
 
 	// SuperAdmin-only user management routes.
+	//
+	// These read members of the current organisation only: the caller must be a
+	// super_admin of it, and the list is joined on that org's memberships. There is
+	// deliberately no direct account creation and no identity editing — an account
+	// joins an organisation through an invitation, and its email and password are
+	// self-service. Disabling or deleting an account is deployment authority and
+	// lives on the instance group (admin.users).
 	adminUsers := rg.Group("/admin")
 	adminUsers.Use(cookieAuth.Middleware())
 	// Populate organization context (header/query/session) before.
@@ -204,11 +211,15 @@ func (h *AllHandlers) RegisterRoutes(rg *gin.RouterGroup, cookieAuth *middleware
 	adminUsers.Use(middleware.RequireSuperAdmin())
 	adminUsers.Use(middleware.NoCache())
 	{
+		adminUsers.GET("/users/stats", h.Admin.UserStats)
 		adminUsers.GET("/users", h.Admin.ListUsers)
-		adminUsers.POST("/users", h.Admin.CreateUser)
 		adminUsers.GET("/users/:id", h.Admin.GetUser)
-		adminUsers.PATCH("/users/:id", h.Admin.UpdateUser)
-		adminUsers.DELETE("/users/:id", h.Admin.DeleteUser)
+		// Retained for forensic use on a compromised account; the console does not
+		// surface a per-user session list (a user's own sessions live on the
+		// profile security tab).
+		adminUsers.GET("/users/:id/sessions", h.Admin.ListUserSessions)
+		adminUsers.DELETE("/users/:id/sessions", h.Admin.RevokeAllUserSessions)
+		adminUsers.DELETE("/users/:id/sessions/:sessionId", h.Admin.RevokeUserSession)
 	}
 
 	// Admin lockout management moved to the instance group (/v1/instance),

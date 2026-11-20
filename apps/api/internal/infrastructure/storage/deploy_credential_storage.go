@@ -119,13 +119,28 @@ func (r *DeployCredentialRepository) ListForDevice(ctx context.Context, deviceID
 
 // Revoke marks a credential revoked. It is scoped to the device, so a caller
 // that knows a credential id from another device cannot revoke it.
+// Revoke marks a credential revoked.
+//
+// It reports ErrNotFound when no row matched, so a revoke for an unknown id — or one
+// that was already revoked — is not answered with a 204 that tells the operator a live
+// credential was killed when nothing changed. "Already revoked" reads as not-found on
+// purpose: the caller's intent is satisfied, and distinguishing the two would let a
+// caller probe which ids exist.
 func (r *DeployCredentialRepository) Revoke(ctx context.Context, deviceID, id string, at time.Time) error {
-	_, err := r.db.ExecContext(ctx,
+	res, err := r.db.ExecContext(ctx,
 		`UPDATE device_deploy_credentials SET revoked_at = ?
 		 WHERE id = ? AND device_id = ? AND revoked_at IS NULL`,
 		at.UnixMilli(), id, deviceID)
 	if err != nil {
 		return fmt.Errorf("revoke deploy credential: %w", err)
+	}
+
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("revoke deploy credential: %w", err)
+	}
+	if n == 0 {
+		return deploycredential.ErrNotFound
 	}
 
 	return nil

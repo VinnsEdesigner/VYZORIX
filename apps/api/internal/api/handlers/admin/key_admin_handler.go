@@ -42,8 +42,8 @@ func adminKeysByUserToOpenAPI(in []apikeydomain.AdminAPIKeyResponse) []openapi.A
 	out := make([]openapi.AdminAPIKey, len(in))
 	for i, k := range in {
 		item := openapi.AdminAPIKey{
-			UserID:   k.UserID,
-			UserName: k.UserName,
+			UserID:       k.UserID,
+			UserName:     k.UserName,
 			ID:           k.ID,
 			Name:         k.Name,
 			KeyPrefix:    k.KeyPrefix,
@@ -305,7 +305,7 @@ func (h *SuperAdminHandler) GetUserStats(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, openapi.UserAPIKeyStatsResult{
-		UserID:           userID,
+		UserID:               userID,
 		TotalKeys:            totalKeys,
 		ActiveKeys:           activeKeys,
 		RevokedKeys:          totalKeys - activeKeys,

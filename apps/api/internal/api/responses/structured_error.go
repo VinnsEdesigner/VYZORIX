@@ -227,17 +227,22 @@ func RespondNotFoundError(c *gin.Context, resourceType string) {
 }
 
 // RespondConflictError sends a conflict error response.
+//
+// The code is RESOURCE_CONFLICT, not RESOURCE_ALREADY_EXISTS: every caller of this helper
+// reports a state that blocks the operation (a device already owned, a sync in flight, a
+// device with no key), not a duplicate identifier. RESOURCE_ALREADY_EXISTS told a client the
+// opposite of what had happened, so a client branching on the code did the wrong thing.
 func RespondConflictError(c *gin.Context, message string) {
 	if message == "" {
-		message = "Resource already exists"
+		message = "The resource is in a state that prevents this operation"
 	}
 
 	c.JSON(http.StatusConflict, StructuredErrorResponse{
 		Error: ErrorDetail{
-			Code:    string(errors.CodeResourceAlreadyExists),
+			Code:    string(errors.CodeResourceConflict),
 			Message: message,
 			TraceID: GetTraceID(c),
-			DocsURL: tracing.BuildErrorDocsURL(string(errors.CodeResourceAlreadyExists)),
+			DocsURL: tracing.BuildErrorDocsURL(string(errors.CodeResourceConflict)),
 		},
 	})
 }

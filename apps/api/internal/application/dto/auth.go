@@ -18,7 +18,7 @@ type OrganizationInfo struct {
 // LoginResponse represents a login response.
 type LoginResponse struct {
 	SelectedOrganization *OrganizationInfo  `json:"selected_organization,omitempty"`
-	UserID           string             `json:"user_id"`
+	UserID               string             `json:"user_id"`
 	Email                string             `json:"email"`
 	Name                 string             `json:"name"`
 	LastOrganizationID   string             `json:"last_organization_id,omitempty"`
@@ -31,7 +31,7 @@ type LoginResponse struct {
 // LoginWithTokensResponse represents a login response with API tokens.
 type LoginWithTokensResponse struct {
 	SelectedOrganization *OrganizationInfo  `json:"selected_organization,omitempty"`
-	UserID           string             `json:"user_id"`
+	UserID               string             `json:"user_id"`
 	Email                string             `json:"email"`
 	Name                 string             `json:"name"`
 	LastOrganizationID   string             `json:"last_organization_id,omitempty"`
@@ -56,8 +56,8 @@ type RegisterRequest struct {
 // RegisterResponse represents a registration response.
 type RegisterResponse struct {
 	UserID string `json:"user_id"`
-	Email      string `json:"email"`
-	Name       string `json:"name"`
+	Email  string `json:"email"`
+	Name   string `json:"name"`
 }
 
 // ForgotPasswordRequest represents a forgot password request.
@@ -144,15 +144,23 @@ type OAuthCallbackRequest struct {
 	State string `json:"state"`
 }
 
-// UserListResponse represents a user in list responses (admin view).
-type UserListResponse struct {
+// OrgUserResponse is one member of the current organisation: the account's
+// profile facts plus the membership facts (role, status, joined). There is no
+// deployment-wide equivalent — a caller acting in an org sees that org only.
+type OrgUserResponse struct {
+	LastSeenAt    *int64 `json:"last_seen_at,omitempty"`
 	ID            string `json:"id"`
+	MemberID      string `json:"member_id"`
 	Email         string `json:"email"`
 	Name          string `json:"name"`
+	AvatarURL     string `json:"avatar_url,omitempty"`
 	Role          string `json:"role"`
+	Status        string `json:"status"`
+	JoinedAt      int64  `json:"joined_at"`
+	CreatedAt     int64  `json:"created_at"`
 	MFAEnabled    bool   `json:"mfa_enabled"`
 	EmailVerified bool   `json:"email_verified"`
-	CreatedAt     int64  `json:"created_at"`
+	Disabled      bool   `json:"disabled"`
 }
 
 // RoleOperator is the role for regular users.
@@ -163,8 +171,8 @@ type UserRegisterRequest = RegisterRequest
 
 // AuthResponse represents an authentication response.
 type AuthResponse struct {
-	Token    string           `json:"token"`
-	User UserResponse `json:"user"`
+	Token string       `json:"token"`
+	User  UserResponse `json:"user"`
 }
 
 // ErrorResponse represents an error response.

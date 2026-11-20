@@ -15,14 +15,13 @@ func generateID(prefix string) string {
 
 // OrganizationSettings represents settings for an organization.
 type OrganizationSettings struct {
-	CreatedAt            time.Time   `json:"createdAt"`
-	UpdatedAt            time.Time   `json:"updatedAt"`
-	DefaultThresholds    *Thresholds `json:"defaultThresholds,omitempty"`
-	ID                   string      `json:"id"`
-	OrganizationID       string      `json:"organizationId"`
-	Timezone             string      `json:"timezone"`
-	DateFormat           string      `json:"dateFormat"`
-	AlertCooldownMinutes int         `json:"alertCooldownMinutes"`
+	CreatedAt         time.Time   `json:"createdAt"`
+	UpdatedAt         time.Time   `json:"updatedAt"`
+	DefaultThresholds *Thresholds `json:"defaultThresholds,omitempty"`
+	ID                string      `json:"id"`
+	OrganizationID    string      `json:"organizationId"`
+	Timezone          string      `json:"timezone"`
+	DateFormat        string      `json:"dateFormat"`
 	// Theme is the organisation's default UI theme id. Members without a
 	// personal override inherit it; an empty value falls through to the
 	// system default. The settings handler validates it against the allowlist.
@@ -30,7 +29,8 @@ type OrganizationSettings struct {
 	// WeekStart is the organisation's default first day of the week
 	// (monday|sunday|saturday). Members without a personal override inherit
 	// it; an empty value falls through to the system default.
-	WeekStart string `json:"weekStart"`
+	WeekStart            string `json:"weekStart"`
+	AlertCooldownMinutes int    `json:"alertCooldownMinutes"`
 }
 
 // Thresholds represents threshold values for alerts.

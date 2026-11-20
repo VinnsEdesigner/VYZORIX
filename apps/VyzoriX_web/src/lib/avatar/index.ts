@@ -8,3 +8,4 @@ export {
   type AvatarOptions,
   type AvatarStyle,
 } from './dicebear';
+export { serviceAccountAvatar } from './service-account-avatar';

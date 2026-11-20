@@ -5,9 +5,11 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"sync"
 	"time"
 
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/redaction"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/uuid"
 )
 
@@ -68,6 +70,9 @@ func (n *NoOpLogger) CommandExecuted(ctx context.Context, e CommandExecutedEvent
 
 // PTYSession is a no-op for the terminal session audit event.
 func (n *NoOpLogger) PTYSession(_ context.Context, _ PTYSessionEvent) {}
+
+// Deploy is a no-op for the deploy audit event.
+func (n *NoOpLogger) Deploy(_ context.Context, _ DeployEvent) {}
 
 // NoOpAuditRepo is a no-operation audit repository for when no separate DB is configured.
 type NoOpAuditRepo struct{}
@@ -143,9 +148,15 @@ func (l *Logger) writer() {
 	}
 }
 
-// writeEntry writes a single audit entry to the repository.
-
+// writeEntry writes one entry to every configured store.
+//
+// The entry is sanitized first. Audit metadata is free-form: a caller recording why an
+// action failed can pass a driver error carrying a connection string, and the audit
+// table is read back through an API. Redacting at this single funnel means every caller
+// is covered without each one remembering.
 func (l *Logger) writeEntry(entry *Entry) {
+	entry = sanitizeEntry(entry)
+
 	// Write to primary repository.
 	if err := l.repo.Log(context.Background(), entry); err != nil {
 		l.log.Error("failed to write audit log",
@@ -160,6 +171,26 @@ func (l *Logger) writeEntry(entry *Entry) {
 				slog.String("error", err.Error()))
 		}
 	}
+}
+
+// sanitizeEntry returns a copy of the entry with its free-text fields redacted.
+//
+// A copy rather than a mutation: the caller may still hold the entry, and silently
+// rewriting its fields would surprise them.
+func sanitizeEntry(entry *Entry) *Entry {
+	if entry == nil {
+		return nil
+	}
+
+	out := *entry
+	r := redaction.DefaultRedactor
+
+	out.Metadata = r.RedactMapKey(entry.Metadata)
+	out.OldValue = r.Redact(entry.OldValue)
+	out.NewValue = r.Redact(entry.NewValue)
+	out.UserAgent = r.Redact(entry.UserAgent)
+
+	return &out
 }
 
 // LogEvent logs a security event to the audit repository via buffered channel.
@@ -223,79 +254,79 @@ func (l *Logger) Shutdown(ctx context.Context) error {
 // LoginSuccess logs a successful login event.
 func (l *Logger) LoginSuccess(ctx context.Context, userID, ipAddress, userAgent string) {
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionLoginSuccess,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
-		Result:     ResultSuccess,
+		UserID:    userID,
+		Action:    ActionLoginSuccess,
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		Result:    ResultSuccess,
 	})
 }
 
 // LoginFailed logs a failed login attempt.
 func (l *Logger) LoginFailed(ctx context.Context, userID, ipAddress, userAgent, reason string) {
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionLoginFailed,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
-		Result:     ResultFailure,
-		Metadata:   map[string]string{"reason": reason},
+		UserID:    userID,
+		Action:    ActionLoginFailed,
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		Result:    ResultFailure,
+		Metadata:  map[string]string{"reason": reason},
 	})
 }
 
 // Logout logs a logout event.
 func (l *Logger) Logout(ctx context.Context, userID, ipAddress, userAgent string) {
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionLogout,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
-		Result:     ResultSuccess,
+		UserID:    userID,
+		Action:    ActionLogout,
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		Result:    ResultSuccess,
 	})
 }
 
 // Register logs a registration event.
 func (l *Logger) Register(ctx context.Context, userID, ipAddress, userAgent string) {
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionRegister,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
-		Result:     ResultSuccess,
+		UserID:    userID,
+		Action:    ActionRegister,
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		Result:    ResultSuccess,
 	})
 }
 
 // PasswordChange logs a password change event.
 func (l *Logger) PasswordChange(ctx context.Context, userID, ipAddress, userAgent string) {
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionPasswordChange,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
-		Result:     ResultSuccess,
+		UserID:    userID,
+		Action:    ActionPasswordChange,
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		Result:    ResultSuccess,
 	})
 }
 
 // AccountLocked logs an account lockout event.
 func (l *Logger) AccountLocked(ctx context.Context, userID, ipAddress string, attempts int) {
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionAccountLocked,
-		IPAddress:  ipAddress,
-		Result:     ResultBlocked,
-		Metadata:   map[string]string{"attempts": fmt.Sprintf("%d", attempts)},
+		UserID:    userID,
+		Action:    ActionAccountLocked,
+		IPAddress: ipAddress,
+		Result:    ResultBlocked,
+		Metadata:  map[string]string{"attempts": fmt.Sprintf("%d", attempts)},
 	})
 }
 
 // SessionRevoked logs a session revocation event.
 func (l *Logger) SessionRevoked(ctx context.Context, userID, ipAddress, userAgent, reason string) {
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionSessionRevoked,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
-		Result:     ResultSuccess,
-		Metadata:   map[string]string{"reason": reason},
+		UserID:    userID,
+		Action:    ActionSessionRevoked,
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		Result:    ResultSuccess,
+		Metadata:  map[string]string{"reason": reason},
 	})
 }
 
@@ -335,7 +366,7 @@ func (l *Logger) RateLimitExceeded(ctx context.Context, ipAddress, userAgent, en
 // APIClientCreated logs an API client creation event.
 func (l *Logger) APIClientCreated(ctx context.Context, userID, clientID, ipAddress string) {
 	l.LogEvent(ctx, &Entry{
-		UserID:   userID,
+		UserID:       userID,
 		Action:       ActionAPIClientCreated,
 		ResourceType: "api_client",
 		ResourceID:   clientID,
@@ -347,7 +378,7 @@ func (l *Logger) APIClientCreated(ctx context.Context, userID, clientID, ipAddre
 // APIClientRevoked logs an API client revocation event.
 func (l *Logger) APIClientRevoked(ctx context.Context, userID, clientID, ipAddress string) {
 	l.LogEvent(ctx, &Entry{
-		UserID:   userID,
+		UserID:       userID,
 		Action:       ActionAPIClientRevoked,
 		ResourceType: "api_client",
 		ResourceID:   clientID,
@@ -359,7 +390,7 @@ func (l *Logger) APIClientRevoked(ctx context.Context, userID, clientID, ipAddre
 // APIClientSecretRotated logs an API client secret rotation event.
 func (l *Logger) APIClientSecretRotated(ctx context.Context, userID, clientID, ipAddress string) {
 	l.LogEvent(ctx, &Entry{
-		UserID:   userID,
+		UserID:       userID,
 		Action:       ActionAPIClientSecretRotated,
 		ResourceType: "api_client",
 		ResourceID:   clientID,
@@ -371,7 +402,7 @@ func (l *Logger) APIClientSecretRotated(ctx context.Context, userID, clientID, i
 // SigningKeyRotated logs a signing key rotation event.
 func (l *Logger) SigningKeyRotated(ctx context.Context, userID, clientID, ipAddress string) {
 	l.LogEvent(ctx, &Entry{
-		UserID:   userID,
+		UserID:       userID,
 		Action:       ActionSigningKeyRotated,
 		ResourceType: "signing_key",
 		ResourceID:   clientID,
@@ -383,7 +414,7 @@ func (l *Logger) SigningKeyRotated(ctx context.Context, userID, clientID, ipAddr
 // AdminAction logs an admin action event.
 func (l *Logger) AdminAction(ctx context.Context, userID, action, resourceType, resourceID, ipAddress string, metadata map[string]string) {
 	l.LogEvent(ctx, &Entry{
-		UserID:   userID,
+		UserID:       userID,
 		Action:       ActionAdminAction,
 		ResourceType: resourceType,
 		ResourceID:   resourceID,
@@ -396,7 +427,7 @@ func (l *Logger) AdminAction(ctx context.Context, userID, action, resourceType, 
 // UpdatePushed logs an update push event.
 func (l *Logger) UpdatePushed(ctx context.Context, userID, pushID, version string, deviceCount int, ipAddress, userAgent string) {
 	l.LogEvent(ctx, &Entry{
-		UserID:   userID,
+		UserID:       userID,
 		Action:       ActionUpdatePushed,
 		ResourceType: "update_push",
 		ResourceID:   pushID,
@@ -413,7 +444,7 @@ func (l *Logger) UpdatePushed(ctx context.Context, userID, pushID, version strin
 // UpdateCancelled logs an update cancellation event.
 func (l *Logger) UpdateCancelled(ctx context.Context, userID, pushID, ipAddress, userAgent string) {
 	l.LogEvent(ctx, &Entry{
-		UserID:   userID,
+		UserID:       userID,
 		Action:       ActionUpdateCancelled,
 		ResourceType: "update_push",
 		ResourceID:   pushID,
@@ -426,34 +457,34 @@ func (l *Logger) UpdateCancelled(ctx context.Context, userID, pushID, ipAddress,
 // UpdateSyncStarted logs an update sync start event.
 func (l *Logger) UpdateSyncStarted(ctx context.Context, userID, ipAddress, userAgent string) {
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionUpdateSyncStarted,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
-		Result:     ResultSuccess,
+		UserID:    userID,
+		Action:    ActionUpdateSyncStarted,
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		Result:    ResultSuccess,
 	})
 }
 
 // UpdateSyncFailed logs an update sync failure event.
 func (l *Logger) UpdateSyncFailed(ctx context.Context, userID, ipAddress, userAgent, reason string) {
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionUpdateSyncFailed,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
-		Result:     ResultFailure,
-		Metadata:   map[string]string{"reason": reason},
+		UserID:    userID,
+		Action:    ActionUpdateSyncFailed,
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		Result:    ResultFailure,
+		Metadata:  map[string]string{"reason": reason},
 	})
 }
 
 // SettingsChanged logs a settings change event.
 func (l *Logger) SettingsChanged(ctx context.Context, userID, section, action, ipAddress, userAgent string, metadata map[string]string) {
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionSettingsChanged,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
-		Result:     ResultSuccess,
+		UserID:    userID,
+		Action:    ActionSettingsChanged,
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		Result:    ResultSuccess,
 		Metadata: map[string]string{
 			"section": section,
 			"action":  action,
@@ -468,11 +499,11 @@ func (l *Logger) WebhookTest(ctx context.Context, userID, url, ipAddress, userAg
 		result = ResultFailure
 	}
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionWebhookTest,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
-		Result:     result,
+		UserID:    userID,
+		Action:    ActionWebhookTest,
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		Result:    result,
 		Metadata: map[string]string{
 			"webhook_url":      url,
 			"response_time_ms": fmt.Sprintf("%d", responseTimeMs),
@@ -483,11 +514,11 @@ func (l *Logger) WebhookTest(ctx context.Context, userID, url, ipAddress, userAg
 // WebhookSecretRotated logs a webhook secret rotation event.
 func (l *Logger) WebhookSecretRotated(ctx context.Context, userID, ipAddress, userAgent string) {
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionWebhookSecretRotated,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
-		Result:     ResultSuccess,
+		UserID:    userID,
+		Action:    ActionWebhookSecretRotated,
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		Result:    ResultSuccess,
 	})
 }
 
@@ -495,11 +526,11 @@ func (l *Logger) WebhookSecretRotated(ctx context.Context, userID, ipAddress, us
 // 2: Added for audit compliance.
 func (l *Logger) MFAVerifyAttempt(ctx context.Context, userID, ipAddress, userAgent string) {
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionMFAVerifyAttempt,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
-		Result:     ResultPending,
+		UserID:    userID,
+		Action:    ActionMFAVerifyAttempt,
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		Result:    ResultPending,
 	})
 }
 
@@ -507,11 +538,11 @@ func (l *Logger) MFAVerifyAttempt(ctx context.Context, userID, ipAddress, userAg
 // 2: Added for audit compliance.
 func (l *Logger) MFAVerifySuccess(ctx context.Context, userID, sessionID, ipAddress string) {
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionMFAVerifySuccess,
-		IPAddress:  ipAddress,
-		Result:     ResultSuccess,
-		Metadata:   map[string]string{"session_id": sessionID},
+		UserID:    userID,
+		Action:    ActionMFAVerifySuccess,
+		IPAddress: ipAddress,
+		Result:    ResultSuccess,
+		Metadata:  map[string]string{"session_id": sessionID},
 	})
 }
 
@@ -519,17 +550,17 @@ func (l *Logger) MFAVerifySuccess(ctx context.Context, userID, sessionID, ipAddr
 // 2: Added for audit compliance.
 func (l *Logger) MFAVerifyFailed(ctx context.Context, userID, ipAddress string) {
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionMFAVerifyFailed,
-		IPAddress:  ipAddress,
-		Result:     ResultFailure,
+		UserID:    userID,
+		Action:    ActionMFAVerifyFailed,
+		IPAddress: ipAddress,
+		Result:    ResultFailure,
 	})
 }
 
 // APIKeyCreated logs an API key creation event.
 func (l *Logger) APIKeyCreated(ctx context.Context, userID, keyID, keyName, keyPrefix, scope, ipAddress, userAgent string) {
 	l.LogEvent(ctx, &Entry{
-		UserID:   userID,
+		UserID:       userID,
 		Action:       ActionAPIKeyCreated,
 		ResourceType: "api_key",
 		ResourceID:   keyID,
@@ -547,7 +578,7 @@ func (l *Logger) APIKeyCreated(ctx context.Context, userID, keyID, keyName, keyP
 // APIKeyUpdated logs an API key update event.
 func (l *Logger) APIKeyUpdated(ctx context.Context, userID, keyID, keyName, changes, ipAddress, userAgent string) {
 	l.LogEvent(ctx, &Entry{
-		UserID:   userID,
+		UserID:       userID,
 		Action:       ActionAPIKeyUpdated,
 		ResourceType: "api_key",
 		ResourceID:   keyID,
@@ -564,7 +595,7 @@ func (l *Logger) APIKeyUpdated(ctx context.Context, userID, keyID, keyName, chan
 // APIKeyRevoked logs an API key revocation event.
 func (l *Logger) APIKeyRevoked(ctx context.Context, userID, keyID, keyName, ipAddress, userAgent string) {
 	l.LogEvent(ctx, &Entry{
-		UserID:   userID,
+		UserID:       userID,
 		Action:       ActionAPIKeyRevoked,
 		ResourceType: "api_key",
 		ResourceID:   keyID,
@@ -580,7 +611,7 @@ func (l *Logger) APIKeyRevoked(ctx context.Context, userID, keyID, keyName, ipAd
 // APIKeyRotated logs an API key rotation event.
 func (l *Logger) APIKeyRotated(ctx context.Context, userID, keyID, keyName, ipAddress, userAgent string) {
 	l.LogEvent(ctx, &Entry{
-		UserID:   userID,
+		UserID:       userID,
 		Action:       ActionAPIKeyRotated,
 		ResourceType: "api_key",
 		ResourceID:   keyID,
@@ -596,11 +627,11 @@ func (l *Logger) APIKeyRotated(ctx context.Context, userID, keyID, keyName, ipAd
 // APIKeyFailed logs a failed API key authentication attempt.
 func (l *Logger) APIKeyFailed(ctx context.Context, userID, keyPrefix, ipAddress, userAgent, reason string) {
 	l.LogEvent(ctx, &Entry{
-		UserID: userID,
-		Action:     ActionAPIKeyFailed,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
-		Result:     ResultFailure,
+		UserID:    userID,
+		Action:    ActionAPIKeyFailed,
+		IPAddress: ipAddress,
+		UserAgent: userAgent,
+		Result:    ResultFailure,
 		Metadata: map[string]string{
 			"key_prefix": keyPrefix,
 			"reason":     reason,
@@ -623,7 +654,7 @@ func (l *Logger) CommandExecuted(ctx context.Context, e CommandExecutedEvent) {
 	}
 
 	l.LogEvent(ctx, &Entry{
-		UserID:   e.UserID,
+		UserID:       e.UserID,
 		Action:       ActionCommandExecuted,
 		ResourceType: "device",
 		ResourceID:   e.DeviceID,
@@ -644,7 +675,7 @@ func (l *Logger) CommandExecuted(ctx context.Context, e CommandExecutedEvent) {
 // It is a value type so handlers assemble it without allocations when there is.
 // nothing to record.
 type CommandExecutedEvent struct {
-	UserID string
+	UserID     string
 	DeviceID   string
 	Command    string
 	DispatchID string
@@ -682,7 +713,7 @@ func (l *Logger) PTYSession(ctx context.Context, e PTYSessionEvent) {
 	}
 
 	l.LogEvent(ctx, &Entry{
-		UserID:   e.UserID,
+		UserID:       e.UserID,
 		Action:       action,
 		ResourceType: "device",
 		ResourceID:   e.DeviceID,
@@ -697,17 +728,78 @@ func (l *Logger) PTYSession(ctx context.Context, e PTYSessionEvent) {
 	})
 }
 
+// DeployEvent carries the fields needed to audit a deploy action.
+//
+// It deliberately has no field for a secret's value. A deploy audit row records that an
+// app secret was set, for which app and key, and never what the value was: the audit
+// trail is read far more widely than the secret store, and a value written here would be
+// a copy of the secret in a table with no envelope and no per-device key.
+type DeployEvent struct {
+	UserID     string
+	OrgID      string
+	DeviceID   string
+	Action     Action
+	IPAddress  string
+	UserAgent  string
+	TraceID    string
+	Result     Result
+	ActorType  string
+	ActorEmail string
+	// Detail is a short human-readable note: the app and key of a secret, the reason a
+	// deploy failed, the credential's name. It must never carry a secret value.
+	Detail  string
+	Version int
+}
+
+// Deploy logs a deploy action: the deploy itself, a rollback, a device reporting an
+// applied version, or a credential/secret change.
+//
+// A deploy decides what code a device runs, so it is audited with the same weight as a
+// command: who asked, for which device and organisation, at which version, and whether
+// it succeeded. The detail is redacted on the way out, because a deploy failure can
+// embed a signing or manifest error that quotes document content.
+func (l *Logger) Deploy(ctx context.Context, e DeployEvent) {
+	metadata := map[string]string{
+		"device_id": e.DeviceID,
+		"org_id":    e.OrgID,
+	}
+	if e.Version > 0 {
+		metadata["version"] = strconv.Itoa(e.Version)
+	}
+	if e.Detail != "" {
+		metadata["detail"] = redaction.DefaultRedactor.Redact(e.Detail)
+	}
+
+	l.LogEvent(ctx, &Entry{
+		UserID:       e.UserID,
+		Action:       e.Action,
+		ResourceType: "device",
+		ResourceID:   e.DeviceID,
+		IPAddress:    e.IPAddress,
+		UserAgent:    e.UserAgent,
+		Result:       e.Result,
+		TraceID:      e.TraceID,
+		// A deploy writes the config a device executes, which is fleet-affecting
+		// authority, so it is classified with the risky operations rather than as an
+		// ordinary settings change.
+		RiskTier:   "high",
+		ActorType:  e.ActorType,
+		ActorEmail: e.ActorEmail,
+		Metadata:   metadata,
+	})
+}
+
 // PTYSessionEvent carries the fields needed to audit a terminal session. It is a
 // value type so handlers assemble it without allocating when there is nothing to
 // record.
 type PTYSessionEvent struct {
-	SessionID  string
-	DeviceID   string
-	UserID string
-	Reason     string
-	IPAddress  string
-	UserAgent  string
-	Result     Result
+	SessionID string
+	DeviceID  string
+	UserID    string
+	Reason    string
+	IPAddress string
+	UserAgent string
+	Result    Result
 	// Opened distinguishes an open from a close for the same struct.
 	Opened bool
 	// Recording reports whether the session is being recorded.

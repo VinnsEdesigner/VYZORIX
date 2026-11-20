@@ -23,5 +23,22 @@ func (s *Server) setupInstanceRoutes(r *gin.RouterGroup) {
 		instance.POST("/lockout/unlock/:user_id",
 			s.requireInstanceScope(permission.ActionAdminLockout),
 			s.authHandlers.Lockout.UnlockAccount)
+
+		// Account state is deployment authority: disabling or deleting an account
+		// reaches every organisation the person belongs to, so an org super_admin
+		// must not hold it. Guarded by admin.users on the instance store. The
+		// org-local siblings are members.write (suspend a membership) and
+		// members.delete (remove a membership), which leave the account intact.
+		if s.authHandlers != nil && s.authHandlers.Admin != nil {
+			instance.POST("/users/:id/disable",
+				s.requireInstanceScope(permission.ActionAdminUsers),
+				s.authHandlers.Admin.DisableUser)
+			instance.POST("/users/:id/enable",
+				s.requireInstanceScope(permission.ActionAdminUsers),
+				s.authHandlers.Admin.EnableUser)
+			instance.DELETE("/users/:id",
+				s.requireInstanceScope(permission.ActionAdminUsers),
+				s.authHandlers.Admin.DeleteUser)
+		}
 	}
 }

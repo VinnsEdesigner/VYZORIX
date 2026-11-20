@@ -40,6 +40,16 @@ func (e *SecretError) Error() string {
 // 404 rather than 400: the request is well-formed, the value simply is not there.
 var ErrSecretNotSet = errors.New("secret is not set")
 
+// ErrNoSecretKey is returned when a device has no secret key registered, so a value cannot
+// be wrapped to it.
+//
+// It is a sentinel rather than a plain error because the condition is a property of the
+// device, not a server fault: the caller asked correctly, and the answer is that this device
+// cannot receive secrets yet. Without it the error fell through to a 500, telling the user
+// the server had broken when the device simply had no key.
+// ErrNoSecretKey is the domain sentinel, re-exported so a deploy caller names it once.
+var ErrNoSecretKey = appsecret.ErrNoSecretKey
+
 // SecretService sets, lists and removes app secrets.
 type SecretService struct {
 	secrets  appsecret.Repository
@@ -161,9 +171,22 @@ func configNamesSecret(document, app, key string) bool {
 
 	return false
 }
+
+// validateSecretName applies the manifest's own app-name rule, so a secret can only be
+// stored under an app a manifest could declare.
+//
+// Without the app check a secret could be filed under a name that can never appear in a
+// manifest, which makes it unreachable: the device's config is the gate for a fetch, and
+// no config will ever name that app. It would sit in the table forever, looking set.
 func validateSecretName(app, key string) error {
 	if strings.TrimSpace(app) == "" {
 		return &SecretError{Message: "app is required"}
+	}
+
+	if !appNamePattern.MatchString(app) || len(app) > maxAppNameLen {
+		return &SecretError{
+			Message: fmt.Sprintf("app %q must match %s and be at most %d characters", app, appNameRe, maxAppNameLen),
+		}
 	}
 
 	if strings.TrimSpace(key) == "" {

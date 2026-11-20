@@ -17,6 +17,7 @@ import (
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/serviceaccount"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/email"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/metrics"
@@ -29,6 +30,7 @@ var (
 	ErrInvalidToken           = errors.New("invalid token")
 	ErrInvalidServiceAccount  = errors.New("invalid service account")
 	ErrInvalidScope           = errors.New("invalid scope")
+	ErrDuplicateTokenName     = errors.New("a token with that name already exists on this service account")
 )
 
 // TokenInput carries the mutable fields of a create/update/rotate request.
@@ -37,6 +39,10 @@ type TokenInput struct {
 	ServiceID string
 	Name      string
 	Scopes    []string
+	// BasicRole is the org role the token acts as; empty means no role.
+	BasicRole string
+	// Roles are the fixed-role grants, each at a breadth.
+	Roles []permission.FixedRoleGrant
 }
 
 // Service provides service account and token lifecycle management.
@@ -113,7 +119,18 @@ func (s *Service) Create(ctx context.Context, orgID, name string) (*serviceaccou
 
 // List returns all service accounts of an org.
 func (s *Service) List(ctx context.Context, orgID string) ([]*serviceaccount.ServiceAccount, error) {
-	return s.repo.ListByOrg(ctx, orgID)
+	accounts, err := s.repo.ListByOrg(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Resolve actor names on read: the row stores ids, and every caller that
+	// renders an account needs the label, not the id.
+	for _, sa := range accounts {
+		s.withActorNames(ctx, sa)
+	}
+
+	return accounts, nil
 }
 
 // Get returns one service account.
@@ -122,7 +139,76 @@ func (s *Service) Get(ctx context.Context, orgID, id string) (*serviceaccount.Se
 	if err != nil {
 		return nil, err
 	}
-	return sa, nil
+
+	return s.withActorNames(ctx, sa), nil
+}
+
+// Update changes name and/or enabled; nil fields are left untouched.
+//
+// actorID and reason are recorded only when the enabled state actually changes,
+// so the account can explain itself later: who turned it off, when, and why. A
+// rename leaves the state facts untouched.
+func (s *Service) Update(
+	ctx context.Context, orgID, id string, name *string, enabled *bool, actorID, reason string,
+) (*serviceaccount.ServiceAccount, error) {
+	sa, err := s.getScoped(ctx, orgID, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if name != nil {
+		if err := sa.Rename(*name); err != nil {
+			return nil, errors.Join(ErrInvalidServiceAccount, err)
+		}
+	}
+	if enabled != nil && *enabled != sa.Enabled {
+		if err := sa.SetEnabled(*enabled, actorID, reason); err != nil {
+			return nil, err
+		}
+	}
+
+	sa.UpdatedAt = time.Now()
+	if err := s.repo.Save(ctx, sa); err != nil {
+		return nil, err
+	}
+	s.audit(ctx, audit.ActionServiceAccountUpdated, sa.ID, "")
+
+	return s.withActorNames(ctx, sa), nil
+}
+
+// withActorNames resolves the stored actor IDs to display names.
+//
+// The row keeps IDs so the fact survives a rename or a deleted actor; the label
+// is looked up here, at read time, and left empty when the actor is gone — a
+// disabled account must still render even if whoever disabled it has since been
+// removed.
+func (s *Service) withActorNames(ctx context.Context, sa *serviceaccount.ServiceAccount) *serviceaccount.ServiceAccount {
+	if s.memberRepo == nil || (sa.DisabledBy == "" && sa.EnabledBy == "") {
+		return sa
+	}
+
+	if sa.DisabledBy != "" {
+		sa.DisabledByName = s.memberName(ctx, sa.OrgID, sa.DisabledBy)
+	}
+	if sa.EnabledBy != "" {
+		sa.EnabledByName = s.memberName(ctx, sa.OrgID, sa.EnabledBy)
+	}
+
+	return sa
+}
+
+// memberName returns the member's display name, falling back to the email and
+// then to the raw id so the UI never renders an empty label.
+func (s *Service) memberName(ctx context.Context, orgID, userID string) string {
+	member, err := s.memberRepo.FindByUserAndOrg(ctx, userID, orgID)
+	if err != nil || member == nil {
+		return ""
+	}
+	if member.UserName != "" {
+		return member.UserName
+	}
+
+	return member.UserEmail
 }
 
 // Delete removes a service account and revokes all its tokens.
@@ -149,7 +235,18 @@ func (s *Service) Delete(ctx context.Context, orgID, id string) error {
 }
 
 // CreateToken generates a new token, returning the full key only at creation.
+// The name must be free on this account.
 func (s *Service) CreateToken(ctx context.Context, in *TokenInput) (*serviceaccount.Token, string, error) {
+	if err := s.assertTokenNameFree(ctx, in.ServiceID, in.Name, ""); err != nil {
+		return nil, "", err
+	}
+	return s.createToken(ctx, in)
+}
+
+// createToken mints and stores a token without checking the name. Callers that
+// expose this to a client must check first; rotation checks with the token being
+// replaced excluded, then calls this.
+func (s *Service) createToken(ctx context.Context, in *TokenInput) (*serviceaccount.Token, string, error) {
 	if _, err := s.getScoped(ctx, "", in.ServiceID); err != nil {
 		return nil, "", err
 	}
@@ -162,9 +259,8 @@ func (s *Service) CreateToken(ctx context.Context, in *TokenInput) (*serviceacco
 			return nil, "", errors.New("service account token quota exceeded")
 		}
 	}
-	if len(in.Scopes) == 0 {
-		in.Scopes = []string{"read"}
-	}
+	// Scopes are no longer a permission source (roles are); the field is kept for
+	// display, and only validated when the caller supplies one.
 	for _, scope := range in.Scopes {
 		if !serviceaccount.Scope(scope).Valid() {
 			return nil, "", fmt.Errorf("%w: %q", ErrInvalidScope, scope)
@@ -185,6 +281,8 @@ func (s *Service) CreateToken(ctx context.Context, in *TokenInput) (*serviceacco
 		KeyHash:   keyHash,
 		KeyPrefix: prefix,
 		Scopes:    in.Scopes,
+		BasicRole: in.BasicRole,
+		Roles:     in.Roles,
 		Valid:     true,
 		ExpiresAt: in.ExpiresAt,
 		CreatedAt: time.Now(),
@@ -213,6 +311,67 @@ func (s *Service) RevokeToken(ctx context.Context, tokenID string) error {
 	return s.tokens.Revoke(ctx, tokenID, time.Now())
 }
 
+// DeleteToken removes a token row entirely, rather than marking it revoked.
+// The token must belong to the named account in the caller's org, so a token id
+// from another account cannot be deleted by guessing it.
+func (s *Service) DeleteToken(ctx context.Context, orgID, serviceID, tokenID string) error {
+	if _, err := s.getScoped(ctx, orgID, serviceID); err != nil {
+		return err
+	}
+	token, err := s.tokens.GetByID(ctx, tokenID)
+	if err != nil || token.ServiceID != serviceID {
+		return ErrServiceAccountNotFound
+	}
+	deleted, err := s.tokens.Delete(ctx, tokenID)
+	if err != nil {
+		return err
+	}
+	if !deleted {
+		return ErrServiceAccountNotFound
+	}
+	s.audit(ctx, audit.ActionServiceAccountTokenRevoked, serviceID, tokenID)
+	return nil
+}
+
+// UpdateTokenRoles changes a token's basic role and fixed roles. Roles are
+// editable at any time; the token's key is untouched, so a running integration
+// keeps its credential while its reach is adjusted.
+func (s *Service) UpdateTokenRoles(ctx context.Context, orgID, serviceID, tokenID string, basicRole string, roles []permission.FixedRoleGrant) (*serviceaccount.Token, error) {
+	if _, err := s.getScoped(ctx, orgID, serviceID); err != nil {
+		return nil, err
+	}
+	token, err := s.tokens.GetByID(ctx, tokenID)
+	if err != nil || token.ServiceID != serviceID {
+		return nil, ErrServiceAccountNotFound
+	}
+	if err := validateTokenRoles(basicRole, roles); err != nil {
+		return nil, err
+	}
+
+	token.BasicRole = basicRole
+	token.Roles = roles
+	if err := s.tokens.Save(ctx, token); err != nil {
+		return nil, err
+	}
+	s.audit(ctx, audit.ActionServiceAccountTokenRotated, serviceID, tokenID)
+	return token, nil
+}
+
+// validateTokenRoles rejects an unknown basic role or fixed-role grant, so a
+// typo cannot silently produce a token with no permissions (or, worse, one whose
+// intent is not what the caller believes).
+func validateTokenRoles(basicRole string, roles []permission.FixedRoleGrant) error {
+	if basicRole != "" && !permission.ValidOrgRole(basicRole) {
+		return errors.Join(ErrInvalidToken, fmt.Errorf("unknown basic role %q", basicRole))
+	}
+	for _, grant := range roles {
+		if !permission.IsValidFixedRoleGrant(grant) {
+			return errors.Join(ErrInvalidToken, fmt.Errorf("unknown fixed role %q at scope %q", grant.Role, grant.Scope))
+		}
+	}
+	return nil
+}
+
 // RotateToken revokes the old token and creates a new one in its place.
 // Returns the new token and the new full key (only available once).
 func (s *Service) RotateToken(ctx context.Context, tokenID string, in *TokenInput) (*serviceaccount.Token, string, error) {
@@ -231,10 +390,36 @@ func (s *Service) RotateToken(ctx context.Context, tokenID string, in *TokenInpu
 		in.Scopes = old.Scopes
 	}
 	if in.Name == "" {
-		in.Name = old.Name + "-rotated"
+		in.Name = old.Name
 	}
-	newToken, key, err := s.CreateToken(ctx, in)
+	// Rotation replaces the credential, not the authority: a caller that does not
+	// restate the roles inherits the old token's roles.
+	if in.BasicRole == "" {
+		in.BasicRole = old.BasicRole
+	}
+	if in.Roles == nil {
+		in.Roles = old.Roles
+	}
+	if roleErr := validateTokenRoles(in.BasicRole, in.Roles); roleErr != nil {
+		return nil, "", roleErr
+	}
+	if nameErr := s.assertTokenNameFree(ctx, in.ServiceID, in.Name, old.ID); nameErr != nil {
+		return nil, "", nameErr
+	}
+
+	// The unique (service_id, name) index rejects the replacement while the token
+	// it replaces still holds the name. Park the old token under a tombstone name
+	// for the duration — it stays usable — and restore it if minting fails.
+	originalName := old.Name
+	old.Name = fmt.Sprintf("%s (replaced %s)", originalName, uuid.New()[:8])
+	if saveErr := s.tokens.Save(ctx, old); saveErr != nil {
+		return nil, "", saveErr
+	}
+
+	newToken, key, err := s.createToken(ctx, in)
 	if err != nil {
+		old.Name = originalName
+		_ = s.tokens.Save(ctx, old)
 		return nil, "", err
 	}
 	if err := s.tokens.Revoke(ctx, tokenID, time.Now()); err != nil {
@@ -245,9 +430,49 @@ func (s *Service) RotateToken(ctx context.Context, tokenID string, in *TokenInpu
 	return newToken, key, nil
 }
 
-// Authenticate validates a presented key against stored hashes. Returns the
-// token when the key is valid and usable.
-func (s *Service) Authenticate(ctx context.Context, key string) (*serviceaccount.Token, error) {
+// AuthenticatedToken is a verified service account token together with the
+// account that owns it. The org travels with the identity, exactly as Grafana's
+// authn.Identity carries OrgID, so a caller never has to re-resolve it from a
+// bare token — and can never resolve it to the wrong account.
+type AuthenticatedToken struct {
+	Token   *serviceaccount.Token
+	Account *serviceaccount.ServiceAccount
+}
+
+// OrgID is the owning account's organization. This is the authoritative org for
+// a service-account-authenticated request.
+func (a *AuthenticatedToken) OrgID() string {
+	if a == nil || a.Account == nil {
+		return ""
+	}
+	return a.Account.OrgID
+}
+
+// assertTokenNameFree rejects a token name already used on the same service
+// account. excludeTokenID lets a rotation keep the name of the token it is
+// replacing.
+func (s *Service) assertTokenNameFree(ctx context.Context, serviceID, name, excludeTokenID string) error {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return errors.Join(ErrInvalidToken, errors.New("name is required"))
+	}
+	existing, err := s.tokens.ListByService(ctx, serviceID)
+	if err != nil {
+		return err
+	}
+	for _, token := range existing {
+		if token.ID != excludeTokenID && strings.EqualFold(token.Name, trimmed) {
+			return ErrDuplicateTokenName
+		}
+	}
+	return nil
+}
+
+// Authenticate validates a presented key and returns the token with its owning
+// account. The token must be usable and the account enabled: a disabled
+// account's tokens stop authenticating, which is the point of the disable
+// switch.
+func (s *Service) Authenticate(ctx context.Context, key string) (*AuthenticatedToken, error) {
 	keyHash := hashKey(key)
 	token, err := s.tokens.GetByKeyHash(ctx, keyHash)
 	if err != nil {
@@ -256,20 +481,17 @@ func (s *Service) Authenticate(ctx context.Context, key string) (*serviceaccount
 	if !token.IsUsable() {
 		return nil, ErrInvalidToken
 	}
-	return token, nil
+	if s.repo == nil {
+		return nil, ErrInvalidToken
+	}
+	account, err := s.repo.GetByID(ctx, token.ServiceID)
+	if err != nil || !account.Enabled {
+		return nil, ErrInvalidToken
+	}
+	return &AuthenticatedToken{Token: token, Account: account}, nil
 }
 
-// GetOrgID returns the org ID of the service account that owns a token (used
-// by auth middleware to set org context from service account tokens).
-func (s *Service) GetOrgID(ctx context.Context) string {
-	// Fallback: the auth middleware already resolved the token and doesn't pass
-	// the token ID here, so this is reserved for future use. Callers that know
-	// the service account ID should query directly.
-	return ""
-}
-
-// GetOrgIDByServiceID returns the org ID for a service account ID (the exact
-// lookup the middleware needs).
+// GetOrgIDByServiceID returns the org ID for a service account ID.
 func (s *Service) GetOrgIDByServiceID(ctx context.Context, serviceID string) string {
 	if s.repo == nil {
 		return ""

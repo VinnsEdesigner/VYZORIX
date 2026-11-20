@@ -8,9 +8,9 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 )
 
 // These tests cover the scope gate that protects the interactive terminal. The

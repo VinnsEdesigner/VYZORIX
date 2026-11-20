@@ -15,7 +15,7 @@ import (
 type Client struct {
 	ctx       context.Context
 	conn      *websocket.Conn
-	user  *user.User
+	user      *user.User
 	subs      map[string]func()
 	done      chan struct{}
 	handler   *Handler
@@ -28,7 +28,7 @@ type Client struct {
 func NewClient(conn *websocket.Conn, op *user.User, orgID string, handler *Handler, presenter *Presenter) *Client {
 	return &Client{
 		conn:      conn,
-		user:  op,
+		user:      op,
 		orgID:     orgID,
 		subs:      make(map[string]func()),
 		done:      make(chan struct{}),

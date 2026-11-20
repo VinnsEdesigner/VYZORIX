@@ -18,30 +18,46 @@ package vyzorix
         monthly_limit: int
 }
 
-// AdminUser.
-#AdminUser: {
+// OrgUser is one member of the current organisation: the account's profile
+// facts plus the membership facts (role, status, joined). There is no
+// deployment-wide equivalent.
+#OrgUser: {
         id: string
+        member_id: string
         email: string
         name: string
-        role?: string
+        role: string
+        status: string
+        joined_at: int64
+        avatar_url?: string
         created_at: int64
-        updated_at: int64
+        last_seen_at?: int64
         mfa_enabled: bool
         email_verified: bool
+        disabled: bool
 }
 
-// AdminUserListResult.
-#AdminUserListResult: {
-        users: [...#AdminUser]
+// OrgUserListResult.
+#OrgUserListResult: {
+        users: [...#OrgUser]
         total: int
+        page: int
+        limit: int
+        total_pages: int
 }
 
-// CreateUserRequest.
-#CreateUserRequest: {
-        email: string
-        password: string
-        name: string
-        role?: string
+// OrgUserStatsResult is the member count per role plus the pending invitation
+// count for one organisation.
+#OrgUserStatsResult: {
+        by_role: {[string]: int}
+        total: int
+        pending_invites: int
+}
+
+// AdminUserSessionListResult.
+#AdminUserSessionListResult: {
+        sessions: [...#SessionInfo]
+        total: int
 }
 
 // UserThresholds.

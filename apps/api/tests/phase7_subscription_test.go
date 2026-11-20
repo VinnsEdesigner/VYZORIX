@@ -29,12 +29,12 @@ import (
 
 // gqlSubState holds shared state for GraphQL subscription WS tests.
 type gqlSubState struct {
-	hub      *wshub.Hub
-	server   *httptest.Server
-	ctx      context.Context
-	cancel   context.CancelFunc
-	user *user.User
-	orgID    string
+	hub    *wshub.Hub
+	server *httptest.Server
+	ctx    context.Context
+	cancel context.CancelFunc
+	user   *user.User
+	orgID  string
 	// devices is the repo backing the subscription org guard; tests register
 	// the IMEIs they intend to observe so the guard admits them.
 	devices *noopDeviceRepoForTests
@@ -132,13 +132,13 @@ func newGQLSubState(t *testing.T) *gqlSubState {
 	})
 
 	return &gqlSubState{
-		hub:      h,
-		server:   server,
-		ctx:      ctx,
-		cancel:   cancel,
-		user: testOp,
-		orgID:    orgID,
-		devices:  noopRepo,
+		hub:     h,
+		server:  server,
+		ctx:     ctx,
+		cancel:  cancel,
+		user:    testOp,
+		orgID:   orgID,
+		devices: noopRepo,
 	}
 }
 

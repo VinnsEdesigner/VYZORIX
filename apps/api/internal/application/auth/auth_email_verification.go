@@ -102,11 +102,11 @@ func (s *AuthService) CreateEmailVerification(ctx context.Context, userID string
 	id = shared.GenerateID()
 
 	ev := &email_verification.EmailVerification{
-		ID:         id,
-		UserID: userID,
-		TokenHash:  tokenHash,
-		ExpiresAt:  time.Now().UTC().Add(24 * time.Hour),
-		CreatedAt:  time.Now().UTC(),
+		ID:        id,
+		UserID:    userID,
+		TokenHash: tokenHash,
+		ExpiresAt: time.Now().UTC().Add(24 * time.Hour),
+		CreatedAt: time.Now().UTC(),
 	}
 
 	if err := s.emailVerifyRepo.Create(ctx, ev); err != nil {

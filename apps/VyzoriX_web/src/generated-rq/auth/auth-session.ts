@@ -62,6 +62,8 @@ import type {
 
 import { customAxios } from '../../../../../packages/API_Client/src/generated/rest-bridge';
 import organizationScopedQueryKey from '.././query-key-mutator';
+import { getGetAuthMeNotificationsHistoryQueryKey } from '../notifications/notifications';
+import { getGetMeNotificationsQueryKey, getGetMePreferencesQueryKey, getGetMeSettingsQueryKey, getGetMeThresholdsQueryKey } from '../settings/user-settings';
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -769,7 +771,7 @@ export const postAuthMeAvatar = async ( options?: Parameters<typeof customAxios>
 
 
 export const getPostAuthMeAvatarMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeAvatar>>, TError,void, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeAvatar>>, TError,void, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postAuthMeAvatar>>, TError,void, TContext> => {
 
 const mutationKey = ['postAuthMeAvatar'];
@@ -788,12 +790,23 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
           return  postAuthMeAvatar(requestOptions)
         }
 
+  const onSuccess = (data: Awaited<ReturnType<typeof postAuthMeAvatar>>, variables: void, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetMeNotificationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetMePreferencesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetMeSettingsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetMeThresholdsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeProfileSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeNotificationsHistoryQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
 
 
 
 
-
-  return  { mutationFn, ...mutationOptions }}
+  return  { ...mutationOptions, mutationFn, onSuccess }}
 
     export type PostAuthMeAvatarMutationResult = NonNullable<Awaited<ReturnType<typeof postAuthMeAvatar>>>
 
@@ -803,14 +816,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Upload avatar
  */
 export const usePostAuthMeAvatar = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeAvatar>>, TError,void, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeAvatar>>, TError,void, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postAuthMeAvatar>>,
         TError,
         void,
         TContext
       > => {
-      return useMutation(getPostAuthMeAvatarMutationOptions(options), queryClient);
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPostAuthMeAvatarMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
     export const getGetAuthMeProfileSummaryUrl = () => {
 

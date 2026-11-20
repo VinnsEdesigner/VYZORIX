@@ -412,33 +412,14 @@ definitions:
       client:
         $ref: '#/definitions/openapi.AdminClient'
     type: object
-  openapi.AdminUser:
+  openapi.AdminUserSessionListResult:
     properties:
-      created_at:
-        type: integer
-      email:
-        type: string
-      email_verified:
-        type: boolean
-      id:
-        type: string
-      mfa_enabled:
-        type: boolean
-      name:
-        type: string
-      role:
-        type: string
-      updated_at:
-        type: integer
-    type: object
-  openapi.AdminUserListResult:
-    properties:
+      sessions:
+        items:
+          $ref: '#/definitions/openapi.SessionInfo'
+        type: array
       total:
         type: integer
-      users:
-        items:
-          $ref: '#/definitions/openapi.AdminUser'
-        type: array
     type: object
   openapi.AlertEvaluateResult:
     properties:
@@ -1022,7 +1003,9 @@ definitions:
     properties:
       email:
         type: string
-      org_id:
+      notes:
+        type: string
+      organizationId:
         type: string
       role:
         type: string
@@ -1045,26 +1028,17 @@ definitions:
     type: object
   openapi.CreateServiceAccountTokenRequest:
     properties:
+      basic_role:
+        type: string
       expires_at:
         type: string
       name:
         type: string
-      scopes:
+      roles:
         items:
-          type: string
+          $ref: '#/definitions/openapi.FixedRoleGrant'
         type: array
       service_id:
-        type: string
-    type: object
-  openapi.CreateUserRequest:
-    properties:
-      email:
-        type: string
-      name:
-        type: string
-      password:
-        type: string
-      role:
         type: string
     type: object
   openapi.CursorPaginationResult:
@@ -1455,6 +1429,37 @@ definitions:
       message:
         type: string
       trace_id:
+        type: string
+    type: object
+  openapi.FixedRoleCatalogResult:
+    properties:
+      org_roles:
+        items:
+          type: string
+        type: array
+      roles:
+        items:
+          $ref: '#/definitions/openapi.FixedRoleInfo'
+        type: array
+      scopes:
+        items:
+          type: string
+        type: array
+    type: object
+  openapi.FixedRoleGrant:
+    properties:
+      role:
+        type: string
+      scope:
+        type: string
+    type: object
+  openapi.FixedRoleInfo:
+    properties:
+      access:
+        type: string
+      group:
+        type: string
+      id:
         type: string
     type: object
   openapi.ForgotPasswordRequest:
@@ -1998,6 +2003,61 @@ definitions:
       webhook:
         $ref: '#/definitions/openapi.WebhookNotifications'
     type: object
+  openapi.OrgUser:
+    properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: integer
+      disabled:
+        type: boolean
+      email:
+        type: string
+      email_verified:
+        type: boolean
+      id:
+        type: string
+      joined_at:
+        type: integer
+      last_seen_at:
+        type: integer
+      member_id:
+        type: string
+      mfa_enabled:
+        type: boolean
+      name:
+        type: string
+      role:
+        type: string
+      status:
+        type: string
+    type: object
+  openapi.OrgUserListResult:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/openapi.OrgUser'
+        type: array
+    type: object
+  openapi.OrgUserStatsResult:
+    properties:
+      by_role:
+        additionalProperties:
+          type: integer
+        type: object
+      pending_invites:
+        type: integer
+      total:
+        type: integer
+    type: object
   openapi.Organization:
     properties:
       created_at:
@@ -2037,11 +2097,15 @@ definitions:
     type: object
   openapi.OrganizationMember:
     properties:
+      avatar_url:
+        type: string
       id:
         type: string
       invited_by:
         type: string
       joined_at:
+        type: integer
+      last_seen:
         type: integer
       organization_id:
         type: string
@@ -2051,6 +2115,8 @@ definitions:
         type: string
       status:
         type: string
+      suspended_at:
+        type: integer
       user_email:
         type: string
       user_id:
@@ -2243,13 +2309,15 @@ definitions:
     type: object
   openapi.RotateServiceAccountTokenRequest:
     properties:
+      basic_role:
+        type: string
       expires_at:
         type: string
       name:
         type: string
-      scopes:
+      roles:
         items:
-          type: string
+          $ref: '#/definitions/openapi.FixedRoleGrant'
         type: array
     type: object
   openapi.SelectOrganizationRequest:
@@ -2268,16 +2336,32 @@ definitions:
     type: object
   openapi.ServiceAccount:
     properties:
+      avatar_url:
+        type: string
       created_at:
         type: integer
+      disabled_at:
+        type: integer
+      disabled_by:
+        type: string
+      disabled_by_name:
+        type: string
+      disabled_reason:
+        type: string
       enabled:
         type: boolean
+      enabled_by:
+        type: string
+      enabled_by_name:
+        type: string
       id:
         type: string
       name:
         type: string
       org_id:
         type: string
+      token_count:
+        type: integer
       updated_at:
         type: integer
     type: object
@@ -2290,6 +2374,8 @@ definitions:
     type: object
   openapi.ServiceAccountToken:
     properties:
+      basic_role:
+        type: string
       created_at:
         type: integer
       expires_at:
@@ -2298,10 +2384,16 @@ definitions:
         type: string
       key_prefix:
         type: string
+      last_used_at:
+        type: integer
       name:
         type: string
       revoked_at:
         type: integer
+      roles:
+        items:
+          $ref: '#/definitions/openapi.FixedRoleGrant'
+        type: array
       scopes:
         items:
           type: string
@@ -2343,6 +2435,8 @@ definitions:
       selected_organization_id:
         type: string
       user_agent:
+        type: string
+      user_id:
         type: string
     type: object
   openapi.SessionListResult:
@@ -2905,6 +2999,24 @@ definitions:
       version:
         type: string
     type: object
+  openapi.UpdateServiceAccountRequest:
+    properties:
+      enabled:
+        type: boolean
+      name:
+        type: string
+      reason:
+        type: string
+    type: object
+  openapi.UpdateServiceAccountTokenRolesRequest:
+    properties:
+      basic_role:
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/openapi.FixedRoleGrant'
+        type: array
+    type: object
   openapi.UpdateSettingsRequest:
     properties:
       client:
@@ -2959,19 +3071,6 @@ definitions:
         type: string
       versionsFound:
         type: integer
-    type: object
-  openapi.UpdateUserRequest:
-    properties:
-      email:
-        type: string
-      email_verified:
-        type: boolean
-      mfa_enabled:
-        type: boolean
-      name:
-        type: string
-      role:
-        type: string
     type: object
   openapi.UpdateVersionListResult:
     properties:
@@ -4054,20 +4153,46 @@ paths:
     get:
       consumes:
       - application/json
-      description: Lists all users in the system (super_admin only)
+      description: Lists the members of the current organisation, paginated and optionally
+        searched by email or name (super_admin only)
       parameters:
       - description: Organization ID
         in: header
         name: X-Organization-ID
         required: true
+        type: string
+      - description: Page number (1-based)
+        in: query
+        name: page
+        type: integer
+      - description: Page size (max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Search by email or name
+        in: query
+        name: q
+        type: string
+      - description: 'Sort column: email, name, created_at, last_login_at'
+        in: query
+        name: sort
+        type: string
+      - description: 'Sort direction: asc or desc'
+        in: query
+        name: order
+        type: string
+      - description: 'Membership status filter: active, suspended; empty means every
+          state except removed'
+        in: query
+        name: status
         type: string
       produces:
       - application/json
       responses:
         "200":
-          description: users
+          description: members
           schema:
-            $ref: '#/definitions/openapi.AdminUserListResult'
+            $ref: '#/definitions/openapi.OrgUserListResult'
         "401":
           description: not authenticated
           schema:
@@ -4080,60 +4205,15 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: List users
-      tags:
-      - admin
-    post:
-      consumes:
-      - application/json
-      description: Creates a new user (super_admin only)
-      parameters:
-      - description: Organization ID
-        in: header
-        name: X-Organization-ID
-        required: true
-        type: string
-      - description: user credentials
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/openapi.CreateUserRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: created user
-          schema:
-            $ref: '#/definitions/openapi.AdminUser'
-        "400":
-          description: invalid input
-          schema:
-            $ref: '#/definitions/openapi.ErrorResponse'
-        "401":
-          description: not authenticated
-          schema:
-            $ref: '#/definitions/openapi.ErrorResponse'
-        "403":
-          description: super_admin required
-          schema:
-            $ref: '#/definitions/openapi.ErrorResponse'
-        "409":
-          description: email already in use
-          schema:
-            $ref: '#/definitions/openapi.ErrorResponse'
-        "500":
-          description: internal error
-          schema:
-            $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Create user
+      summary: List organisation members
       tags:
       - admin
   /auth/admin/users/{id}:
-    delete:
+    get:
       consumes:
       - application/json
-      description: Deletes a user. Cannot delete yourself or the last super_admin
+      description: Returns a member of the current organisation (super_admin only).
+        A user outside the organisation is reported as not found.
       parameters:
       - description: Organization ID
         in: header
@@ -4149,11 +4229,53 @@ paths:
       - application/json
       responses:
         "200":
-          description: user deleted
+          description: member
           schema:
-            $ref: '#/definitions/openapi.SuccessResult'
+            $ref: '#/definitions/openapi.OrgUser'
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: super_admin required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not a member of this organisation
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "500":
+          description: internal error
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Get organisation member
+      tags:
+      - admin
+  /auth/admin/users/{id}/sessions:
+    delete:
+      consumes:
+      - application/json
+      description: Revokes every active session of a user (super_admin only)
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: user ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: sessions revoked
+          schema:
+            $ref: '#/definitions/openapi.RevokeResult'
         "400":
-          description: user id required / cannot delete self
+          description: user id required
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
         "401":
@@ -4164,25 +4286,17 @@ paths:
           description: super_admin required
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-        "404":
-          description: not found
-          schema:
-            $ref: '#/definitions/openapi.ErrorResponse'
-        "409":
-          description: cannot delete last super_admin
-          schema:
-            $ref: '#/definitions/openapi.ErrorResponse'
         "500":
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Delete user
+      summary: Revoke all user sessions
       tags:
       - admin
     get:
       consumes:
       - application/json
-      description: Returns a single user by ID (super_admin only)
+      description: Lists the active sessions of a user (super_admin only)
       parameters:
       - description: Organization ID
         in: header
@@ -4198,9 +4312,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: created user
+          description: sessions
           schema:
-            $ref: '#/definitions/openapi.AdminUser'
+            $ref: '#/definitions/openapi.AdminUserSessionListResult'
         "401":
           description: not authenticated
           schema:
@@ -4217,13 +4331,14 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Get user
+      summary: List user sessions
       tags:
       - admin
-    patch:
+  /auth/admin/users/{id}/sessions/{sessionId}:
+    delete:
       consumes:
       - application/json
-      description: Updates mutable user fields (super_admin only)
+      description: Revokes one session belonging to a user (super_admin only)
       parameters:
       - description: Organization ID
         in: header
@@ -4235,21 +4350,20 @@ paths:
         name: id
         required: true
         type: string
-      - description: user update
-        in: body
-        name: body
+      - description: session ID
+        in: path
+        name: sessionId
         required: true
-        schema:
-          $ref: '#/definitions/openapi.UpdateUserRequest'
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: updated user
+          description: session revoked
           schema:
-            $ref: '#/definitions/openapi.AdminUser'
+            $ref: '#/definitions/openapi.SuccessResult'
         "400":
-          description: invalid input
+          description: session id required
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
         "401":
@@ -4261,18 +4375,48 @@ paths:
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
         "404":
-          description: not found
-          schema:
-            $ref: '#/definitions/openapi.ErrorResponse'
-        "409":
-          description: email already in use
+          description: session not found
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
         "500":
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Update user
+      summary: Revoke user session
+      tags:
+      - admin
+  /auth/admin/users/stats:
+    get:
+      consumes:
+      - application/json
+      description: Member count per role plus the pending invitation count for the
+        current organisation (super_admin only)
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: stats
+          schema:
+            $ref: '#/definitions/openapi.OrgUserStatsResult'
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: super_admin required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "500":
+          description: internal error
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Organisation member stats
       tags:
       - admin
   /auth/api-keys:
@@ -8674,6 +8818,133 @@ paths:
       summary: Unlock account
       tags:
       - instance
+  /instance/users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes an account and its memberships (instance admin only)
+      parameters:
+      - description: user ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: deleted
+          schema:
+            $ref: '#/definitions/openapi.SuccessResult'
+        "400":
+          description: cannot delete your own account
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: instance admin required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "409":
+          description: cannot delete the last super admin
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "500":
+          description: internal error
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Delete an account
+      tags:
+      - instance
+  /instance/users/{id}/disable:
+    post:
+      consumes:
+      - application/json
+      description: Disables an account and revokes every session (instance admin only)
+      parameters:
+      - description: user ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: disabled
+          schema:
+            $ref: '#/definitions/openapi.SuccessResult'
+        "400":
+          description: cannot disable your own account
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: instance admin required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "500":
+          description: internal error
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Disable an account
+      tags:
+      - instance
+  /instance/users/{id}/enable:
+    post:
+      consumes:
+      - application/json
+      description: Clears the account-disable timestamp (instance admin only)
+      parameters:
+      - description: user ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: enabled
+          schema:
+            $ref: '#/definitions/openapi.SuccessResult'
+        "400":
+          description: user id required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "401":
+          description: not authenticated
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: instance admin required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "500":
+          description: internal error
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Re-enable an account
+      tags:
+      - instance
   /invitations:
     get:
       consumes:
@@ -9746,6 +10017,10 @@ paths:
         name: id
         required: true
         type: string
+      - description: 'Membership status: active, suspended, all'
+        in: query
+        name: status
+        type: string
       produces:
       - application/json
       responses:
@@ -10398,12 +10673,11 @@ paths:
       summary: Delete service account
       tags:
       - service-accounts
-  /service-accounts/{id}/rotate:
-    post:
+    patch:
       consumes:
       - application/json
-      description: Revokes the existing token and issues a new one. Returns the full
-        key once
+      description: Renames a service account and/or toggles it enabled. Omitted fields
+        are left unchanged
       parameters:
       - description: Organization ID
         in: header
@@ -10415,28 +10689,32 @@ paths:
         name: id
         required: true
         type: string
-      - description: new token definition
+      - description: fields to update
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/openapi.RotateServiceAccountTokenRequest'
+          $ref: '#/definitions/openapi.UpdateServiceAccountRequest'
       produces:
       - application/json
       responses:
-        "201":
-          description: rotated token with full key
+        "200":
+          description: updated service account
           schema:
-            $ref: '#/definitions/openapi.ServiceAccountTokenRotated'
+            $ref: '#/definitions/openapi.ServiceAccount'
         "400":
-          description: invalid input / not found
+          description: invalid input
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
         "500":
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Rotate service account token
+      summary: Update service account
       tags:
       - service-accounts
   /service-accounts/{id}/tokens:
@@ -10517,7 +10795,8 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Revokes a single token by ID
+      description: Revokes a token by ID (soft, auditable). With purge=true the token
+        row is deleted.
       parameters:
       - description: Organization ID
         in: header
@@ -10534,6 +10813,10 @@ paths:
         name: token
         required: true
         type: string
+      - description: Delete the token row instead of marking it revoked
+        in: query
+        name: purge
+        type: boolean
       produces:
       - application/json
       responses:
@@ -10549,7 +10832,122 @@ paths:
           description: internal error
           schema:
             $ref: '#/definitions/openapi.ErrorResponse'
-      summary: Revoke service account token
+      summary: Revoke or delete service account token
+      tags:
+      - service-accounts
+    patch:
+      consumes:
+      - application/json
+      description: Replaces a token's basic role and fixed roles. The token's key
+        is unchanged
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: service account ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: token
+        required: true
+        type: string
+      - description: roles to assign
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/openapi.UpdateServiceAccountTokenRolesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: updated token
+          schema:
+            $ref: '#/definitions/openapi.ServiceAccountToken'
+        "400":
+          description: invalid role
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "500":
+          description: internal error
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Update service account token roles
+      tags:
+      - service-accounts
+  /service-accounts/{id}/tokens/{token}/rotate:
+    post:
+      consumes:
+      - application/json
+      description: Revokes the existing token and issues a new one. Returns the full
+        key once
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: service account ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: token ID
+        in: path
+        name: token
+        required: true
+        type: string
+      - description: new token definition
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/openapi.RotateServiceAccountTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: rotated token with full key
+          schema:
+            $ref: '#/definitions/openapi.ServiceAccountTokenRotated'
+        "400":
+          description: invalid input / not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "500":
+          description: internal error
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Rotate service account token
+      tags:
+      - service-accounts
+  /service-accounts/roles:
+    get:
+      consumes:
+      - application/json
+      description: Returns the fixed-role catalog and org roles a service account
+        token may be assigned
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: assignable roles
+          schema:
+            $ref: '#/definitions/openapi.FixedRoleCatalogResult'
+        "500":
+          description: internal error
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: List assignable roles
       tags:
       - service-accounts
   /telemetry/cleanup:

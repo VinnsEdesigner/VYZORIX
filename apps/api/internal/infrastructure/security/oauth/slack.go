@@ -20,14 +20,7 @@ type SlackConfig struct {
 
 // SlackTokenResponse is the oauth.v2.access response.
 type SlackTokenResponse struct {
-	OK          bool   `json:"ok"`
-	Error       string `json:"error"`
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	Scope       string `json:"scope"`
-	BotUserID   string `json:"bot_user_id"`
-	AppID       string `json:"app_id"`
-	Team        struct {
+	Team struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
 	} `json:"team"`
@@ -35,6 +28,13 @@ type SlackTokenResponse struct {
 		ID    string `json:"id"`
 		Scope string `json:"scope"`
 	} `json:"authed_user"`
+	Error       string `json:"error"`
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	Scope       string `json:"scope"`
+	BotUserID   string `json:"bot_user_id"`
+	AppID       string `json:"app_id"`
+	OK          bool   `json:"ok"`
 }
 
 // SlackChannel is a channel the bot can post to.
@@ -103,9 +103,9 @@ func ListSlackChannels(ctx context.Context, token string) ([]SlackChannel, error
 	}
 
 	var decoded struct {
-		OK       bool           `json:"ok"`
 		Error    string         `json:"error"`
 		Channels []SlackChannel `json:"channels"`
+		OK       bool           `json:"ok"`
 	}
 	if err := json.Unmarshal(body, &decoded); err != nil {
 		return nil, err

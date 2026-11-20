@@ -1,11 +1,13 @@
 package deployhandlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/deploy"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/crypto"
 )
@@ -102,6 +104,12 @@ func (h *Handler) SetSecret(c *gin.Context) {
 
 		return
 	}
+
+	// The VALUE is never recorded — only that a secret was set, for which app and key,
+	// and at which generation. An audit trail is read far more widely than the secret
+	// store, so a value written here would be a copy of the secret with no envelope.
+	h.recordAudit(c, h.auditEvent(c, orgID, deviceID, audit.ActionDeploySecretSet,
+		audit.ResultSuccess, fmt.Sprintf("secret %s/%s set at generation %d", c.Param("app"), req.Key, generation)))
 
 	c.JSON(http.StatusOK, setSecretResponse{
 		App:        c.Param("app"),
@@ -204,6 +212,9 @@ func (h *Handler) UnsetSecret(c *gin.Context) {
 
 		return
 	}
+
+	h.recordAudit(c, h.auditEvent(c, orgID, deviceID, audit.ActionDeploySecretUnset,
+		audit.ResultSuccess, "secret "+c.Param("app")+"/"+c.Param("key")+" removed"))
 
 	c.Status(http.StatusNoContent)
 }

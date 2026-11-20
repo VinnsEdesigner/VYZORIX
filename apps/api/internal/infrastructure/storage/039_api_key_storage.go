@@ -27,7 +27,7 @@ type APIKey struct {
 	LastRequest    *int64
 	ExpiresAt      *int64
 	RevokedAt      *int64
-	UserID     string
+	UserID         string
 	Name           string
 	KeyPrefix      string
 	KeyHash        string
@@ -50,8 +50,8 @@ type APIKeyWithUser struct {
 // UserRequestTotal is a per-user cumulative request-count aggregate.
 // used by the super-admin global stats "top users" view.
 type UserRequestTotal struct {
-	UserID    string
-	UserName  string
+	UserID        string
+	UserName      string
 	TotalRequests int64
 }
 

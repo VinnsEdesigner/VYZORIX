@@ -17,6 +17,11 @@ export function injectGlobalStyles(theme: VyzorixTheme): void {
     a { color: ${theme.colors.text.link}; }
     ::selection { background: ${theme.colors.primary.main}; color: ${theme.colors.primary.contrastText}; }
     @keyframes vyzorix-spin { to { transform: rotate(360deg); } }
+    @keyframes vyzorix-field-shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-4px); }
+      40%, 80% { transform: translateX(4px); }
+    }
     :root[data-reduce-motion='true'] *, :root[data-reduce-motion='true'] *::before, :root[data-reduce-motion='true'] *::after {
       transition: none !important;
       animation: none !important;

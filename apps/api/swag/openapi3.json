@@ -1641,8 +1641,8 @@
     },
     "/auth/admin/users": {
       "get": {
-        "summary": "List users",
-        "description": "Lists all users in the system (super_admin only)",
+        "summary": "List organisation members",
+        "description": "Lists the members of the current organisation, paginated and optionally searched by email or name (super_admin only)",
         "tags": [
           "admin"
         ],
@@ -1655,15 +1655,69 @@
               "type": "string"
             },
             "description": "Organization ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Page number (1-based)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Page size (max 100)"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search by email or name"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Sort column: email, name, created_at, last_login_at"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Sort direction: asc or desc"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Membership status filter: active, suspended; empty means every state except removed"
           }
         ],
         "responses": {
           "200": {
-            "description": "users",
+            "description": "members",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AdminUserListResult"
+                  "$ref": "#/components/schemas/OrgUserListResult"
                 }
               }
             }
@@ -1699,10 +1753,12 @@
             }
           }
         }
-      },
-      "post": {
-        "summary": "Create user",
-        "description": "Creates a new user (super_admin only)",
+      }
+    },
+    "/auth/admin/users/stats": {
+      "get": {
+        "summary": "Organisation member stats",
+        "description": "Member count per role plus the pending invitation count for the current organisation (super_admin only)",
         "tags": [
           "admin"
         ],
@@ -1717,34 +1773,13 @@
             "description": "Organization ID"
           }
         ],
-        "requestBody": {
-          "required": true,
-          "description": "user credentials",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateUserRequest"
-              }
-            }
-          }
-        },
         "responses": {
-          "201": {
-            "description": "created user",
+          "200": {
+            "description": "stats",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AdminUser"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "invalid input",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
+                  "$ref": "#/components/schemas/OrgUserStatsResult"
                 }
               }
             }
@@ -1761,16 +1796,6 @@
           },
           "403": {
             "description": "super_admin required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "email already in use",
             "content": {
               "application/json": {
                 "schema": {
@@ -1794,8 +1819,8 @@
     },
     "/auth/admin/users/{id}": {
       "get": {
-        "summary": "Get user",
-        "description": "Returns a single user by ID (super_admin only)",
+        "summary": "Get organisation member",
+        "description": "Returns a member of the current organisation (super_admin only). A user outside the organisation is reported as not found.",
         "tags": [
           "admin"
         ],
@@ -1821,11 +1846,92 @@
         ],
         "responses": {
           "200": {
-            "description": "created user",
+            "description": "member",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AdminUser"
+                  "$ref": "#/components/schemas/OrgUser"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "super_admin required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not a member of this organisation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/admin/users/{id}/sessions": {
+      "get": {
+        "summary": "List user sessions",
+        "description": "Lists the active sessions of a user (super_admin only)",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "name": "X-Organization-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "user ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "sessions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserSessionListResult"
                 }
               }
             }
@@ -1873,8 +1979,8 @@
         }
       },
       "delete": {
-        "summary": "Delete user",
-        "description": "Deletes a user. Cannot delete yourself or the last super_admin",
+        "summary": "Revoke all user sessions",
+        "description": "Revokes every active session of a user (super_admin only)",
         "tags": [
           "admin"
         ],
@@ -1900,17 +2006,17 @@
         ],
         "responses": {
           "200": {
-            "description": "user deleted",
+            "description": "sessions revoked",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResult"
+                  "$ref": "#/components/schemas/RevokeResult"
                 }
               }
             }
           },
           "400": {
-            "description": "user id required / cannot delete self",
+            "description": "user id required",
             "content": {
               "application/json": {
                 "schema": {
@@ -1931,26 +2037,6 @@
           },
           "403": {
             "description": "super_admin required",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "cannot delete last super_admin",
             "content": {
               "application/json": {
                 "schema": {
@@ -1970,10 +2056,12 @@
             }
           }
         }
-      },
-      "patch": {
-        "summary": "Update user",
-        "description": "Updates mutable user fields (super_admin only)",
+      }
+    },
+    "/auth/admin/users/{id}/sessions/{sessionId}": {
+      "delete": {
+        "summary": "Revoke user session",
+        "description": "Revokes one session belonging to a user (super_admin only)",
         "tags": [
           "admin"
         ],
@@ -1995,32 +2083,30 @@
               "type": "string"
             },
             "description": "user ID"
+          },
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "session ID"
           }
         ],
-        "requestBody": {
-          "required": true,
-          "description": "user update",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateUserRequest"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
-            "description": "updated user",
+            "description": "session revoked",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AdminUser"
+                  "$ref": "#/components/schemas/SuccessResult"
                 }
               }
             }
           },
           "400": {
-            "description": "invalid input",
+            "description": "session id required",
             "content": {
               "application/json": {
                 "schema": {
@@ -2050,17 +2136,7 @@
             }
           },
           "404": {
-            "description": "not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "email already in use",
+            "description": "session not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -10166,6 +10242,262 @@
         }
       }
     },
+    "/instance/users/{id}": {
+      "delete": {
+        "summary": "Delete an account",
+        "description": "Deletes an account and its memberships (instance admin only)",
+        "tags": [
+          "instance"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "user ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "cannot delete your own account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "instance admin required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "cannot delete the last super admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/instance/users/{id}/disable": {
+      "post": {
+        "summary": "Disable an account",
+        "description": "Disables an account and revokes every session (instance admin only)",
+        "tags": [
+          "instance"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "user ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "disabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "cannot disable your own account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "instance admin required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/instance/users/{id}/enable": {
+      "post": {
+        "summary": "Re-enable an account",
+        "description": "Clears the account-disable timestamp (instance admin only)",
+        "tags": [
+          "instance"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "user ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "user id required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "instance admin required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/invitations": {
       "get": {
         "summary": "List sent invitations",
@@ -12137,6 +12469,15 @@
               "type": "string"
             },
             "description": "organization ID"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Membership status: active, suspended, all"
           }
         ],
         "responses": {
@@ -13328,6 +13669,37 @@
         }
       }
     },
+    "/service-accounts/roles": {
+      "get": {
+        "summary": "List assignable roles",
+        "description": "Returns the fixed-role catalog and org roles a service account token may be assigned",
+        "tags": [
+          "service-accounts"
+        ],
+        "responses": {
+          "200": {
+            "description": "assignable roles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixedRoleCatalogResult"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/service-accounts/{id}": {
       "delete": {
         "summary": "Delete service account",
@@ -13387,12 +13759,10 @@
             }
           }
         }
-      }
-    },
-    "/service-accounts/{id}/rotate": {
-      "post": {
-        "summary": "Rotate service account token",
-        "description": "Revokes the existing token and issues a new one. Returns the full key once",
+      },
+      "patch": {
+        "summary": "Update service account",
+        "description": "Renames a service account and/or toggles it enabled. Omitted fields are left unchanged",
         "tags": [
           "service-accounts"
         ],
@@ -13418,28 +13788,38 @@
         ],
         "requestBody": {
           "required": true,
-          "description": "new token definition",
+          "description": "fields to update",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RotateServiceAccountTokenRequest"
+                "$ref": "#/components/schemas/UpdateServiceAccountRequest"
               }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "rotated token with full key",
+          "200": {
+            "description": "updated service account",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServiceAccountTokenRotated"
+                  "$ref": "#/components/schemas/ServiceAccount"
                 }
               }
             }
           },
           "400": {
-            "description": "invalid input / not found",
+            "description": "invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -13594,8 +13974,85 @@
     },
     "/service-accounts/{id}/tokens/{token}": {
       "delete": {
-        "summary": "Revoke service account token",
-        "description": "Revokes a single token by ID",
+        "summary": "Revoke or delete service account token",
+        "description": "Revokes a token by ID (soft, auditable). With purge=true the token row is deleted.",
+        "tags": [
+          "service-accounts"
+        ],
+        "parameters": [
+          {
+            "name": "X-Organization-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "service account ID"
+          },
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "token ID"
+          },
+          {
+            "name": "purge",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Delete the token row instead of marking it revoked"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "revoked confirmation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokedResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update service account token roles",
+        "description": "Replaces a token's basic role and fixed roles. The token's key is unchanged",
         "tags": [
           "service-accounts"
         ],
@@ -13628,19 +14085,121 @@
             "description": "token ID"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "description": "roles to assign",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateServiceAccountTokenRolesRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "revoked confirmation",
+            "description": "updated token",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RevokedResult"
+                  "$ref": "#/components/schemas/ServiceAccountToken"
                 }
               }
             }
           },
           "400": {
+            "description": "invalid role",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
             "description": "not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/service-accounts/{id}/tokens/{token}/rotate": {
+      "post": {
+        "summary": "Rotate service account token",
+        "description": "Revokes the existing token and issues a new one. Returns the full key once",
+        "tags": [
+          "service-accounts"
+        ],
+        "parameters": [
+          {
+            "name": "X-Organization-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Organization ID"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "service account ID"
+          },
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "token ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "new token definition",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RotateServiceAccountTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "rotated token with full key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceAccountTokenRotated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "invalid input / not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -15637,46 +16196,17 @@
           }
         }
       },
-      "AdminUser": {
+      "AdminUserSessionListResult": {
         "type": "object",
         "properties": {
-          "created_at": {
-            "type": "integer"
-          },
-          "email": {
-            "type": "string"
-          },
-          "email_verified": {
-            "type": "boolean"
-          },
-          "id": {
-            "type": "string"
-          },
-          "mfa_enabled": {
-            "type": "boolean"
-          },
-          "name": {
-            "type": "string"
-          },
-          "role": {
-            "type": "string"
-          },
-          "updated_at": {
-            "type": "integer"
-          }
-        }
-      },
-      "AdminUserListResult": {
-        "type": "object",
-        "properties": {
-          "total": {
-            "type": "integer"
-          },
-          "users": {
+          "sessions": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AdminUser"
+              "$ref": "#/components/schemas/SessionInfo"
             }
+          },
+          "total": {
+            "type": "integer"
           }
         }
       },
@@ -16573,7 +17103,10 @@
           "email": {
             "type": "string"
           },
-          "org_id": {
+          "notes": {
+            "type": "string"
+          },
+          "organizationId": {
             "type": "string"
           },
           "role": {
@@ -16609,36 +17142,22 @@
       "CreateServiceAccountTokenRequest": {
         "type": "object",
         "properties": {
+          "basic_role": {
+            "type": "string"
+          },
           "expires_at": {
             "type": "string"
           },
           "name": {
             "type": "string"
           },
-          "scopes": {
+          "roles": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/FixedRoleGrant"
             }
           },
           "service_id": {
-            "type": "string"
-          }
-        }
-      },
-      "CreateUserRequest": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "password": {
-            "type": "string"
-          },
-          "role": {
             "type": "string"
           }
         }
@@ -17240,6 +17759,54 @@
             "type": "string"
           },
           "trace_id": {
+            "type": "string"
+          }
+        }
+      },
+      "FixedRoleCatalogResult": {
+        "type": "object",
+        "properties": {
+          "org_roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FixedRoleInfo"
+            }
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "FixedRoleGrant": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string"
+          }
+        }
+      },
+      "FixedRoleInfo": {
+        "type": "object",
+        "properties": {
+          "access": {
+            "type": "string"
+          },
+          "group": {
+            "type": "string"
+          },
+          "id": {
             "type": "string"
           }
         }
@@ -18074,6 +18641,90 @@
           }
         }
       },
+      "OrgUser": {
+        "type": "object",
+        "properties": {
+          "avatar_url": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "integer"
+          },
+          "disabled": {
+            "type": "boolean"
+          },
+          "email": {
+            "type": "string"
+          },
+          "email_verified": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string"
+          },
+          "joined_at": {
+            "type": "integer"
+          },
+          "last_seen_at": {
+            "type": "integer"
+          },
+          "member_id": {
+            "type": "string"
+          },
+          "mfa_enabled": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "OrgUserListResult": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "total_pages": {
+            "type": "integer"
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrgUser"
+            }
+          }
+        }
+      },
+      "OrgUserStatsResult": {
+        "type": "object",
+        "properties": {
+          "by_role": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer"
+            }
+          },
+          "pending_invites": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          }
+        }
+      },
       "Organization": {
         "type": "object",
         "properties": {
@@ -18134,6 +18785,9 @@
       "OrganizationMember": {
         "type": "object",
         "properties": {
+          "avatar_url": {
+            "type": "string"
+          },
           "id": {
             "type": "string"
           },
@@ -18141,6 +18795,9 @@
             "type": "string"
           },
           "joined_at": {
+            "type": "integer"
+          },
+          "last_seen": {
             "type": "integer"
           },
           "organization_id": {
@@ -18154,6 +18811,9 @@
           },
           "status": {
             "type": "string"
+          },
+          "suspended_at": {
+            "type": "integer"
           },
           "user_email": {
             "type": "string"
@@ -18453,16 +19113,19 @@
       "RotateServiceAccountTokenRequest": {
         "type": "object",
         "properties": {
+          "basic_role": {
+            "type": "string"
+          },
           "expires_at": {
             "type": "string"
           },
           "name": {
             "type": "string"
           },
-          "scopes": {
+          "roles": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/FixedRoleGrant"
             }
           }
         }
@@ -18492,11 +19155,32 @@
       "ServiceAccount": {
         "type": "object",
         "properties": {
+          "avatar_url": {
+            "type": "string"
+          },
           "created_at": {
             "type": "integer"
           },
+          "disabled_at": {
+            "type": "integer"
+          },
+          "disabled_by": {
+            "type": "string"
+          },
+          "disabled_by_name": {
+            "type": "string"
+          },
+          "disabled_reason": {
+            "type": "string"
+          },
           "enabled": {
             "type": "boolean"
+          },
+          "enabled_by": {
+            "type": "string"
+          },
+          "enabled_by_name": {
+            "type": "string"
           },
           "id": {
             "type": "string"
@@ -18506,6 +19190,9 @@
           },
           "org_id": {
             "type": "string"
+          },
+          "token_count": {
+            "type": "integer"
           },
           "updated_at": {
             "type": "integer"
@@ -18526,6 +19213,9 @@
       "ServiceAccountToken": {
         "type": "object",
         "properties": {
+          "basic_role": {
+            "type": "string"
+          },
           "created_at": {
             "type": "integer"
           },
@@ -18538,11 +19228,20 @@
           "key_prefix": {
             "type": "string"
           },
+          "last_used_at": {
+            "type": "integer"
+          },
           "name": {
             "type": "string"
           },
           "revoked_at": {
             "type": "integer"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FixedRoleGrant"
+            }
           },
           "scopes": {
             "type": "array",
@@ -18607,6 +19306,9 @@
             "type": "string"
           },
           "user_agent": {
+            "type": "string"
+          },
+          "user_id": {
             "type": "string"
           }
         }
@@ -19472,6 +20174,34 @@
           }
         }
       },
+      "UpdateServiceAccountRequest": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateServiceAccountTokenRolesRequest": {
+        "type": "object",
+        "properties": {
+          "basic_role": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FixedRoleGrant"
+            }
+          }
+        }
+      },
       "UpdateSettingsRequest": {
         "type": "object",
         "properties": {
@@ -19554,26 +20284,6 @@
           },
           "versionsFound": {
             "type": "integer"
-          }
-        }
-      },
-      "UpdateUserRequest": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "email_verified": {
-            "type": "boolean"
-          },
-          "mfa_enabled": {
-            "type": "boolean"
-          },
-          "name": {
-            "type": "string"
-          },
-          "role": {
-            "type": "string"
           }
         }
       },

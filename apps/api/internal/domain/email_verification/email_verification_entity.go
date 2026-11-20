@@ -17,7 +17,7 @@ type EmailVerification struct {
 	ExpiresAt   time.Time
 	CreatedAt   time.Time
 	ID          string
-	UserID  string
+	UserID      string
 	TokenHash   string
 	EmailSentAt *time.Time // Time when verification email was successfully sent.
 	EmailError  string     // Error message if email failed to send.

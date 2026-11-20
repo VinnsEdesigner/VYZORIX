@@ -56,28 +56,69 @@ func (s *MemberStorage) Create(ctx context.Context, member *organization.Organiz
 	return nil
 }
 
-// scanMember scans a member from a row.
+// memberScan holds the raw columns of a membership row, so the single-row and
+// multi-row readers share one column list and one lifecycle mapping.
+type memberScan struct {
+	member      organization.OrganizationMember
+	status      string
+	invitedBy   sql.NullString
+	userName    sql.NullString
+	userEmail   sql.NullString
+	avatarURL   sql.NullString
+	removedAt   sql.NullInt64
+	suspendedAt sql.NullInt64
+	lastLoginAt sql.NullInt64
+	joinedAtMs  int64
+}
+
+func (s *memberScan) targets() []any {
+	return []any{
+		&s.member.ID,
+		&s.member.OrganizationID,
+		&s.member.UserID,
+		&s.member.Role,
+		&s.invitedBy,
+		&s.joinedAtMs,
+		&s.removedAt,
+		&s.status,
+		&s.suspendedAt,
+		&s.userName,
+		&s.userEmail,
+		&s.avatarURL,
+		&s.lastLoginAt,
+	}
+}
+
+func (s *memberScan) result() *organization.OrganizationMember {
+	m := &s.member
+	m.JoinedAt = time.UnixMilli(s.joinedAtMs)
+	m.Lifecycle = memberStatusToLifecycle(s.status)
+	if s.invitedBy.Valid {
+		m.InvitedBy = &s.invitedBy.String
+	}
+	if s.removedAt.Valid {
+		t := time.UnixMilli(s.removedAt.Int64)
+		m.RemovedAt = &t
+	}
+	if s.suspendedAt.Valid {
+		t := time.UnixMilli(s.suspendedAt.Int64)
+		m.SuspendedAt = &t
+	}
+	if s.lastLoginAt.Valid {
+		t := time.UnixMilli(s.lastLoginAt.Int64)
+		m.LastSeenAt = &t
+	}
+	m.UserName = s.userName.String
+	m.UserEmail = s.userEmail.String
+	m.AvatarURL = s.avatarURL.String
+
+	return m
+}
+
+// scanMember scans a single membership row.
 func scanMember(row *sql.Row) (*organization.OrganizationMember, error) {
-	var member organization.OrganizationMember
-	var joinedAtMs int64
-	var invitedBy sql.NullString
-	var removedAt sql.NullInt64
-	var userName, userEmail sql.NullString
-	var status string
-
-	err := row.Scan(
-		&member.ID,
-		&member.OrganizationID,
-		&member.UserID,
-		&member.Role,
-		&invitedBy,
-		&joinedAtMs,
-		&removedAt,
-		&status,
-		&userName,
-		&userEmail,
-	)
-
+	var sc memberScan
+	err := row.Scan(sc.targets()...)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, organization.ErrMemberNotFound
 	}
@@ -85,26 +126,16 @@ func scanMember(row *sql.Row) (*organization.OrganizationMember, error) {
 		return nil, err
 	}
 
-	member.JoinedAt = time.UnixMilli(joinedAtMs)
-	member.Lifecycle = organization.MemberLifecycle(status)
-	if invitedBy.Valid {
-		member.InvitedBy = &invitedBy.String
-	}
-	if removedAt.Valid {
-		t := time.UnixMilli(removedAt.Int64)
-		member.RemovedAt = &t
-	}
-	member.UserName = userName.String
-	member.UserEmail = userEmail.String
-
-	return &member, nil
+	return sc.result(), nil
 }
 
 // FindByID retrieves a member by ID.
 func (s *MemberStorage) FindByID(ctx context.Context, id string) (*organization.OrganizationMember, error) {
 	query := `
 		SELECT om.id, om.organization_id, om.user_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
-			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email
+			   om.suspended_at,
+			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email,
+			   COALESCE(op.avatar_url, '') as avatar_url, op.last_login_at
 		FROM organization_members om
 		LEFT JOIN users op ON om.user_id = op.id
 		WHERE om.id = ?`
@@ -121,60 +152,23 @@ func (s *MemberStorage) FindByMemberID(ctx context.Context, id organization.Memb
 func (s *MemberStorage) FindByUserAndOrg(ctx context.Context, userID, orgID string) (*organization.OrganizationMember, error) {
 	query := `
 		SELECT om.id, om.organization_id, om.user_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
-			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email
+			   om.suspended_at,
+			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email,
+			   COALESCE(op.avatar_url, '') as avatar_url, op.last_login_at
 		FROM organization_members om
 		LEFT JOIN users op ON om.user_id = op.id
 		WHERE om.user_id = ? AND om.organization_id = ? AND om.status = 'active'`
 
-	var member organization.OrganizationMember
-	var joinedAtMs int64
-	var invitedBy sql.NullString
-	var removedAt sql.NullInt64
-	var status string
-	var userName, userEmail sql.NullString
-
-	err := s.getQuerier(ctx).QueryRowContext(ctx, query, userID, orgID).Scan(
-		&member.ID,
-		&member.OrganizationID,
-		&member.UserID,
-		&member.Role,
-		&invitedBy,
-		&joinedAtMs,
-		&removedAt,
-		&status,
-		&userName,
-		&userEmail,
-	)
-
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, organization.ErrMemberNotFound
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	member.JoinedAt = time.UnixMilli(joinedAtMs)
-	// Map status string to lifecycle.
-	member.Lifecycle = memberStatusToLifecycle(status)
-
-	if invitedBy.Valid {
-		member.InvitedBy = &invitedBy.String
-	}
-	if removedAt.Valid {
-		t := time.UnixMilli(removedAt.Int64)
-		member.RemovedAt = &t
-	}
-	member.UserName = userName.String
-	member.UserEmail = userEmail.String
-
-	return &member, nil
+	return scanMember(s.getQuerier(ctx).QueryRowContext(ctx, query, userID, orgID))
 }
 
 // FindByOrganization lists all members of an organization.
 func (s *MemberStorage) FindByOrganization(ctx context.Context, orgID string) ([]*organization.OrganizationMember, error) {
 	query := `
 		SELECT om.id, om.organization_id, om.user_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
-			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email
+			   om.suspended_at,
+			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email,
+			   COALESCE(op.avatar_url, '') as avatar_url, op.last_login_at
 		FROM organization_members om
 		LEFT JOIN users op ON om.user_id = op.id
 		WHERE om.organization_id = ? AND om.status = 'active'
@@ -188,44 +182,11 @@ func (s *MemberStorage) FindByOrganization(ctx context.Context, orgID string) ([
 
 	var members []*organization.OrganizationMember
 	for rows.Next() {
-		var member organization.OrganizationMember
-		var joinedAtMs int64
-		var invitedBy sql.NullString
-		var removedAt sql.NullInt64
-		var status string
-		var userName, userEmail sql.NullString
-
-		err := rows.Scan(
-			&member.ID,
-			&member.OrganizationID,
-			&member.UserID,
-			&member.Role,
-			&invitedBy,
-			&joinedAtMs,
-			&removedAt,
-			&status,
-			&userName,
-			&userEmail,
-		)
-		if err != nil {
+		var sc memberScan
+		if err := rows.Scan(sc.targets()...); err != nil {
 			return nil, err
 		}
-
-		member.JoinedAt = time.UnixMilli(joinedAtMs)
-		// Map status string to lifecycle.
-		member.Lifecycle = memberStatusToLifecycle(status)
-
-		if invitedBy.Valid {
-			member.InvitedBy = &invitedBy.String
-		}
-		if removedAt.Valid {
-			t := time.UnixMilli(removedAt.Int64)
-			member.RemovedAt = &t
-		}
-		member.UserName = userName.String
-		member.UserEmail = userEmail.String
-
-		members = append(members, &member)
+		members = append(members, sc.result())
 	}
 
 	return members, rows.Err()
@@ -247,7 +208,9 @@ func (s *MemberStorage) FindActiveByOrganizationPaginated(ctx context.Context, o
 	// Get paginated results.
 	query := `
 		SELECT om.id, om.organization_id, om.user_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
-			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email
+			   om.suspended_at,
+			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email,
+			   COALESCE(op.avatar_url, '') as avatar_url, op.last_login_at
 		FROM organization_members om
 		LEFT JOIN users op ON om.user_id = op.id
 		WHERE om.organization_id = ? AND om.status = 'active'
@@ -262,43 +225,11 @@ func (s *MemberStorage) FindActiveByOrganizationPaginated(ctx context.Context, o
 
 	var members []*organization.OrganizationMember
 	for rows.Next() {
-		var member organization.OrganizationMember
-		var joinedAtMs int64
-		var invitedBy sql.NullString
-		var removedAt sql.NullInt64
-		var status string
-		var userName, userEmail sql.NullString
-
-		err := rows.Scan(
-			&member.ID,
-			&member.OrganizationID,
-			&member.UserID,
-			&member.Role,
-			&invitedBy,
-			&joinedAtMs,
-			&removedAt,
-			&status,
-			&userName,
-			&userEmail,
-		)
-		if err != nil {
+		var sc memberScan
+		if err := rows.Scan(sc.targets()...); err != nil {
 			return nil, 0, err
 		}
-
-		member.JoinedAt = time.UnixMilli(joinedAtMs)
-		member.Lifecycle = memberStatusToLifecycle(status)
-
-		if invitedBy.Valid {
-			member.InvitedBy = &invitedBy.String
-		}
-		if removedAt.Valid {
-			t := time.UnixMilli(removedAt.Int64)
-			member.RemovedAt = &t
-		}
-		member.UserName = userName.String
-		member.UserEmail = userEmail.String
-
-		members = append(members, &member)
+		members = append(members, sc.result())
 	}
 
 	return members, total, rows.Err()
@@ -308,12 +239,13 @@ func (s *MemberStorage) FindActiveByOrganizationPaginated(ctx context.Context, o
 func (s *MemberStorage) Update(ctx context.Context, member *organization.OrganizationMember) error {
 	query := `
 		UPDATE organization_members
-		SET role = ?, status = ?
+		SET role = ?, status = ?, suspended_at = ?
 		WHERE id = ?`
 
 	result, err := s.getQuerier(ctx).ExecContext(ctx, query,
 		string(member.Role),
 		string(member.Lifecycle),
+		timePtrMillis(member.SuspendedAt),
 		member.ID,
 	)
 	if err != nil {
@@ -398,7 +330,9 @@ func (s *MemberStorage) CountSuperAdminsByOrganization(ctx context.Context, orgI
 func (s *MemberStorage) ListByUser(ctx context.Context, userID string) ([]*organization.OrganizationMember, error) {
 	query := `
 		SELECT om.id, om.organization_id, om.user_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
-			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email
+			   om.suspended_at,
+			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email,
+			   COALESCE(op.avatar_url, '') as avatar_url, op.last_login_at
 		FROM organization_members om
 		LEFT JOIN users op ON om.user_id = op.id
 		WHERE om.user_id = ? AND om.status = 'active'
@@ -412,44 +346,11 @@ func (s *MemberStorage) ListByUser(ctx context.Context, userID string) ([]*organ
 
 	var members []*organization.OrganizationMember
 	for rows.Next() {
-		var member organization.OrganizationMember
-		var joinedAtMs int64
-		var invitedBy sql.NullString
-		var removedAt sql.NullInt64
-		var status string
-		var userName, userEmail sql.NullString
-
-		err := rows.Scan(
-			&member.ID,
-			&member.OrganizationID,
-			&member.UserID,
-			&member.Role,
-			&invitedBy,
-			&joinedAtMs,
-			&removedAt,
-			&status,
-			&userName,
-			&userEmail,
-		)
-		if err != nil {
+		var sc memberScan
+		if err := rows.Scan(sc.targets()...); err != nil {
 			return nil, err
 		}
-
-		member.JoinedAt = time.UnixMilli(joinedAtMs)
-		// Map status string to lifecycle.
-		member.Lifecycle = memberStatusToLifecycle(status)
-
-		if invitedBy.Valid {
-			member.InvitedBy = &invitedBy.String
-		}
-		if removedAt.Valid {
-			t := time.UnixMilli(removedAt.Int64)
-			member.RemovedAt = &t
-		}
-		member.UserName = userName.String
-		member.UserEmail = userEmail.String
-
-		members = append(members, &member)
+		members = append(members, sc.result())
 	}
 
 	return members, rows.Err()
@@ -471,7 +372,9 @@ func (s *MemberStorage) ListByUserPaginated(ctx context.Context, userID string, 
 	// Get paginated results.
 	query := `
 		SELECT om.id, om.organization_id, om.user_id, om.role, om.invited_by, om.joined_at, om.removed_at, om.status,
-			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email
+			   om.suspended_at,
+			   COALESCE(op.name, '') as user_name, COALESCE(op.email, '') as user_email,
+			   COALESCE(op.avatar_url, '') as avatar_url, op.last_login_at
 		FROM organization_members om
 		LEFT JOIN users op ON om.user_id = op.id
 		WHERE om.user_id = ? AND om.status = 'active'
@@ -486,43 +389,11 @@ func (s *MemberStorage) ListByUserPaginated(ctx context.Context, userID string, 
 
 	var members []*organization.OrganizationMember
 	for rows.Next() {
-		var member organization.OrganizationMember
-		var joinedAtMs int64
-		var invitedBy sql.NullString
-		var removedAt sql.NullInt64
-		var status string
-		var userName, userEmail sql.NullString
-
-		err := rows.Scan(
-			&member.ID,
-			&member.OrganizationID,
-			&member.UserID,
-			&member.Role,
-			&invitedBy,
-			&joinedAtMs,
-			&removedAt,
-			&status,
-			&userName,
-			&userEmail,
-		)
-		if err != nil {
+		var sc memberScan
+		if err := rows.Scan(sc.targets()...); err != nil {
 			return nil, 0, err
 		}
-
-		member.JoinedAt = time.UnixMilli(joinedAtMs)
-		member.Lifecycle = memberStatusToLifecycle(status)
-
-		if invitedBy.Valid {
-			member.InvitedBy = &invitedBy.String
-		}
-		if removedAt.Valid {
-			t := time.UnixMilli(removedAt.Int64)
-			member.RemovedAt = &t
-		}
-		member.UserName = userName.String
-		member.UserEmail = userEmail.String
-
-		members = append(members, &member)
+		members = append(members, sc.result())
 	}
 
 	return members, total, rows.Err()
@@ -614,4 +485,13 @@ func memberStatusToLifecycle(status string) organization.MemberLifecycle {
 	default:
 		return organization.MemberLifecycleActive
 	}
+}
+
+// timePtrMillis renders an optional timestamp as Unix millis, or nil for SQL NULL.
+func timePtrMillis(t *time.Time) interface{} {
+	if t == nil {
+		return nil
+	}
+
+	return t.UnixMilli()
 }

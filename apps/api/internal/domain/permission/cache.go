@@ -19,7 +19,7 @@ type Cache struct {
 
 type cacheKey struct {
 	userID string
-	orgID      string
+	orgID  string
 }
 
 type cacheEntry struct {

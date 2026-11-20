@@ -125,5 +125,22 @@ if command -v python3 &>/dev/null; then
 else
   info "python3 not installed — skipping e2e selectors drift check."
 fi
+# --- mutation invalidation gate: every mutating operation must be listed ---
+# orval only emits invalidateQueries for the operations named in
+# orval.config.js. An unlisted mutation silently leaves stale UI after a
+# successful write, which is how the service-account disable toggle shipped
+# broken: success toast, badge still "Enabled" until a reload.
+if command -v python3 &>/dev/null; then
+  info "Checking mutation invalidation coverage..."
+  if (cd "$REPO_ROOT" && python3 tooling/codegen/check_mutation_invalidation.py >/dev/null 2>&1); then
+    pass "mutation invalidation: clean"
+  else
+    (cd "$REPO_ROOT" && python3 tooling/codegen/check_mutation_invalidation.py >&2) || true
+    fail "unlisted mutating operations — add them to mutationInvalidates in orval.config.js."
+  fi
+else
+  info "python3 not installed — skipping mutation invalidation check."
+fi
+
 echo ""
 pass "All checks passed. Commit proceeding."

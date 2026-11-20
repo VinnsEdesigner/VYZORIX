@@ -24,6 +24,10 @@ export function controlStyles(theme: VyzorixTheme, invalid?: boolean) {
       color: theme.colors.action.disabledText,
       cursor: 'not-allowed',
     },
+
+    [theme.transitions.handleMotion('no-preference')]: {
+      animation: invalid ? 'vyzorix-field-shake 320ms ease-in-out' : undefined,
+    },
   });
 }
 

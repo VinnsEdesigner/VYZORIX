@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device_group"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 )
 
 type fakeOrgRepo struct {
@@ -79,8 +79,8 @@ func (f *fakeGrantRepo) Save(_ context.Context, p *permission.ResourcePermission
 }
 
 type fakeOrgCreator struct {
-	counter int
 	orgs    map[string]*organization.Organization
+	counter int
 }
 
 func (f *fakeOrgCreator) CreateOrganization(_ context.Context, _, name, desc string, _ int, _ string) (*organization.Organization, error) {

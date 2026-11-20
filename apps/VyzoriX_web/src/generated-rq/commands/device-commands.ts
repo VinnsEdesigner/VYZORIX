@@ -45,6 +45,7 @@ import type {
 
 import { customAxios } from '../../../../../packages/API_Client/src/generated/rest-bridge';
 import organizationScopedQueryKey from '.././query-key-mutator';
+import { getGetDashboardStatsQueryKey } from '../dashboard/dashboard-stats';
 import { getGetDashboardDevicesQueryKey, getGetDashboardDevicesUserQueryKey, getGetDashboardEventsRecentQueryKey, getGetDeviceCountQueryKey, getGetDevicesQueryKey } from '../devices/device-management';
 
 
@@ -95,7 +96,7 @@ export const deleteCommandDispatchId = async (dispatchId: string, options?: Para
 
 
 export const getDeleteCommandDispatchIdMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCommandDispatchId>>, TError,{dispatchId: string}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCommandDispatchId>>, TError,{dispatchId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteCommandDispatchId>>, TError,{dispatchId: string}, TContext> => {
 
 const mutationKey = ['deleteCommandDispatchId'];
@@ -114,12 +115,19 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
           return  deleteCommandDispatchId(dispatchId,requestOptions)
         }
 
+  const onSuccess = (data: Awaited<ReturnType<typeof deleteCommandDispatchId>>, variables: {dispatchId: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardStatsQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
 
 
 
 
-
-  return  { mutationFn, ...mutationOptions }}
+  return  { ...mutationOptions, mutationFn, onSuccess }}
 
     export type DeleteCommandDispatchIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCommandDispatchId>>>
 
@@ -129,14 +137,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Cancel command
  */
 export const useDeleteCommandDispatchId = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCommandDispatchId>>, TError,{dispatchId: string}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCommandDispatchId>>, TError,{dispatchId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteCommandDispatchId>>,
         TError,
         {dispatchId: string},
         TContext
       > => {
-      return useMutation(getDeleteCommandDispatchIdMutationOptions(options), queryClient);
+      const backupQueryClient = useQueryClient();
+      return useMutation(getDeleteCommandDispatchIdMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
     export const getPostCommandDispatchIdRetryUrl = (dispatchId: string,) => {
 
@@ -166,7 +175,7 @@ export const postCommandDispatchIdRetry = async (dispatchId: string, options?: P
 
 
 export const getPostCommandDispatchIdRetryMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postCommandDispatchIdRetry>>, TError,{dispatchId: string}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postCommandDispatchIdRetry>>, TError,{dispatchId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postCommandDispatchIdRetry>>, TError,{dispatchId: string}, TContext> => {
 
 const mutationKey = ['postCommandDispatchIdRetry'];
@@ -185,12 +194,19 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
           return  postCommandDispatchIdRetry(dispatchId,requestOptions)
         }
 
+  const onSuccess = (data: Awaited<ReturnType<typeof postCommandDispatchIdRetry>>, variables: {dispatchId: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardStatsQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
 
 
 
 
-
-  return  { mutationFn, ...mutationOptions }}
+  return  { ...mutationOptions, mutationFn, onSuccess }}
 
     export type PostCommandDispatchIdRetryMutationResult = NonNullable<Awaited<ReturnType<typeof postCommandDispatchIdRetry>>>
 
@@ -200,14 +216,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Retry command
  */
 export const usePostCommandDispatchIdRetry = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postCommandDispatchIdRetry>>, TError,{dispatchId: string}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postCommandDispatchIdRetry>>, TError,{dispatchId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postCommandDispatchIdRetry>>,
         TError,
         {dispatchId: string},
         TContext
       > => {
-      return useMutation(getPostCommandDispatchIdRetryMutationOptions(options), queryClient);
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPostCommandDispatchIdRetryMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
     export const getGetCommandDispatchIdStatusUrl = (dispatchId: string,) => {
 
@@ -478,7 +495,7 @@ return customAxios<CommandDispatchResult>(getPostDeviceImeiCommandUrl(imei),
 
 
 export const getPostDeviceImeiCommandMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeviceImeiCommand>>, TError,{imei: string;data: CommandRequest}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeviceImeiCommand>>, TError,{imei: string;data: CommandRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postDeviceImeiCommand>>, TError,{imei: string;data: CommandRequest}, TContext> => {
 
 const mutationKey = ['postDeviceImeiCommand'];
@@ -497,12 +514,19 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
           return  postDeviceImeiCommand(imei,data,requestOptions)
         }
 
+  const onSuccess = (data: Awaited<ReturnType<typeof postDeviceImeiCommand>>, variables: {imei: string;data: CommandRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardStatsQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
 
 
 
 
-
-  return  { mutationFn, ...mutationOptions }}
+  return  { ...mutationOptions, mutationFn, onSuccess }}
 
     export type PostDeviceImeiCommandMutationResult = NonNullable<Awaited<ReturnType<typeof postDeviceImeiCommand>>>
     export type PostDeviceImeiCommandMutationBody = CommandRequest
@@ -512,14 +536,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Execute command
  */
 export const usePostDeviceImeiCommand = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeviceImeiCommand>>, TError,{imei: string;data: CommandRequest}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeviceImeiCommand>>, TError,{imei: string;data: CommandRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postDeviceImeiCommand>>,
         TError,
         {imei: string;data: CommandRequest},
         TContext
       > => {
-      return useMutation(getPostDeviceImeiCommandMutationOptions(options), queryClient);
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPostDeviceImeiCommandMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
     export const getPostDeviceImeiCommandDispatchIdResultUrl = (imei: string,
     dispatchId: string,) => {
@@ -558,7 +583,7 @@ return customAxios<CommandResultAck>(getPostDeviceImeiCommandDispatchIdResultUrl
 
 
 export const getPostDeviceImeiCommandDispatchIdResultMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeviceImeiCommandDispatchIdResult>>, TError,{imei: string;dispatchId: string;data: CommandResultReport}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeviceImeiCommandDispatchIdResult>>, TError,{imei: string;dispatchId: string;data: CommandResultReport}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postDeviceImeiCommandDispatchIdResult>>, TError,{imei: string;dispatchId: string;data: CommandResultReport}, TContext> => {
 
 const mutationKey = ['postDeviceImeiCommandDispatchIdResult'];
@@ -577,12 +602,19 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
           return  postDeviceImeiCommandDispatchIdResult(imei,dispatchId,data,requestOptions)
         }
 
+  const onSuccess = (data: Awaited<ReturnType<typeof postDeviceImeiCommandDispatchIdResult>>, variables: {imei: string;dispatchId: string;data: CommandResultReport}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetDevicesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardDevicesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardStatsQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
 
 
 
 
-
-  return  { mutationFn, ...mutationOptions }}
+  return  { ...mutationOptions, mutationFn, onSuccess }}
 
     export type PostDeviceImeiCommandDispatchIdResultMutationResult = NonNullable<Awaited<ReturnType<typeof postDeviceImeiCommandDispatchIdResult>>>
     export type PostDeviceImeiCommandDispatchIdResultMutationBody = CommandResultReport
@@ -592,14 +624,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Report command result
  */
 export const usePostDeviceImeiCommandDispatchIdResult = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeviceImeiCommandDispatchIdResult>>, TError,{imei: string;dispatchId: string;data: CommandResultReport}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postDeviceImeiCommandDispatchIdResult>>, TError,{imei: string;dispatchId: string;data: CommandResultReport}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postDeviceImeiCommandDispatchIdResult>>,
         TError,
         {imei: string;dispatchId: string;data: CommandResultReport},
         TContext
       > => {
-      return useMutation(getPostDeviceImeiCommandDispatchIdResultMutationOptions(options), queryClient);
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPostDeviceImeiCommandDispatchIdResultMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
     export const getGetDeviceImeiCommandsPendingUrl = (imei: string,) => {
 

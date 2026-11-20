@@ -32,7 +32,7 @@ var ErrMismatch = errors.New("confirmation does not match the request")
 //nolint:govet // fieldalignment: reordered for best packing
 type PendingConfirmation struct {
 	Token      string
-	UserID string
+	UserID     string
 	OrgID      string
 	Command    string
 	DeviceID   string

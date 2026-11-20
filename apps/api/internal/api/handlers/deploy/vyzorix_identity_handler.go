@@ -9,8 +9,8 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/responses"
 	apperrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 )
 
 // UserLookup resolves the user a credential authenticates as. API-key
@@ -31,12 +31,12 @@ type OrganizationLookup interface {
 // It carries no secret: a name, a role, an org and, when a device was named, that
 // device's tier.
 type identityResponse struct {
-	Device       *deviceSummary `json:"device,omitempty"`
+	Device   *deviceSummary `json:"device,omitempty"`
 	UserName string         `json:"userName"`
-	Email        string         `json:"email"`
-	Role         string         `json:"role"`
-	OrgID        string         `json:"orgId"`
-	OrgName      string         `json:"orgName"`
+	Email    string         `json:"email"`
+	Role     string         `json:"role"`
+	OrgID    string         `json:"orgId"`
+	OrgName  string         `json:"orgName"`
 }
 
 // deviceSummary is the device half of the identity, present only when the request
@@ -82,9 +82,9 @@ func (h *Handler) Identity(c *gin.Context) {
 	if isCredential {
 		c.JSON(200, identityResponse{
 			UserName: "deploy credential",
-			OrgID:        orgID,
-			OrgName:      h.orgName(c.Request.Context(), orgID),
-			Device:       h.deviceSummary(c.Request.Context(), orgID, deviceID),
+			OrgID:    orgID,
+			OrgName:  h.orgName(c.Request.Context(), orgID),
+			Device:   h.deviceSummary(c.Request.Context(), orgID, deviceID),
 		})
 
 		return
@@ -116,11 +116,11 @@ func (h *Handler) Identity(c *gin.Context) {
 
 	c.JSON(200, identityResponse{
 		UserName: name,
-		Email:        email,
-		Role:         h.role(c, op, orgID),
-		OrgID:        orgID,
-		OrgName:      h.orgName(c.Request.Context(), orgID),
-		Device:       h.deviceSummary(c.Request.Context(), orgID, deviceID),
+		Email:    email,
+		Role:     h.role(c, op, orgID),
+		OrgID:    orgID,
+		OrgName:  h.orgName(c.Request.Context(), orgID),
+		Device:   h.deviceSummary(c.Request.Context(), orgID, deviceID),
 	})
 }
 

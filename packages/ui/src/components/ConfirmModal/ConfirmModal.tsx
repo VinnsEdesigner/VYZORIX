@@ -36,7 +36,8 @@ export function ConfirmModal({
   const styles = useStyles2(getStyles);
 
   return (
-    <Modal title={title} isOpen={isOpen} onDismiss={onDismiss} width={400}>
+
+    <Modal title={title} isOpen={isOpen} onDismiss={onDismiss} width={400} hideCloseButton>
       <Text color="secondary">{body}</Text>
       <div className={styles.actions}>
         <Button variant="secondary" fill="text" onClick={onDismiss}>

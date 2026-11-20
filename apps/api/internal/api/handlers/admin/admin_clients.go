@@ -31,7 +31,7 @@ func adminClientToSchema(r *dto.ClientResponse) openapi.AdminClient {
 		ID:             r.ID,
 		LastRequestAt:  r.LastRequestAt,
 		Name:           r.Name,
-		UserID:     r.UserID,
+		UserID:         r.UserID,
 		Platform:       r.Platform,
 		AllowedOrigins: r.AllowedOrigins,
 		AllowedPaths:   r.AllowedPaths,

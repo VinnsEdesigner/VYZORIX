@@ -28,5 +28,44 @@ const postInstanceLockoutUnlockUserId = (
     },
       options);
     }
-  return {postInstanceLockoutUnlockUserId}};
+  /**
+ * Deletes an account and its memberships (instance admin only)
+ * @summary Delete an account
+ */
+const deleteInstanceUsersId = (
+    id: string,
+ options?: SecondParameter<typeof customAxios<SuccessResult>>,) => {
+      return customAxios<SuccessResult>(
+      {url: `/instance/users/${id}`, method: 'DELETE'
+    },
+      options);
+    }
+  /**
+ * Disables an account and revokes every session (instance admin only)
+ * @summary Disable an account
+ */
+const postInstanceUsersIdDisable = (
+    id: string,
+ options?: SecondParameter<typeof customAxios<SuccessResult>>,) => {
+      return customAxios<SuccessResult>(
+      {url: `/instance/users/${id}/disable`, method: 'POST'
+    },
+      options);
+    }
+  /**
+ * Clears the account-disable timestamp (instance admin only)
+ * @summary Re-enable an account
+ */
+const postInstanceUsersIdEnable = (
+    id: string,
+ options?: SecondParameter<typeof customAxios<SuccessResult>>,) => {
+      return customAxios<SuccessResult>(
+      {url: `/instance/users/${id}/enable`, method: 'POST'
+    },
+      options);
+    }
+  return {postInstanceLockoutUnlockUserId,deleteInstanceUsersId,postInstanceUsersIdDisable,postInstanceUsersIdEnable}};
 export type PostInstanceLockoutUnlockUserIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInstance>['postInstanceLockoutUnlockUserId']>>>
+export type DeleteInstanceUsersIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInstance>['deleteInstanceUsersId']>>>
+export type PostInstanceUsersIdDisableResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInstance>['postInstanceUsersIdDisable']>>>
+export type PostInstanceUsersIdEnableResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getInstance>['postInstanceUsersIdEnable']>>>

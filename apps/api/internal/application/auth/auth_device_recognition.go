@@ -12,8 +12,8 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/dto"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/devicestore"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/session"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 )
 
 // DeviceInfo contains device fingerprint data for login verification.

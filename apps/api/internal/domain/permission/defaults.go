@@ -59,6 +59,10 @@ func DefaultScopesForRole(roleName string) ScopedPermissions {
 			ScopedPermission{ActionUpdateDelete, updatesAll},
 			ScopedPermission{ActionSettingsWrite, orgAll},
 			ScopedPermission{ActionKeysManage, orgAll},
+			// Provisioning rewrites device configs, so it sits with the other admin
+			// capabilities, not with the viewer/operator defaults above.
+			ScopedPermission{ActionProvisioningRead, orgAll},
+			ScopedPermission{ActionProvisioningWrite, orgAll},
 			ScopedPermission{ActionAuditRead, orgAll},
 			ScopedPermission{ActionTelemetryWrite, telemetryAll},
 			ScopedPermission{ActionMembersRead, orgAll},

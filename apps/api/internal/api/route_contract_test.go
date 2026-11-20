@@ -48,10 +48,8 @@ var orgRoles = []organization.OrganizationRole{
 func registrationServer(t *testing.T) *Server {
 	t.Helper()
 
-	gin.SetMode(gin.TestMode)
-
 	s := &Server{
-		authHandlers:        &authhandlers.AllHandlers{Settings: &authhandlers.SettingsHandler{}},
+		authHandlers:        &authhandlers.AllHandlers{Settings: &authhandlers.SettingsHandler{}, Admin: &authhandlers.AdminHandler{}},
 		organizationHandler: &organizationhandlers.OrganizationHandler{},
 		memberHandler:       &organizationhandlers.MemberHandler{},
 		invitationHandler:   &organizationhandlers.InvitationHandler{},
@@ -174,7 +172,6 @@ func TestCapabilitiesMatchesMiddleware(t *testing.T) {
 // response carries the personal, instance and org namespaces, and a caller with
 // no org context still receives personal and instance.
 func TestCapabilitiesEndpointReportsThreeStores(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	s := &Server{}
 	r := gin.New()
@@ -222,7 +219,6 @@ func TestCapabilitiesEndpointReportsThreeStores(t *testing.T) {
 // wires a real membership and asserts the org grants appear, which only happens
 // when the route resolves the org from the session.
 func TestCapabilitiesOrgNamespaceNeedsOrgContext(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 
 	db, err := storage.Open(storage.DefaultConfig(filepath.Join(t.TempDir(), "capabilities.db")))
 	if err != nil {

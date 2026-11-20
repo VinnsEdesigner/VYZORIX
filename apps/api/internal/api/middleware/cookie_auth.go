@@ -9,8 +9,8 @@ import (
 	gqlcontext "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/graphql/context"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/responses"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/auth"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/session"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
 
 	"github.com/gin-gonic/gin"

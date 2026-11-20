@@ -50,6 +50,7 @@ const (
 	ActionMFAVerifyFailed  Action = "mfa_verify_failed"
 	// Service account lifecycle audit actions.
 	ActionServiceAccountCreated      Action = "service_account_created"
+	ActionServiceAccountUpdated      Action = "service_account_updated"
 	ActionServiceAccountDeleted      Action = "service_account_deleted"
 	ActionServiceAccountTokenCreated Action = "service_account_token_created"
 	ActionServiceAccountTokenRotated Action = "service_account_token_rotated"
@@ -67,6 +68,20 @@ const (
 	// is recorded independently of command execution.
 	ActionPTYSessionOpened Action = "pty_session_opened"
 	ActionPTYSessionClosed Action = "pty_session_closed"
+
+	// Deploy audit actions. A deploy writes the signed config a device runs, so every
+	// step that changes what a device will do is recorded: the deploy itself, a
+	// rollback, a device reporting a version applied, a deploy credential being minted or
+	// revoked, and an app secret being set or removed. The secret's VALUE is never
+	// recorded — only that one was set, for which app and key.
+	ActionDeploySucceeded     Action = "deploy_succeeded"
+	ActionDeployFailed        Action = "deploy_failed"
+	ActionDeployRolledBack    Action = "deploy_rolled_back"
+	ActionDeployApplied       Action = "deploy_applied"
+	ActionDeployCredentialNew Action = "deploy_credential_minted"
+	ActionDeployCredentialOff Action = "deploy_credential_revoked"
+	ActionDeploySecretSet     Action = "deploy_secret_set"
+	ActionDeploySecretUnset   Action = "deploy_secret_unset"
 )
 
 // Result represents the outcome of an action.
@@ -84,7 +99,7 @@ type Entry struct {
 	CreatedAt    time.Time         `json:"created_at"`
 	Metadata     map[string]string `json:"metadata,omitempty"`
 	ID           string            `json:"id"`
-	UserID   string            `json:"user_id,omitempty"`
+	UserID       string            `json:"user_id,omitempty"`
 	Action       Action            `json:"action"`
 	ResourceType string            `json:"resource_type,omitempty"`
 	ResourceID   string            `json:"resource_id,omitempty"`
@@ -163,7 +178,7 @@ func (r *Repository) Log(ctx context.Context, entry *Entry) error {
 type Query struct {
 	StartTime    time.Time
 	EndTime      time.Time
-	UserID   string
+	UserID       string
 	Action       Action
 	ResourceType string
 	ResourceID   string

@@ -19,10 +19,10 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/logs"
 	appmetrics "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/metrics"
 	notifications "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/notifications"
-	appuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/user"
 	orgapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/organization"
 	serviceaccount "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/serviceaccount"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/updates"
+	appuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/fcm"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/storage"
@@ -50,7 +50,7 @@ type Resolver struct {
 	AuthMiddleware        *gqlmiddleware.AuthMiddleware
 	Presenter             *gqladapters.Presenter
 	Validator             *validator.Validator
-	UserRepo          user.Repository
+	UserRepo              user.Repository
 	SettingsService       *auth.ClientSettingsService
 	NotificationSvc       *appuser.NotificationService
 	WebhookClient         *infrawebhook.Client
@@ -122,7 +122,7 @@ func NewResolver(
 		AuthMiddleware:        authMiddleware,
 		Presenter:             presenter,
 		Validator:             validator.New(),
-		UserRepo:          userRepo,
+		UserRepo:              userRepo,
 		SettingsService:       settingsService,
 		NotificationSvc:       notificationSvc,
 		WebhookClient:         webhookClient,

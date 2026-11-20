@@ -141,6 +141,52 @@
   query-key org-isolation fix (`dashboardStats`/`deviceMetrics`/`latestTelemetry`/`telemetryStats`
   keys currently omit `organizationId`).
 
+## Users & access: invite-only, org-scoped (2026-11-19)
+
+- **Membership is invitation-only.** Nobody joins an organisation except through
+  `AcceptInvitation` (token + expiry + email match). Account creation still exists
+  (public `POST /v1/auth/register` and GitHub OAuth `FindOrCreateGitHubUser`), but
+  an account is not a member. Do not describe this as "no account creation".
+- **Removed from the API, permanently:** `POST /auth/admin/users` (direct account
+  creation — it skipped `ValidatePassword` and the breach check while the console
+  claimed otherwise), `PATCH /auth/admin/users/:id` (rewrote a login address with
+  no re-verification, silently ignored `role`), `POST /auth/admin/users/:id/password`
+  (silent lateral movement), `GET /auth/admin/users/:id/organizations`.
+  `AuthService.CreateUser` is KEPT — boot provisioning calls it
+  (`cmd/api/provisioning_adapter.go`). `api/user_routes_contract_test.go` fails if
+  any removed route comes back.
+- **`GET /auth/admin/users` is org-scoped.** It joins `organization_members` for
+  the caller's org (`UserRepository.ListByOrganization`), so an org super_admin can
+  never enumerate another tenant's accounts. It returns `OrgUser`
+  (membership facts: `member_id`, `role`, `status`, `joined_at`; account facts:
+  name/email/avatar/`last_seen_at`). `?status=active|suspended` filters; empty
+  means every state except removed.
+- **`GET /auth/admin/users/stats`** returns `by_role` counts + `pending_invites`
+  for the org. Counting is server-side; never tally the client's pages.
+- **Account state is instance authority.** Disable/enable/delete moved to
+  `/v1/instance/users/{id}[/disable|/enable]`, guarded by the new
+  `admin.users` action on the instance store (granted to `instance_admin`). The
+  org-local siblings are `members.write` (suspend/reinstate a membership) and
+  `members.delete` (remove a membership) — a different action, not a duplicate.
+- **`POST /v1/invitations` is guarded** by `OrganizationContext` +
+  `OrganizationMembership` + `requireScope(members.write, org:*)`. The body's
+  `organizationId` is optional and rejected when it disagrees with the resolved
+  org, so the guard and the write target cannot diverge.
+- **`suspended` is storable.** Migration 099 rebuilds `organization_members` with
+  `CHECK (status IN ('active','suspended','removed'))` and adds `suspended_at`;
+  `MemberStorage.Update` persists it. Before this, suspending a member 500'd on
+  the old two-value CHECK.
+- **Client gating goes through `useCapabilities()`**
+  (`apps/VyzoriX_web/src/hooks/_shared/use-capabilities.ts`): `can(action)` reads
+  `GET /me/capabilities`, never a role name. `canManageMember(targetRole)` adds the
+  server's rule `actor.Level() > target.Level()`, so a peer admin never sees a
+  Suspend button the server would refuse. Note the capability string is
+  `action:scope` and the scope itself contains colons — split on the FIRST colon.
+- **The admin per-user session endpoints remain** (`GET|DELETE
+  /auth/admin/users/:id/sessions`), super-admin gated and audited, but the console
+  does not surface them: a user's own sessions live on `/profile?tab=security`.
+  Use them for forensics on a compromised account.
+
 ## Repository layout
 - `apps/api/` — Go server (go.mod). Does NOT consume the TS SDK.
 - `apps/VyzoriX_web/` — Vite + TanStack Start web app. Consumes `@vyzorix/api-client` (workspace symlink) for connectivity only.

@@ -10,7 +10,7 @@ import (
 type contextKey string
 
 const (
-	userKey       contextKey = "user"
+	userKey           contextKey = "user"
 	metadataKey       contextKey = "requestMetadata"
 	organizationIDKey contextKey = "organizationID"
 	mfaVerifiedKey    contextKey = "mfaVerified"

@@ -59,10 +59,10 @@ func TestWhoamiReportsUserRoleAndOrg(t *testing.T) {
 
 	var got struct {
 		UserName string `json:"userName"`
-		Email        string `json:"email"`
-		Role         string `json:"role"`
-		OrgID        string `json:"orgId"`
-		OrgName      string `json:"orgName"`
+		Email    string `json:"email"`
+		Role     string `json:"role"`
+		OrgID    string `json:"orgId"`
+		OrgName  string `json:"orgName"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
 		t.Fatalf("decode: %v", err)
@@ -146,8 +146,8 @@ func TestWhoamiNamesADeployCredential(t *testing.T) {
 
 	var got struct {
 		UserName string `json:"userName"`
-		OrgID        string `json:"orgId"`
-		Device       *struct {
+		OrgID    string `json:"orgId"`
+		Device   *struct {
 			ID string `json:"id"`
 		} `json:"device"`
 	}

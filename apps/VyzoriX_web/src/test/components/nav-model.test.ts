@@ -177,3 +177,34 @@ describe('humanisePath', () => {
     expect(humanisePath('/')).toBe('Home');
   });
 });
+
+describe('resolveNavTrail — detail routes', () => {
+
+  const adminUsers: NavItem = {
+    id: 'users-access',
+    text: 'Users and access',
+    url: '/admin/users',
+    children: [
+      { id: 'users', text: 'Users', url: '/admin/users' },
+      { id: 'service-accounts', text: 'Service accounts', url: '/admin/service-accounts' },
+    ],
+  };
+  const admin: NavSection = { id: 'administration', label: 'Administration', items: [adminUsers] };
+
+  it('resolves a child link exactly', () => {
+    const trail = resolveNavTrail([admin], '/admin/service-accounts');
+    expect(trail.child?.text).toBe('Service accounts');
+    expect(navTrailLabels(trail)).toEqual(['Administration', 'Users and access', 'Service accounts']);
+  });
+
+  it('resolves a detail route beneath a child link', () => {
+    const trail = resolveNavTrail([admin], '/admin/service-accounts/abc-123');
+    expect(trail.child?.text).toBe('Service accounts');
+    expect(navTrailLabels(trail)).toEqual(['Administration', 'Users and access', 'Service accounts']);
+  });
+
+  it('does not treat a sibling path as a descendant', () => {
+    const trail = resolveNavTrail([admin], '/admin/service-accounts-archive');
+    expect(trail.child).toBeUndefined();
+  });
+});

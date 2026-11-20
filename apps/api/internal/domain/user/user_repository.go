@@ -36,6 +36,22 @@ type Repository interface {
 	// List returns a paginated list of users.
 	List(ctx context.Context, limit, offset int) ([]*User, int, error)
 
+	// ListFiltered returns a paginated, optionally searched list of users
+	// ordered by the given column. An empty query matches every user; sort
+	// must be a whitelisted column name (the storage layer rejects anything
+	// else) so the value can be interpolated into the query safely.
+	ListFiltered(ctx context.Context, limit, offset int, query, sort string, desc bool) ([]*User, int, error)
+
+	// ListByOrganization returns a page of users who hold a membership in orgID,
+	// joined on that membership so a caller can never see an account outside the
+	// organisation it is acting in. status filters the membership lifecycle:
+	// empty means every state except removed.
+	ListByOrganization(ctx context.Context, orgID string, limit, offset int, search, sort string, desc bool, status string) ([]*OrganizationUser, int, error)
+
+	// SetDisabled stamps or clears the account-disable timestamp. Passing a nil
+	// time re-enables the account.
+	SetDisabled(ctx context.Context, id string, disabledAt *time.Time) error
+
 	// UpdatePassword updates the password hash for a user.
 	UpdatePassword(ctx context.Context, id, passwordHash string) error
 
@@ -144,4 +160,16 @@ type Repository interface {
 	// Update because that method does not carry the instance role and would
 	// otherwise reset it on every profile write.
 	UpdateInstanceRole(ctx context.Context, userID string, role permission.InstanceRole) error
+}
+
+// OrganizationUser is a user together with their membership in one
+// organisation. The membership facts (role, status, joined) are per-organisation;
+// the profile facts (name, email, avatar, last login) belong to the account.
+type OrganizationUser struct {
+	JoinedAt   time.Time
+	LastSeenAt *time.Time
+	MemberID   string
+	Role       string
+	Status     string
+	User
 }

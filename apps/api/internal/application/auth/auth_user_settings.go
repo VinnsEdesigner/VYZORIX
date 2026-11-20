@@ -14,8 +14,8 @@ import (
 // UpdateSettingsRequest represents a request to update user settings.
 type UpdateSettingsRequest struct {
 	Client *user.ClientSettings `json:"client,omitempty"`
-	Name   *string                  `json:"name,omitempty"`
-	Reset  bool                     `json:"reset,omitempty"`
+	Name   *string              `json:"name,omitempty"`
+	Reset  bool                 `json:"reset,omitempty"`
 }
 
 // UpdateUserName updates a user's name.

@@ -9,16 +9,18 @@ import type {
   AdminAPIKeyListResult,
   AdminClientListResult,
   AdminClientResult,
-  AdminUser,
-  AdminUserListResult,
-  CreateUserRequest,
+  AdminUserSessionListResult,
   GetAdminApiKeysParams,
   GetAdminApiKeysUserUserIdParams,
+  GetAuthAdminUsersParams,
   GlobalAPIKeyStatsResult,
+  OrgUser,
+  OrgUserListResult,
+  OrgUserStatsResult,
+  RevokeResult,
   SuccessResult,
   SupportBundleResult,
   UpdateAdminClientRequest,
-  UpdateUserRequest,
   UserAPIKeyStatsResult
 } from '../vyzorixUpdateServerAPI.schemas';
 
@@ -168,71 +170,80 @@ const getAdminSupportBundle = (
       options);
     }
   /**
- * Lists all users in the system (super_admin only)
- * @summary List users
+ * Lists the members of the current organisation, paginated and optionally searched by email or name (super_admin only)
+ * @summary List organisation members
  */
 const getAuthAdminUsers = (
-
- options?: SecondParameter<typeof customAxios<AdminUserListResult>>,) => {
-      return customAxios<AdminUserListResult>(
-      {url: `/auth/admin/users`, method: 'GET'
+    params?: GetAuthAdminUsersParams,
+ options?: SecondParameter<typeof customAxios<OrgUserListResult>>,) => {
+      return customAxios<OrgUserListResult>(
+      {url: `/auth/admin/users`, method: 'GET',
+        params
     },
       options);
     }
   /**
- * Creates a new user (super_admin only)
- * @summary Create user
+ * Member count per role plus the pending invitation count for the current organisation (super_admin only)
+ * @summary Organisation member stats
  */
-const postAuthAdminUsers = (
-    createUserRequest: CreateUserRequest,
- options?: SecondParameter<typeof customAxios<AdminUser>>,) => {
-      return customAxios<AdminUser>(
-      {url: `/auth/admin/users`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: createUserRequest
+const getAuthAdminUsersStats = (
+
+ options?: SecondParameter<typeof customAxios<OrgUserStatsResult>>,) => {
+      return customAxios<OrgUserStatsResult>(
+      {url: `/auth/admin/users/stats`, method: 'GET'
     },
       options);
     }
   /**
- * Returns a single user by ID (super_admin only)
- * @summary Get user
+ * Returns a member of the current organisation (super_admin only). A user outside the organisation is reported as not found.
+ * @summary Get organisation member
  */
 const getAuthAdminUsersId = (
     id: string,
- options?: SecondParameter<typeof customAxios<AdminUser>>,) => {
-      return customAxios<AdminUser>(
+ options?: SecondParameter<typeof customAxios<OrgUser>>,) => {
+      return customAxios<OrgUser>(
       {url: `/auth/admin/users/${id}`, method: 'GET'
     },
       options);
     }
   /**
- * Deletes a user. Cannot delete yourself or the last super_admin
- * @summary Delete user
+ * Lists the active sessions of a user (super_admin only)
+ * @summary List user sessions
  */
-const deleteAuthAdminUsersId = (
+const getAuthAdminUsersIdSessions = (
     id: string,
- options?: SecondParameter<typeof customAxios<SuccessResult>>,) => {
-      return customAxios<SuccessResult>(
-      {url: `/auth/admin/users/${id}`, method: 'DELETE'
+ options?: SecondParameter<typeof customAxios<AdminUserSessionListResult>>,) => {
+      return customAxios<AdminUserSessionListResult>(
+      {url: `/auth/admin/users/${id}/sessions`, method: 'GET'
     },
       options);
     }
   /**
- * Updates mutable user fields (super_admin only)
- * @summary Update user
+ * Revokes every active session of a user (super_admin only)
+ * @summary Revoke all user sessions
  */
-const patchAuthAdminUsersId = (
+const deleteAuthAdminUsersIdSessions = (
     id: string,
-    updateUserRequest: UpdateUserRequest,
- options?: SecondParameter<typeof customAxios<AdminUser>>,) => {
-      return customAxios<AdminUser>(
-      {url: `/auth/admin/users/${id}`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
-      data: updateUserRequest
+ options?: SecondParameter<typeof customAxios<RevokeResult>>,) => {
+      return customAxios<RevokeResult>(
+      {url: `/auth/admin/users/${id}/sessions`, method: 'DELETE'
     },
       options);
     }
-  return {getAdminApiKeys,getAdminApiKeysStats,getAdminApiKeysStatsUserUserId,getAdminApiKeysUserUserId,deleteAdminApiKeysKeyId,getAdminClients,getAdminClientsClientId,deleteAdminClientsClientId,patchAdminClientsClientId,postAdminClientsClientIdRotateKey,getAdminSupportBundle,getAuthAdminUsers,postAuthAdminUsers,getAuthAdminUsersId,deleteAuthAdminUsersId,patchAuthAdminUsersId}};
+  /**
+ * Revokes one session belonging to a user (super_admin only)
+ * @summary Revoke user session
+ */
+const deleteAuthAdminUsersIdSessionsSessionId = (
+    id: string,
+    sessionId: string,
+ options?: SecondParameter<typeof customAxios<SuccessResult>>,) => {
+      return customAxios<SuccessResult>(
+      {url: `/auth/admin/users/${id}/sessions/${sessionId}`, method: 'DELETE'
+    },
+      options);
+    }
+  return {getAdminApiKeys,getAdminApiKeysStats,getAdminApiKeysStatsUserUserId,getAdminApiKeysUserUserId,deleteAdminApiKeysKeyId,getAdminClients,getAdminClientsClientId,deleteAdminClientsClientId,patchAdminClientsClientId,postAdminClientsClientIdRotateKey,getAdminSupportBundle,getAuthAdminUsers,getAuthAdminUsersStats,getAuthAdminUsersId,getAuthAdminUsersIdSessions,deleteAuthAdminUsersIdSessions,deleteAuthAdminUsersIdSessionsSessionId}};
 export type GetAdminApiKeysResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAdminApiKeys']>>>
 export type GetAdminApiKeysStatsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAdminApiKeysStats']>>>
 export type GetAdminApiKeysStatsUserUserIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAdminApiKeysStatsUserUserId']>>>
@@ -245,7 +256,8 @@ export type PatchAdminClientsClientIdResult = NonNullable<Awaited<ReturnType<Ret
 export type PostAdminClientsClientIdRotateKeyResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['postAdminClientsClientIdRotateKey']>>>
 export type GetAdminSupportBundleResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAdminSupportBundle']>>>
 export type GetAuthAdminUsersResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAuthAdminUsers']>>>
-export type PostAuthAdminUsersResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['postAuthAdminUsers']>>>
+export type GetAuthAdminUsersStatsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAuthAdminUsersStats']>>>
 export type GetAuthAdminUsersIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAuthAdminUsersId']>>>
-export type DeleteAuthAdminUsersIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['deleteAuthAdminUsersId']>>>
-export type PatchAuthAdminUsersIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['patchAuthAdminUsersId']>>>
+export type GetAuthAdminUsersIdSessionsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['getAuthAdminUsersIdSessions']>>>
+export type DeleteAuthAdminUsersIdSessionsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['deleteAuthAdminUsersIdSessions']>>>
+export type DeleteAuthAdminUsersIdSessionsSessionIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getAdmin>['deleteAuthAdminUsersIdSessionsSessionId']>>>

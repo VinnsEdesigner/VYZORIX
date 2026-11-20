@@ -51,13 +51,13 @@ func (p *Presenter) LoginSuccess(c *gin.Context, userID string) {
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
 			p.auditLogger.LogEvent(ctx, &audit.Entry{
-				UserID: userID,
-				Action:     audit.ActionLoginSuccess,
-				IPAddress:  ipAddress,
-				UserAgent:  userAgent,
-				Result:     audit.ResultSuccess,
-				TraceID:    traceID,
-				ActorType:  "user",
+				UserID:    userID,
+				Action:    audit.ActionLoginSuccess,
+				IPAddress: ipAddress,
+				UserAgent: userAgent,
+				Result:    audit.ResultSuccess,
+				TraceID:   traceID,
+				ActorType: "user",
 			})
 		}()
 	}
@@ -200,6 +200,13 @@ func (p *Presenter) NotFound(c *gin.Context, message string) {
 // Conflict sends a 409 response.
 func (p *Presenter) Conflict(c *gin.Context, message string) {
 	responses.RespondStructured(c, http.StatusConflict, message)
+}
+
+// UnprocessableEntity sends a 422 response. The request was well-formed but named
+// something the server cannot act on — a caller-supplied value that resolved to
+// nothing usable, as distinct from a malformed body (400).
+func (p *Presenter) UnprocessableEntity(c *gin.Context, message string) {
+	responses.RespondStructured(c, http.StatusUnprocessableEntity, message)
 }
 
 // InternalError sends a 500 response.

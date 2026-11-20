@@ -97,6 +97,12 @@ const (
 	ActionAuditRead     Action = "audit.read"
 	ActionKeysManage    Action = "keys.manage"
 
+	// Provisioning: view and manage the git repositories that converge device
+	// configs. Write access can rewrite any device's config, so it is admin
+	// authority — the same blast radius as fleet-wide deploy.
+	ActionProvisioningRead  Action = "provisioning.read"
+	ActionProvisioningWrite Action = "provisioning.write"
+
 	// Instance-scoped actions. Their resource is the deployment, not an
 	// organisation, so they are granted on ScopeInstance and never satisfy an
 	// org-scoped check. admin.lockout locks a user out of the deployment;
@@ -106,6 +112,13 @@ const (
 	ActionAdminImpersonate Action = "admin.impersonate"
 	ActionOrgList          Action = "org.list"
 	ActionOrgCreate        Action = "org.create"
+
+	// ActionAdminUsers governs the account itself: disabling, re-enabling or
+	// deleting a person. An account outlives any single organisation, so this is
+	// deployment authority, not org authority. The org-local siblings are
+	// members.write (suspend/reinstate a membership) and members.delete (remove a
+	// membership), which act on the membership and leave the account intact.
+	ActionAdminUsers Action = "admin.users"
 
 	// Personal-scoped actions. Their resource is the caller's own account, so
 	// they are granted on ScopePersonal and never satisfy an org-scoped check.

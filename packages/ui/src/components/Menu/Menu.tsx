@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { type VyzorixTheme } from '../../theme/types';
 import { useStyles2 } from '../../theme/ThemeContext';
 import { Icon, type IconName } from '../Icon';
+import { OverlaySheet } from '../Overlay';
+import { useOverlay } from '../Overlay/OverlayProvider';
 
 export interface MenuItem {
   label: string;
@@ -54,11 +56,16 @@ function getStyles(theme: VyzorixTheme) {
       '&:disabled': { color: theme.colors.action.disabledText, cursor: 'not-allowed' },
     }),
     destructive: css({ color: theme.colors.error.text }),
+
+    sheetMenu: css({ display: 'flex', flexDirection: 'column', gap: 2 }),
+    sheetItem: css({ minHeight: 44, padding: `${theme.spacing(1)} ${theme.spacing(1.5)}` }),
   };
 }
 
 export function Menu({ items, children, className }: MenuProps) {
   const styles = useStyles2(getStyles);
+  const { presentation } = useOverlay();
+  const isSheet = presentation === 'sheet';
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -91,26 +98,38 @@ export function Menu({ items, children, className }: MenuProps) {
   return (
     <div ref={wrapperRef} className={cx(styles.wrapper, className)}>
       {trigger}
-      {open ? (
-        <div role="menu" className={styles.menu}>
-          {items.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              role="menuitem"
-              disabled={item.disabled}
-              className={cx(styles.item, item.destructive && styles.destructive)}
-              onClick={() => {
-                setOpen(false);
-                item.onClick();
-              }}
-            >
-              {item.icon ? <Icon name={item.icon} size="sm" /> : null}
-              {item.label}
-            </button>
-          ))}
-        </div>
-      ) : null}
+      {open
+        ? (() => {
+            const list = (
+              <div role="menu" className={isSheet ? styles.sheetMenu : styles.menu}>
+                {items.map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    role="menuitem"
+                    disabled={item.disabled}
+                    className={cx(styles.item, isSheet && styles.sheetItem, item.destructive && styles.destructive)}
+                    onClick={() => {
+                      setOpen(false);
+                      item.onClick();
+                    }}
+                  >
+                    {item.icon ? <Icon name={item.icon} size={isSheet ? 'lg' : 'sm'} /> : null}
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            );
+
+            return isSheet ? (
+              <OverlaySheet open onClose={() => setOpen(false)} label="Actions">
+                {list}
+              </OverlaySheet>
+            ) : (
+              list
+            );
+          })()
+        : null}
     </div>
   );
 }

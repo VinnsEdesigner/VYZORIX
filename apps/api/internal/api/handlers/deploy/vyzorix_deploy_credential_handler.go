@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/deploy"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/deploycredential"
 )
@@ -96,6 +97,12 @@ func (h *Handler) MintCredential(c *gin.Context) {
 
 		return
 	}
+
+	// Minting a long-lived credential is a privileged write: it creates a key that can
+	// deploy to this device without a session. The token itself is never recorded — only
+	// the credential's id, its name, and the fact that one was minted.
+	h.recordAudit(c, h.auditEvent(c, orgID, deviceID, audit.ActionDeployCredentialNew,
+		audit.ResultSuccess, "credential "+credential.ID+" ("+credential.Name+")"))
 
 	c.JSON(http.StatusCreated, mintCredentialResponse{
 		credentialResponse: toCredentialResponse(credential),
@@ -191,6 +198,9 @@ func (h *Handler) RevokeCredential(c *gin.Context) {
 
 		return
 	}
+
+	h.recordAudit(c, h.auditEvent(c, orgID, deviceID, audit.ActionDeployCredentialOff,
+		audit.ResultSuccess, "credential "+c.Param("id")+" revoked"))
 
 	c.Status(http.StatusNoContent)
 }

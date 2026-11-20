@@ -31,26 +31,26 @@ type WebhookNotifications struct {
 // SlackNotifications holds the result of the Slack link-up. The access token is
 // never serialised to a client: the API strips it and reports only Connected.
 type SlackNotifications struct {
-	Connected   bool   `json:"connected"`
 	TeamID      string `json:"teamId,omitempty"`
 	TeamName    string `json:"teamName,omitempty"`
 	SlackUserID string `json:"slackUserId,omitempty"`
 	ChannelID   string `json:"channelId,omitempty"`
 	ChannelName string `json:"channelName,omitempty"`
 	AccessToken string `json:"-"`
+	Connected   bool   `json:"connected"`
 }
 
 // NotificationSettings holds all notification preferences for a user.
 type NotificationSettings struct {
-	Channels []string             `json:"channels"`
-	Webhook  WebhookNotifications `json:"webhook"`
-	Email    EmailNotifications   `json:"email"`
-	Push     PushNotifications    `json:"push"`
-	Slack    SlackNotifications   `json:"slack"`
-	Enabled  bool                 `json:"enabled"`
+	Slack SlackNotifications `json:"slack"`
 	// EmailAddress is a custom address to receive notification email at. An
 	// empty value means "use the account email".
-	EmailAddress string `json:"emailAddress,omitempty"`
+	EmailAddress string               `json:"emailAddress,omitempty"`
+	Channels     []string             `json:"channels"`
+	Webhook      WebhookNotifications `json:"webhook"`
+	Email        EmailNotifications   `json:"email"`
+	Push         PushNotifications    `json:"push"`
+	Enabled      bool                 `json:"enabled"`
 }
 
 // DefaultNotificationSettings returns default notification settings.

@@ -47,14 +47,14 @@ func (s *Service) RequestConfirmation(ctx context.Context, userID, orgID, comman
 
 	now := time.Now()
 	c := &domainconfirmation.PendingConfirmation{
-		Token:      shared.GenerateID(),
-		UserID: userID,
-		OrgID:      orgID,
-		Command:    commandName,
-		DeviceID:   deviceID,
-		RiskTier:   string(profile.Tier),
-		CreatedAt:  now,
-		ExpiresAt:  now.Add(ttl),
+		Token:     shared.GenerateID(),
+		UserID:    userID,
+		OrgID:     orgID,
+		Command:   commandName,
+		DeviceID:  deviceID,
+		RiskTier:  string(profile.Tier),
+		CreatedAt: now,
+		ExpiresAt: now.Add(ttl),
 	}
 	if err := s.repo.Create(ctx, c); err != nil {
 		return nil, err

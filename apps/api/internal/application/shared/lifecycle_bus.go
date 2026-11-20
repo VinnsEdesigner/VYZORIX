@@ -5,7 +5,7 @@ import "sync"
 type LifecycleEvent struct {
 	Type         string
 	OrgID        string
-	UserID   string
+	UserID       string
 	InvitationID string
 	Role         string
 }

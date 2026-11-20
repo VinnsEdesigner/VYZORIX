@@ -67,6 +67,10 @@ func DefaultScopesForInstanceRole(role InstanceRole) ScopedPermissions {
 		perms = append(perms,
 			ScopedPermission{ActionAdminLockout, instanceAll},
 			ScopedPermission{ActionAdminImpersonate, instanceAll},
+			// Disabling or deleting an account reaches across every organisation the
+			// person belongs to, so it is deployment authority. The org-scoped
+			// siblings (members.write / members.delete) act on one membership only.
+			ScopedPermission{ActionAdminUsers, instanceAll},
 		)
 	}
 

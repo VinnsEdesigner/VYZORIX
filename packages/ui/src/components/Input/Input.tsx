@@ -10,6 +10,8 @@ export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
   invalid?: boolean;
   prefix?: React.ReactNode;
   suffix?: React.ReactNode;
+
+  invalidSignal?: number;
 }
 
 const getStyles = (theme: VyzorixTheme, invalid?: boolean) => ({
@@ -29,7 +31,7 @@ const getStyles = (theme: VyzorixTheme, invalid?: boolean) => ({
 });
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ invalid, prefix, suffix, className, id, ...rest }, ref) => {
+  ({ invalid, invalidSignal, prefix, suffix, className, id, ...rest }, ref) => {
     const styles = useStyles2(getStyles, invalid);
 
     const field = useFieldContext();
@@ -41,6 +43,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       <div className={styles.wrapper}>
         {prefix ? <span className={cx(styles.adornment, styles.prefix)}>{prefix}</span> : null}
         <input
+
+          key={invalidSignal}
           ref={ref}
           id={controlId}
           aria-invalid={isInvalid || undefined}

@@ -66,7 +66,7 @@ func rebuildAPIKeysTable(tx *sql.Tx) error {
 		if count > 0 {
 			// Data present: add only the missing columns defensively rather than drop.
 			return addMissingColumns(tx, "api_keys", missing, map[string]string{
-				"user_id":     "TEXT",
+				"user_id":         "TEXT",
 				"key_prefix":      "TEXT",
 				"scope":           "TEXT DEFAULT 'read'",
 				"is_active":       "INTEGER NOT NULL DEFAULT 1",
@@ -143,7 +143,7 @@ func rebuildAPIClientsTable(tx *sql.Tx) error {
 		}
 		if count > 0 {
 			return addMissingColumns(tx, "api_clients", missing, map[string]string{
-				"user_id":        "TEXT",
+				"user_id":            "TEXT",
 				"platform":           "TEXT",
 				"client_secret_hash": "TEXT",
 				"hmac_key":           "TEXT",

@@ -62,12 +62,13 @@ function interceptAuthResponse(method, pathname, status, responseHeaders, body, 
   }
 
   // ── Logout ──
+  //
+  // The credentials are stripped by the session store's destroySession, which the
+  // caller invokes once the upstream logout succeeds. Doing it here as well would
+  // leave two places responsible for the same invariant, and the one that ran
+  // first (here) never removed the record.
   if (method === 'POST' && pathname === '/v1/auth/logout') {
-    info('Logout intercepted, clearing session credentials', { userId: sess.userId });
-    sess.signingKey = null;
-    sess.accessToken = null;
-    sess.refreshToken = null;
-    sess.apiSessionCookie = null;
+    info('Logout intercepted', { userId: sess.userId });
     return { modified: false, body: body };
   }
 

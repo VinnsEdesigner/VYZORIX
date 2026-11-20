@@ -1,0 +1,48 @@
+[Unit]
+Description=Vyzorix API (Go)
+Documentation=https://github.com/VinnsEdesigner/VYZORIX
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=vyzorix
+Group=vyzorix
+WorkingDirectory=/opt/vyzorix
+EnvironmentFile=/etc/vyzorix/api.env
+ExecStart=/opt/vyzorix/bin/vyzorix-api
+
+# The API drains in-flight requests on SIGTERM (signal.NotifyContext in
+# cmd/api/api_main.go), so give it time to finish rather than cutting sessions.
+KillSignal=SIGTERM
+TimeoutStopSec=30
+Restart=on-failure
+RestartSec=5
+
+# The proxy is the only process that should reach the API. BIND_ADDR in
+# /etc/vyzorix/api.env should therefore be 127.0.0.1, not 0.0.0.0 — the port is
+# not firewalled by this unit.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+
+# Writable paths: the SQLite database and the audit log, plus uploaded avatars.
+ReadWritePaths=/var/lib/vyzorix /var/lib/vyzorix/avatars
+
+# Hardening above is best-effort: if a future build needs a path this list does
+# not cover, the unit fails loudly at start rather than silently misbehaving.
+LimitNOFILE=65536
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vyzorix-api
+
+[Install]
+WantedBy=multi-user.target

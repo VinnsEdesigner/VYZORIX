@@ -14,8 +14,8 @@ import (
 	domaincommand "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
 	domainconfirmation "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/confirmation"
 	domainerrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/session"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/gin-gonic/gin"
 )
 

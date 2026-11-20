@@ -7,7 +7,8 @@
  */
 import {
   useMutation,
-  useQuery
+  useQuery,
+  useQueryClient
 } from '@tanstack/react-query';
 import type {
   DataTag,
@@ -15,6 +16,7 @@ import type {
   DefinedUseQueryResult,
   InvalidateOptions,
   MutationFunction,
+  MutationFunctionContext,
   QueryClient,
   QueryFunction,
   QueryKey,
@@ -39,6 +41,8 @@ import type {
 
 import { customAxios } from '../../../../../packages/API_Client/src/generated/rest-bridge';
 import organizationScopedQueryKey from '.././query-key-mutator';
+import { getGetAuthMeProfileSummaryQueryKey, getGetAuthMeQueryKey } from '../auth/auth-session';
+import { getGetMeNotificationsQueryKey, getGetMePreferencesQueryKey, getGetMeSettingsQueryKey, getGetMeThresholdsQueryKey } from '../settings/user-settings';
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -204,7 +208,7 @@ export const postAuthMeNotificationsHistoryRead = async ( options?: Parameters<t
 
 
 export const getPostAuthMeNotificationsHistoryReadMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeNotificationsHistoryRead>>, TError,void, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeNotificationsHistoryRead>>, TError,void, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postAuthMeNotificationsHistoryRead>>, TError,void, TContext> => {
 
 const mutationKey = ['postAuthMeNotificationsHistoryRead'];
@@ -223,12 +227,23 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
           return  postAuthMeNotificationsHistoryRead(requestOptions)
         }
 
+  const onSuccess = (data: Awaited<ReturnType<typeof postAuthMeNotificationsHistoryRead>>, variables: void, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetMeNotificationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetMePreferencesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetMeSettingsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetMeThresholdsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeProfileSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeNotificationsHistoryQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
 
 
 
 
-
-  return  { mutationFn, ...mutationOptions }}
+  return  { ...mutationOptions, mutationFn, onSuccess }}
 
     export type PostAuthMeNotificationsHistoryReadMutationResult = NonNullable<Awaited<ReturnType<typeof postAuthMeNotificationsHistoryRead>>>
 
@@ -238,14 +253,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Mark notifications read
  */
 export const usePostAuthMeNotificationsHistoryRead = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeNotificationsHistoryRead>>, TError,void, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeNotificationsHistoryRead>>, TError,void, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postAuthMeNotificationsHistoryRead>>,
         TError,
         void,
         TContext
       > => {
-      return useMutation(getPostAuthMeNotificationsHistoryReadMutationOptions(options), queryClient);
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPostAuthMeNotificationsHistoryReadMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
     export const getGetAuthMeNotificationsPushPublicKeyUrl = () => {
 
@@ -390,7 +406,7 @@ return customAxios<SuccessResult>(getPostAuthMeNotificationsPushSubscribeUrl(),
 
 
 export const getPostAuthMeNotificationsPushSubscribeMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeNotificationsPushSubscribe>>, TError,{data: PushSubscriptionRequest}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeNotificationsPushSubscribe>>, TError,{data: PushSubscriptionRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postAuthMeNotificationsPushSubscribe>>, TError,{data: PushSubscriptionRequest}, TContext> => {
 
 const mutationKey = ['postAuthMeNotificationsPushSubscribe'];
@@ -409,12 +425,23 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
           return  postAuthMeNotificationsPushSubscribe(data,requestOptions)
         }
 
+  const onSuccess = (data: Awaited<ReturnType<typeof postAuthMeNotificationsPushSubscribe>>, variables: {data: PushSubscriptionRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetMeNotificationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetMePreferencesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetMeSettingsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetMeThresholdsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeProfileSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeNotificationsHistoryQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
 
 
 
 
-
-  return  { mutationFn, ...mutationOptions }}
+  return  { ...mutationOptions, mutationFn, onSuccess }}
 
     export type PostAuthMeNotificationsPushSubscribeMutationResult = NonNullable<Awaited<ReturnType<typeof postAuthMeNotificationsPushSubscribe>>>
     export type PostAuthMeNotificationsPushSubscribeMutationBody = PushSubscriptionRequest
@@ -424,14 +451,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Register a browser push subscription
  */
 export const usePostAuthMeNotificationsPushSubscribe = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeNotificationsPushSubscribe>>, TError,{data: PushSubscriptionRequest}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeNotificationsPushSubscribe>>, TError,{data: PushSubscriptionRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postAuthMeNotificationsPushSubscribe>>,
         TError,
         {data: PushSubscriptionRequest},
         TContext
       > => {
-      return useMutation(getPostAuthMeNotificationsPushSubscribeMutationOptions(options), queryClient);
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPostAuthMeNotificationsPushSubscribeMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
     export const getPostAuthMeNotificationsPushTestUrl = () => {
 
@@ -538,7 +566,7 @@ return customAxios<SuccessResult>(getPostAuthMeNotificationsPushUnsubscribeUrl()
 
 
 export const getPostAuthMeNotificationsPushUnsubscribeMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeNotificationsPushUnsubscribe>>, TError,{data: PushSubscriptionRequest}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeNotificationsPushUnsubscribe>>, TError,{data: PushSubscriptionRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postAuthMeNotificationsPushUnsubscribe>>, TError,{data: PushSubscriptionRequest}, TContext> => {
 
 const mutationKey = ['postAuthMeNotificationsPushUnsubscribe'];
@@ -557,12 +585,23 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
           return  postAuthMeNotificationsPushUnsubscribe(data,requestOptions)
         }
 
+  const onSuccess = (data: Awaited<ReturnType<typeof postAuthMeNotificationsPushUnsubscribe>>, variables: {data: PushSubscriptionRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetMeNotificationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetMePreferencesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetMeSettingsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetMeThresholdsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeProfileSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeNotificationsHistoryQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
 
 
 
 
-
-  return  { mutationFn, ...mutationOptions }}
+  return  { ...mutationOptions, mutationFn, onSuccess }}
 
     export type PostAuthMeNotificationsPushUnsubscribeMutationResult = NonNullable<Awaited<ReturnType<typeof postAuthMeNotificationsPushUnsubscribe>>>
     export type PostAuthMeNotificationsPushUnsubscribeMutationBody = PushSubscriptionRequest
@@ -572,14 +611,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Remove a browser push subscription
  */
 export const usePostAuthMeNotificationsPushUnsubscribe = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeNotificationsPushUnsubscribe>>, TError,{data: PushSubscriptionRequest}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthMeNotificationsPushUnsubscribe>>, TError,{data: PushSubscriptionRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postAuthMeNotificationsPushUnsubscribe>>,
         TError,
         {data: PushSubscriptionRequest},
         TContext
       > => {
-      return useMutation(getPostAuthMeNotificationsPushUnsubscribeMutationOptions(options), queryClient);
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPostAuthMeNotificationsPushUnsubscribeMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
     export const getGetAuthMeNotificationsSlackCallbackUrl = () => {
 

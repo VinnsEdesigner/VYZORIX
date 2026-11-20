@@ -1,10 +1,13 @@
 package vyzorix
 
-// CreateInvitationRequest.
+// CreateInvitationRequest. The organisation is resolved from the credential, not
+// the body; organizationId is accepted only so a client that sends one can be
+// rejected when it disagrees with the session's org.
 #CreateInvitationRequest: {
         email: string
         role: string
-        org_id?: string
+        organizationId?: string
+        notes?: string
 }
 
 // Invitation.

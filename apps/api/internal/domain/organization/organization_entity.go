@@ -191,23 +191,26 @@ func (o *Organization) CanAddMember() bool {
 }
 
 // OrganizationMember represents a membership linking a user to an organization.
+//
+// Fields are ordered by alignment so the struct packs without padding; the
+// grouping comments mark what each run of fields means.
 type OrganizationMember struct {
-	// Lifecycle tracks the membership lifecycle state.
-	Lifecycle MemberLifecycle
-
+	JoinedAt time.Time
 	// Core fields.
-	ID             string
+	InvitedBy   *string
+	LastSeenAt  *time.Time
+	SuspendedAt *time.Time
+	RemovedAt   *time.Time // Soft delete - set when removed.
+	UserID      string
+	Role        OrganizationRole
+	// Lifecycle tracks the membership lifecycle state.
+	Lifecycle      MemberLifecycle
 	OrganizationID string
-	UserID     string
-	Role           OrganizationRole
-	InvitedBy      *string
-	JoinedAt       time.Time
-	RemovedAt      *time.Time // Soft delete - set when removed.
-	SuspendedAt    *time.Time
-
 	// Populated fields (joined from other tables).
 	UserName  string
 	UserEmail string
+	AvatarURL string
+	ID        string
 }
 
 // NewMember creates a new OrganizationMember as an active member.
@@ -216,7 +219,7 @@ func NewMember(id, organizationID, userID string, role OrganizationRole) *Organi
 	return &OrganizationMember{
 		ID:             id,
 		OrganizationID: organizationID,
-		UserID:     userID,
+		UserID:         userID,
 		Role:           role,
 		Lifecycle:      MemberLifecycleActive,
 		JoinedAt:       time.Now(),

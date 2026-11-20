@@ -24,27 +24,39 @@ type UserAPIKeyStatsResult struct {
 	TotalKeys            int64  `json:"total_keys"`
 }
 
-type AdminUser struct {
+type OrgUser struct {
+	AvatarURL     string `json:"avatar_url,omitempty"`
 	Email         string `json:"email"`
 	ID            string `json:"id"`
+	LastSeenAt    *int64 `json:"last_seen_at,omitempty"`
+	MemberID      string `json:"member_id"`
 	Name          string `json:"name"`
-	Role          string `json:"role,omitempty"`
+	Role          string `json:"role"`
+	Status        string `json:"status"`
 	CreatedAt     int64  `json:"created_at"`
-	UpdatedAt     int64  `json:"updated_at"`
+	JoinedAt      int64  `json:"joined_at"`
+	Disabled      bool   `json:"disabled"`
 	EmailVerified bool   `json:"email_verified"`
 	MFAEnabled    bool   `json:"mfa_enabled"`
 }
 
-type AdminUserListResult struct {
-	Users []AdminUser `json:"users"`
-	Total int         `json:"total"`
+type OrgUserListResult struct {
+	Users      []OrgUser `json:"users"`
+	Limit      int       `json:"limit"`
+	Page       int       `json:"page"`
+	Total      int       `json:"total"`
+	TotalPages int       `json:"total_pages"`
 }
 
-type CreateUserRequest struct {
-	Email    string `json:"email"`
-	Name     string `json:"name"`
-	Password string `json:"password"`
-	Role     string `json:"role,omitempty"`
+type OrgUserStatsResult struct {
+	ByRole         map[string]int `json:"by_role"`
+	PendingInvites int            `json:"pending_invites"`
+	Total          int            `json:"total"`
+}
+
+type AdminUserSessionListResult struct {
+	Sessions []SessionInfo `json:"sessions"`
+	Total    int           `json:"total"`
 }
 
 type UserThresholds struct {
@@ -885,9 +897,10 @@ type InboxResendResult struct {
 }
 
 type CreateInvitationRequest struct {
-	Email string `json:"email"`
-	OrgID string `json:"org_id,omitempty"`
-	Role  string `json:"role"`
+	Email          string `json:"email"`
+	Notes          string `json:"notes,omitempty"`
+	OrganizationID string `json:"organizationId,omitempty"`
+	Role           string `json:"role"`
 }
 
 type Invitation struct {
@@ -986,13 +999,16 @@ type CapabilitiesResult struct {
 }
 
 type OrganizationMember struct {
+	AvatarURL      string `json:"avatar_url,omitempty"`
 	ID             string `json:"id"`
 	InvitedBy      string `json:"invited_by,omitempty"`
 	JoinedAt       *int64 `json:"joined_at,omitempty"`
+	LastSeen       *int64 `json:"last_seen,omitempty"`
 	OrganizationID string `json:"organization_id"`
 	RemovedAt      *int64 `json:"removed_at,omitempty"`
 	Role           string `json:"role"`
 	Status         string `json:"status"`
+	SuspendedAt    *int64 `json:"suspended_at,omitempty"`
 	UserEmail      string `json:"user_email,omitempty"`
 	UserID         string `json:"user_id"`
 	UserName       string `json:"user_name,omitempty"`
@@ -1381,38 +1397,67 @@ type CreateServiceAccountRequest struct {
 	Name string `json:"name"`
 }
 
+type FixedRoleGrant struct {
+	Role  string `json:"role"`
+	Scope string `json:"scope"`
+}
+
 type CreateServiceAccountTokenRequest struct {
-	ExpiresAt string   `json:"expires_at,omitempty"`
-	Name      string   `json:"name"`
-	ServiceID string   `json:"service_id"`
-	Scopes    []string `json:"scopes"`
+	BasicRole string           `json:"basic_role,omitempty"`
+	ExpiresAt string           `json:"expires_at,omitempty"`
+	Name      string           `json:"name"`
+	ServiceID string           `json:"service_id"`
+	Roles     []FixedRoleGrant `json:"roles,omitempty"`
+}
+
+type UpdateServiceAccountTokenRolesRequest struct {
+	BasicRole string           `json:"basic_role,omitempty"`
+	Roles     []FixedRoleGrant `json:"roles,omitempty"`
 }
 
 type RotateServiceAccountTokenRequest struct {
-	ExpiresAt string   `json:"expires_at,omitempty"`
-	Name      string   `json:"name"`
-	Scopes    []string `json:"scopes"`
+	BasicRole string           `json:"basic_role,omitempty"`
+	ExpiresAt string           `json:"expires_at,omitempty"`
+	Name      string           `json:"name"`
+	Roles     []FixedRoleGrant `json:"roles,omitempty"`
+}
+
+type UpdateServiceAccountRequest struct {
+	Name    string `json:"name,omitempty"`
+	Reason  string `json:"reason,omitempty"`
+	Enabled bool   `json:"enabled,omitempty"`
 }
 
 type ServiceAccount struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	OrgID     string `json:"org_id"`
-	CreatedAt int64  `json:"created_at"`
-	UpdatedAt int64  `json:"updated_at"`
-	Enabled   bool   `json:"enabled"`
+	AvatarURL      string `json:"avatar_url"`
+	DisabledAt     *int64 `json:"disabled_at,omitempty"`
+	DisabledBy     string `json:"disabled_by,omitempty"`
+	DisabledByName string `json:"disabled_by_name,omitempty"`
+	DisabledReason string `json:"disabled_reason,omitempty"`
+	EnabledBy      string `json:"enabled_by,omitempty"`
+	EnabledByName  string `json:"enabled_by_name,omitempty"`
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	OrgID          string `json:"org_id"`
+	CreatedAt      int64  `json:"created_at"`
+	TokenCount     int    `json:"token_count"`
+	UpdatedAt      int64  `json:"updated_at"`
+	Enabled        bool   `json:"enabled"`
 }
 
 type ServiceAccountToken struct {
-	ExpiresAt *int64   `json:"expires_at,omitempty"`
-	ID        string   `json:"id"`
-	KeyPrefix string   `json:"key_prefix"`
-	Name      string   `json:"name"`
-	RevokedAt *int64   `json:"revoked_at,omitempty"`
-	ServiceID string   `json:"service_id"`
-	Scopes    []string `json:"scopes"`
-	CreatedAt int64    `json:"created_at"`
-	Valid     bool     `json:"valid"`
+	BasicRole  string           `json:"basic_role,omitempty"`
+	ExpiresAt  *int64           `json:"expires_at,omitempty"`
+	ID         string           `json:"id"`
+	KeyPrefix  string           `json:"key_prefix"`
+	LastUsedAt *int64           `json:"last_used_at,omitempty"`
+	Name       string           `json:"name"`
+	RevokedAt  *int64           `json:"revoked_at,omitempty"`
+	ServiceID  string           `json:"service_id"`
+	Roles      []FixedRoleGrant `json:"roles"`
+	Scopes     []string         `json:"scopes"`
+	CreatedAt  int64            `json:"created_at"`
+	Valid      bool             `json:"valid"`
 }
 
 type ServiceAccountListResult struct {
@@ -1431,11 +1476,24 @@ type ServiceAccountTokenRotated struct {
 	Secret string `json:"secret"`
 }
 
+type FixedRoleInfo struct {
+	Access string `json:"access"`
+	Group  string `json:"group"`
+	ID     string `json:"id"`
+}
+
+type FixedRoleCatalogResult struct {
+	OrgRoles []string        `json:"org_roles"`
+	Roles    []FixedRoleInfo `json:"roles"`
+	Scopes   []string        `json:"scopes"`
+}
+
 type SessionInfo struct {
 	ID                     string `json:"id"`
 	IPAddress              string `json:"ip_address"`
 	SelectedOrganizationID string `json:"selected_organization_id,omitempty"`
 	UserAgent              string `json:"user_agent"`
+	UserID                 string `json:"user_id,omitempty"`
 	CreatedAt              int64  `json:"created_at"`
 	ExpiresAt              int64  `json:"expires_at"`
 	IsCurrent              bool   `json:"is_current"`

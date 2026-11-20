@@ -23,7 +23,7 @@ type KnownDeviceRepository struct {
 // Bounds mirror the in-memory store's caps.
 const (
 	maxKnownDevicesPerUser = 50
-	maxSignalsPerDevice        = 20
+	maxSignalsPerDevice    = 20
 )
 
 // NewKnownDeviceRepository creates a new KnownDeviceRepository.

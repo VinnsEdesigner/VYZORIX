@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -13,16 +14,22 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
 )
 
-// memConfigs is an in-memory deployconfig.Repository.
+// memConfigs is an in-memory deployconfig.Repository. It is mutex-guarded because a
+// concurrency test drives it from several goroutines; the real repository is protected by
+// a transaction, so the fake must not introduce its own map race.
 type memConfigs struct {
 	records map[string]*deployconfig.Record
+	mu      sync.Mutex
 }
 
 func newMemConfigs() *memConfigs {
 	return &memConfigs{records: map[string]*deployconfig.Record{}}
 }
 
-func (m *memConfigs) Current(_ context.Context, deviceID string) (*deployconfig.Record, error) {
+func (m *memConfigs) Current(_ context.Context, _, deviceID string) (*deployconfig.Record, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	rec, ok := m.records[deviceID]
 	if !ok {
 		return nil, deployconfig.ErrNotFound
@@ -31,11 +38,18 @@ func (m *memConfigs) Current(_ context.Context, deviceID string) (*deployconfig.
 	return rec, nil
 }
 
-func (m *memConfigs) LastGood(_ context.Context, _ string) (*deployconfig.Record, error) {
+func (m *memConfigs) CurrentForDevice(ctx context.Context, deviceID string) (*deployconfig.Record, error) {
+	return m.Current(ctx, "", deviceID)
+}
+
+func (m *memConfigs) LastGood(_ context.Context, _, _ string) (*deployconfig.Record, error) {
 	return nil, deployconfig.ErrNotFound
 }
 
 func (m *memConfigs) SaveCurrent(_ context.Context, record *deployconfig.Record) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.records[record.DeviceID] = record
 
 	return nil
@@ -139,7 +153,7 @@ func TestDeployPersistsAndReturnsTheVersion(t *testing.T) {
 		t.Fatalf("expected two apps, got %v", result.AppNames)
 	}
 
-	stored, err := configs.Current(context.Background(), "d_01H")
+	stored, err := configs.Current(context.Background(), "org_01H", "d_01H")
 	if err != nil {
 		t.Fatalf("the config must be persisted: %v", err)
 	}
@@ -205,7 +219,7 @@ func TestDryRunStoresNothing(t *testing.T) {
 		t.Fatalf("the dry-run version %d is not the one in the document", result.Version)
 	}
 
-	if _, err := configs.Current(context.Background(), "d_01H"); !errors.Is(err, deployconfig.ErrNotFound) {
+	if _, err := configs.Current(context.Background(), "org_01H", "d_01H"); !errors.Is(err, deployconfig.ErrNotFound) {
 		t.Fatal("a dry run must not persist")
 	}
 }
@@ -318,7 +332,7 @@ func TestDeployTakesTheDeviceFromTheManifest(t *testing.T) {
 		t.Fatalf("first deploy must be version 1, got %d", result.Version)
 	}
 
-	record, err := configs.Current(context.Background(), "d_01H")
+	record, err := configs.Current(context.Background(), "org_01H", "d_01H")
 	if err != nil {
 		t.Fatalf("the deploy must persist under the manifest's device, got %v", err)
 	}

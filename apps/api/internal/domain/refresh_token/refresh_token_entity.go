@@ -18,7 +18,7 @@ var ErrRevoked = errors.New("refresh token revoked")
 type RefreshToken struct {
 	ID           string    // Unique identifier (UUIDv7).
 	TokenHash    string    // SHA-256 hash of the actual token.
-	UserID   string    // The user this token belongs to.
+	UserID       string    // The user this token belongs to.
 	SessionID    string    // The session this token is associated with.
 	ExpiresAt    time.Time // When this token expires.
 	CreatedAt    time.Time // When this token was created.
@@ -41,9 +41,9 @@ func (rt *RefreshToken) IsValid() bool {
 // When a token is rotated, the old one is marked as revoked and replaced by the new one.
 // This allows for detection of token theft (if an old token is used after rotation).
 type TokenFamily struct {
-	CreatedAt  time.Time
-	ExpiresAt  time.Time
-	FamilyID   string
-	TokenID    string
-	UserID string
+	CreatedAt time.Time
+	ExpiresAt time.Time
+	FamilyID  string
+	TokenID   string
+	UserID    string
 }

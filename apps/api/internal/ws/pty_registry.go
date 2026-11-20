@@ -66,7 +66,7 @@ type PTYSession struct {
 	recorder   *PTYRecorder
 	SessionID  string
 	DeviceID   string
-	UserID string
+	UserID     string
 	OrgID      string
 	// capability is the resolved API allowlist, device tier and expiry the session
 	// carries. It is the boundary contract's decision, recorded here at open so
@@ -191,7 +191,7 @@ func (r *PTYRegistry) Open(sessionID, deviceID, userID, orgID string, recording 
 	s := &PTYSession{
 		SessionID:  sessionID,
 		DeviceID:   deviceID,
-		UserID: userID,
+		UserID:     userID,
 		OrgID:      orgID,
 		Recording:  recording,
 		OpenedAt:   now,

@@ -1346,7 +1346,7 @@ const docTemplate = `{
         },
         "/auth/admin/users": {
             "get": {
-                "description": "Lists all users in the system (super_admin only)",
+                "description": "Lists the members of the current organisation, paginated and optionally searched by email or name (super_admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1356,7 +1356,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "List users",
+                "summary": "List organisation members",
                 "parameters": [
                     {
                         "type": "string",
@@ -1364,13 +1364,49 @@ const docTemplate = `{
                         "name": "X-Organization-ID",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (1-based)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by email or name",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort column: email, name, created_at, last_login_at",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort direction: asc or desc",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Membership status filter: active, suspended; empty means every state except removed",
+                        "name": "status",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "users",
+                        "description": "members",
                         "schema": {
-                            "$ref": "#/definitions/openapi.AdminUserListResult"
+                            "$ref": "#/definitions/openapi.OrgUserListResult"
                         }
                     },
                     "401": {
@@ -1392,9 +1428,11 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "Creates a new user (super_admin only)",
+            }
+        },
+        "/auth/admin/users/stats": {
+            "get": {
+                "description": "Member count per role plus the pending invitation count for the current organisation (super_admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1404,7 +1442,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Create user",
+                "summary": "Organisation member stats",
                 "parameters": [
                     {
                         "type": "string",
@@ -1412,28 +1450,13 @@ const docTemplate = `{
                         "name": "X-Organization-ID",
                         "in": "header",
                         "required": true
-                    },
-                    {
-                        "description": "user credentials",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/openapi.CreateUserRequest"
-                        }
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "created user",
+                    "200": {
+                        "description": "stats",
                         "schema": {
-                            "$ref": "#/definitions/openapi.AdminUser"
-                        }
-                    },
-                    "400": {
-                        "description": "invalid input",
-                        "schema": {
-                            "$ref": "#/definitions/openapi.ErrorResponse"
+                            "$ref": "#/definitions/openapi.OrgUserStatsResult"
                         }
                     },
                     "401": {
@@ -1444,12 +1467,6 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "super_admin required",
-                        "schema": {
-                            "$ref": "#/definitions/openapi.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "email already in use",
                         "schema": {
                             "$ref": "#/definitions/openapi.ErrorResponse"
                         }
@@ -1465,7 +1482,7 @@ const docTemplate = `{
         },
         "/auth/admin/users/{id}": {
             "get": {
-                "description": "Returns a single user by ID (super_admin only)",
+                "description": "Returns a member of the current organisation (super_admin only). A user outside the organisation is reported as not found.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1475,7 +1492,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Get user",
+                "summary": "Get organisation member",
                 "parameters": [
                     {
                         "type": "string",
@@ -1494,9 +1511,72 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "created user",
+                        "description": "member",
                         "schema": {
-                            "$ref": "#/definitions/openapi.AdminUser"
+                            "$ref": "#/definitions/openapi.OrgUser"
+                        }
+                    },
+                    "401": {
+                        "description": "not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "super_admin required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not a member of this organisation",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/admin/users/{id}/sessions": {
+            "get": {
+                "description": "Lists the active sessions of a user (super_admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List user sessions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "user ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "sessions",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.AdminUserSessionListResult"
                         }
                     },
                     "401": {
@@ -1526,7 +1606,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Deletes a user. Cannot delete yourself or the last super_admin",
+                "description": "Revokes every active session of a user (super_admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1536,7 +1616,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Delete user",
+                "summary": "Revoke all user sessions",
                 "parameters": [
                     {
                         "type": "string",
@@ -1555,13 +1635,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "user deleted",
+                        "description": "sessions revoked",
                         "schema": {
-                            "$ref": "#/definitions/openapi.SuccessResult"
+                            "$ref": "#/definitions/openapi.RevokeResult"
                         }
                     },
                     "400": {
-                        "description": "user id required / cannot delete self",
+                        "description": "user id required",
                         "schema": {
                             "$ref": "#/definitions/openapi.ErrorResponse"
                         }
@@ -1574,18 +1654,6 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "super_admin required",
-                        "schema": {
-                            "$ref": "#/definitions/openapi.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "not found",
-                        "schema": {
-                            "$ref": "#/definitions/openapi.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "cannot delete last super_admin",
                         "schema": {
                             "$ref": "#/definitions/openapi.ErrorResponse"
                         }
@@ -1597,9 +1665,11 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "patch": {
-                "description": "Updates mutable user fields (super_admin only)",
+            }
+        },
+        "/auth/admin/users/{id}/sessions/{sessionId}": {
+            "delete": {
+                "description": "Revokes one session belonging to a user (super_admin only)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1609,7 +1679,7 @@ const docTemplate = `{
                 "tags": [
                     "admin"
                 ],
-                "summary": "Update user",
+                "summary": "Revoke user session",
                 "parameters": [
                     {
                         "type": "string",
@@ -1626,24 +1696,22 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "user update",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/openapi.UpdateUserRequest"
-                        }
+                        "type": "string",
+                        "description": "session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "updated user",
+                        "description": "session revoked",
                         "schema": {
-                            "$ref": "#/definitions/openapi.AdminUser"
+                            "$ref": "#/definitions/openapi.SuccessResult"
                         }
                     },
                     "400": {
-                        "description": "invalid input",
+                        "description": "session id required",
                         "schema": {
                             "$ref": "#/definitions/openapi.ErrorResponse"
                         }
@@ -1661,13 +1729,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "not found",
-                        "schema": {
-                            "$ref": "#/definitions/openapi.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "email already in use",
+                        "description": "session not found",
                         "schema": {
                             "$ref": "#/definitions/openapi.ErrorResponse"
                         }
@@ -8269,6 +8331,198 @@ const docTemplate = `{
                 }
             }
         },
+        "/instance/users/{id}": {
+            "delete": {
+                "description": "Deletes an account and its memberships (instance admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "instance"
+                ],
+                "summary": "Delete an account",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "deleted",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.SuccessResult"
+                        }
+                    },
+                    "400": {
+                        "description": "cannot delete your own account",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "instance admin required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "cannot delete the last super admin",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/instance/users/{id}/disable": {
+            "post": {
+                "description": "Disables an account and revokes every session (instance admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "instance"
+                ],
+                "summary": "Disable an account",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "disabled",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.SuccessResult"
+                        }
+                    },
+                    "400": {
+                        "description": "cannot disable your own account",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "instance admin required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/instance/users/{id}/enable": {
+            "post": {
+                "description": "Clears the account-disable timestamp (instance admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "instance"
+                ],
+                "summary": "Re-enable an account",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "user ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "enabled",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.SuccessResult"
+                        }
+                    },
+                    "400": {
+                        "description": "user id required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "instance admin required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/invitations": {
             "get": {
                 "description": "Returns invitations sent by the authenticated user",
@@ -9875,6 +10129,12 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Membership status: active, suspended, all",
+                        "name": "status",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -10792,6 +11052,35 @@ const docTemplate = `{
                 }
             }
         },
+        "/service-accounts/roles": {
+            "get": {
+                "description": "Returns the fixed-role catalog and org roles a service account token may be assigned",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service-accounts"
+                ],
+                "summary": "List assignable roles",
+                "responses": {
+                    "200": {
+                        "description": "assignable roles",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.FixedRoleCatalogResult"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/service-accounts/{id}": {
             "delete": {
                 "description": "Removes a service account and its tokens",
@@ -10841,11 +11130,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            }
-        },
-        "/service-accounts/{id}/rotate": {
-            "post": {
-                "description": "Revokes the existing token and issues a new one. Returns the full key once",
+            },
+            "patch": {
+                "description": "Renames a service account and/or toggles it enabled. Omitted fields are left unchanged",
                 "consumes": [
                     "application/json"
                 ],
@@ -10855,7 +11142,7 @@ const docTemplate = `{
                 "tags": [
                     "service-accounts"
                 ],
-                "summary": "Rotate service account token",
+                "summary": "Update service account",
                 "parameters": [
                     {
                         "type": "string",
@@ -10872,24 +11159,30 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "new token definition",
+                        "description": "fields to update",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/openapi.RotateServiceAccountTokenRequest"
+                            "$ref": "#/definitions/openapi.UpdateServiceAccountRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "rotated token with full key",
+                    "200": {
+                        "description": "updated service account",
                         "schema": {
-                            "$ref": "#/definitions/openapi.ServiceAccountTokenRotated"
+                            "$ref": "#/definitions/openapi.ServiceAccount"
                         }
                     },
                     "400": {
-                        "description": "invalid input / not found",
+                        "description": "invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
                         "schema": {
                             "$ref": "#/definitions/openapi.ErrorResponse"
                         }
@@ -11014,7 +11307,7 @@ const docTemplate = `{
         },
         "/service-accounts/{id}/tokens/{token}": {
             "delete": {
-                "description": "Revokes a single token by ID",
+                "description": "Revokes a token by ID (soft, auditable). With purge=true the token row is deleted.",
                 "consumes": [
                     "application/json"
                 ],
@@ -11024,7 +11317,7 @@ const docTemplate = `{
                 "tags": [
                     "service-accounts"
                 ],
-                "summary": "Revoke service account token",
+                "summary": "Revoke or delete service account token",
                 "parameters": [
                     {
                         "type": "string",
@@ -11046,6 +11339,12 @@ const docTemplate = `{
                         "name": "token",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Delete the token row instead of marking it revoked",
+                        "name": "purge",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -11057,6 +11356,144 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Replaces a token's basic role and fixed roles. The token's key is unchanged",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service-accounts"
+                ],
+                "summary": "Update service account token roles",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "service account ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "roles to assign",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/openapi.UpdateServiceAccountTokenRolesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "updated token",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ServiceAccountToken"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid role",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "internal error",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/service-accounts/{id}/tokens/{token}/rotate": {
+            "post": {
+                "description": "Revokes the existing token and issues a new one. Returns the full key once",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service-accounts"
+                ],
+                "summary": "Rotate service account token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "service account ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token ID",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "new token definition",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/openapi.RotateServiceAccountTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "rotated token with full key",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ServiceAccountTokenRotated"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid input / not found",
                         "schema": {
                             "$ref": "#/definitions/openapi.ErrorResponse"
                         }
@@ -12783,46 +13220,17 @@ const docTemplate = `{
                 }
             }
         },
-        "openapi.AdminUser": {
+        "openapi.AdminUserSessionListResult": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "integer"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "email_verified": {
-                    "type": "boolean"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "mfa_enabled": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "integer"
-                }
-            }
-        },
-        "openapi.AdminUserListResult": {
-            "type": "object",
-            "properties": {
-                "total": {
-                    "type": "integer"
-                },
-                "users": {
+                "sessions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/openapi.AdminUser"
+                        "$ref": "#/definitions/openapi.SessionInfo"
                     }
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },
@@ -13719,7 +14127,10 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
-                "org_id": {
+                "notes": {
+                    "type": "string"
+                },
+                "organizationId": {
                     "type": "string"
                 },
                 "role": {
@@ -13755,36 +14166,22 @@ const docTemplate = `{
         "openapi.CreateServiceAccountTokenRequest": {
             "type": "object",
             "properties": {
+                "basic_role": {
+                    "type": "string"
+                },
                 "expires_at": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
-                "scopes": {
+                "roles": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/openapi.FixedRoleGrant"
                     }
                 },
                 "service_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "openapi.CreateUserRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "role": {
                     "type": "string"
                 }
             }
@@ -14386,6 +14783,54 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "trace_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "openapi.FixedRoleCatalogResult": {
+            "type": "object",
+            "properties": {
+                "org_roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/openapi.FixedRoleInfo"
+                    }
+                },
+                "scopes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "openapi.FixedRoleGrant": {
+            "type": "object",
+            "properties": {
+                "role": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                }
+            }
+        },
+        "openapi.FixedRoleInfo": {
+            "type": "object",
+            "properties": {
+                "access": {
+                    "type": "string"
+                },
+                "group": {
+                    "type": "string"
+                },
+                "id": {
                     "type": "string"
                 }
             }
@@ -15220,6 +15665,90 @@ const docTemplate = `{
                 }
             }
         },
+        "openapi.OrgUser": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "disabled": {
+                    "type": "boolean"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "email_verified": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "joined_at": {
+                    "type": "integer"
+                },
+                "last_seen_at": {
+                    "type": "integer"
+                },
+                "member_id": {
+                    "type": "string"
+                },
+                "mfa_enabled": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "openapi.OrgUserListResult": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                },
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/openapi.OrgUser"
+                    }
+                }
+            }
+        },
+        "openapi.OrgUserStatsResult": {
+            "type": "object",
+            "properties": {
+                "by_role": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "pending_invites": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "openapi.Organization": {
             "type": "object",
             "properties": {
@@ -15280,6 +15809,9 @@ const docTemplate = `{
         "openapi.OrganizationMember": {
             "type": "object",
             "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -15287,6 +15819,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "joined_at": {
+                    "type": "integer"
+                },
+                "last_seen": {
                     "type": "integer"
                 },
                 "organization_id": {
@@ -15300,6 +15835,9 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                },
+                "suspended_at": {
+                    "type": "integer"
                 },
                 "user_email": {
                     "type": "string"
@@ -15599,16 +16137,19 @@ const docTemplate = `{
         "openapi.RotateServiceAccountTokenRequest": {
             "type": "object",
             "properties": {
+                "basic_role": {
+                    "type": "string"
+                },
                 "expires_at": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
-                "scopes": {
+                "roles": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/openapi.FixedRoleGrant"
                     }
                 }
             }
@@ -15638,11 +16179,32 @@ const docTemplate = `{
         "openapi.ServiceAccount": {
             "type": "object",
             "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "integer"
                 },
+                "disabled_at": {
+                    "type": "integer"
+                },
+                "disabled_by": {
+                    "type": "string"
+                },
+                "disabled_by_name": {
+                    "type": "string"
+                },
+                "disabled_reason": {
+                    "type": "string"
+                },
                 "enabled": {
                     "type": "boolean"
+                },
+                "enabled_by": {
+                    "type": "string"
+                },
+                "enabled_by_name": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
@@ -15652,6 +16214,9 @@ const docTemplate = `{
                 },
                 "org_id": {
                     "type": "string"
+                },
+                "token_count": {
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "integer"
@@ -15672,6 +16237,9 @@ const docTemplate = `{
         "openapi.ServiceAccountToken": {
             "type": "object",
             "properties": {
+                "basic_role": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "integer"
                 },
@@ -15684,11 +16252,20 @@ const docTemplate = `{
                 "key_prefix": {
                     "type": "string"
                 },
+                "last_used_at": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
                 },
                 "revoked_at": {
                     "type": "integer"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/openapi.FixedRoleGrant"
+                    }
                 },
                 "scopes": {
                     "type": "array",
@@ -15753,6 +16330,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user_agent": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }
@@ -16618,6 +17198,34 @@ const docTemplate = `{
                 }
             }
         },
+        "openapi.UpdateServiceAccountRequest": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "openapi.UpdateServiceAccountTokenRolesRequest": {
+            "type": "object",
+            "properties": {
+                "basic_role": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/openapi.FixedRoleGrant"
+                    }
+                }
+            }
+        },
         "openapi.UpdateSettingsRequest": {
             "type": "object",
             "properties": {
@@ -16700,26 +17308,6 @@ const docTemplate = `{
                 },
                 "versionsFound": {
                     "type": "integer"
-                }
-            }
-        },
-        "openapi.UpdateUserRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "email_verified": {
-                    "type": "boolean"
-                },
-                "mfa_enabled": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "role": {
-                    "type": "string"
                 }
             }
         },

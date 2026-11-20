@@ -19,7 +19,7 @@ import (
 
 // NotificationData contains data for notification email templates.
 type NotificationData struct {
-	UserName  string
+	UserName      string
 	DeviceID      string
 	DeviceName    string
 	EventType     string
@@ -89,13 +89,13 @@ type Data struct {
 // LoginNotificationData contains data for new login notification emails.
 // 10: Added for login notification feature.
 type LoginNotificationData struct {
-	UserName string
-	IPAddress    string
-	UserAgent    string
-	Location     string
-	Device       string
-	Timestamp    string
-	BaseURL      string
+	UserName  string
+	IPAddress string
+	UserAgent string
+	Location  string
+	Device    string
+	Timestamp string
+	BaseURL   string
 }
 
 // SendVerificationEmail sends a welcome email with email verification link.

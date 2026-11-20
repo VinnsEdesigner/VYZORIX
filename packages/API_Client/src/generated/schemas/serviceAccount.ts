@@ -7,10 +7,18 @@
  */
 
 export interface ServiceAccount {
+  avatar_url?: string;
   created_at?: number;
+  disabled_at?: number;
+  disabled_by?: string;
+  disabled_by_name?: string;
+  disabled_reason?: string;
   enabled?: boolean;
+  enabled_by?: string;
+  enabled_by_name?: string;
   id?: string;
   name?: string;
   org_id?: string;
+  token_count?: number;
   updated_at?: number;
 }

@@ -20,15 +20,20 @@ const getStyles = (theme: VyzorixTheme) => ({
     background: theme.colors.background.secondary,
     border: `1px solid ${theme.colors.border.weak}`,
     color: theme.colors.text.secondary,
+
+    minWidth: 0,
+    overflowWrap: 'anywhere',
   }),
-  body: css({ flex: 1 }),
+
+  body: css({ flex: 1, minWidth: 0, overflowWrap: 'anywhere', wordBreak: 'break-word' }),
+  icon: css({ flexShrink: 0 }),
 });
 
 export function InfoBox({ title, children, icon = 'info', className }: InfoBoxProps) {
   const styles = useStyles2(getStyles);
   return (
     <div className={cx(styles.box, className)}>
-      <Icon name={icon} size="md" />
+      <Icon name={icon} size="md" className={styles.icon} />
       <div className={styles.body}>
         <Text variant="base" weight="medium" element="div">
           {title}

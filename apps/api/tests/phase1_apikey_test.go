@@ -352,13 +352,13 @@ func TestPhase1APIKey(t *testing.T) {
 		}
 	}
 	state := &TestState{
-		Email:      email,
-		Password:   testPassword,
-		Name:       name,
-		OrgID:      orgID,
-		UserID: opID,
-		APIKeys:    apiKeys,
-		CSRF:       csrf,
+		Email:    email,
+		Password: testPassword,
+		Name:     name,
+		OrgID:    orgID,
+		UserID:   opID,
+		APIKeys:  apiKeys,
+		CSRF:     csrf,
 	}
 	saveState(state)
 

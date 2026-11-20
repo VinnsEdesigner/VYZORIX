@@ -4,10 +4,12 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/deploy"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/deploystate"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/deployconfig"
@@ -75,6 +77,16 @@ func (h *Handler) Deploy(c *gin.Context) {
 		return
 	}
 
+	// Fail closed: only an explicitly true value previews. `c.Query(...) == "true"` read
+	// "?dry_run=1" as false, so a caller asking for a preview persisted a real config and
+	// pushed it to the device. An unrecognised value is refused rather than guessed.
+	dryRun, ok := boolQuery(c, "dry_run")
+	if !ok {
+		respondBadQuery(c, "dry_run")
+
+		return
+	}
+
 	result, err := h.service.Deploy(c.Request.Context(), deploy.DeployRequest{
 		Caller: caller,
 		OrgID:  orgID,
@@ -87,12 +99,28 @@ func (h *Handler) Deploy(c *gin.Context) {
 		// requires the config to name the human who minted the credential.
 		MemberID: memberID,
 		Manifest: body,
-		DryRun:   c.Query("dry_run") == "true",
+		DryRun:   dryRun,
 	})
 	if err != nil {
+		// The failure is audited with the device the manifest named, when it named one.
+		// A refused deploy is exactly what an audit trail is for: someone tried to change
+		// what a device runs and was told no.
+		failed := h.auditEvent(c, orgID, deviceIDFromBody(body), audit.ActionDeployFailed, audit.ResultFailure, err.Error())
+		h.recordAudit(c, failed)
 		h.respondDeployError(c, err)
 
 		return
+	}
+
+	// A real deploy is audited by the service, which every path goes through (the HTTP
+	// handler and a provisioned sync alike). Only a dry run is recorded here: it stores
+	// nothing, so the service never sees it, and it must be distinguishable from an
+	// applied change.
+	if result.DryRun {
+		dryRun := h.auditEvent(c, orgID, result.DeviceID, audit.ActionDeploySucceeded,
+			audit.ResultSuccess, "dry run: compiled and signed, nothing stored")
+		dryRun.Version = result.Version
+		h.recordAudit(c, dryRun)
 	}
 
 	// A device that is connected right now is told immediately; one that is
@@ -113,6 +141,35 @@ func (h *Handler) Deploy(c *gin.Context) {
 		DryRun:       result.DryRun,
 		Document:     result.Document,
 	})
+}
+
+// deviceIDFromBody reads the target device id from a manifest body, for the audit row of
+// a deploy that failed before the service could return one. A body that does not parse
+// yields an empty id, which is honest: the row records the attempt, not a device it could
+// not name.
+func deviceIDFromBody(body []byte) string {
+	id, err := deploy.PeekDeviceID(body)
+	if err != nil {
+		return ""
+	}
+
+	return id
+}
+
+// boolQuery parses a boolean query parameter. Absent is false; a present value must be a
+// recognisable boolean, so a typo cannot silently mean the opposite of what was asked.
+func boolQuery(c *gin.Context, name string) (value, ok bool) {
+	raw := c.Query(name)
+	if raw == "" {
+		return false, true
+	}
+
+	parsed, err := strconv.ParseBool(raw)
+	if err != nil {
+		return false, false
+	}
+
+	return parsed, true
 }
 
 // pushConfig notifies a connected device of a new deploy. It is best-effort: the

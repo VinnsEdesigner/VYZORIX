@@ -46,6 +46,8 @@ import type {
 
 import { customAxios } from '../../../../../packages/API_Client/src/generated/rest-bridge';
 import organizationScopedQueryKey from '.././query-key-mutator';
+import { getGetAuthMeProfileSummaryQueryKey, getGetAuthMeQueryKey } from '../auth/auth-session';
+import { getGetAuthMeNotificationsHistoryQueryKey } from '../notifications/notifications';
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -126,6 +128,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     queryClient.invalidateQueries({ queryKey: getGetMePreferencesQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetMeSettingsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetMeThresholdsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeProfileSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeNotificationsHistoryQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -321,6 +326,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     queryClient.invalidateQueries({ queryKey: getGetMePreferencesQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetMeSettingsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetMeThresholdsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeProfileSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeNotificationsHistoryQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -401,6 +409,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     queryClient.invalidateQueries({ queryKey: getGetMePreferencesQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetMeSettingsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetMeThresholdsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeProfileSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeNotificationsHistoryQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -487,6 +498,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     queryClient.invalidateQueries({ queryKey: getGetMePreferencesQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetMeSettingsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetMeThresholdsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeProfileSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeNotificationsHistoryQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -682,6 +696,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     queryClient.invalidateQueries({ queryKey: getGetMePreferencesQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetMeSettingsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetMeThresholdsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeProfileSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeNotificationsHistoryQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -877,6 +894,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     queryClient.invalidateQueries({ queryKey: getGetMePreferencesQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetMeSettingsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetMeThresholdsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeProfileSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeNotificationsHistoryQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -1072,6 +1092,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     queryClient.invalidateQueries({ queryKey: getGetMePreferencesQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetMeSettingsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetMeThresholdsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeProfileSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeNotificationsHistoryQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };

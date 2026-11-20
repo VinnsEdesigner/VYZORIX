@@ -119,7 +119,6 @@ func signDeviceRequest(t *testing.T, key *ecdsa.PrivateKey, method, path, device
 func runRequireHMAC(t *testing.T, s *Server, deviceID string, req *http.Request) bool {
 	t.Helper()
 
-	gin.SetMode(gin.TestMode)
 	reached := false
 
 	engine := gin.New()

@@ -4,12 +4,21 @@ import { useCallback, useEffect } from 'react';
 import { Icon } from '../Icon';
 import { useStyles2 } from '../../theme/ThemeContext';
 import { isNewGroup } from './filter';
-import { MENU_MAX_HEIGHT, getComboboxStyles } from './styles';
+import { MENU_MAX_HEIGHT, SHEET_ROW_GAP, SHEET_ROW_HEIGHT, getComboboxStyles } from './styles';
 import { itemToString, type ComboboxOption } from './types';
 
 const OVERSCAN = 4;
-const ROW_HEIGHT = 36;
-const ROW_HEIGHT_WITH_DESCRIPTION = 52;
+
+export const ROW_METRICS = {
+  popover: { row: 36, withDescription: 52, gap: 0 },
+  sheet: {
+    row: SHEET_ROW_HEIGHT,
+    withDescription: SHEET_ROW_HEIGHT + 16,
+    gap: SHEET_ROW_GAP,
+  },
+} as const;
+
+export type ComboboxDensity = keyof typeof ROW_METRICS;
 
 export interface ComboboxListProps<T extends string | number> {
   options: ComboboxOption<T>[];
@@ -21,6 +30,8 @@ export interface ComboboxListProps<T extends string | number> {
   showFocusRing: boolean;
   scrollRef: React.RefObject<HTMLDivElement | null>;
   getItemProps: (options: { item: ComboboxOption<T>; index: number }) => Record<string, unknown>;
+
+  density?: ComboboxDensity;
 }
 
 export function ComboboxList<T extends string | number>({
@@ -33,18 +44,21 @@ export function ComboboxList<T extends string | number>({
   showFocusRing,
   scrollRef,
   getItemProps,
+  density = 'popover',
 }: ComboboxListProps<T>) {
-  const styles = useStyles2(getComboboxStyles);
+  const styles = useStyles2(getComboboxStyles, density);
+  const metrics = ROW_METRICS[density];
 
   const estimateSize = useCallback(
     (index: number) => {
       const option = options[index];
-      if (!option) return ROW_HEIGHT;
+      if (!option) return metrics.row;
       const grouped = isNewGroup(option, options[index - 1]);
-      const base = option.description ? ROW_HEIGHT_WITH_DESCRIPTION : ROW_HEIGHT;
-      return base + (grouped && option.group ? ROW_HEIGHT : 0);
+      const base = option.description ? metrics.withDescription : metrics.row;
+
+      return base + metrics.gap + (grouped && option.group ? metrics.row : 0);
     },
-    [options],
+    [options, metrics],
   );
 
   const virtualizer = useVirtualizer({
@@ -55,7 +69,7 @@ export function ComboboxList<T extends string | number>({
 
     initialRect: {
       width: 0,
-      height: Math.min(options.length * ROW_HEIGHT, MENU_MAX_HEIGHT),
+      height: Math.min(options.length * metrics.row, MENU_MAX_HEIGHT),
     },
   });
 

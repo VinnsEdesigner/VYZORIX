@@ -50,9 +50,9 @@ func TestGetPreferences_NoData_ReturnsDefaults(t *testing.T) {
 
 // fakeOrgTheme is a stub OrgThemeSource for the cascade tests.
 type fakeOrgTheme struct {
-	theme    string
-	defaults map[string]string
 	err      error
+	defaults map[string]string
+	theme    string
 }
 
 func (f fakeOrgTheme) OrgTheme(_ context.Context, _ string) (string, error) {

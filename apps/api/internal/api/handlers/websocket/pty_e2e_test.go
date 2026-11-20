@@ -101,9 +101,9 @@ func (d *fakeDevice) run(t *testing.T) {
 
 type e2eRig struct {
 	userConn *websocket.Conn
-	device       *fakeDevice
-	relay        *hub.PTYRelay
-	hub          *hub.Hub
+	device   *fakeDevice
+	relay    *hub.PTYRelay
+	hub      *hub.Hub
 }
 
 func newE2ERig(t *testing.T, recordingDir string) *e2eRig {

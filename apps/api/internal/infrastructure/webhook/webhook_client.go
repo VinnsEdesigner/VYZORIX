@@ -82,11 +82,11 @@ const (
 
 // Payload represents a webhook payload.
 type Payload struct {
-	Timestamp  time.Time              `json:"timestamp"`
-	Data       map[string]interface{} `json:"data,omitempty"`
-	Type       EventType              `json:"type"`
-	DeviceID   string                 `json:"deviceId,omitempty"`
-	UserID string                 `json:"userId,omitempty"`
+	Timestamp time.Time              `json:"timestamp"`
+	Data      map[string]interface{} `json:"data,omitempty"`
+	Type      EventType              `json:"type"`
+	DeviceID  string                 `json:"deviceId,omitempty"`
+	UserID    string                 `json:"userId,omitempty"`
 }
 
 // TestResult represents the result of a webhook test.

@@ -13,6 +13,7 @@ import (
 	confirmationhandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/confirmation"
 	devicehandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/device"
 	organizationhandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/organization"
+	provisioninghandler "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/provisioning"
 	updateshandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/updates"
 	websockethandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/websocket"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
@@ -23,6 +24,7 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/device"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/notification"
 	orgapplication "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/organization"
+	provisioningapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/provisioning"
 	updatesapplication "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/updates"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
 	domaincommand "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
@@ -91,26 +93,45 @@ type HandlerSet struct {
 	Auth         *authhandlers.AllHandlers
 	// DEPRECATED: DeviceRegister - /v1/device/register endpoint removed.
 	// DeviceRegister     *devicehandlers.RegisterHandler.
-	DeviceStatus          *devicehandlers.StatusHandler
-	DeviceUpdater         *devicehandlers.UpdaterHandler
-	DeviceList            *devicehandlers.ListHandler
-	Devices               *devicehandlers.DevicesHandler
-	DeviceSettings        *devicehandlers.SettingsHandler
-	DeviceService         *device.Service
-	Command               *cmdhandlers.ExecuteHandler
-	Confirmation          *confirmationhandlers.Handler
-	Stream                *websockethandlers.StreamHandler
-	PTYRelay              *hub.PTYRelay
-	UserTerminal          *websockethandlers.UserTerminalHandler
-	RecordingHandler      *websockethandlers.RecordingHandler
-	TelemetryHistory      *handlers.TelemetryHistoryHandler
-	ConnectionStatus      *handlers.ConnectionStatusHandler
-	DeviceFrames          *websockethandlers.DeviceFrameHandler
-	AdminClients          *admin.ClientsHandler
-	Updates               *updateshandlers.UpdatesHandler
-	UpdatesService        *updatesapplication.Service
-	Organization          *organizationhandlers.OrganizationHandler
-	Invitation            *organizationhandlers.InvitationHandler
+	DeviceStatus     *devicehandlers.StatusHandler
+	DeviceUpdater    *devicehandlers.UpdaterHandler
+	DeviceList       *devicehandlers.ListHandler
+	Devices          *devicehandlers.DevicesHandler
+	DeviceSettings   *devicehandlers.SettingsHandler
+	DeviceService    *device.Service
+	Command          *cmdhandlers.ExecuteHandler
+	Confirmation     *confirmationhandlers.Handler
+	Stream           *websockethandlers.StreamHandler
+	PTYRelay         *hub.PTYRelay
+	UserTerminal     *websockethandlers.UserTerminalHandler
+	RecordingHandler *websockethandlers.RecordingHandler
+	TelemetryHistory *handlers.TelemetryHistoryHandler
+	ConnectionStatus *handlers.ConnectionStatusHandler
+	DeviceFrames     *websockethandlers.DeviceFrameHandler
+	AdminClients     *admin.ClientsHandler
+	Updates          *updateshandlers.UpdatesHandler
+	UpdatesService   *updatesapplication.Service
+	Organization     *organizationhandlers.OrganizationHandler
+	Invitation       *organizationhandlers.InvitationHandler
+	// ProvisioningConnection is the GitOps provisioning surface. It is
+	// nil when the feature is not wired, so its routes are simply absent.
+	ProvisioningConnection *provisioninghandler.ConnectionHandler
+	ProvisioningRepository *provisioninghandler.RepositoryHandler
+	ProvisioningSync       *provisioninghandler.SyncHandler
+	// ProvisioningWebhook receives provider pushes. It is the only unauthenticated
+	// provisioning route; the HMAC signature is its authentication.
+	ProvisioningWebhook *provisioninghandler.WebhookHandler
+	// ProvisioningPushBack edits a manifest and commits it back to its repository.
+	ProvisioningPushBack *provisioninghandler.PushBackHandler
+	// ProvisioningSyncService is the engine behind ProvisioningSync. It is
+	// exported so the server can hand it the deploy service, which is built after
+	// this handler set.
+	ProvisioningSyncService *provisioningapp.SyncService
+	// ProvisioningScheduler runs interval syncs. Nil when provisioning is not wired.
+	ProvisioningScheduler *provisioningapp.Scheduler
+	// ProvisioningAuditor records provisioning events. Exported so the server can
+	// attach the escalation that needs the notification dispatcher, built later.
+	ProvisioningAuditor   *provisioningapp.Auditor
 	Member                *organizationhandlers.MemberHandler
 	Transfer              *devicehandlers.TransferHandler
 	OrgService            *orgapplication.OrganizationService
@@ -286,7 +307,83 @@ func WireHandlers(deps HandlerDependencies) *HandlerSet {
 	// Set AppCheck verifier for device attestation.
 	hs.AppCheckVerifier = deps.AppCheckVerifier
 
+	wireProvisioningHandlers(hs, deps)
+
 	return hs
+}
+
+// wireProvisioningHandlers builds the GitOps provisioning surface.
+//
+// It is separate from WireHandlers so that function stays within the length budget
+// the linter enforces; this wiring is one cohesive unit and belongs together.
+func wireProvisioningHandlers(hs *HandlerSet, deps HandlerDependencies) {
+	if deps.DB == nil {
+		return
+	}
+
+	provStore := storage.NewProvisioningStorage(deps.DB.DB())
+	provStore.SetSecretCipher(deps.Config.SessionSecret)
+	provSvc := provisioningapp.NewConnectionService(provStore, provisioningapp.NewHTTPChecker(), deps.Log)
+	provRepoService := provisioningapp.NewRepositoryService(provStore, provStore, provisioningapp.NewHTTPRemoteVerifier(), deps.Log)
+	provSyncService := provisioningapp.NewSyncService(
+		provisioningapp.NewGitFetcher(), provStore, provStore, provStore, nil, provStore, deps.Log,
+	)
+
+	// Org files (orgs/<org>/alerts.toml and the rest) are applied by a per-kind applier.
+	// Only the kinds with an applier are writable; a file for a kind with none is reported
+	// as a failure for that file rather than silently ignored.
+	provSyncService.SetOrgApplier(
+		provisioningapp.KindAlerts,
+		provisioningapp.NewAlertApplier(storage.NewAlertRuleRepository(deps.DB.DB())),
+	)
+
+	// An org file's directory names its organisation, so the name is checked against the
+	// repository's own org. The adapter lives in the api package, which is the join point
+	// between the sync engine and the organisation service.
+	if deps.OrgService != nil {
+		provSyncService.SetOrgNameLookup(newOrgNameAdapter(deps.OrgService))
+	}
+
+	hs.ProvisioningRepository = provisioninghandler.NewRepositoryHandler(provRepoService, deps.Presenter)
+	hs.ProvisioningRepository.SetStatsSource(provStore)
+	hs.ProvisioningConnection = provisioninghandler.NewConnectionHandler(provSvc, deps.Presenter)
+	hs.ProvisioningSync = provisioninghandler.NewSyncHandler(provRepoService, provSyncService, provStore, provStore, deps.Presenter)
+	hs.ProvisioningSync.SetCounters(provStore)
+	hs.ProvisioningSync.SetEventRepository(provStore)
+
+	// One Auditor shared by every provisioning service, so a failed audit write is
+	// escalated the same way wherever it happens. The escalator needs the notification
+	// dispatcher, which the server builds after this set, so it is attached through the
+	// server (see Server.attachProvisioningEscalator).
+	provAuditor := provisioningapp.NewAuditor(provStore, nil, deps.Log)
+	provSyncService.SetAuditor(provAuditor)
+	provSvc.SetAuditor(provAuditor)
+	provRepoService.SetAuditor(provAuditor)
+	hs.ProvisioningAuditor = provAuditor
+
+	// The deploy service is built by the server after this set, so the sync engine is
+	// handed it through the server (see Server.wireDeployHandler).
+	hs.ProvisioningSyncService = provSyncService
+	hs.ProvisioningScheduler = provisioningapp.NewScheduler(provStore, provSyncService, deps.Log, 0)
+
+	// The webhook receiver shares the sync engine, so a push and an interval run go
+	// through exactly one code path. It is constructed here rather than in the server
+	// because it needs only the store, the verifier and the sync engine.
+	hs.ProvisioningWebhook = provisioninghandler.NewWebhookHandler(
+		provisioningapp.NewWebhookReceiver(provStore, provStore, provisioningapp.NewSignatureVerifier(), provSyncService),
+		deps.Presenter,
+	)
+
+	// Push-back edits a manifest and commits it back. It shares the auditor, so an edit is
+	// attributed the same way a sync is.
+	hs.ProvisioningPushBack = provisioninghandler.NewPushBackHandler(
+		provisioningapp.NewPushBackService(
+			provisioningapp.NewGitPusher(), provStore, provisioningapp.NewHTTPPullRequester(), provAuditor, deps.Log,
+		),
+		provRepoService,
+		provStore,
+		deps.Presenter,
+	)
 }
 
 // wireDeviceFrameRouting builds the PTY relay and the device frame handler, and

@@ -41,6 +41,17 @@ func (m *OrganizationMembership) Middleware() gin.HandlerFunc {
 			return
 		}
 
+		// A service account has no user and no membership row; its credential is the
+		// membership, and auth already pinned the org to the owning account.
+		if c.GetString("auth_type") == "service_account" {
+			if acctOrg := c.GetString("service_account_org_id"); acctOrg != "" && acctOrg != orgID {
+				responses.RespondStructuredAbort(c, http.StatusForbidden, "service account does not belong to this organization")
+				return
+			}
+			c.Next()
+			return
+		}
+
 		// Get user from context (set by auth middleware).
 		user := GetUserFromContext(c)
 		if user == nil {

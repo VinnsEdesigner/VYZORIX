@@ -1,8 +1,20 @@
 import { css } from '@emotion/css';
-import { Combobox, useStyles2, type ComboboxOption, type VyzorixTheme } from '@vyzorix/ui';
+import {
+  Button,
+  Combobox,
+  EmptyState,
+  LoadingPlaceholder,
+  useStyles2,
+  type ComboboxOption,
+  type VyzorixTheme,
+} from '@vyzorix/ui';
 import { usePreferencesStore, type IdleTimeoutMinutes } from '@/stores/preferences-store';
 import { usePreferencesSync } from '@/hooks/preferences/use-preferences-sync';
+import { useRevokeAllDevices, useRevokeSession, useSessions } from '@/hooks/session';
+import { describeUserAgent } from '@/lib/session/describe-user-agent';
+import { notifyError, notifySuccess } from '@/stores/toast-store';
 import { useVyzorTranslation } from '@/hooks/i18n';
+import { formatDateTime } from './profile-page';
 
 const IDLE_TIMEOUT_KEYS: { value: string; labelKey: string }[] = [
   { value: '15', labelKey: 'security.after15m' },
@@ -59,6 +71,8 @@ export function SecurityTab() {
 
   return (
     <div className={styles.tab}>
+      <SessionList />
+
       <Group title={t('security.sessions')}>
         <SettingRow
           label={t('security.signOutAfter')}
@@ -95,6 +109,128 @@ export function SecurityTab() {
   );
 }
 
+function SessionList() {
+  const styles = useStyles2(getStyles);
+  const table = useStyles2(getSessionTableStyles);
+  const sessions = useSessions();
+  const revokeOne = useRevokeSession();
+  const revokeAll = useRevokeAllDevices();
+
+  const rows = sessions.data?.sessions ?? [];
+
+  return (
+    <Group title="Active sessions">
+      {sessions.isLoading ? <LoadingPlaceholder text="Loading sessions…" /> : null}
+
+      {!sessions.isLoading && rows.length === 0 ? (
+        <EmptyState icon="shield" message="No active sessions." />
+      ) : null}
+
+      {rows.length > 0 ? (
+        <>
+          <div className={table.wrapper}>
+            <table className={table.table}>
+              <thead>
+                <tr>
+                  <th className={table.headCell}>Signed in</th>
+                  <th className={table.headCell}>Expires</th>
+                  <th className={table.headCell}>IP address</th>
+                  <th className={table.headCell}>Device</th>
+                  <th className={table.headCell} />
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((session) => (
+                  <tr key={session.id}>
+                    <td className={table.cell}>
+                      {formatDateTime(session.created_at)}
+                      {session.is_current ? <span className={table.subLine}>this device</span> : null}
+                    </td>
+                    <td className={table.cell}>{formatDateTime(session.expires_at)}</td>
+                    <td className={table.cell}>{session.ip_address || '—'}</td>
+                    <td className={table.cell}>
+                      <span className={table.ellipsis}>{describeUserAgent(session.user_agent)}</span>
+                    </td>
+                    <td className={table.cell}>
+                      {session.is_current ? null : (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          loading={revokeOne.isPending}
+                          onClick={() =>
+                            revokeOne.mutate(
+                              { id: session.id ?? '' },
+                              {
+                                onSuccess: () => {
+                                  notifySuccess('Session signed out');
+                                  void sessions.refetch();
+                                },
+                                onError: () => notifyError('Could not sign out session'),
+                              },
+                            )
+                          }
+                        >
+                          Sign out
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className={styles.sessionFooter}>
+            <Button
+              variant="secondary"
+              loading={revokeAll.isPending}
+              onClick={() =>
+                revokeAll.mutate(undefined, {
+                  onSuccess: () => {
+                    notifySuccess('Signed out everywhere');
+                    void sessions.refetch();
+                  },
+                  onError: () => notifyError('Could not sign out other devices'),
+                })
+              }
+            >
+              Sign out other devices
+            </Button>
+          </div>
+        </>
+      ) : null}
+    </Group>
+  );
+}
+
+const getSessionTableStyles = (theme: VyzorixTheme) => ({
+  wrapper: css({ width: '100%', overflowX: 'auto' }),
+  table: css({
+    width: '100%',
+    borderCollapse: 'separate',
+    'tbody tr:nth-of-type(odd)': {
+      background: theme.colors.emphasize(theme.colors.background.primary, 0.02),
+    },
+  }),
+  headCell: css({
+    padding: `${theme.spacing(0.5)} ${theme.spacing(1)}`,
+    textAlign: 'left',
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.fontWeightMedium,
+    fontSize: theme.typography.sm.fontSize,
+    whiteSpace: 'nowrap',
+  }),
+  cell: css({
+    padding: `${theme.spacing(0.5)} ${theme.spacing(1)}`,
+    fontSize: theme.typography.sm.fontSize,
+    color: theme.colors.text.primary,
+    verticalAlign: 'middle',
+    whiteSpace: 'nowrap',
+  }),
+  ellipsis: css({ display: 'block', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis' }),
+  subLine: css({ display: 'block', color: theme.colors.text.secondary, fontSize: theme.typography.sm.fontSize }),
+});
+
 const getStyles = (theme: VyzorixTheme) => ({
   tab: css({ display: 'flex', flexDirection: 'column', gap: theme.spacing(3) }),
   group: css({
@@ -123,4 +259,5 @@ const getStyles = (theme: VyzorixTheme) => ({
   rowDescription: css({ color: theme.colors.text.secondary, fontSize: theme.typography.sm.fontSize }),
   rowControl: css({ minWidth: 180 }),
   hint: css({ margin: 0, color: theme.colors.text.secondary, fontSize: theme.typography.sm.fontSize }),
+  sessionFooter: css({ marginTop: theme.spacing(1) }),
 });

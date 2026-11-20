@@ -176,7 +176,7 @@ func (s *ClientSettingsService) ResetSettings(ctx context.Context, userID string
 type SettingsResponse struct {
 	Notifications *user.NotificationSettings `json:"notifications"`
 	Client        *user.ClientSettings       `json:"client,omitempty"`
-	Preferences   map[string]any                 `json:"preferences,omitempty"`
+	Preferences   map[string]any             `json:"preferences,omitempty"`
 }
 
 var defaultPreferences = map[string]any{

@@ -131,9 +131,9 @@ func (h *NotificationHistoryHandler) MarkRead(c *gin.Context) {
 	h.presenter.OK(c, openapi.MarkNotificationsReadResult{Unread: 0})
 }
 
-// clampInt parses value as an int and clamps it to [min, max]; a bad value falls
+// clampInt parses value as an int and clamps it to [low, high]; a bad value falls
 // back to fallback.
-func clampInt(value string, fallback, min, max int) int {
+func clampInt(value string, fallback, low, high int) int {
 	if value == "" {
 		return fallback
 	}
@@ -141,11 +141,12 @@ func clampInt(value string, fallback, min, max int) int {
 	if err != nil {
 		return fallback
 	}
-	if parsed < min {
-		return min
+	if parsed < low {
+		return low
 	}
-	if parsed > max {
-		return max
+	if parsed > high {
+		return high
 	}
+
 	return parsed
 }

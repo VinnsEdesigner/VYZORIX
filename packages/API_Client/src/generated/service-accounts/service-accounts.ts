@@ -8,14 +8,19 @@
 import type {
   CreateServiceAccountRequest,
   CreateServiceAccountTokenRequest,
+  DeleteServiceAccountsIdTokensTokenParams,
   DeletedResult,
+  FixedRoleCatalogResult,
   RevokedResult,
   RotateServiceAccountTokenRequest,
   ServiceAccount,
   ServiceAccountListResult,
+  ServiceAccountToken,
   ServiceAccountTokenCreated,
   ServiceAccountTokenListResult,
-  ServiceAccountTokenRotated
+  ServiceAccountTokenRotated,
+  UpdateServiceAccountRequest,
+  UpdateServiceAccountTokenRolesRequest
 } from '../vyzorixUpdateServerAPI.schemas';
 
 import { customAxios } from '.././rest-bridge';
@@ -52,6 +57,18 @@ const postServiceAccounts = (
       options);
     }
   /**
+ * Returns the fixed-role catalog and org roles a service account token may be assigned
+ * @summary List assignable roles
+ */
+const getServiceAccountsRoles = (
+
+ options?: SecondParameter<typeof customAxios<FixedRoleCatalogResult>>,) => {
+      return customAxios<FixedRoleCatalogResult>(
+      {url: `/service-accounts/roles`, method: 'GET'
+    },
+      options);
+    }
+  /**
  * Removes a service account and its tokens
  * @summary Delete service account
  */
@@ -64,17 +81,17 @@ const deleteServiceAccountsId = (
       options);
     }
   /**
- * Revokes the existing token and issues a new one. Returns the full key once
- * @summary Rotate service account token
+ * Renames a service account and/or toggles it enabled. Omitted fields are left unchanged
+ * @summary Update service account
  */
-const postServiceAccountsIdRotate = (
+const patchServiceAccountsId = (
     id: string,
-    rotateServiceAccountTokenRequest: RotateServiceAccountTokenRequest,
- options?: SecondParameter<typeof customAxios<ServiceAccountTokenRotated>>,) => {
-      return customAxios<ServiceAccountTokenRotated>(
-      {url: `/service-accounts/${id}/rotate`, method: 'POST',
+    updateServiceAccountRequest: UpdateServiceAccountRequest,
+ options?: SecondParameter<typeof customAxios<ServiceAccount>>,) => {
+      return customAxios<ServiceAccount>(
+      {url: `/service-accounts/${id}`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
-      data: rotateServiceAccountTokenRequest
+      data: updateServiceAccountRequest
     },
       options);
     }
@@ -106,23 +123,60 @@ const postServiceAccountsIdTokens = (
       options);
     }
   /**
- * Revokes a single token by ID
- * @summary Revoke service account token
+ * Revokes a token by ID (soft, auditable). With purge=true the token row is deleted.
+ * @summary Revoke or delete service account token
  */
 const deleteServiceAccountsIdTokensToken = (
     id: string,
     token: string,
+    params?: DeleteServiceAccountsIdTokensTokenParams,
  options?: SecondParameter<typeof customAxios<RevokedResult>>,) => {
       return customAxios<RevokedResult>(
-      {url: `/service-accounts/${id}/tokens/${token}`, method: 'DELETE'
+      {url: `/service-accounts/${id}/tokens/${token}`, method: 'DELETE',
+        params
     },
       options);
     }
-  return {getServiceAccounts,postServiceAccounts,deleteServiceAccountsId,postServiceAccountsIdRotate,getServiceAccountsIdTokens,postServiceAccountsIdTokens,deleteServiceAccountsIdTokensToken}};
+  /**
+ * Replaces a token's basic role and fixed roles. The token's key is unchanged
+ * @summary Update service account token roles
+ */
+const patchServiceAccountsIdTokensToken = (
+    id: string,
+    token: string,
+    updateServiceAccountTokenRolesRequest: UpdateServiceAccountTokenRolesRequest,
+ options?: SecondParameter<typeof customAxios<ServiceAccountToken>>,) => {
+      return customAxios<ServiceAccountToken>(
+      {url: `/service-accounts/${id}/tokens/${token}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: updateServiceAccountTokenRolesRequest
+    },
+      options);
+    }
+  /**
+ * Revokes the existing token and issues a new one. Returns the full key once
+ * @summary Rotate service account token
+ */
+const postServiceAccountsIdTokensTokenRotate = (
+    id: string,
+    token: string,
+    rotateServiceAccountTokenRequest: RotateServiceAccountTokenRequest,
+ options?: SecondParameter<typeof customAxios<ServiceAccountTokenRotated>>,) => {
+      return customAxios<ServiceAccountTokenRotated>(
+      {url: `/service-accounts/${id}/tokens/${token}/rotate`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: rotateServiceAccountTokenRequest
+    },
+      options);
+    }
+  return {getServiceAccounts,postServiceAccounts,getServiceAccountsRoles,deleteServiceAccountsId,patchServiceAccountsId,getServiceAccountsIdTokens,postServiceAccountsIdTokens,deleteServiceAccountsIdTokensToken,patchServiceAccountsIdTokensToken,postServiceAccountsIdTokensTokenRotate}};
 export type GetServiceAccountsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getServiceAccounts>['getServiceAccounts']>>>
 export type PostServiceAccountsResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getServiceAccounts>['postServiceAccounts']>>>
+export type GetServiceAccountsRolesResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getServiceAccounts>['getServiceAccountsRoles']>>>
 export type DeleteServiceAccountsIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getServiceAccounts>['deleteServiceAccountsId']>>>
-export type PostServiceAccountsIdRotateResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getServiceAccounts>['postServiceAccountsIdRotate']>>>
+export type PatchServiceAccountsIdResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getServiceAccounts>['patchServiceAccountsId']>>>
 export type GetServiceAccountsIdTokensResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getServiceAccounts>['getServiceAccountsIdTokens']>>>
 export type PostServiceAccountsIdTokensResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getServiceAccounts>['postServiceAccountsIdTokens']>>>
 export type DeleteServiceAccountsIdTokensTokenResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getServiceAccounts>['deleteServiceAccountsIdTokensToken']>>>
+export type PatchServiceAccountsIdTokensTokenResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getServiceAccounts>['patchServiceAccountsIdTokensToken']>>>
+export type PostServiceAccountsIdTokensTokenRotateResult = NonNullable<Awaited<ReturnType<ReturnType<typeof getServiceAccounts>['postServiceAccountsIdTokensTokenRotate']>>>

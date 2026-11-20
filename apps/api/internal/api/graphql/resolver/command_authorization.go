@@ -7,9 +7,9 @@ import (
 	cmdapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/command"
 	domaincommand "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
 	devicedomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
-	domainuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	orgdomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
+	domainuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 )
 
 // authorizeCommand enforces the same authorization the REST command path does,
@@ -60,7 +60,7 @@ func (r *Resolver) authorizeCommand(ctx context.Context, op *domainuser.User, or
 
 	// Risk gate (MFA + confirmation), shared with the REST path.
 	actor := domaincommand.ActorContext{
-		UserID:   op.ID,
+		UserID:       op.ID,
 		OrgID:        orgID,
 		IsSuperAdmin: op.IsSuperAdmin(),
 		MFAVerified:  gqlcontext.GetMFAVerified(ctx),

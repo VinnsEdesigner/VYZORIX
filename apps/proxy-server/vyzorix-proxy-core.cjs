@@ -40,6 +40,7 @@ var getSession = sessionStore.getSession;
 var sessionCookieHeader = sessionStore.sessionCookieHeader;
 var clearSessionCookieHeader = sessionStore.clearSessionCookieHeader;
 var extractCookie = sessionStore.extractCookie;
+var destroySession = sessionStore.destroySession;
 var signRequest = signing.signRequest;
 var deriveAPIKeySigningSecret = signing.deriveAPIKeySigningSecret;
 var interceptAuthResponse = authInterceptor.interceptAuthResponse;
@@ -275,8 +276,15 @@ async function handleApiRequest(method, pathname, search, reqHeaders, reqBody, c
   var durationMs = Date.now() - startTime;
   logRequest(method, fullPath, status, durationMs, { signed: signed, intercepted: intercepted });
 
-  // Handle logout: destroy session.
+  // Logout: end the server-side session, not just the cookie.
+  //
+  // Clearing the cookie alone left the record in the store with its credentials
+  // intact until the interceptor nulled them — and nothing ever removed it, so
+  // logged-out sessions accumulated in the session file forever. destroySession
+  // marks the record defunct and strips every credential, and every read path
+  // refuses a defunct record.
   if (apiStrippedPath === '/v1/auth/logout' && method === 'POST' && status >= 200 && status < 300) {
+    destroySession(cookieHeader);
     return {
       status: status,
       headers: resHeaders,

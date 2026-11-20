@@ -12,6 +12,14 @@ import (
 // ErrNotFound is returned when no secret is stored for the app and key.
 var ErrNotFound = errors.New("app secret not found")
 
+// ErrNoSecretKey is returned when a device has no secret key registered, so a value cannot
+// be wrapped to it.
+//
+// It lives in the domain because the storage layer reports it and storage must not import
+// application code. The condition is a property of the device, not a server fault, so the
+// handler answers with the device's state instead of a 500.
+var ErrNoSecretKey = errors.New("device has no secret key registered")
+
 // Record is one stored secret. Ciphertext is the value wrapped to the device's
 // key; the plaintext is never held here.
 type Record struct {

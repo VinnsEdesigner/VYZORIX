@@ -174,14 +174,14 @@ func (p *Processor) ProcessDeviceConnected(ctx context.Context, deviceID string,
 	}
 
 	evt := &event.Event{
-		ID:         generateEventID(),
-		DeviceID:   deviceID,
-		UserID: userID,
-		Type:       event.EventTypeDeviceConnected,
-		Severity:   event.SeverityInfo,
-		Timestamp:  time.Now(),
-		Data:       metadata,
-		Source:     "server",
+		ID:        generateEventID(),
+		DeviceID:  deviceID,
+		UserID:    userID,
+		Type:      event.EventTypeDeviceConnected,
+		Severity:  event.SeverityInfo,
+		Timestamp: time.Now(),
+		Data:      metadata,
+		Source:    "server",
 	}
 
 	if err := p.repo.Store(ctx, evt); err != nil {
@@ -220,7 +220,7 @@ func (p *Processor) ProcessDeviceConnected(ctx context.Context, deviceID string,
 			EventType:  notification.EventTypeDeviceOnline,
 			DeviceID:   deviceID,
 			DeviceName: getDeviceName(device),
-			UserID: userID,
+			UserID:     userID,
 			Timestamp:  evt.Timestamp,
 		}
 		if err := p.notificationSvc.SendNotification(ctx, notifData); err != nil {
@@ -244,14 +244,14 @@ func (p *Processor) ProcessDeviceDisconnected(ctx context.Context, deviceID stri
 	}
 
 	evt := &event.Event{
-		ID:         generateEventID(),
-		DeviceID:   deviceID,
-		UserID: userID,
-		Type:       event.EventTypeDeviceDisconnected,
-		Severity:   event.SeverityWarning,
-		Timestamp:  time.Now(),
-		Data:       metadata,
-		Source:     "server",
+		ID:        generateEventID(),
+		DeviceID:  deviceID,
+		UserID:    userID,
+		Type:      event.EventTypeDeviceDisconnected,
+		Severity:  event.SeverityWarning,
+		Timestamp: time.Now(),
+		Data:      metadata,
+		Source:    "server",
 	}
 	if metadata == nil {
 		evt.Data = make(map[string]any)
@@ -298,7 +298,7 @@ func (p *Processor) ProcessDeviceDisconnected(ctx context.Context, deviceID stri
 			EventType:  notification.EventTypeDeviceOffline,
 			DeviceID:   deviceID,
 			DeviceName: getDeviceName(device),
-			UserID: userID,
+			UserID:     userID,
 			Timestamp:  evt.Timestamp,
 		}
 		if err := p.notificationSvc.SendNotification(ctx, notifData); err != nil {
@@ -392,7 +392,7 @@ func (p *Processor) ProcessTelemetry(ctx context.Context, deviceID string, telem
 				EventType:    notification.EventTypeThresholdBreach,
 				DeviceID:     deviceID,
 				DeviceName:   getDeviceName(device),
-				UserID:   userID,
+				UserID:       userID,
 				AlertType:    alertType,
 				CurrentValue: currentValue,
 				Threshold:    thresholdValue,
@@ -420,14 +420,14 @@ func (p *Processor) ProcessCommandEvent(ctx context.Context, deviceID string, co
 	}
 
 	evt := &event.Event{
-		ID:         generateEventID(),
-		DeviceID:   deviceID,
-		UserID: userID,
-		Type:       commandType,
-		Severity:   event.GetSeverity(commandType),
-		Timestamp:  time.Now(),
-		Data:       metadata,
-		Source:     "server",
+		ID:        generateEventID(),
+		DeviceID:  deviceID,
+		UserID:    userID,
+		Type:      commandType,
+		Severity:  event.GetSeverity(commandType),
+		Timestamp: time.Now(),
+		Data:      metadata,
+		Source:    "server",
 	}
 
 	if err := p.repo.Store(ctx, evt); err != nil {
@@ -465,7 +465,7 @@ func (p *Processor) ProcessCommandEvent(ctx context.Context, deviceID string, co
 			EventType:     notification.EventTypeCommandFailed,
 			DeviceID:      deviceID,
 			DeviceName:    getDeviceName(device),
-			UserID:    userID,
+			UserID:        userID,
 			CommandName:   commandName,
 			FailureReason: failureReason,
 			Timestamp:     evt.Timestamp,
@@ -496,14 +496,14 @@ func (p *Processor) ProcessError(ctx context.Context, deviceID string, errMsg st
 	metadata["error"] = errMsg
 
 	evt := &event.Event{
-		ID:         generateEventID(),
-		DeviceID:   deviceID,
-		UserID: userID,
-		Type:       event.EventTypeError,
-		Severity:   event.SeverityCritical,
-		Timestamp:  time.Now(),
-		Data:       metadata,
-		Source:     "server",
+		ID:        generateEventID(),
+		DeviceID:  deviceID,
+		UserID:    userID,
+		Type:      event.EventTypeError,
+		Severity:  event.SeverityCritical,
+		Timestamp: time.Now(),
+		Data:      metadata,
+		Source:    "server",
 	}
 
 	if err := p.repo.Store(ctx, evt); err != nil {
@@ -530,7 +530,7 @@ func (p *Processor) ProcessError(ctx context.Context, deviceID string, errMsg st
 			EventType:    notification.EventTypeError,
 			DeviceID:     deviceID,
 			DeviceName:   getDeviceName(device),
-			UserID:   userID,
+			UserID:       userID,
 			ErrorMessage: errMsg,
 			Timestamp:    evt.Timestamp,
 		}
@@ -564,14 +564,14 @@ func (p *Processor) checkThresholdsWithConfig(deviceID, userID string, data map[
 		divergence := math.Abs(deviceRiskScore - serverRiskScore)
 		if divergence > 20 {
 			events = append(events, &event.Event{
-				ID:         generateEventID(),
-				DeviceID:   deviceID,
-				UserID: userID,
-				Type:       event.EventTypeError,
-				Severity:   event.SeverityWarning,
-				Timestamp:  time.Now(),
-				Data:       map[string]any{"riskScoreDivergence": divergence, "deviceReported": deviceRiskScore, "serverCalculated": serverRiskScore, "issue": "risk_score_manipulation_detected"},
-				Source:     "server",
+				ID:        generateEventID(),
+				DeviceID:  deviceID,
+				UserID:    userID,
+				Type:      event.EventTypeError,
+				Severity:  event.SeverityWarning,
+				Timestamp: time.Now(),
+				Data:      map[string]any{"riskScoreDivergence": divergence, "deviceReported": deviceRiskScore, "serverCalculated": serverRiskScore, "issue": "risk_score_manipulation_detected"},
+				Source:    "server",
 			})
 		}
 
@@ -580,28 +580,28 @@ func (p *Processor) checkThresholdsWithConfig(deviceID, userID string, data map[
 
 			if p.shouldSendAlert(deviceID, "riskScore", event.EventTypeRiskScoreAlert) {
 				events = append(events, &event.Event{
-					ID:         generateEventID(),
-					DeviceID:   deviceID,
-					UserID: userID,
-					Type:       event.EventTypeRiskScoreAlert,
-					Severity:   event.SeverityCritical,
-					Timestamp:  time.Now(),
-					Data:       map[string]any{"riskScore": serverRiskScore, "threshold": thresholds.RiskScoreCritical, "deviceReported": deviceRiskScore},
-					Source:     "server",
+					ID:        generateEventID(),
+					DeviceID:  deviceID,
+					UserID:    userID,
+					Type:      event.EventTypeRiskScoreAlert,
+					Severity:  event.SeverityCritical,
+					Timestamp: time.Now(),
+					Data:      map[string]any{"riskScore": serverRiskScore, "threshold": thresholds.RiskScoreCritical, "deviceReported": deviceRiskScore},
+					Source:    "server",
 				})
 			}
 		} else if serverRiskScore >= float64(thresholds.RiskScoreWarning) {
 
 			if p.shouldSendAlert(deviceID, "riskScore", event.EventTypeThresholdBreach) {
 				events = append(events, &event.Event{
-					ID:         generateEventID(),
-					DeviceID:   deviceID,
-					UserID: userID,
-					Type:       event.EventTypeThresholdBreach,
-					Severity:   event.SeverityWarning,
-					Timestamp:  time.Now(),
-					Data:       map[string]any{"riskScore": serverRiskScore, "threshold": thresholds.RiskScoreWarning, "deviceReported": deviceRiskScore},
-					Source:     "server",
+					ID:        generateEventID(),
+					DeviceID:  deviceID,
+					UserID:    userID,
+					Type:      event.EventTypeThresholdBreach,
+					Severity:  event.SeverityWarning,
+					Timestamp: time.Now(),
+					Data:      map[string]any{"riskScore": serverRiskScore, "threshold": thresholds.RiskScoreWarning, "deviceReported": deviceRiskScore},
+					Source:    "server",
 				})
 			}
 		}
@@ -613,28 +613,28 @@ func (p *Processor) checkThresholdsWithConfig(deviceID, userID string, data map[
 
 			if p.shouldSendAlert(deviceID, "thermal", event.EventTypeThermalAlert) {
 				events = append(events, &event.Event{
-					ID:         generateEventID(),
-					DeviceID:   deviceID,
-					UserID: userID,
-					Type:       event.EventTypeThermalAlert,
-					Severity:   event.SeverityCritical,
-					Timestamp:  time.Now(),
-					Data:       map[string]any{"thermalTemp": thermalTemp, "threshold": thresholds.ThermalCritical},
-					Source:     "server",
+					ID:        generateEventID(),
+					DeviceID:  deviceID,
+					UserID:    userID,
+					Type:      event.EventTypeThermalAlert,
+					Severity:  event.SeverityCritical,
+					Timestamp: time.Now(),
+					Data:      map[string]any{"thermalTemp": thermalTemp, "threshold": thresholds.ThermalCritical},
+					Source:    "server",
 				})
 			}
 		} else if thermalTemp >= thresholds.ThermalWarning {
 
 			if p.shouldSendAlert(deviceID, "thermal", event.EventTypeThresholdBreach) {
 				events = append(events, &event.Event{
-					ID:         generateEventID(),
-					DeviceID:   deviceID,
-					UserID: userID,
-					Type:       event.EventTypeThresholdBreach,
-					Severity:   event.SeverityWarning,
-					Timestamp:  time.Now(),
-					Data:       map[string]any{"thermalTemp": thermalTemp, "threshold": thresholds.ThermalWarning},
-					Source:     "server",
+					ID:        generateEventID(),
+					DeviceID:  deviceID,
+					UserID:    userID,
+					Type:      event.EventTypeThresholdBreach,
+					Severity:  event.SeverityWarning,
+					Timestamp: time.Now(),
+					Data:      map[string]any{"thermalTemp": thermalTemp, "threshold": thresholds.ThermalWarning},
+					Source:    "server",
 				})
 			}
 		}
@@ -646,28 +646,28 @@ func (p *Processor) checkThresholdsWithConfig(deviceID, userID string, data map[
 
 			if p.shouldSendAlert(deviceID, "buffer", event.EventTypeBufferLevelAlert) {
 				events = append(events, &event.Event{
-					ID:         generateEventID(),
-					DeviceID:   deviceID,
-					UserID: userID,
-					Type:       event.EventTypeBufferLevelAlert,
-					Severity:   event.SeverityCritical,
-					Timestamp:  time.Now(),
-					Data:       map[string]any{"bufferLevel": bufferLevel, "threshold": thresholds.BufferCritical},
-					Source:     "server",
+					ID:        generateEventID(),
+					DeviceID:  deviceID,
+					UserID:    userID,
+					Type:      event.EventTypeBufferLevelAlert,
+					Severity:  event.SeverityCritical,
+					Timestamp: time.Now(),
+					Data:      map[string]any{"bufferLevel": bufferLevel, "threshold": thresholds.BufferCritical},
+					Source:    "server",
 				})
 			}
 		} else if bufferLevel <= float64(thresholds.BufferWarning) {
 
 			if p.shouldSendAlert(deviceID, "buffer", event.EventTypeThresholdBreach) {
 				events = append(events, &event.Event{
-					ID:         generateEventID(),
-					DeviceID:   deviceID,
-					UserID: userID,
-					Type:       event.EventTypeThresholdBreach,
-					Severity:   event.SeverityWarning,
-					Timestamp:  time.Now(),
-					Data:       map[string]any{"bufferLevel": bufferLevel, "threshold": thresholds.BufferWarning},
-					Source:     "server",
+					ID:        generateEventID(),
+					DeviceID:  deviceID,
+					UserID:    userID,
+					Type:      event.EventTypeThresholdBreach,
+					Severity:  event.SeverityWarning,
+					Timestamp: time.Now(),
+					Data:      map[string]any{"bufferLevel": bufferLevel, "threshold": thresholds.BufferWarning},
+					Source:    "server",
 				})
 			}
 		}

@@ -607,6 +607,29 @@ var migrations = []Migration{
 	{Apply: migrateSlackNotifications, Name: "add_slack_notifications", Version: 91},
 	{Apply: migrateNotificationsReadAt, Name: "add_notifications_read_at", Version: 94},
 	{Apply: migratePushSubscriptions, Name: "create_push_subscriptions", Version: 95},
+	// The account-disable timestamp: NULL means active. Separate migration for the
+	// same reason as 087/088/090 — the users table already exists on deployed
+	// databases, so a column added to the CREATE TABLE would never be created.
+	{Apply: migrateAddUserDisabled, Name: "add_user_disabled", Version: 96},
+	// One token name per service account, so a token is identifiable by name
+	// within its account (the scope Grafana uses, tightened to the account).
+	{Apply: migrateServiceAccountTokenNameUnique, Name: "service_account_token_name_unique", Version: 97},
+	// A token's basic role and fixed-role grants, so a token can be scoped like
+	// a Grafana service account token rather than only by coarse read/write/admin.
+	{Apply: migrateServiceAccountTokenRoles, Name: "service_account_token_roles", Version: 98},
+	// Widen the membership status CHECK to admit `suspended` and persist the
+	// suspension timestamp. The domain has always had the state; the constraint
+	// never allowed storing it, so suspending a member failed.
+	{Apply: migrateMemberSuspendedStatus, Name: "member_suspended_status", Version: 99},
+	// Who disabled a service account, when, and why. The row carried only
+	// `enabled`, so a disabled account could not explain itself.
+	{Apply: migrateServiceAccountStateFacts, Name: "service_account_state_facts", Version: 100},
+	// GitOps provisioning: stored git credentials, repositories synced on an
+	// interval, the manifests each owns, and sync job history.
+	{Apply: migrateProvisioningGitOps, Name: "provisioning_gitops", Version: 101},
+	// Rebuild provisioning_resources with ON DELETE RESTRICT: 101's CASCADE erased the
+	// released ownership rows that keep_resources exists to preserve.
+	{Apply: migrateProvisioningResourceOwnershipRetention, Name: "provisioning_resource_retention", Version: 102},
 }
 
 // runMigrations applies all pending migrations.

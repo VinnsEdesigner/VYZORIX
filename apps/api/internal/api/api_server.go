@@ -26,6 +26,7 @@ import (
 	inboxhandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/inbox"
 	notificationhandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/notification"
 	organizationhandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/organization"
+	provisioninghandler "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/provisioning"
 	sahandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/serviceaccount"
 	updaterhandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/updater"
 	updateshandlers "github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers/updates"
@@ -49,6 +50,7 @@ import (
 	appmetrics "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/metrics"
 	appnotification "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/notifications"
 	orgapplication "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/organization"
+	provisioningapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/provisioning"
 	searchsvc "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/search"
 	saapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/serviceaccount"
 	updatesapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/updates"
@@ -123,87 +125,95 @@ func (s *Server) LifecycleManager() *lifecycle.Manager {
 
 // Server is the main API server.
 type Server struct {
-	ContactPointHandler         *notificationhandlers.Handler
-	channelHandler              *channelhandlers.Handler
-	ServiceAccountHandler       *sahandlers.Handler
-	AnnotationHandler           *annotationhandlers.Handler
-	configVersionHandler        *cvhandlers.Handler
-	cache                       *infracache.Cache
-	lifecycleManager            *lifecycle.Manager
-	FCMRetryWorker              *worker.FCMRetryWorker
-	statsSvc                    *usagestats.Service
-	encryptKeyFn                func(clientID string) ([]byte, bool)
-	authHandlers                *authhandlers.AllHandlers
-	hub                         *hub.Hub
-	engine                      *gin.Engine
-	log                         *slog.Logger
-	deviceStatusHandler         *devicehandlers.StatusHandler
-	sessionManager              *infraauth.SessionManager
-	rateLimiter                 *middleware.RateLimiter
-	authLimiter                 *middleware.RateLimiter
-	cookieAuth                  *middleware.CookieAuth
-	signatureVerifier           *middleware.SignatureVerifier
-	lockout                     *middleware.Lockout
-	csrfProtector               *middleware.CSRFProtector
-	turnstileVerifier           *middleware.TurnstileVerifier
-	revocationList              *infraauth.RevocationList
-	ipIntelligence              *middleware.IPIntelligence
-	hmacVerifier                *cryptohmac.Verifier
-	sessionSignatureVerifier    *cryptohmac.Verifier
-	mwFactory                   *middleware.MiddlewareFactory
-	DB                          *storage.SQLite
-	dashboardRateLimiter        *middleware.DashboardRateLimiterMiddleware
-	deviceRegRateLimiter        *middleware.DeviceRegistrationRateLimiterMiddleware
-	AuditLogger                 *audit.Logger
-	deviceUpdaterHandler        *devicehandlers.UpdaterHandler
-	deviceListHandler           *devicehandlers.ListHandler
-	devicesHandler              *devicehandlers.DevicesHandler
-	commandHandler              *cmdhandlers.ExecuteHandler
-	confirmationHandler         *confirmationhandlers.Handler
-	commandAuthorizer           *command.Authorizer
-	grantRepo                   *storage.GrantRepository
-	scopeGuards                 []scopeGuard
-	groupRepo                   *storage.DeviceGroupRepository
-	InvitationStorage           *storage.InvitationStorage
-	features                    *featuremgmt.Manager
-	supportBundleHandler        *admin.SupportBundleHandler
-	updateCheckerHandler        *admin.UpdateCheckerHandler
-	searchService               *searchsvc.Service
-	alertHandler                *alerthandlers.Handler
-	AlertEvaluator              *alertapp.Evaluator
-	streamHandler               *websockethandlers.StreamHandler
-	userTerminalHandler         *websockethandlers.UserTerminalHandler
-	recordingHandler            *websockethandlers.RecordingHandler
-	deviceFrameHandler          *websockethandlers.DeviceFrameHandler
-	ptyRelay                    *hub.PTYRelay
-	telemetryHistoryHandler     *handlers.TelemetryHistoryHandler
-	connectionStatusHandler     *handlers.ConnectionStatusHandler
-	adminClientsHandler         *admin.ClientsHandler
-	metricsHandler              *infraMetrics.MetricsHandler
-	commandHistoryHandler       *cmdhandlers.HistoryHandler
-	deviceLogsHandler           *devicehandlers.LogsHandler
-	deviceEventsHandler         *devicehandlers.EventsHandler
-	deviceMetricsHandler        *devicehandlers.MetricsHandler
-	deviceTelemetryHandler      *devicehandlers.TelemetryHandler
-	dashboardStatsHandler       *dashboardhandlers.StatsHandler
-	updaterHandler              *updaterhandlers.Handler
-	updatesHandler              *updateshandlers.UpdatesHandler
-	inboxHandler                *inboxhandlers.Handler
-	enrollHandler               *inboxhandlers.EnrollHandler
-	inboxService                *inbox.Service
-	diagnosticsHandler          *diagnosticshandlers.Handler
-	diagnosticsInspectHandler   *diagnosticshandlers.InspectHandler
-	diagnosticsTimelineHandler  *diagnosticshandlers.TimelineHandler
-	apiKeysHandler              *authhandlers.Handler
-	superAdminAPIKeys           *admin.SuperAdminHandler
-	tenantAPIKeyAuth            *middleware.TenantAPIKeyAuth
-	apiKeyRateLimiter           *middleware.InMemoryRateLimiter
-	organizationHandler         *organizationhandlers.OrganizationHandler
-	organizationSettingsHandler *organizationhandlers.SettingsHandler
-	deviceSettingsHandler       *devicehandlers.SettingsHandler
-	invitationHandler           *organizationhandlers.InvitationHandler
-	memberHandler               *organizationhandlers.MemberHandler
-	transferHandler             *devicehandlers.TransferHandler
+	ContactPointHandler           *notificationhandlers.Handler
+	channelHandler                *channelhandlers.Handler
+	ServiceAccountHandler         *sahandlers.Handler
+	AnnotationHandler             *annotationhandlers.Handler
+	configVersionHandler          *cvhandlers.Handler
+	cache                         *infracache.Cache
+	lifecycleManager              *lifecycle.Manager
+	FCMRetryWorker                *worker.FCMRetryWorker
+	statsSvc                      *usagestats.Service
+	encryptKeyFn                  func(clientID string) ([]byte, bool)
+	authHandlers                  *authhandlers.AllHandlers
+	hub                           *hub.Hub
+	engine                        *gin.Engine
+	log                           *slog.Logger
+	deviceStatusHandler           *devicehandlers.StatusHandler
+	sessionManager                *infraauth.SessionManager
+	rateLimiter                   *middleware.RateLimiter
+	authLimiter                   *middleware.RateLimiter
+	cookieAuth                    *middleware.CookieAuth
+	signatureVerifier             *middleware.SignatureVerifier
+	lockout                       *middleware.Lockout
+	csrfProtector                 *middleware.CSRFProtector
+	turnstileVerifier             *middleware.TurnstileVerifier
+	revocationList                *infraauth.RevocationList
+	ipIntelligence                *middleware.IPIntelligence
+	hmacVerifier                  *cryptohmac.Verifier
+	sessionSignatureVerifier      *cryptohmac.Verifier
+	mwFactory                     *middleware.MiddlewareFactory
+	DB                            *storage.SQLite
+	dashboardRateLimiter          *middleware.DashboardRateLimiterMiddleware
+	deviceRegRateLimiter          *middleware.DeviceRegistrationRateLimiterMiddleware
+	AuditLogger                   *audit.Logger
+	deviceUpdaterHandler          *devicehandlers.UpdaterHandler
+	deviceListHandler             *devicehandlers.ListHandler
+	devicesHandler                *devicehandlers.DevicesHandler
+	commandHandler                *cmdhandlers.ExecuteHandler
+	confirmationHandler           *confirmationhandlers.Handler
+	commandAuthorizer             *command.Authorizer
+	grantRepo                     *storage.GrantRepository
+	scopeGuards                   []scopeGuard
+	groupRepo                     *storage.DeviceGroupRepository
+	InvitationStorage             *storage.InvitationStorage
+	features                      *featuremgmt.Manager
+	supportBundleHandler          *admin.SupportBundleHandler
+	updateCheckerHandler          *admin.UpdateCheckerHandler
+	searchService                 *searchsvc.Service
+	alertHandler                  *alerthandlers.Handler
+	AlertEvaluator                *alertapp.Evaluator
+	streamHandler                 *websockethandlers.StreamHandler
+	userTerminalHandler           *websockethandlers.UserTerminalHandler
+	recordingHandler              *websockethandlers.RecordingHandler
+	deviceFrameHandler            *websockethandlers.DeviceFrameHandler
+	ptyRelay                      *hub.PTYRelay
+	telemetryHistoryHandler       *handlers.TelemetryHistoryHandler
+	connectionStatusHandler       *handlers.ConnectionStatusHandler
+	adminClientsHandler           *admin.ClientsHandler
+	metricsHandler                *infraMetrics.MetricsHandler
+	commandHistoryHandler         *cmdhandlers.HistoryHandler
+	deviceLogsHandler             *devicehandlers.LogsHandler
+	deviceEventsHandler           *devicehandlers.EventsHandler
+	deviceMetricsHandler          *devicehandlers.MetricsHandler
+	deviceTelemetryHandler        *devicehandlers.TelemetryHandler
+	dashboardStatsHandler         *dashboardhandlers.StatsHandler
+	updaterHandler                *updaterhandlers.Handler
+	updatesHandler                *updateshandlers.UpdatesHandler
+	inboxHandler                  *inboxhandlers.Handler
+	enrollHandler                 *inboxhandlers.EnrollHandler
+	inboxService                  *inbox.Service
+	diagnosticsHandler            *diagnosticshandlers.Handler
+	diagnosticsInspectHandler     *diagnosticshandlers.InspectHandler
+	diagnosticsTimelineHandler    *diagnosticshandlers.TimelineHandler
+	apiKeysHandler                *authhandlers.Handler
+	superAdminAPIKeys             *admin.SuperAdminHandler
+	tenantAPIKeyAuth              *middleware.TenantAPIKeyAuth
+	apiKeyRateLimiter             *middleware.InMemoryRateLimiter
+	organizationHandler           *organizationhandlers.OrganizationHandler
+	organizationSettingsHandler   *organizationhandlers.SettingsHandler
+	deviceSettingsHandler         *devicehandlers.SettingsHandler
+	invitationHandler             *organizationhandlers.InvitationHandler
+	provisioningConnectionHandler *provisioninghandler.ConnectionHandler
+	provisioningRepositoryHandler *provisioninghandler.RepositoryHandler
+	provisioningSyncHandler       *provisioninghandler.SyncHandler
+	provisioningWebhookHandler    *provisioninghandler.WebhookHandler
+	provisioningPushBackHandler   *provisioninghandler.PushBackHandler
+	provisioningSyncService       *provisioningapp.SyncService
+	provisioningAuditor           *provisioningapp.Auditor
+	provisioningScheduler         *provisioningapp.Scheduler
+	memberHandler                 *organizationhandlers.MemberHandler
+	transferHandler               *devicehandlers.TransferHandler
 	// DeviceRepo is the org-scoped device lookup the deploy predicate and the
 	// device-scoped credential check both use.
 	DeviceRepo        *storage.DeviceRepository
@@ -221,6 +231,13 @@ type Server struct {
 // runs after the server is constructed.
 func (s *Server) DeployCatalog() *deploy.Catalog {
 	return s.deployCatalog
+}
+
+// ProvisioningScheduler returns the interval sync loop, or nil when provisioning is
+// not wired. It is exposed so the process that owns the server's lifetime starts and
+// stops it alongside the other workers.
+func (s *Server) ProvisioningScheduler() *provisioningapp.Scheduler {
+	return s.provisioningScheduler
 }
 
 // Routes returns the Gin engine for serving.
@@ -299,6 +316,21 @@ func (s *Server) wireDeployHandler(cfg *ServerConfig) {
 	s.deployCatalog = deploy.NewCatalog(nil)
 
 	deployService := deploy.NewDeployService(configs, s.DeviceRepo, sign, deploy.DeviceSettings{}, s.deployCatalog)
+
+	// A deploy decides what code a device runs, so it is audited with the same weight as a
+	// command. The service records the actions it owns (rollback, applied) and the handlers
+	// record the ones they own (deploy, credentials, secrets); both reach the one audit
+	// logger through this adapter.
+	deployAudit := newDeployAuditAdapter(cfg.AuditLogger)
+	if deployAudit != nil {
+		deployService.SetAudit(deployAudit)
+	}
+	// A manifest that names a secret the device has not been given now fails at apply
+	// time, naming the key, rather than surfacing when the device asks for it.
+	if readiness := newSecretReadinessAdapter(secrets); readiness != nil {
+		deployService.SetSecretReadiness(readiness)
+	}
+
 	secretService := deploy.NewSecretService(secrets, secretKeys)
 	credentialService := deploy.NewCredentialService(credentials)
 	s.deployService = deployService
@@ -347,12 +379,29 @@ func (s *Server) wireDeployHandler(cfg *ServerConfig) {
 		cfg.Log,
 	)
 
+	// The handler records the actions it owns: the deploy itself, a credential mint or
+	// revoke, and a secret set or unset. It shares the adapter the service uses, so every
+	// deploy action reaches the same audit trail.
+	if deployAudit != nil {
+		s.deployHandler.SetAudit(deployAudit)
+	}
+
 	// A deploy notifies a device that is connected right now, so it does not wait
 	// for its next reconnect. The pusher is the onboarding handler (it already
 	// builds and signs the device_config frame); it is wired here because the
 	// deploy handler is built after it.
 	if s.enrollHandler != nil {
 		s.deployHandler.SetConfigPusher(s.enrollHandler)
+	}
+
+	// Provisioning applies manifests through this same deploy service, so it is
+	// handed over here: the engine is built with the handler set, before the
+	// service exists.
+	if s.provisioningSyncService != nil {
+		s.provisioningSyncService.SetDeployer(deployService)
+	}
+	if s.provisioningSyncHandler != nil {
+		s.provisioningSyncHandler.SetDocumentReader(deployService)
 	}
 }
 
@@ -455,6 +504,13 @@ func (s *Server) wireFeatureHandlers(cfg *ServerConfig, presenter *response.Pres
 	}
 	dispatcher := appnotification.NewDispatcher(cpRepo, cpDeliveries, channels, cfg.Log)
 	alertNotifier := appnotification.NewAlertNotifierAdapter(dispatcher)
+
+	// A provisioning audit write that fails is a security gap, so it escalates through
+	// the same contact points an alert rule uses. Attached here because the dispatcher
+	// is built at this point, after the handler set.
+	if s.provisioningAuditor != nil {
+		s.provisioningAuditor.SetEscalator(appnotification.NewAuditEscalator(dispatcher))
+	}
 
 	s.AlertEvaluator = alertapp.NewEvaluator(
 		alertRules,
@@ -815,6 +871,14 @@ func NewServerWithDeps(cfg *ServerConfigWithDeps) *Server {
 	s.organizationSettingsHandler = cfg.HandlerSet.OrgSettings
 	s.deviceSettingsHandler = cfg.HandlerSet.DeviceSettings
 	s.invitationHandler = cfg.HandlerSet.Invitation
+	s.provisioningConnectionHandler = cfg.HandlerSet.ProvisioningConnection
+	s.provisioningRepositoryHandler = cfg.HandlerSet.ProvisioningRepository
+	s.provisioningSyncHandler = cfg.HandlerSet.ProvisioningSync
+	s.provisioningWebhookHandler = cfg.HandlerSet.ProvisioningWebhook
+	s.provisioningPushBackHandler = cfg.HandlerSet.ProvisioningPushBack
+	s.provisioningSyncService = cfg.HandlerSet.ProvisioningSyncService
+	s.provisioningAuditor = cfg.HandlerSet.ProvisioningAuditor
+	s.provisioningScheduler = cfg.HandlerSet.ProvisioningScheduler
 	s.memberHandler = cfg.HandlerSet.Member
 	s.transferHandler = cfg.HandlerSet.Transfer
 

@@ -8,6 +8,7 @@
 
 export interface CreateInvitationRequest {
   email?: string;
-  org_id?: string;
+  notes?: string;
+  organizationId?: string;
   role?: string;
 }

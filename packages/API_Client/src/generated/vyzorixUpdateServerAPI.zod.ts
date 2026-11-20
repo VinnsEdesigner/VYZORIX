@@ -83,19 +83,9 @@ export const AdminClientListResultSchema = z.object({
 export const AdminClientResultSchema = z.object({
   client: z.lazy(() => AdminClientSchema).optional(),
 });
-export const AdminUserSchema = z.object({
-  created_at: z.number().int().optional(),
-  email: z.string().optional(),
-  email_verified: z.boolean().optional(),
-  id: z.string().optional(),
-  mfa_enabled: z.boolean().optional(),
-  name: z.string().optional(),
-  role: z.string().optional(),
-  updated_at: z.number().int().optional(),
-});
-export const AdminUserListResultSchema = z.object({
+export const AdminUserSessionListResultSchema = z.object({
+  sessions: z.array(z.lazy(() => SessionInfoSchema)).optional(),
   total: z.number().int().optional(),
-  users: z.array(z.lazy(() => AdminUserSchema)).optional(),
 });
 export const AlertEvaluateResultSchema = z.object({
   rule_id: z.string().optional(),
@@ -387,7 +377,8 @@ export const CreateClientCredentialRequestSchema = z.object({
 });
 export const CreateInvitationRequestSchema = z.object({
   email: z.string().optional(),
-  org_id: z.string().optional(),
+  notes: z.string().optional(),
+  organizationId: z.string().optional(),
   role: z.string().optional(),
 });
 export const CreateOrganizationRequestSchema = z.object({
@@ -400,16 +391,11 @@ export const CreateServiceAccountRequestSchema = z.object({
   name: z.string().optional(),
 });
 export const CreateServiceAccountTokenRequestSchema = z.object({
+  basic_role: z.string().optional(),
   expires_at: z.string().optional(),
   name: z.string().optional(),
-  scopes: z.array(z.string()).optional(),
+  roles: z.array(z.lazy(() => FixedRoleGrantSchema)).optional(),
   service_id: z.string().optional(),
-});
-export const CreateUserRequestSchema = z.object({
-  email: z.string().optional(),
-  name: z.string().optional(),
-  password: z.string().optional(),
-  role: z.string().optional(),
 });
 export const CursorPaginationResultSchema = z.object({
   hasMore: z.boolean().optional(),
@@ -615,6 +601,20 @@ export const ErrorResponseSchema = z.object({
   fields: z.record(z.string(), z.string()).optional(),
   message: z.string().optional(),
   trace_id: z.string().optional(),
+});
+export const FixedRoleCatalogResultSchema = z.object({
+  org_roles: z.array(z.string()).optional(),
+  roles: z.array(z.lazy(() => FixedRoleInfoSchema)).optional(),
+  scopes: z.array(z.string()).optional(),
+});
+export const FixedRoleGrantSchema = z.object({
+  role: z.string().optional(),
+  scope: z.string().optional(),
+});
+export const FixedRoleInfoSchema = z.object({
+  access: z.string().optional(),
+  group: z.string().optional(),
+  id: z.string().optional(),
 });
 export const ForgotPasswordRequestSchema = z.object({
   email: z.string().optional(),
@@ -827,11 +827,16 @@ export const MFAVerifySetupRequestSchema = z.object({
   code: z.string().optional(),
   token: z.string().optional(),
 });
+export const MarkNotificationsReadResultSchema = z.object({
+  unread: z.number().int().optional(),
+});
 export const MeResultSchema = z.object({
   avatar_url: z.string().optional(),
+  created_at: z.number().int().optional(),
   email: z.string().optional(),
   email_verified: z.boolean().optional(),
   id: z.string().optional(),
+  last_login_at: z.number().int().optional(),
   last_organization_id: z.string().optional(),
   mfa_enabled: z.boolean().optional(),
   name: z.string().optional(),
@@ -853,19 +858,66 @@ export const MetricStatsDTOSchema = z.object({
   max: z.number().optional(),
   min: z.number().optional(),
 });
+export const NotificationHistoryEntrySchema = z.object({
+  channel: z.string().optional(),
+  deviceId: z.string().optional(),
+  errorMsg: z.string().optional(),
+  eventType: z.string().optional(),
+  id: z.string().optional(),
+  sentAt: z.number().int().optional(),
+  success: z.boolean().optional(),
+});
+export const NotificationHistoryResultSchema = z.object({
+  entries: z.array(z.lazy(() => NotificationHistoryEntrySchema)).optional(),
+  limit: z.number().int().optional(),
+  offset: z.number().int().optional(),
+  total: z.number().int().optional(),
+  unread: z.number().int().optional(),
+});
 export const NotificationSettingsSchema = z.object({
   channels: z.array(z.string()).optional(),
   email: z.lazy(() => EmailNotificationsSchema).optional(),
+  emailAddress: z.string().optional(),
   enabled: z.boolean().optional(),
   push: z.lazy(() => PushNotificationsSchema).optional(),
+  slack: z.lazy(() => SlackNotificationsSchema).optional(),
   webhook: z.lazy(() => WebhookNotificationsSchema).optional(),
 });
 export const NotificationUpdateRequestSchema = z.object({
   channels: z.array(z.string()).optional(),
   email: z.lazy(() => EmailNotificationsSchema).optional(),
+  emailAddress: z.string().optional(),
   enabled: z.boolean().optional(),
   push: z.lazy(() => PushNotificationsSchema).optional(),
+  slack: z.lazy(() => SlackNotificationInputSchema).optional(),
   webhook: z.lazy(() => WebhookNotificationsSchema).optional(),
+});
+export const OrgUserSchema = z.object({
+  avatar_url: z.string().optional(),
+  created_at: z.number().int().optional(),
+  disabled: z.boolean().optional(),
+  email: z.string().optional(),
+  email_verified: z.boolean().optional(),
+  id: z.string().optional(),
+  joined_at: z.number().int().optional(),
+  last_seen_at: z.number().int().optional(),
+  member_id: z.string().optional(),
+  mfa_enabled: z.boolean().optional(),
+  name: z.string().optional(),
+  role: z.string().optional(),
+  status: z.string().optional(),
+});
+export const OrgUserListResultSchema = z.object({
+  limit: z.number().int().optional(),
+  page: z.number().int().optional(),
+  total: z.number().int().optional(),
+  total_pages: z.number().int().optional(),
+  users: z.array(z.lazy(() => OrgUserSchema)).optional(),
+});
+export const OrgUserStatsResultSchema = z.object({
+  by_role: z.record(z.string(), z.number().int()).optional(),
+  pending_invites: z.number().int().optional(),
+  total: z.number().int().optional(),
 });
 export const OrganizationSchema = z.object({
   created_at: z.number().int().optional(),
@@ -887,13 +939,16 @@ export const OrganizationListResultSchema = z.object({
   organizations: z.array(z.lazy(() => OrganizationSchema)).optional(),
 });
 export const OrganizationMemberSchema = z.object({
+  avatar_url: z.string().optional(),
   id: z.string().optional(),
   invited_by: z.string().optional(),
   joined_at: z.number().int().optional(),
+  last_seen: z.number().int().optional(),
   organization_id: z.string().optional(),
   removed_at: z.number().int().optional(),
   role: z.string().optional(),
   status: z.string().optional(),
+  suspended_at: z.number().int().optional(),
   user_email: z.string().optional(),
   user_id: z.string().optional(),
   user_name: z.string().optional(),
@@ -911,6 +966,7 @@ export const OrganizationSettingsResultSchema = z.object({
   theme: z.string().optional(),
   timezone: z.string().optional(),
   updatedAt: z.string().optional(),
+  weekStart: z.string().optional(),
 });
 export const PaginationSchema = z.object({
   limit: z.number().int().optional(),
@@ -925,7 +981,18 @@ export const PollVerificationResultSchema = z.object({
 });
 export const PreferencesResultSchema = z.object({
   preferences: z.record(z.string(), z.unknown()).optional(),
+  resolved: z.record(z.string(), z.string()).optional(),
   theme: z.string().optional(),
+});
+export const ProfileActionResultSchema = z.object({
+  avatar_url: z.string().optional(),
+  email: z.string().optional(),
+  id: z.string().optional(),
+  name: z.string().optional(),
+});
+export const ProfileSummaryResultSchema = z.object({
+  actions: z.number().int().optional(),
+  active_sessions: z.number().int().optional(),
 });
 export const PushNotificationsSchema = z.object({
   commandFailed: z.boolean().optional(),
@@ -934,6 +1001,21 @@ export const PushNotificationsSchema = z.object({
   registrationRequest: z.boolean().optional(),
   thresholdBreach: z.boolean().optional(),
   updateAvailable: z.boolean().optional(),
+});
+export const PushPublicKeyResultSchema = z.object({
+  enabled: z.boolean().optional(),
+  publicKey: z.string().optional(),
+});
+export const PushSubscriptionKeysSchema = z.object({
+  auth: z.string().optional(),
+  p256dh: z.string().optional(),
+});
+export const PushSubscriptionRequestSchema = z.object({
+  endpoint: z.string().optional(),
+  keys: z.lazy(() => PushSubscriptionKeysSchema).optional(),
+});
+export const PushTestResultSchema = z.object({
+  delivered: z.number().int().optional(),
 });
 export const RefreshTokenRequestSchema = z.object({
   refresh_token: z.string().optional(),
@@ -971,9 +1053,10 @@ export const RevokedResultSchema = z.object({
   revoked: z.boolean().optional(),
 });
 export const RotateServiceAccountTokenRequestSchema = z.object({
+  basic_role: z.string().optional(),
   expires_at: z.string().optional(),
   name: z.string().optional(),
-  scopes: z.array(z.string()).optional(),
+  roles: z.array(z.lazy(() => FixedRoleGrantSchema)).optional(),
 });
 export const SelectOrganizationRequestSchema = z.object({
   organization_id: z.string().optional(),
@@ -984,23 +1067,34 @@ export const SelectOrganizationResultSchema = z.object({
   role: z.string().optional(),
 });
 export const ServiceAccountSchema = z.object({
+  avatar_url: z.string().optional(),
   created_at: z.number().int().optional(),
+  disabled_at: z.number().int().optional(),
+  disabled_by: z.string().optional(),
+  disabled_by_name: z.string().optional(),
+  disabled_reason: z.string().optional(),
   enabled: z.boolean().optional(),
+  enabled_by: z.string().optional(),
+  enabled_by_name: z.string().optional(),
   id: z.string().optional(),
   name: z.string().optional(),
   org_id: z.string().optional(),
+  token_count: z.number().int().optional(),
   updated_at: z.number().int().optional(),
 });
 export const ServiceAccountListResultSchema = z.object({
   service_accounts: z.array(z.lazy(() => ServiceAccountSchema)).optional(),
 });
 export const ServiceAccountTokenSchema = z.object({
+  basic_role: z.string().optional(),
   created_at: z.number().int().optional(),
   expires_at: z.number().int().optional(),
   id: z.string().optional(),
   key_prefix: z.string().optional(),
+  last_used_at: z.number().int().optional(),
   name: z.string().optional(),
   revoked_at: z.number().int().optional(),
+  roles: z.array(z.lazy(() => FixedRoleGrantSchema)).optional(),
   scopes: z.array(z.string()).optional(),
   service_id: z.string().optional(),
   valid: z.boolean().optional(),
@@ -1022,6 +1116,7 @@ export const SessionInfoSchema = z.object({
   is_current: z.boolean().optional(),
   selected_organization_id: z.string().optional(),
   user_agent: z.string().optional(),
+  user_id: z.string().optional(),
 });
 export const SessionListResultSchema = z.object({
   sessions: z.array(z.lazy(() => SessionInfoSchema)).optional(),
@@ -1034,6 +1129,26 @@ export const SettingsResponseResultSchema = z.object({
   client: z.lazy(() => ClientSettingsSchema).optional(),
   notifications: z.lazy(() => NotificationSettingsSchema).optional(),
   preferences: z.record(z.string(), z.unknown()).optional(),
+});
+export const SlackChannelSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().optional(),
+});
+export const SlackChannelsResultSchema = z.object({
+  channels: z.array(z.lazy(() => SlackChannelSchema)).optional(),
+});
+export const SlackNotificationInputSchema = z.object({
+  channelId: z.string().optional(),
+  channelName: z.string().optional(),
+  connected: z.boolean().optional(),
+});
+export const SlackNotificationsSchema = z.object({
+  channelId: z.string().optional(),
+  channelName: z.string().optional(),
+  connected: z.boolean().optional(),
+  slackUserId: z.string().optional(),
+  teamId: z.string().optional(),
+  teamName: z.string().optional(),
 });
 export const SuccessResultSchema = z.object({
   message: z.string().optional(),
@@ -1216,6 +1331,7 @@ export const UpdateOrganizationSettingsRequestSchema = z.object({
   defaultThresholds: z.lazy(() => UserThresholdsSchema).optional(),
   theme: z.string().optional(),
   timezone: z.string().optional(),
+  weekStart: z.string().optional(),
 });
 export const UpdatePushDetailDeviceSchema = z.object({
   acknowledgedAt: z.number().int().optional(),
@@ -1286,6 +1402,15 @@ export const UpdatePushResultSchema = z.object({
   status: z.string().optional(),
   version: z.string().optional(),
 });
+export const UpdateServiceAccountRequestSchema = z.object({
+  enabled: z.boolean().optional(),
+  name: z.string().optional(),
+  reason: z.string().optional(),
+});
+export const UpdateServiceAccountTokenRolesRequestSchema = z.object({
+  basic_role: z.string().optional(),
+  roles: z.array(z.lazy(() => FixedRoleGrantSchema)).optional(),
+});
 export const UpdateSettingsRequestSchema = z.object({
   client: z.lazy(() => ClientSettingsSchema).optional(),
   name: z.string().optional(),
@@ -1315,13 +1440,6 @@ export const UpdateSyncStatusResultSchema = z.object({
   nextSyncAt: z.number().int().optional(),
   status: z.string().optional(),
   versionsFound: z.number().int().optional(),
-});
-export const UpdateUserRequestSchema = z.object({
-  email: z.string().optional(),
-  email_verified: z.boolean().optional(),
-  mfa_enabled: z.boolean().optional(),
-  name: z.string().optional(),
-  role: z.string().optional(),
 });
 export const UpdateVersionListResultSchema = z.object({
   pagination: z.lazy(() => PaginationSchema).optional(),

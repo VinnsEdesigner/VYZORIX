@@ -14,6 +14,8 @@ export interface ModalProps {
   className?: string;
 
   width?: number;
+
+  hideCloseButton?: boolean;
 }
 
 function getStyles(theme: VyzorixTheme, width: number) {
@@ -51,7 +53,15 @@ function getStyles(theme: VyzorixTheme, width: number) {
   };
 }
 
-export function Modal({ title, isOpen, onDismiss, children, className, width = 480 }: ModalProps) {
+export function Modal({
+  title,
+  isOpen,
+  onDismiss,
+  children,
+  className,
+  width = 480,
+  hideCloseButton = false,
+}: ModalProps) {
   const styles = useStyles2(getStyles, width);
 
   useEffect(() => {
@@ -84,7 +94,9 @@ export function Modal({ title, isOpen, onDismiss, children, className, width = 4
             <Text variant="lg" weight="medium" element="div">
               {title}
             </Text>
-            <IconButton name="x" aria-label="Close" fill="text" size="sm" onClick={onDismiss} />
+            {hideCloseButton ? null : (
+              <IconButton name="x" aria-label="Close" fill="text" size="sm" onClick={onDismiss} />
+            )}
           </div>
           <div className={styles.body}>{children}</div>
         </div>

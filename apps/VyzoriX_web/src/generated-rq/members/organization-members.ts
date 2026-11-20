@@ -7,7 +7,8 @@
  */
 import {
   useMutation,
-  useQuery
+  useQuery,
+  useQueryClient
 } from '@tanstack/react-query';
 import type {
   DataTag,
@@ -15,6 +16,7 @@ import type {
   DefinedUseQueryResult,
   InvalidateOptions,
   MutationFunction,
+  MutationFunctionContext,
   QueryClient,
   QueryFunction,
   QueryKey,
@@ -27,6 +29,7 @@ import type {
 
 import type {
   ErrorResponse,
+  GetOrganizationsIdMembersParams,
   MessageResult,
   OrganizationMember,
   OrganizationMemberListResult,
@@ -35,6 +38,8 @@ import type {
 
 import { customAxios } from '../../../../../packages/API_Client/src/generated/rest-bridge';
 import organizationScopedQueryKey from '.././query-key-mutator';
+import { getGetAuthAdminUsersQueryKey, getGetAuthAdminUsersStatsQueryKey } from '../admin/admin-operations';
+import { getGetOrganizationsQueryKey } from '../organizations/organization-management';
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -56,21 +61,30 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   return result;
 };
 
-export const getGetOrganizationsIdMembersUrl = (id: string,) => {
+export const getGetOrganizationsIdMembersUrl = (id: string,
+    params?: GetOrganizationsIdMembersParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/organizations/${id}/members`
+  return stringifiedParams.length > 0 ? `/organizations/${id}/members?${stringifiedParams}` : `/organizations/${id}/members`
 }
 
 /**
  * Returns all members of an organization
  * @summary List organization members
  */
-export const getOrganizationsIdMembers = async (id: string, options?: Parameters<typeof customAxios>[1]): Promise<OrganizationMemberListResult> => {
+export const getOrganizationsIdMembers = async (id: string,
+    params?: GetOrganizationsIdMembersParams, options?: Parameters<typeof customAxios>[1]): Promise<OrganizationMemberListResult> => {
 
-  return customAxios<OrganizationMemberListResult>(getGetOrganizationsIdMembersUrl(id),
+  return customAxios<OrganizationMemberListResult>(getGetOrganizationsIdMembersUrl(id,params),
   {
     ...options,
     method: 'GET'
@@ -83,20 +97,22 @@ export const getOrganizationsIdMembers = async (id: string, options?: Parameters
 
 
 
-export const getGetOrganizationsIdMembersQueryKey = (id: string,) =>
-    organizationScopedQueryKey({ id }, { url: `/organizations/${id}/members` });
+export const getGetOrganizationsIdMembersQueryKey = (id: string,
+    params?: GetOrganizationsIdMembersParams,) =>
+    organizationScopedQueryKey({ id,params }, { url: `/organizations/${id}/members` });
 
 
-export const useGetOrganizationsIdMembersQueryOptions = <TData = Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError = ErrorResponse>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+export const useGetOrganizationsIdMembersQueryOptions = <TData = Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError = ErrorResponse>(id: string,
+    params?: GetOrganizationsIdMembersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  organizationScopedQueryKey({ id }, { url: `/organizations/${id}/members`, queryOptions });
+  const queryKey =  organizationScopedQueryKey({ id,params }, { url: `/organizations/${id}/members`, queryOptions });
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOrganizationsIdMembers>>> = ({ signal }) => getOrganizationsIdMembers(id, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOrganizationsIdMembers>>> = ({ signal }) => getOrganizationsIdMembers(id,params, { signal, ...requestOptions });
 
 
 
@@ -110,7 +126,8 @@ export type GetOrganizationsIdMembersQueryError = ErrorResponse
 
 
 export function useGetOrganizationsIdMembers<TData = Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError = ErrorResponse>(
- id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError, TData>> & Pick<
+ id: string,
+    params: undefined |  GetOrganizationsIdMembersParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getOrganizationsIdMembers>>,
           TError,
@@ -120,7 +137,8 @@ export function useGetOrganizationsIdMembers<TData = Awaited<ReturnType<typeof g
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetOrganizationsIdMembers<TData = Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError = ErrorResponse>(
- id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError, TData>> & Pick<
+ id: string,
+    params?: GetOrganizationsIdMembersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getOrganizationsIdMembers>>,
           TError,
@@ -130,7 +148,8 @@ export function useGetOrganizationsIdMembers<TData = Awaited<ReturnType<typeof g
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetOrganizationsIdMembers<TData = Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError = ErrorResponse>(
- id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ id: string,
+    params?: GetOrganizationsIdMembersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -138,11 +157,12 @@ export function useGetOrganizationsIdMembers<TData = Awaited<ReturnType<typeof g
  */
 
 export function useGetOrganizationsIdMembers<TData = Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError = ErrorResponse>(
- id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ id: string,
+    params?: GetOrganizationsIdMembersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizationsIdMembers>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = useGetOrganizationsIdMembersQueryOptions(id,options)
+  const queryOptions = useGetOrganizationsIdMembersQueryOptions(id,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -154,10 +174,11 @@ export function useGetOrganizationsIdMembers<TData = Awaited<ReturnType<typeof g
  * @summary List organization members
  */
 export const invalidateGetOrganizationsIdMembers = async (
- queryClient: QueryClient, id: string, options?: InvalidateOptions
+ queryClient: QueryClient, id: string,
+    params?: GetOrganizationsIdMembersParams, options?: InvalidateOptions
   ): Promise<QueryClient> => {
 
-  await queryClient.invalidateQueries({ queryKey: organizationScopedQueryKey({ id }, { url: `/organizations/${id}/members` }) }, options);
+  await queryClient.invalidateQueries({ queryKey: organizationScopedQueryKey({ id,params }, { url: `/organizations/${id}/members` }) }, options);
 
   return queryClient;
 }
@@ -313,7 +334,7 @@ export const deleteOrganizationsIdMembersMemberId = async (id: string,
 
 
 export const getDeleteOrganizationsIdMembersMemberIdMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteOrganizationsIdMembersMemberId>>, TError,{id: string;memberId: string}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteOrganizationsIdMembersMemberId>>, TError,{id: string;memberId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteOrganizationsIdMembersMemberId>>, TError,{id: string;memberId: string}, TContext> => {
 
 const mutationKey = ['deleteOrganizationsIdMembersMemberId'];
@@ -332,12 +353,19 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
           return  deleteOrganizationsIdMembersMemberId(id,memberId,requestOptions)
         }
 
+  const onSuccess = (data: Awaited<ReturnType<typeof deleteOrganizationsIdMembersMemberId>>, variables: {id: string;memberId: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetOrganizationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
 
 
 
 
-
-  return  { mutationFn, ...mutationOptions }}
+  return  { ...mutationOptions, mutationFn, onSuccess }}
 
     export type DeleteOrganizationsIdMembersMemberIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteOrganizationsIdMembersMemberId>>>
 
@@ -347,14 +375,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Remove organization member
  */
 export const useDeleteOrganizationsIdMembersMemberId = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteOrganizationsIdMembersMemberId>>, TError,{id: string;memberId: string}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteOrganizationsIdMembersMemberId>>, TError,{id: string;memberId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteOrganizationsIdMembersMemberId>>,
         TError,
         {id: string;memberId: string},
         TContext
       > => {
-      return useMutation(getDeleteOrganizationsIdMembersMemberIdMutationOptions(options), queryClient);
+      const backupQueryClient = useQueryClient();
+      return useMutation(getDeleteOrganizationsIdMembersMemberIdMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
     export const getPostOrganizationsIdMembersMemberIdReinstateUrl = (id: string,
     memberId: string,) => {
@@ -386,7 +415,7 @@ export const postOrganizationsIdMembersMemberIdReinstate = async (id: string,
 
 
 export const getPostOrganizationsIdMembersMemberIdReinstateMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdReinstate>>, TError,{id: string;memberId: string}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdReinstate>>, TError,{id: string;memberId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdReinstate>>, TError,{id: string;memberId: string}, TContext> => {
 
 const mutationKey = ['postOrganizationsIdMembersMemberIdReinstate'];
@@ -405,12 +434,19 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
           return  postOrganizationsIdMembersMemberIdReinstate(id,memberId,requestOptions)
         }
 
+  const onSuccess = (data: Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdReinstate>>, variables: {id: string;memberId: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetOrganizationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
 
 
 
 
-
-  return  { mutationFn, ...mutationOptions }}
+  return  { ...mutationOptions, mutationFn, onSuccess }}
 
     export type PostOrganizationsIdMembersMemberIdReinstateMutationResult = NonNullable<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdReinstate>>>
 
@@ -420,14 +456,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Reinstate member
  */
 export const usePostOrganizationsIdMembersMemberIdReinstate = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdReinstate>>, TError,{id: string;memberId: string}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdReinstate>>, TError,{id: string;memberId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdReinstate>>,
         TError,
         {id: string;memberId: string},
         TContext
       > => {
-      return useMutation(getPostOrganizationsIdMembersMemberIdReinstateMutationOptions(options), queryClient);
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPostOrganizationsIdMembersMemberIdReinstateMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
     export const getPatchOrganizationsIdMembersMemberIdRoleUrl = (id: string,
     memberId: string,) => {
@@ -466,7 +503,7 @@ return customAxios<OrganizationMember>(getPatchOrganizationsIdMembersMemberIdRol
 
 
 export const getPatchOrganizationsIdMembersMemberIdRoleMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchOrganizationsIdMembersMemberIdRole>>, TError,{id: string;memberId: string;data: UpdateMemberRoleRequest}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchOrganizationsIdMembersMemberIdRole>>, TError,{id: string;memberId: string;data: UpdateMemberRoleRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof patchOrganizationsIdMembersMemberIdRole>>, TError,{id: string;memberId: string;data: UpdateMemberRoleRequest}, TContext> => {
 
 const mutationKey = ['patchOrganizationsIdMembersMemberIdRole'];
@@ -485,12 +522,19 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
           return  patchOrganizationsIdMembersMemberIdRole(id,memberId,data,requestOptions)
         }
 
+  const onSuccess = (data: Awaited<ReturnType<typeof patchOrganizationsIdMembersMemberIdRole>>, variables: {id: string;memberId: string;data: UpdateMemberRoleRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetOrganizationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
 
 
 
 
-
-  return  { mutationFn, ...mutationOptions }}
+  return  { ...mutationOptions, mutationFn, onSuccess }}
 
     export type PatchOrganizationsIdMembersMemberIdRoleMutationResult = NonNullable<Awaited<ReturnType<typeof patchOrganizationsIdMembersMemberIdRole>>>
     export type PatchOrganizationsIdMembersMemberIdRoleMutationBody = UpdateMemberRoleRequest
@@ -500,14 +544,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Update member role
  */
 export const usePatchOrganizationsIdMembersMemberIdRole = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchOrganizationsIdMembersMemberIdRole>>, TError,{id: string;memberId: string;data: UpdateMemberRoleRequest}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchOrganizationsIdMembersMemberIdRole>>, TError,{id: string;memberId: string;data: UpdateMemberRoleRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof patchOrganizationsIdMembersMemberIdRole>>,
         TError,
         {id: string;memberId: string;data: UpdateMemberRoleRequest},
         TContext
       > => {
-      return useMutation(getPatchOrganizationsIdMembersMemberIdRoleMutationOptions(options), queryClient);
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPatchOrganizationsIdMembersMemberIdRoleMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
     export const getPostOrganizationsIdMembersMemberIdSuspendUrl = (id: string,
     memberId: string,) => {
@@ -539,7 +584,7 @@ export const postOrganizationsIdMembersMemberIdSuspend = async (id: string,
 
 
 export const getPostOrganizationsIdMembersMemberIdSuspendMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdSuspend>>, TError,{id: string;memberId: string}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdSuspend>>, TError,{id: string;memberId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdSuspend>>, TError,{id: string;memberId: string}, TContext> => {
 
 const mutationKey = ['postOrganizationsIdMembersMemberIdSuspend'];
@@ -558,12 +603,19 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
           return  postOrganizationsIdMembersMemberIdSuspend(id,memberId,requestOptions)
         }
 
+  const onSuccess = (data: Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdSuspend>>, variables: {id: string;memberId: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetOrganizationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
 
 
 
 
-
-  return  { mutationFn, ...mutationOptions }}
+  return  { ...mutationOptions, mutationFn, onSuccess }}
 
     export type PostOrganizationsIdMembersMemberIdSuspendMutationResult = NonNullable<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdSuspend>>>
 
@@ -573,14 +625,15 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Suspend member
  */
 export const usePostOrganizationsIdMembersMemberIdSuspend = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdSuspend>>, TError,{id: string;memberId: string}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdSuspend>>, TError,{id: string;memberId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdSuspend>>,
         TError,
         {id: string;memberId: string},
         TContext
       > => {
-      return useMutation(getPostOrganizationsIdMembersMemberIdSuspendMutationOptions(options), queryClient);
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPostOrganizationsIdMembersMemberIdSuspendMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
     export const getPostOrganizationsIdMembersMemberIdTransferUrl = (id: string,
     memberId: string,) => {
@@ -612,7 +665,7 @@ export const postOrganizationsIdMembersMemberIdTransfer = async (id: string,
 
 
 export const getPostOrganizationsIdMembersMemberIdTransferMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdTransfer>>, TError,{id: string;memberId: string}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdTransfer>>, TError,{id: string;memberId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdTransfer>>, TError,{id: string;memberId: string}, TContext> => {
 
 const mutationKey = ['postOrganizationsIdMembersMemberIdTransfer'];
@@ -631,12 +684,19 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
           return  postOrganizationsIdMembersMemberIdTransfer(id,memberId,requestOptions)
         }
 
+  const onSuccess = (data: Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdTransfer>>, variables: {id: string;memberId: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetOrganizationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
 
 
 
 
-
-  return  { mutationFn, ...mutationOptions }}
+  return  { ...mutationOptions, mutationFn, onSuccess }}
 
     export type PostOrganizationsIdMembersMemberIdTransferMutationResult = NonNullable<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdTransfer>>>
 
@@ -646,12 +706,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Transfer ownership
  */
 export const usePostOrganizationsIdMembersMemberIdTransfer = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdTransfer>>, TError,{id: string;memberId: string}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdTransfer>>, TError,{id: string;memberId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postOrganizationsIdMembersMemberIdTransfer>>,
         TError,
         {id: string;memberId: string},
         TContext
       > => {
-      return useMutation(getPostOrganizationsIdMembersMemberIdTransferMutationOptions(options), queryClient);
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPostOrganizationsIdMembersMemberIdTransferMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }

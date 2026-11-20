@@ -332,6 +332,6 @@ func (h *ConnectionStatusHandler) DisconnectDevice(c *gin.Context) {
 	c.JSON(http.StatusOK, openapi.DeviceDisconnectResult{
 		DeviceID:     deviceID,
 		Disconnected: true,
-		UserID:   op.ID,
+		UserID:       op.ID,
 	})
 }

@@ -1,6 +1,6 @@
 // Package deploycredential is the deploy credential: a long-lived token scoped
 // to a single device, so CI can deploy without a user session
-//.
+// .
 //
 // It is deliberately not a general API key. A credential that could reach the
 // fleet would turn one leaked CI secret into a fleet-wide write; scoping it to

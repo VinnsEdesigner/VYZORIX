@@ -24,8 +24,8 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/logs"
 	appmetrics "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/metrics"
 	appnotifications "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/notifications"
-	appuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/user"
 	saapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/serviceaccount"
+	appuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/user"
 	notificationdomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/notification"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/config"
 	emailService "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/email"
@@ -65,7 +65,7 @@ type phase8State struct {
 	hub       interface {
 		PublishTelemetry(string, string, interface{})
 	}
-	userID    string
+	userID        string
 	orgID         string
 	sessionCookie *http.Cookie
 	csrfToken     string

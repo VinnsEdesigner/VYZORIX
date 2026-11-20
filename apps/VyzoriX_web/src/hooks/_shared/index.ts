@@ -1,3 +1,4 @@
+export * from './use-current-context';
 export {
   usePagination,
   usePaginationInfo,
@@ -33,3 +34,4 @@ export {
 } from "./use-debounce";
 
 export { useLocalStore, useCurrentUserId, useCurrentUser, type CurrentUser } from './use-local-store';
+export { useCapabilities, ORG_ROLE_LEVEL, type Capabilities } from './use-capabilities';

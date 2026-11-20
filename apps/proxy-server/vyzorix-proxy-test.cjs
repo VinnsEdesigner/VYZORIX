@@ -306,15 +306,85 @@ test('interceptAuthResponse captures refreshed token', function () {
   assertEqual(sess.refreshToken, 'new-refresh', 'Refresh token captured');
 });
 
-test('interceptAuthResponse clears credentials on logout', function () {
+test('destroySession marks the record defunct and strips every credential', function () {
+  var sess = getOrCreateSession(undefined);
+  sess.signingKey = 'some-key';
+  sess.accessToken = 'some-token';
+  sess.refreshToken = 'some-refresh';
+  sess.apiSessionCookie = 'api-cookie';
+  sess.csrfToken = 'csrf';
+  sess.userId = 'u1';
+  var cookie = sessionCookieHeader(sess).split(';')[0];
+
+  var result = destroySession(cookie);
+
+  assertEqual(Boolean(result && result.defunctAt), true, 'defunctAt stamped');
+  assertEqual(sess.signingKey, null, 'Signing key stripped');
+  assertEqual(sess.accessToken, null, 'Access token stripped');
+  assertEqual(sess.refreshToken, null, 'Refresh token stripped');
+  assertEqual(sess.apiSessionCookie, null, 'API session cookie stripped');
+  assertEqual(sess.csrfToken, null, 'CSRF token stripped');
+});
+
+test('a defunct session can never be resumed', function () {
+  var sess = getOrCreateSession(undefined);
+  sess.signingKey = 'key';
+  var cookie = sessionCookieHeader(sess).split(';')[0];
+
+  destroySession(cookie);
+
+  assertEqual(getSession(cookie), null, 'getSession refuses a defunct record');
+
+  // The cookie is still in the browser until the Set-Cookie clears it, so a
+  // request that arrives first must not resurrect the session.
+  var resumed = getOrCreateSession(cookie);
+  assertEqual(resumed.id !== sess.id, true, 'getOrCreateSession issues a new session');
+  assertEqual(resumed.defunctAt, null, 'the new session is live');
+});
+
+test('destroySession is idempotent and keeps the original timestamp', function () {
+  var sess = getOrCreateSession(undefined);
+  var cookie = sessionCookieHeader(sess).split(';')[0];
+
+  var first = destroySession(cookie);
+  var stamp = first.defunctAt;
+  var second = destroySession(cookie);
+
+  assertEqual(second.defunctAt, stamp, 'repeated logout does not move the timestamp');
+});
+
+test('a defunct record survives persistence and stays unusable after reload', function () {
+  var sess = getOrCreateSession(undefined);
+  sess.signingKey = 'key';
+  sess.userId = 'u1';
+  var cookie = sessionCookieHeader(sess).split(';')[0];
+
+  destroySession(cookie);
+  sessionStore.flushSessions();
+
+  // The record is on disk for audit...
+  var raw = require('node:fs').readFileSync(cfg.config.sessionFile, 'utf8');
+  var onDisk = JSON.parse(raw).filter(function (r) { return r.id === sess.id; });
+  assertEqual(onDisk.length, 1, 'defunct record is persisted');
+  assertEqual(Boolean(onDisk[0].defunctAt), true, 'persisted record carries defunctAt');
+  assertEqual(onDisk[0].signingKey, null, 'persisted record carries no signing key');
+  assertEqual(onDisk[0].apiSessionCookie, null, 'persisted record carries no API cookie');
+
+  // ...and it cannot come back to life on the next load.
+  sessionStore.loadSessions();
+  assertEqual(getSession(cookie), null, 'a reloaded defunct record is still refused');
+});
+
+test('interceptAuthResponse does not strip credentials on logout', function () {
+  // Stripping is destroySession's job, invoked by the caller once the upstream
+  // logout succeeds. Two owners for one invariant is how the record survived.
   var sess = getOrCreateSession(undefined);
   sess.signingKey = 'some-key';
   sess.accessToken = 'some-token';
   var body = Buffer.alloc(0);
   var headerMap = new Map();
-  var result = interceptAuthResponse('POST', '/v1/auth/logout', 200, headerMap, body, sess);
-  assertEqual(sess.signingKey, null, 'Signing key cleared on logout');
-  assertEqual(sess.accessToken, null, 'Access token cleared on logout');
+  interceptAuthResponse('POST', '/v1/auth/logout', 200, headerMap, body, sess);
+  assertEqual(sess.signingKey, 'some-key', 'interceptor leaves credentials to destroySession');
 });
 
 test('interceptAuthResponse does nothing for non-auth endpoints', function () {

@@ -304,6 +304,8 @@ func (h *LoginHandler) Handle(c *gin.Context) {
 				Error:   "account_locked",
 				Message: "Account temporarily locked due to suspicious activity",
 			})
+		case errors.Is(err, application.ErrUserDisabled):
+			h.presenter.Forbidden(c, "this account has been disabled")
 		default:
 			slog.Info("login error",
 				"trace_id", middleware.GetTraceID(c),
@@ -422,6 +424,8 @@ func (h *LoginHandler) HandleWithTokens(c *gin.Context) {
 		case errors.Is(err, application.ErrInvalidCredentials):
 			h.lockout.RecordFailed(req.Email, c.ClientIP(), c.GetHeader("User-Agent"))
 			h.presenter.Unauthorized(c, "Invalid email or password")
+		case errors.Is(err, application.ErrUserDisabled):
+			h.presenter.Forbidden(c, "this account has been disabled")
 		default:
 			h.presenter.InternalError(c, "Login failed")
 		}

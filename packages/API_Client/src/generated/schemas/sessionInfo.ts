@@ -14,4 +14,5 @@ export interface SessionInfo {
   is_current?: boolean;
   selected_organization_id?: string;
   user_agent?: string;
+  user_id?: string;
 }

@@ -8,6 +8,7 @@ package vyzorix
         created_at: int64
         expires_at: int64
         selected_organization_id?: string
+        user_id?: string
         is_current: bool
 }
 

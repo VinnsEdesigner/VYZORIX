@@ -17,12 +17,12 @@ var ErrUsed = errors.New("password reset token already used")
 
 // PasswordResetToken represents a pending password reset token.
 type PasswordResetToken struct {
-	ExpiresAt  time.Time
-	CreatedAt  time.Time
-	UsedAt     *time.Time
-	ID         string
-	UserID string
-	TokenHash  string
+	ExpiresAt time.Time
+	CreatedAt time.Time
+	UsedAt    *time.Time
+	ID        string
+	UserID    string
+	TokenHash string
 }
 
 // IsExpired returns true if the token has expired.

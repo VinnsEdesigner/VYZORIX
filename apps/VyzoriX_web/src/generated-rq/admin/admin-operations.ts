@@ -31,22 +31,26 @@ import type {
   AdminAPIKeyListResult,
   AdminClientListResult,
   AdminClientResult,
-  AdminUser,
-  AdminUserListResult,
-  CreateUserRequest,
+  AdminUserSessionListResult,
   ErrorResponse,
   GetAdminApiKeysParams,
   GetAdminApiKeysUserUserIdParams,
+  GetAuthAdminUsersParams,
   GlobalAPIKeyStatsResult,
+  OrgUser,
+  OrgUserListResult,
+  OrgUserStatsResult,
+  RevokeResult,
   SuccessResult,
   SupportBundleResult,
   UpdateAdminClientRequest,
-  UpdateUserRequest,
   UserAPIKeyStatsResult
 } from '../../../../../packages/API_Client/src/generated/schemas';
 
 import { customAxios } from '../../../../../packages/API_Client/src/generated/rest-bridge';
 import organizationScopedQueryKey from '.././query-key-mutator';
+import { getGetAuthLockoutStatusQueryKey } from '../auth/auth-session';
+import { getGetAuthSessionsQueryKey } from '../sessions/auth-sessions';
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -581,6 +585,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     queryClient.invalidateQueries({ queryKey: getGetAdminClientsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAdminSupportBundleQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthSessionsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthLockoutStatusQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -880,6 +887,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     queryClient.invalidateQueries({ queryKey: getGetAdminClientsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAdminSupportBundleQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthSessionsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthLockoutStatusQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -968,6 +978,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     queryClient.invalidateQueries({ queryKey: getGetAdminClientsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAdminSupportBundleQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthSessionsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthLockoutStatusQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -1049,6 +1062,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     queryClient.invalidateQueries({ queryKey: getGetAdminClientsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAdminSupportBundleQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthSessionsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthLockoutStatusQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -1185,21 +1201,28 @@ export const invalidateGetAdminSupportBundle = async (
 
 
 
-export const getGetAuthAdminUsersUrl = () => {
+export const getGetAuthAdminUsersUrl = (params?: GetAuthAdminUsersParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/auth/admin/users`
+  return stringifiedParams.length > 0 ? `/auth/admin/users?${stringifiedParams}` : `/auth/admin/users`
 }
 
 /**
- * Lists all users in the system (super_admin only)
- * @summary List users
+ * Lists the members of the current organisation, paginated and optionally searched by email or name (super_admin only)
+ * @summary List organisation members
  */
-export const getAuthAdminUsers = async ( options?: Parameters<typeof customAxios>[1]): Promise<AdminUserListResult> => {
+export const getAuthAdminUsers = async (params?: GetAuthAdminUsersParams, options?: Parameters<typeof customAxios>[1]): Promise<OrgUserListResult> => {
 
-  return customAxios<AdminUserListResult>(getGetAuthAdminUsersUrl(),
+  return customAxios<OrgUserListResult>(getGetAuthAdminUsersUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1212,20 +1235,20 @@ export const getAuthAdminUsers = async ( options?: Parameters<typeof customAxios
 
 
 
-export const getGetAuthAdminUsersQueryKey = () =>
-    organizationScopedQueryKey({  }, { url: `/auth/admin/users` });
+export const getGetAuthAdminUsersQueryKey = (params?: GetAuthAdminUsersParams,) =>
+    organizationScopedQueryKey({ params }, { url: `/auth/admin/users` });
 
 
-export const useGetAuthAdminUsersQueryOptions = <TData = Awaited<ReturnType<typeof getAuthAdminUsers>>, TError = ErrorResponse>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsers>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+export const useGetAuthAdminUsersQueryOptions = <TData = Awaited<ReturnType<typeof getAuthAdminUsers>>, TError = ErrorResponse>(params?: GetAuthAdminUsersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsers>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  organizationScopedQueryKey({  }, { url: `/auth/admin/users`, queryOptions });
+  const queryKey =  organizationScopedQueryKey({ params }, { url: `/auth/admin/users`, queryOptions });
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuthAdminUsers>>> = ({ signal }) => getAuthAdminUsers({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuthAdminUsers>>> = ({ signal }) => getAuthAdminUsers(params, { signal, ...requestOptions });
 
 
 
@@ -1239,7 +1262,7 @@ export type GetAuthAdminUsersQueryError = ErrorResponse
 
 
 export function useGetAuthAdminUsers<TData = Awaited<ReturnType<typeof getAuthAdminUsers>>, TError = ErrorResponse>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsers>>, TError, TData>> & Pick<
+ params: undefined |  GetAuthAdminUsersParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsers>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getAuthAdminUsers>>,
           TError,
@@ -1249,7 +1272,7 @@ export function useGetAuthAdminUsers<TData = Awaited<ReturnType<typeof getAuthAd
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetAuthAdminUsers<TData = Awaited<ReturnType<typeof getAuthAdminUsers>>, TError = ErrorResponse>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsers>>, TError, TData>> & Pick<
+ params?: GetAuthAdminUsersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsers>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getAuthAdminUsers>>,
           TError,
@@ -1259,19 +1282,19 @@ export function useGetAuthAdminUsers<TData = Awaited<ReturnType<typeof getAuthAd
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetAuthAdminUsers<TData = Awaited<ReturnType<typeof getAuthAdminUsers>>, TError = ErrorResponse>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsers>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ params?: GetAuthAdminUsersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsers>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary List users
+ * @summary List organisation members
  */
 
 export function useGetAuthAdminUsers<TData = Awaited<ReturnType<typeof getAuthAdminUsers>>, TError = ErrorResponse>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsers>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ params?: GetAuthAdminUsersParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsers>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = useGetAuthAdminUsersQueryOptions(options)
+  const queryOptions = useGetAuthAdminUsersQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -1280,13 +1303,13 @@ export function useGetAuthAdminUsers<TData = Awaited<ReturnType<typeof getAuthAd
 
 
 /**
- * @summary List users
+ * @summary List organisation members
  */
 export const invalidateGetAuthAdminUsers = async (
- queryClient: QueryClient,  options?: InvalidateOptions
+ queryClient: QueryClient, params?: GetAuthAdminUsersParams, options?: InvalidateOptions
   ): Promise<QueryClient> => {
 
-  await queryClient.invalidateQueries({ queryKey: organizationScopedQueryKey({  }, { url: `/auth/admin/users` }) }, options);
+  await queryClient.invalidateQueries({ queryKey: organizationScopedQueryKey({ params }, { url: `/auth/admin/users` }) }, options);
 
   return queryClient;
 }
@@ -1294,32 +1317,26 @@ export const invalidateGetAuthAdminUsers = async (
 
 
 
-export const getPostAuthAdminUsersUrl = () => {
+export const getGetAuthAdminUsersStatsUrl = () => {
 
 
 
 
-  return `/auth/admin/users`
+  return `/auth/admin/users/stats`
 }
 
 /**
- * Creates a new user (super_admin only)
- * @summary Create user
+ * Member count per role plus the pending invitation count for the current organisation (super_admin only)
+ * @summary Organisation member stats
  */
-export const postAuthAdminUsers = async (createUserRequest: CreateUserRequest, options?: Parameters<typeof customAxios>[1]): Promise<AdminUser> => {
+export const getAuthAdminUsersStats = async ( options?: Parameters<typeof customAxios>[1]): Promise<OrgUserStatsResult> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
-  };
-return customAxios<AdminUser>(getPostAuthAdminUsersUrl(),
+  return customAxios<OrgUserStatsResult>(getGetAuthAdminUsersStatsUrl(),
   {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(createUserRequest)
+    method: 'GET'
+
+
   }
 );}
 
@@ -1327,61 +1344,89 @@ return customAxios<AdminUser>(getPostAuthAdminUsersUrl(),
 
 
 
-export const getPostAuthAdminUsersMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthAdminUsers>>, TError,{data: CreateUserRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
-): UseMutationOptions<Awaited<ReturnType<typeof postAuthAdminUsers>>, TError,{data: CreateUserRequest}, TContext> => {
-
-const mutationKey = ['postAuthAdminUsers'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+export const getGetAuthAdminUsersStatsQueryKey = () =>
+    organizationScopedQueryKey({  }, { url: `/auth/admin/users/stats` });
 
 
+export const useGetAuthAdminUsersStatsQueryOptions = <TData = Awaited<ReturnType<typeof getAuthAdminUsersStats>>, TError = ErrorResponse>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsersStats>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  organizationScopedQueryKey({  }, { url: `/auth/admin/users/stats`, queryOptions });
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postAuthAdminUsers>>, {data: CreateUserRequest}> = (props) => {
-          const {data} = props ?? {};
 
-          return  postAuthAdminUsers(data,requestOptions)
-        }
-
-  const onSuccess = (data: Awaited<ReturnType<typeof postAuthAdminUsers>>, variables: {data: CreateUserRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
-        if (!options?.skipInvalidation) {
-        queryClient.invalidateQueries({ queryKey: getGetAdminApiKeysQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetAdminApiKeysStatsQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetAdminClientsQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetAdminSupportBundleQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
-        }
-        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
-      };
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuthAdminUsersStats>>> = ({ signal }) => getAuthAdminUsersStats({ signal, ...requestOptions });
 
 
 
 
-  return  { ...mutationOptions, mutationFn, onSuccess }}
 
-    export type PostAuthAdminUsersMutationResult = NonNullable<Awaited<ReturnType<typeof postAuthAdminUsers>>>
-    export type PostAuthAdminUsersMutationBody = CreateUserRequest
-    export type PostAuthAdminUsersMutationError = ErrorResponse
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsersStats>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
 
-    /**
- * @summary Create user
+export type GetAuthAdminUsersStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getAuthAdminUsersStats>>>
+export type GetAuthAdminUsersStatsQueryError = ErrorResponse
+
+
+export function useGetAuthAdminUsersStats<TData = Awaited<ReturnType<typeof getAuthAdminUsersStats>>, TError = ErrorResponse>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsersStats>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAuthAdminUsersStats>>,
+          TError,
+          Awaited<ReturnType<typeof getAuthAdminUsersStats>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAuthAdminUsersStats<TData = Awaited<ReturnType<typeof getAuthAdminUsersStats>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsersStats>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAuthAdminUsersStats>>,
+          TError,
+          Awaited<ReturnType<typeof getAuthAdminUsersStats>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAuthAdminUsersStats<TData = Awaited<ReturnType<typeof getAuthAdminUsersStats>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsersStats>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Organisation member stats
  */
-export const usePostAuthAdminUsers = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postAuthAdminUsers>>, TError,{data: CreateUserRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postAuthAdminUsers>>,
-        TError,
-        {data: CreateUserRequest},
-        TContext
-      > => {
-      const backupQueryClient = useQueryClient();
-      return useMutation(getPostAuthAdminUsersMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
-    }
-    export const getGetAuthAdminUsersIdUrl = (id: string,) => {
+
+export function useGetAuthAdminUsersStats<TData = Awaited<ReturnType<typeof getAuthAdminUsersStats>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsersStats>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = useGetAuthAdminUsersStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+/**
+ * @summary Organisation member stats
+ */
+export const invalidateGetAuthAdminUsersStats = async (
+ queryClient: QueryClient,  options?: InvalidateOptions
+  ): Promise<QueryClient> => {
+
+  await queryClient.invalidateQueries({ queryKey: organizationScopedQueryKey({  }, { url: `/auth/admin/users/stats` }) }, options);
+
+  return queryClient;
+}
+
+
+
+
+export const getGetAuthAdminUsersIdUrl = (id: string,) => {
 
 
 
@@ -1390,12 +1435,12 @@ export const usePostAuthAdminUsers = <TError = ErrorResponse,
 }
 
 /**
- * Returns a single user by ID (super_admin only)
- * @summary Get user
+ * Returns a member of the current organisation (super_admin only). A user outside the organisation is reported as not found.
+ * @summary Get organisation member
  */
-export const getAuthAdminUsersId = async (id: string, options?: Parameters<typeof customAxios>[1]): Promise<AdminUser> => {
+export const getAuthAdminUsersId = async (id: string, options?: Parameters<typeof customAxios>[1]): Promise<OrgUser> => {
 
-  return customAxios<AdminUser>(getGetAuthAdminUsersIdUrl(id),
+  return customAxios<OrgUser>(getGetAuthAdminUsersIdUrl(id),
   {
     ...options,
     method: 'GET'
@@ -1459,7 +1504,7 @@ export function useGetAuthAdminUsersId<TData = Awaited<ReturnType<typeof getAuth
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Get user
+ * @summary Get organisation member
  */
 
 export function useGetAuthAdminUsersId<TData = Awaited<ReturnType<typeof getAuthAdminUsersId>>, TError = ErrorResponse>(
@@ -1476,7 +1521,7 @@ export function useGetAuthAdminUsersId<TData = Awaited<ReturnType<typeof getAuth
 
 
 /**
- * @summary Get user
+ * @summary Get organisation member
  */
 export const invalidateGetAuthAdminUsersId = async (
  queryClient: QueryClient, id: string, options?: InvalidateOptions
@@ -1490,21 +1535,130 @@ export const invalidateGetAuthAdminUsersId = async (
 
 
 
-export const getDeleteAuthAdminUsersIdUrl = (id: string,) => {
+export const getGetAuthAdminUsersIdSessionsUrl = (id: string,) => {
 
 
 
 
-  return `/auth/admin/users/${id}`
+  return `/auth/admin/users/${id}/sessions`
 }
 
 /**
- * Deletes a user. Cannot delete yourself or the last super_admin
- * @summary Delete user
+ * Lists the active sessions of a user (super_admin only)
+ * @summary List user sessions
  */
-export const deleteAuthAdminUsersId = async (id: string, options?: Parameters<typeof customAxios>[1]): Promise<SuccessResult> => {
+export const getAuthAdminUsersIdSessions = async (id: string, options?: Parameters<typeof customAxios>[1]): Promise<AdminUserSessionListResult> => {
 
-  return customAxios<SuccessResult>(getDeleteAuthAdminUsersIdUrl(id),
+  return customAxios<AdminUserSessionListResult>(getGetAuthAdminUsersIdSessionsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAuthAdminUsersIdSessionsQueryKey = (id: string,) =>
+    organizationScopedQueryKey({ id }, { url: `/auth/admin/users/${id}/sessions` });
+
+
+export const useGetAuthAdminUsersIdSessionsQueryOptions = <TData = Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>, TError = ErrorResponse>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  organizationScopedQueryKey({ id }, { url: `/auth/admin/users/${id}/sessions`, queryOptions });
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>> = ({ signal }) => getAuthAdminUsersIdSessions(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAuthAdminUsersIdSessionsQueryResult = NonNullable<Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>>
+export type GetAuthAdminUsersIdSessionsQueryError = ErrorResponse
+
+
+export function useGetAuthAdminUsersIdSessions<TData = Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>, TError = ErrorResponse>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>,
+          TError,
+          Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAuthAdminUsersIdSessions<TData = Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>,
+          TError,
+          Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAuthAdminUsersIdSessions<TData = Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List user sessions
+ */
+
+export function useGetAuthAdminUsersIdSessions<TData = Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>, TError = ErrorResponse>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAuthAdminUsersIdSessions>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = useGetAuthAdminUsersIdSessionsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+/**
+ * @summary List user sessions
+ */
+export const invalidateGetAuthAdminUsersIdSessions = async (
+ queryClient: QueryClient, id: string, options?: InvalidateOptions
+  ): Promise<QueryClient> => {
+
+  await queryClient.invalidateQueries({ queryKey: organizationScopedQueryKey({ id }, { url: `/auth/admin/users/${id}/sessions` }) }, options);
+
+  return queryClient;
+}
+
+
+
+
+export const getDeleteAuthAdminUsersIdSessionsUrl = (id: string,) => {
+
+
+
+
+  return `/auth/admin/users/${id}/sessions`
+}
+
+/**
+ * Revokes every active session of a user (super_admin only)
+ * @summary Revoke all user sessions
+ */
+export const deleteAuthAdminUsersIdSessions = async (id: string, options?: Parameters<typeof customAxios>[1]): Promise<RevokeResult> => {
+
+  return customAxios<RevokeResult>(getDeleteAuthAdminUsersIdSessionsUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -1517,11 +1671,11 @@ export const deleteAuthAdminUsersId = async (id: string, options?: Parameters<ty
 
 
 
-export const getDeleteAuthAdminUsersIdMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAuthAdminUsersId>>, TError,{id: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteAuthAdminUsersId>>, TError,{id: string}, TContext> => {
+export const getDeleteAuthAdminUsersIdSessionsMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAuthAdminUsersIdSessions>>, TError,{id: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAuthAdminUsersIdSessions>>, TError,{id: string}, TContext> => {
 
-const mutationKey = ['deleteAuthAdminUsersId'];
+const mutationKey = ['deleteAuthAdminUsersIdSessions'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1531,19 +1685,22 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAuthAdminUsersId>>, {id: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAuthAdminUsersIdSessions>>, {id: string}> = (props) => {
           const {id} = props ?? {};
 
-          return  deleteAuthAdminUsersId(id,requestOptions)
+          return  deleteAuthAdminUsersIdSessions(id,requestOptions)
         }
 
-  const onSuccess = (data: Awaited<ReturnType<typeof deleteAuthAdminUsersId>>, variables: {id: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
+  const onSuccess = (data: Awaited<ReturnType<typeof deleteAuthAdminUsersIdSessions>>, variables: {id: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetAdminApiKeysQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAdminApiKeysStatsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAdminClientsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAdminSupportBundleQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthSessionsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthLockoutStatusQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -1553,51 +1710,46 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { ...mutationOptions, mutationFn, onSuccess }}
 
-    export type DeleteAuthAdminUsersIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAuthAdminUsersId>>>
+    export type DeleteAuthAdminUsersIdSessionsMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAuthAdminUsersIdSessions>>>
 
-    export type DeleteAuthAdminUsersIdMutationError = ErrorResponse
+    export type DeleteAuthAdminUsersIdSessionsMutationError = ErrorResponse
 
     /**
- * @summary Delete user
+ * @summary Revoke all user sessions
  */
-export const useDeleteAuthAdminUsersId = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAuthAdminUsersId>>, TError,{id: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+export const useDeleteAuthAdminUsersIdSessions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAuthAdminUsersIdSessions>>, TError,{id: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof deleteAuthAdminUsersId>>,
+        Awaited<ReturnType<typeof deleteAuthAdminUsersIdSessions>>,
         TError,
         {id: string},
         TContext
       > => {
       const backupQueryClient = useQueryClient();
-      return useMutation(getDeleteAuthAdminUsersIdMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
+      return useMutation(getDeleteAuthAdminUsersIdSessionsMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
-    export const getPatchAuthAdminUsersIdUrl = (id: string,) => {
+    export const getDeleteAuthAdminUsersIdSessionsSessionIdUrl = (id: string,
+    sessionId: string,) => {
 
 
 
 
-  return `/auth/admin/users/${id}`
+  return `/auth/admin/users/${id}/sessions/${sessionId}`
 }
 
 /**
- * Updates mutable user fields (super_admin only)
- * @summary Update user
+ * Revokes one session belonging to a user (super_admin only)
+ * @summary Revoke user session
  */
-export const patchAuthAdminUsersId = async (id: string,
-    updateUserRequest: UpdateUserRequest, options?: Parameters<typeof customAxios>[1]): Promise<AdminUser> => {
+export const deleteAuthAdminUsersIdSessionsSessionId = async (id: string,
+    sessionId: string, options?: Parameters<typeof customAxios>[1]): Promise<SuccessResult> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
-  };
-return customAxios<AdminUser>(getPatchAuthAdminUsersIdUrl(id),
+  return customAxios<SuccessResult>(getDeleteAuthAdminUsersIdSessionsSessionIdUrl(id,sessionId),
   {
     ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(updateUserRequest)
+    method: 'DELETE'
+
+
   }
 );}
 
@@ -1605,11 +1757,11 @@ return customAxios<AdminUser>(getPatchAuthAdminUsersIdUrl(id),
 
 
 
-export const getPatchAuthAdminUsersIdMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchAuthAdminUsersId>>, TError,{id: string;data: UpdateUserRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
-): UseMutationOptions<Awaited<ReturnType<typeof patchAuthAdminUsersId>>, TError,{id: string;data: UpdateUserRequest}, TContext> => {
+export const getDeleteAuthAdminUsersIdSessionsSessionIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAuthAdminUsersIdSessionsSessionId>>, TError,{id: string;sessionId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAuthAdminUsersIdSessionsSessionId>>, TError,{id: string;sessionId: string}, TContext> => {
 
-const mutationKey = ['patchAuthAdminUsersId'];
+const mutationKey = ['deleteAuthAdminUsersIdSessionsSessionId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1619,19 +1771,22 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchAuthAdminUsersId>>, {id: string;data: UpdateUserRequest}> = (props) => {
-          const {id,data} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAuthAdminUsersIdSessionsSessionId>>, {id: string;sessionId: string}> = (props) => {
+          const {id,sessionId} = props ?? {};
 
-          return  patchAuthAdminUsersId(id,data,requestOptions)
+          return  deleteAuthAdminUsersIdSessionsSessionId(id,sessionId,requestOptions)
         }
 
-  const onSuccess = (data: Awaited<ReturnType<typeof patchAuthAdminUsersId>>, variables: {id: string;data: UpdateUserRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
+  const onSuccess = (data: Awaited<ReturnType<typeof deleteAuthAdminUsersIdSessionsSessionId>>, variables: {id: string;sessionId: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetAdminApiKeysQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAdminApiKeysStatsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAdminClientsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAdminSupportBundleQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthSessionsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthLockoutStatusQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -1641,21 +1796,21 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { ...mutationOptions, mutationFn, onSuccess }}
 
-    export type PatchAuthAdminUsersIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchAuthAdminUsersId>>>
-    export type PatchAuthAdminUsersIdMutationBody = UpdateUserRequest
-    export type PatchAuthAdminUsersIdMutationError = ErrorResponse
+    export type DeleteAuthAdminUsersIdSessionsSessionIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAuthAdminUsersIdSessionsSessionId>>>
+
+    export type DeleteAuthAdminUsersIdSessionsSessionIdMutationError = ErrorResponse
 
     /**
- * @summary Update user
+ * @summary Revoke user session
  */
-export const usePatchAuthAdminUsersId = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchAuthAdminUsersId>>, TError,{id: string;data: UpdateUserRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+export const useDeleteAuthAdminUsersIdSessionsSessionId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAuthAdminUsersIdSessionsSessionId>>, TError,{id: string;sessionId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof patchAuthAdminUsersId>>,
+        Awaited<ReturnType<typeof deleteAuthAdminUsersIdSessionsSessionId>>,
         TError,
-        {id: string;data: UpdateUserRequest},
+        {id: string;sessionId: string},
         TContext
       > => {
       const backupQueryClient = useQueryClient();
-      return useMutation(getPatchAuthAdminUsersIdMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
+      return useMutation(getDeleteAuthAdminUsersIdSessionsSessionIdMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }

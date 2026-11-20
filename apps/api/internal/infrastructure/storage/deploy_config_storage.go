@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/deployconfig"
@@ -44,21 +45,54 @@ func scanDeployConfig(scanner interface{ Scan(...any) error }) (*deployconfig.Re
 	return &rec, nil
 }
 
-// Current returns the config the device should be running.
-func (r *DeployConfigRepository) Current(ctx context.Context, deviceID string) (*deployconfig.Record, error) {
-	return r.get(ctx, deviceID, deployconfig.KindCurrent)
+// Current returns the config the device should be running, scoped to an organisation.
+//
+// The org is enforced by the query, not by the caller remembering to check: the join
+// against devices means a device in another tenant reads as ErrNotFound, exactly like one
+// that does not exist. The config table has no org column of its own — the org is a
+// property of the device — so the join is what makes tenancy a property of the read.
+func (r *DeployConfigRepository) Current(ctx context.Context, orgID, deviceID string) (*deployconfig.Record, error) {
+	return r.get(ctx, orgID, deviceID, deployconfig.KindCurrent)
 }
 
-// LastGood returns the config that last applied.
-func (r *DeployConfigRepository) LastGood(ctx context.Context, deviceID string) (*deployconfig.Record, error) {
-	return r.get(ctx, deviceID, deployconfig.KindLastGood)
+// LastGood returns the config that last applied, scoped to an organisation.
+func (r *DeployConfigRepository) LastGood(ctx context.Context, orgID, deviceID string) (*deployconfig.Record, error) {
+	return r.get(ctx, orgID, deviceID, deployconfig.KindLastGood)
 }
 
-// get reads one retained config by kind.
-func (r *DeployConfigRepository) get(ctx context.Context, deviceID string, kind deployconfig.Kind) (*deployconfig.Record, error) {
+// CurrentForDevice returns the config the device should be running, keyed by device id
+// alone.
+//
+// This is the device's own read: the device signed the request with its own key, so the
+// device is the authenticated principal and the id in the path is the id that was proven.
+// There is no org to check against and no cross-tenant risk — a device can only read its
+// own row. It is a separate method from Current so a user-facing caller cannot reach it by
+// accident: every user path goes through Current and its org join.
+func (r *DeployConfigRepository) CurrentForDevice(ctx context.Context, deviceID string) (*deployconfig.Record, error) {
 	row := r.db.QueryRowContext(ctx,
 		`SELECT `+deployConfigColumns+` FROM device_deploy_configs WHERE device_id = ? AND kind = ?`,
-		deviceID, string(kind))
+		deviceID, string(deployconfig.KindCurrent))
+
+	rec, err := scanDeployConfig(row)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, deployconfig.ErrNotFound
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("read current config for %s: %w", deviceID, err)
+	}
+
+	return rec, nil
+}
+
+// get reads one retained config by kind, refusing a device outside the organisation.
+func (r *DeployConfigRepository) get(ctx context.Context, orgID, deviceID string, kind deployconfig.Kind) (*deployconfig.Record, error) {
+	row := r.db.QueryRowContext(ctx,
+		`SELECT `+prefixedColumns(deployConfigColumns, "c")+`
+		 FROM device_deploy_configs c
+		 JOIN devices d ON d.id = c.device_id
+		 WHERE c.device_id = ? AND c.kind = ? AND d.organization_id = ?`,
+		deviceID, string(kind), orgID)
 
 	rec, err := scanDeployConfig(row)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -70,6 +104,18 @@ func (r *DeployConfigRepository) get(ctx context.Context, deviceID string, kind 
 	}
 
 	return rec, nil
+}
+
+// prefixedColumns qualifies a bare column list with a table alias, so the join's
+// columns cannot be ambiguous.
+func prefixedColumns(columns, alias string) string {
+	parts := strings.Split(columns, ",")
+
+	for i, part := range parts {
+		parts[i] = alias + "." + strings.TrimSpace(part)
+	}
+
+	return strings.Join(parts, ", ")
 }
 
 // SaveCurrent stores a new current config. In one transaction it demotes the

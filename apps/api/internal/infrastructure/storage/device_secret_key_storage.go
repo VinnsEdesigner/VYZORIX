@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/appsecret"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
 )
 
@@ -41,7 +42,7 @@ func (r *DeviceSecretKeyRepository) SecretPublicKey(ctx context.Context, deviceI
 	}
 
 	if key.String == "" {
-		return "", fmt.Errorf("device %s has no secret key registered", deviceID)
+		return "", fmt.Errorf("%w: device %s", appsecret.ErrNoSecretKey, deviceID)
 	}
 
 	return key.String, nil

@@ -2,10 +2,11 @@ package middleware
 
 import (
 	"context"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/serviceaccount"
 	"net/http"
 	"strings"
 
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/serviceaccount"
+	svcapp "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/serviceaccount"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/responses"
 	keys "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/keys"
@@ -113,10 +114,10 @@ func IsTenantPath(path string) bool {
 // =============================================================================.
 
 // TenantAPIKeyAuth provides tenant API key authentication middleware.
-// ServiceAccountAuthenticator validates service account tokens when user
-// API key validation fails. Implemented by serviceaccount.Service.
+// ServiceAccountAuthenticator validates service account tokens. The returned
+// identity carries its owning account, so the org comes off the credential.
 type ServiceAccountAuthenticator interface {
-	Authenticate(ctx context.Context, key string) (*serviceaccount.Token, error)
+	Authenticate(ctx context.Context, key string) (*svcapp.AuthenticatedToken, error)
 }
 
 // TenantAPIKeyAuth validates user API keys and, as a fallback, service
@@ -178,18 +179,24 @@ func (t *TenantAPIKeyAuth) Middleware() gin.HandlerFunc {
 		// the form "vxyz_sa_..." fall back to the service account lookup.
 		key, err := t.service.ValidateKey(c.Request.Context(), apiKey)
 		if err != nil && t.saAuth != nil && strings.HasPrefix(apiKey, "vxyz_sa_") {
-			if saToken, saErr := t.saAuth.Authenticate(c.Request.Context(), apiKey); saErr == nil && saToken.IsUsable() {
+			if identity, saErr := t.saAuth.Authenticate(c.Request.Context(), apiKey); saErr == nil {
+				token := identity.Token
 				c.Set("user_id", "")
-				c.Set("api_key_id", saToken.ID)
-				c.Set("api_key_scope", saToken.Scopes[0])
-				c.Set("api_key_name", saToken.Name)
-				c.Set("auth_type", "service_account")
-				c.Set("service_account_id", saToken.ServiceID)
-				c.Set("service_account_scopes", saToken.Scopes)
-				if saSvc, ok := t.saAuth.(interface{ GetOrgID(context.Context) string }); ok {
-					c.Set(ContextKeyOrganizationID, saSvc.GetOrgID(c.Request.Context()))
-					c.Set("org_source", "service_account")
+				c.Set("api_key_id", token.ID)
+				// Scopes are optional now that roles are the permission source, so
+				// there may be none; an empty scope must not index the slice.
+				if len(token.Scopes) > 0 {
+					c.Set("api_key_scope", token.Scopes[0])
 				}
+				c.Set("api_key_name", token.Name)
+				c.Set("auth_type", "service_account")
+				c.Set("service_account_id", token.ServiceID)
+				c.Set("service_account_scopes", token.Scopes)
+				// requireScope evaluates this token, so it travels in context.
+				c.Set(ContextKeyServiceAccountToken, token)
+				c.Set(ContextKeyOrganizationID, identity.OrgID())
+				c.Set("service_account_org_id", identity.OrgID())
+				c.Set("org_source", "service_account")
 				c.Next()
 				return
 			}
@@ -317,10 +324,15 @@ type ScopeEnforcementFunc func(method string) domain.Scope
 // It uses a scope determination function so different routes can have different requirements.
 func (t *TenantAPIKeyAuth) ScopeEnforcement(scopeFn ScopeEnforcementFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Only enforce scope for API key auth (not session auth).
-		authType, exists := c.Get("auth_type")
-		if !exists || authType != "tenant_api_key" {
-			// Session auth - skip scope enforcement.
+		// Bearer credentials only; sessions are authorised by role.
+		switch c.GetString("auth_type") {
+		case "service_account":
+			// requireScope does the authoritative action-level check.
+			c.Next()
+			return
+		case "tenant_api_key":
+			// Coarse method-based check below.
+		default:
 			c.Next()
 			return
 		}
@@ -380,4 +392,19 @@ func MethodToScope(method string) domain.Scope {
 	default:
 		return domain.ScopeRead
 	}
+}
+
+// ContextKeyServiceAccountToken is the gin context key holding the authenticated
+// service account token, set by TenantAPIKeyAuth.
+const ContextKeyServiceAccountToken = "service_account_token"
+
+// GetServiceAccountToken returns the authenticated service account token, or nil
+// when the request was not authenticated by one.
+func GetServiceAccountToken(c *gin.Context) *serviceaccount.Token {
+	if val, exists := c.Get(ContextKeyServiceAccountToken); exists {
+		if token, ok := val.(*serviceaccount.Token); ok {
+			return token
+		}
+	}
+	return nil
 }

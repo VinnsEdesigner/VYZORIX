@@ -68,7 +68,7 @@ func (h *InvitationHandler) Create(c *gin.Context) {
 	}
 
 	var req struct {
-		OrganizationID string `json:"organizationId" binding:"required"`
+		OrganizationID string `json:"organizationId"`
 		Email          string `json:"email" binding:"required"`
 		Role           string `json:"role" binding:"required"`
 		Notes          string `json:"notes"`
@@ -76,6 +76,19 @@ func (h *InvitationHandler) Create(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.presenter.BadRequest(c, "Invalid request body")
+		return
+	}
+
+	// The organisation is resolved from the credential, not from the body: the
+	// scope guard authorised members.write on the session's org, so a body naming a
+	// different org would authorise one org and write to another.
+	orgID := middleware.GetOrganizationID(c)
+	if orgID == "" {
+		h.presenter.BadRequest(c, "organization context required")
+		return
+	}
+	if req.OrganizationID != "" && req.OrganizationID != orgID {
+		h.presenter.Forbidden(c, "organization does not match the current context")
 		return
 	}
 
@@ -95,7 +108,7 @@ func (h *InvitationHandler) Create(c *gin.Context) {
 
 	inv, err := h.invitationService.CreateInvitation(
 		c.Request.Context(),
-		req.OrganizationID,
+		orgID,
 		op.ID,
 		req.Email,
 		invRole,

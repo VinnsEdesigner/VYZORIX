@@ -808,7 +808,6 @@ func ProvideHandlerSet(
 	hs.ConnectionStatus = handlers.NewConnectionStatusHandler(log, hubResult.Hub, storage.NewDeviceRepository(db))
 	hs.AdminClients = admin.NewClientsHandler(clientService)
 	hs.Updates = updatesHandler
-
 	return hs
 }
 

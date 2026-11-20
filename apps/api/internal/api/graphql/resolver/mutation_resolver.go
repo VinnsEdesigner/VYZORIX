@@ -14,9 +14,9 @@ import (
 	annotationdomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/annotation"
 	devicedomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
 	notificationdomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/notification"
-	domainuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	orgdomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	sadomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/serviceaccount"
+	domainuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/webhook"
 	"github.com/graphql-go/graphql"
 )

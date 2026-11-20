@@ -69,7 +69,9 @@ export function resolveNavTrail(sections: NavSection[], pathname: string): NavTr
   for (const section of sections) {
     for (const item of section.items) {
       for (const child of item.children ?? []) {
-        if (splitUrl(child.url).path === path) {
+
+        const childPath = splitUrl(child.url).path;
+        if (path === childPath || path.startsWith(`${childPath}/`)) {
           return { section, item, child };
         }
       }

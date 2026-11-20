@@ -27,7 +27,16 @@ type Injection struct {
 
 // Compile turns a manifest into a config. The manifest must already have passed
 // ParseManifest.
+//
+// The injection is checked for the values that make a config meaningful. A caller that
+// forgot to set the version would render `version 0`, and the device would treat the
+// document as older than anything it holds and ignore it — a silent no-op rather than an
+// error. The device, org and member are the same kind of required server-owned fact.
 func Compile(m *Manifest, in Injection) (*Config, error) {
+	if err := validateInjection(in); err != nil {
+		return nil, err
+	}
+
 	cfg := &Config{
 		DeviceID:         in.DeviceID,
 		OrgID:            in.OrgID,
@@ -52,6 +61,24 @@ func Compile(m *Manifest, in Injection) (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// validateInjection refuses an injection missing a server-owned value a config needs.
+// The version is the important one: version 0 is older than any real deploy, so a device
+// would keep what it has and the deploy would look like it worked.
+func validateInjection(in Injection) error {
+	switch {
+	case in.DeviceID == "":
+		return &ManifestError{Field: "device.id", Message: "the server did not supply a target device"}
+	case in.OrgID == "":
+		return &ManifestError{Field: "device.org", Message: "the server did not supply an organisation"}
+	case in.MemberID == "":
+		return &ManifestError{Field: "device.member", Message: "the server did not supply the authorising member"}
+	case in.Version <= 0:
+		return &ManifestError{Field: "version", Message: "the server did not supply a positive version"}
+	}
+
+	return nil
 }
 
 // compileApp builds one AppConfig. The digest rule is re-checked here so a

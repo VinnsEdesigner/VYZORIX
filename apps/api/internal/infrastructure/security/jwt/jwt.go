@@ -25,9 +25,9 @@ var (
 type UserClaims struct {
 	jwt.RegisteredClaims
 	UserID string `json:"oid"`
-	Email      string `json:"email"`
-	Name       string `json:"name"`
-	Role       string `json:"role"`
+	Email  string `json:"email"`
+	Name   string `json:"name"`
+	Role   string `json:"role"`
 }
 
 // Manager handles signing and verifying JWT tokens for user authentication.
@@ -74,9 +74,9 @@ func (m *Manager) Generate(userID, email, name, role string) (string, time.Time,
 			ID:        tokenID,
 		},
 		UserID: userID,
-		Email:      email,
-		Name:       name,
-		Role:       role,
+		Email:  email,
+		Name:   name,
+		Role:   role,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signed, err := token.SignedString(m.secret)

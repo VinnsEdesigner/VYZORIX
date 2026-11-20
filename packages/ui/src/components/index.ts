@@ -20,6 +20,7 @@ export * from './Slider';
 export * from './Field';
 export * from './FormField';
 export * from './Portal';
+export * from './Overlay';
 export * from './Tooltip';
 export * from './Modal';
 export * from './ConfirmModal';

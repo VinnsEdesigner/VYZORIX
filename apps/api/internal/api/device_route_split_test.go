@@ -118,7 +118,6 @@ func TestDeviceSignedRoutesRequireOnlyTheDeviceSignature(t *testing.T) {
 	key, pubPEM := deviceRouteKeyPair(t)
 	s := deviceRouteServer(t, "dev-1", pubPEM)
 
-	gin.SetMode(gin.TestMode)
 	reached := false
 
 	engine := gin.New()
@@ -157,7 +156,6 @@ func TestDeviceSignedRouteRejectsTheApiClientSignatureAlone(t *testing.T) {
 	_, pubPEM := deviceRouteKeyPair(t)
 	s := deviceRouteServer(t, "dev-1", pubPEM)
 
-	gin.SetMode(gin.TestMode)
 	reached := false
 
 	engine := gin.New()

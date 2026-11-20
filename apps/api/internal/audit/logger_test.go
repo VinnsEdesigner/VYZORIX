@@ -18,7 +18,7 @@ func TestLoggerConfig_Default(t *testing.T) {
 func TestEntry_Fields(t *testing.T) {
 	entry := &Entry{
 		ID:           "entry-123",
-		UserID:   "op-456",
+		UserID:       "op-456",
 		Action:       ActionLoginSuccess,
 		ResourceType: "session",
 		ResourceID:   "session-789",

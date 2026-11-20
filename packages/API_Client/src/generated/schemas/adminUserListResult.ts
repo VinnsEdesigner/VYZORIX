@@ -8,6 +8,9 @@
 import type { AdminUser } from './adminUser';
 
 export interface AdminUserListResult {
+  limit?: number;
+  page?: number;
   total?: number;
+  total_pages?: number;
   users?: AdminUser[];
 }

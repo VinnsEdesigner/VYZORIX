@@ -1,8 +1,7 @@
 export type {
-  AdminUser,
-  AdminUserListResult,
-  CreateUserRequest,
-  UpdateUserRequest,
+  OrgUser,
+  OrgUserListResult,
+  OrgUserStatsResult,
   AdminClient,
   AdminClientListResult,
   AdminClientResult,

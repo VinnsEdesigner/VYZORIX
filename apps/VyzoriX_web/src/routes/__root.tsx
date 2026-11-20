@@ -1,6 +1,6 @@
 import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { BrandingProvider, resolveBranding } from '@vyzorix/ui';
+import { BrandingProvider, OverlayProvider, resolveBranding } from '@vyzorix/ui';
 import { QueryProvider } from '@/providers/query-provider';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { VyzorI18nProvider } from '@/providers/vyzor-i18n-provider';
@@ -113,18 +113,20 @@ function RootComponent() {
     <QueryProvider>
       <BrandingProvider settings={brandingSettings}>
         <ThemeProvider>
-          <VyzorI18nProvider>
-            <VyzorAnalyticsProvider>
-              <ToastProvider>
-                <VyzorErrorBoundary>
-                <BootGate>
-                  <Shell />
-                  <VyzorConsentBanner />
-                </BootGate>
-                </VyzorErrorBoundary>
-              </ToastProvider>
-            </VyzorAnalyticsProvider>
-          </VyzorI18nProvider>
+          <OverlayProvider mode="sheet">
+            <VyzorI18nProvider>
+              <VyzorAnalyticsProvider>
+                <ToastProvider>
+                  <VyzorErrorBoundary>
+                    <BootGate>
+                      <Shell />
+                      <VyzorConsentBanner />
+                    </BootGate>
+                  </VyzorErrorBoundary>
+                </ToastProvider>
+              </VyzorAnalyticsProvider>
+            </VyzorI18nProvider>
+          </OverlayProvider>
         </ThemeProvider>
       </BrandingProvider>
     </QueryProvider>

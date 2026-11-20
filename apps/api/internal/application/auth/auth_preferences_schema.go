@@ -24,9 +24,9 @@ const (
 //
 // A spec with no constraints beyond the kind accepts any value of that kind.
 type preferenceSpec struct {
-	kind        preferenceKind
 	allowed     []string
 	allowedInts []int
+	kind        preferenceKind
 	min         int
 	max         int
 }
@@ -97,45 +97,73 @@ func validatePreference(key string, value any) error {
 
 	switch spec.kind {
 	case preferenceString:
-		str, isString := value.(string)
-		if !isString {
-			return fmt.Errorf("%w: preference %q must be a string", ErrValidationError, key)
-		}
-		if str == "" {
-			return nil
-		}
-		if len(spec.allowed) > 0 && !containsString(spec.allowed, str) {
-			return fmt.Errorf("%w: preference %q has an unsupported value", ErrValidationError, key)
-		}
+		return validateStringPreference(key, spec, value)
 	case preferenceBool:
 		if _, isBool := value.(bool); !isBool {
 			return fmt.Errorf("%w: preference %q must be a boolean", ErrValidationError, key)
 		}
 	case preferenceInt:
-		n, isInt := asInt(value)
-		if !isInt {
-			return fmt.Errorf("%w: preference %q must be an integer", ErrValidationError, key)
-		}
-		if len(spec.allowedInts) > 0 {
-			if !containsInt(spec.allowedInts, n) {
-				return fmt.Errorf("%w: preference %q has an unsupported value", ErrValidationError, key)
-			}
-		} else if n < spec.min || n > spec.max {
-			return fmt.Errorf("%w: preference %q is out of range", ErrValidationError, key)
-		}
+		return validateIntPreference(key, spec, value)
 	case preferenceStringList:
-		list, isList := value.([]any)
-		if !isList {
-			return fmt.Errorf("%w: preference %q must be a list", ErrValidationError, key)
+		return validateStringListPreference(key, spec, value)
+	}
+
+	return nil
+}
+
+// validateStringPreference checks a string key against its allowed set.
+func validateStringPreference(key string, spec preferenceSpec, value any) error {
+	str, isString := value.(string)
+	if !isString {
+		return fmt.Errorf("%w: preference %q must be a string", ErrValidationError, key)
+	}
+	if str == "" {
+		return nil
+	}
+	if len(spec.allowed) > 0 && !containsString(spec.allowed, str) {
+		return fmt.Errorf("%w: preference %q has an unsupported value", ErrValidationError, key)
+	}
+
+	return nil
+}
+
+// validateIntPreference checks an integer key against its allowed set, or its range
+// when no set is declared.
+func validateIntPreference(key string, spec preferenceSpec, value any) error {
+	n, isInt := asInt(value)
+	if !isInt {
+		return fmt.Errorf("%w: preference %q must be an integer", ErrValidationError, key)
+	}
+
+	if len(spec.allowedInts) > 0 {
+		if !containsInt(spec.allowedInts, n) {
+			return fmt.Errorf("%w: preference %q has an unsupported value", ErrValidationError, key)
 		}
-		for _, item := range list {
-			str, isString := item.(string)
-			if !isString {
-				return fmt.Errorf("%w: preference %q must contain strings", ErrValidationError, key)
-			}
-			if len(spec.allowed) > 0 && !containsString(spec.allowed, str) {
-				return fmt.Errorf("%w: preference %q has an unsupported value", ErrValidationError, key)
-			}
+
+		return nil
+	}
+
+	if n < spec.min || n > spec.max {
+		return fmt.Errorf("%w: preference %q is out of range", ErrValidationError, key)
+	}
+
+	return nil
+}
+
+// validateStringListPreference checks every element of a list key.
+func validateStringListPreference(key string, spec preferenceSpec, value any) error {
+	list, isList := value.([]any)
+	if !isList {
+		return fmt.Errorf("%w: preference %q must be a list", ErrValidationError, key)
+	}
+
+	for _, item := range list {
+		str, isString := item.(string)
+		if !isString {
+			return fmt.Errorf("%w: preference %q must contain strings", ErrValidationError, key)
+		}
+		if len(spec.allowed) > 0 && !containsString(spec.allowed, str) {
+			return fmt.Errorf("%w: preference %q has an unsupported value", ErrValidationError, key)
 		}
 	}
 

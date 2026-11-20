@@ -536,59 +536,17 @@ func (h *SettingsHandler) UpdateNotifications(c *gin.Context) {
 	}
 
 	// Apply updates.
-	if req.Enabled != nil {
-		notifications.Enabled = *req.Enabled
-	}
-	if req.Channels != nil {
-		notifications.Channels = *req.Channels
-	}
-	if req.Email != nil {
-		notifications.Email = *req.Email
-	}
-	if req.Push != nil {
-		notifications.Push = *req.Push
-	}
-	if req.Webhook != nil {
-		notifications.Webhook = *req.Webhook
-	}
+	applyNotificationScalars(notifications, &req)
+
 	if req.EmailAddress != nil {
-		address := strings.TrimSpace(*req.EmailAddress)
-		if address == "" {
-			// Empty clears the custom address and falls back to the account email.
-			notifications.EmailAddress = ""
-		} else {
-			// Strict, server-side validation: the address must be a real,
-			// deliverable mailbox, not just well-formed. Format + disposable checks
-			// first, then an MX lookup on the domain. The client cannot be trusted
-			// to have validated this.
-			normalized, err := infraauth.ValidateEmail(address)
-			if err != nil {
-				h.presenter.BadRequest(c, "invalid notification email address")
-				return
-			}
-			result := user.ValidateEmailFull(normalized, user.StrictMailboxValidator())
-			if !result.Valid {
-				message := "invalid notification email address"
-				if len(result.Errors) > 0 {
-					message = result.Errors[0].Message
-				}
-				h.presenter.BadRequest(c, message)
-				return
-			}
-			notifications.EmailAddress = normalized
+		address, ok := h.resolveNotificationEmail(c, *req.EmailAddress)
+		if !ok {
+			return
 		}
+		notifications.EmailAddress = address
 	}
-	if req.Slack != nil {
-		if req.Slack.ChannelID != nil {
-			notifications.Slack.ChannelID = *req.Slack.ChannelID
-		}
-		if req.Slack.ChannelName != nil {
-			notifications.Slack.ChannelName = *req.Slack.ChannelName
-		}
-		if req.Slack.Connected != nil {
-			notifications.Slack.Connected = *req.Slack.Connected
-		}
-	}
+
+	applySlackUpdate(notifications, req.Slack)
 
 	// Validate webhook URL if enabled.
 	if notifications.Webhook.Enabled && notifications.Webhook.URL == "" {
@@ -624,6 +582,78 @@ func (h *SettingsHandler) UpdateNotifications(c *gin.Context) {
 	})
 
 	h.presenter.OK(c, notifications)
+}
+
+// applyNotificationScalars copies the plain toggle fields of an update onto the
+// stored settings. A nil field means "not supplied".
+func applyNotificationScalars(notifications *user.NotificationSettings, req *NotificationUpdateRequest) {
+	if req.Enabled != nil {
+		notifications.Enabled = *req.Enabled
+	}
+	if req.Channels != nil {
+		notifications.Channels = *req.Channels
+	}
+	if req.Email != nil {
+		notifications.Email = *req.Email
+	}
+	if req.Push != nil {
+		notifications.Push = *req.Push
+	}
+	if req.Webhook != nil {
+		notifications.Webhook = *req.Webhook
+	}
+}
+
+// applySlackUpdate copies the Slack fields that were supplied.
+func applySlackUpdate(notifications *user.NotificationSettings, slack *SlackNotificationInput) {
+	if slack == nil {
+		return
+	}
+	if slack.ChannelID != nil {
+		notifications.Slack.ChannelID = *slack.ChannelID
+	}
+	if slack.ChannelName != nil {
+		notifications.Slack.ChannelName = *slack.ChannelName
+	}
+	if slack.Connected != nil {
+		notifications.Slack.Connected = *slack.Connected
+	}
+}
+
+// resolveNotificationEmail validates a custom notification address and reports the
+// value to store. An empty input clears the address and falls back to the account
+// email.
+//
+// ok is false when the request has already been answered with a 400, so the caller
+// returns immediately rather than writing a value it could not validate.
+func (h *SettingsHandler) resolveNotificationEmail(c *gin.Context, raw string) (string, bool) {
+	address := strings.TrimSpace(raw)
+	if address == "" {
+		return "", true
+	}
+
+	// Strict, server-side validation: the address must be a real, deliverable
+	// mailbox, not just well-formed. Format + disposable checks first, then an MX
+	// lookup on the domain. The client cannot be trusted to have validated this.
+	normalized, validateErr := infraauth.ValidateEmail(address)
+	if validateErr != nil {
+		h.presenter.BadRequest(c, "invalid notification email address")
+
+		return "", false
+	}
+
+	result := user.ValidateEmailFull(normalized, user.StrictMailboxValidator())
+	if !result.Valid {
+		message := "invalid notification email address"
+		if len(result.Errors) > 0 {
+			message = result.Errors[0].Message
+		}
+		h.presenter.BadRequest(c, message)
+
+		return "", false
+	}
+
+	return normalized, true
 }
 
 // WebhookTestRequest represents webhook test request.

@@ -149,7 +149,7 @@ func (s *Service) ConfigForDevice(
 	deviceID string,
 ) (*ConfigEnvelope, error) {
 	if s.deployConfigs != nil {
-		deployed, err := s.deployConfigs.Current(ctx, deviceID)
+		deployed, err := s.deployConfigs.CurrentForDevice(ctx, deviceID)
 		if err != nil && !errors.Is(err, deployconfig.ErrNotFound) {
 			return nil, err
 		}
@@ -204,9 +204,14 @@ func (s *Service) ConfigForDevice(
 // *storage.DeployConfigRepository satisfies it. It is an interface so a test can
 // supply a store without a database.
 type DeployConfigSource interface {
-	// Current returns the config the device should be running, or
+	// CurrentForDevice returns the config the device should be running, or
 	// deployconfig.ErrNotFound when it has never been deployed to.
-	Current(ctx context.Context, deviceID string) (*deployconfig.Record, error)
+	//
+	// It is keyed by device id alone because this is the device's own delivery path: the
+	// device signed the request, so it is the authenticated principal and can only read
+	// its own row. The user-facing reads go through deploy.DeployService.Current, which
+	// checks the device is in the caller's organisation.
+	CurrentForDevice(ctx context.Context, deviceID string) (*deployconfig.Record, error)
 }
 
 // SetDeployConfigSource wires the deploy store the delivery path reads. Without

@@ -10,8 +10,8 @@ import (
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/shared"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/password_reset"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
 )
 
@@ -69,11 +69,11 @@ func (s *AuthService) GeneratePasswordResetToken(ctx context.Context, email stri
 
 	// Create reset token record.
 	prt := &password_reset.PasswordResetToken{
-		ID:         id,
-		UserID: op.ID,
-		TokenHash:  tokenHash,
-		ExpiresAt:  time.Now().UTC().Add(15 * time.Minute),
-		CreatedAt:  time.Now().UTC(),
+		ID:        id,
+		UserID:    op.ID,
+		TokenHash: tokenHash,
+		ExpiresAt: time.Now().UTC().Add(15 * time.Minute),
+		CreatedAt: time.Now().UTC(),
 	}
 
 	if err := s.passwordResetRepo.Create(ctx, prt); err != nil {

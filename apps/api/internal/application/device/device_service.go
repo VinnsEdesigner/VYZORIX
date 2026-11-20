@@ -12,8 +12,8 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/dto"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/inbox"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/transaction"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 )
 
 var (
@@ -27,7 +27,7 @@ var (
 // Service handles device operations.
 type Service struct {
 	deviceRepo    device.Repository
-	userRepo  user.Repository
+	userRepo      user.Repository
 	txManager     transaction.TxManager
 	logger        *slog.Logger
 	statusUpdater DeviceStatusUpdater
@@ -50,9 +50,9 @@ func NewService(
 		logger = slog.Default()
 	}
 	return &Service{
-		deviceRepo:   deviceRepo,
-		userRepo: userRepo,
-		logger:       logger,
+		deviceRepo: deviceRepo,
+		userRepo:   userRepo,
+		logger:     logger,
 	}
 }
 
@@ -800,7 +800,7 @@ func (s *Service) CreateFromInbox(ctx context.Context, entry *inbox.InboxEntry) 
 		Model:             entry.Model,
 		Manufacturer:      entry.Manufacturer,
 		OSVersion:         entry.OSVersion,
-		UserID:        entry.UserID,
+		UserID:            entry.UserID,
 		Online:            false,
 		RegisteredAt:      now.UnixMilli(),
 		LastSeen:          now.UnixMilli(),

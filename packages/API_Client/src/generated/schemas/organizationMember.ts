@@ -7,13 +7,16 @@
  */
 
 export interface OrganizationMember {
+  avatar_url?: string;
   id?: string;
   invited_by?: string;
   joined_at?: number;
+  last_seen?: number;
   organization_id?: string;
   removed_at?: number;
   role?: string;
   status?: string;
+  suspended_at?: number;
   user_email?: string;
   user_id?: string;
   user_name?: string;

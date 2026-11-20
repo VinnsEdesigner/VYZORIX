@@ -21,9 +21,9 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/keys"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/logs"
 	appmetrics "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/metrics"
-	appuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/user"
 	orgapplication "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/provisioning"
+	appuser "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/user"
 	devicedomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
 	notificationdomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/notification"
 	orgdomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
@@ -39,7 +39,18 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// processStart is captured before any work, so a boot-time sweep can tell a job a
+// previous process abandoned from one this process just started.
+var processStart = time.Now()
+
 func main() {
+	// git invokes this binary as `git-credential-helper` to fetch a provisioning
+	// repository's token. It must be answered before any config or DB work, and it
+	// writes only the credential to stdout.
+	if provisioning.RunCredentialHelper(os.Args[1:]) {
+		return
+	}
+
 	// Load .env.example file for default production configuration.
 	// Try multiple paths: Docker (/app), local dev from apps/api (../../), local from root (.)
 	for _, envPath := range []string{".env.example", "../../.env.example", "../.env.example"} {
@@ -350,39 +361,33 @@ func startServer(cfg *config.Config, log *slog.Logger, apiServer *api.Server,
 		bootstrapSlackContactPoint(log, apiServer.DB, cfg.SlackConfig)
 	}
 
-	// Run provisioning if a provisioning file is configured.
-	if provFile := os.Getenv("PROVISIONING_FILE"); provFile != "" {
-		prov := provisioning.New(log)
-		if apiServer.DB != nil {
-			db := apiServer.DB.DB()
-			prov = prov.
-				WithRepositories(
-					provOrgRepo{storage.NewOrganizationStorage(db)},
-					provUserRepo{storage.NewUserRepository(db)},
-					provGroupRepo{storage.NewDeviceGroupRepository(db)},
-					provGrantRepo{storage.NewGrantRepository(db)},
-				).
-				WithCreators(
-					provOrgCreator{orgService},
-					provUserCreator{authService},
-					provKeyCreator{keyService},
-				).
-				WithAlertRepository(storage.NewAlertRuleRepository(db)).
-				WithContactPointRepository(storage.NewContactPointRepository(db)).
-				WithServiceAccountRepository(storage.NewServiceAccountRepository(db)).
-				WithAnnotationRepository(storage.NewAnnotationRepository(db))
-		}
-		// The app catalog is seeded from the file, not a store, so it is wired as
-		// a sink the deploy feature's catalog reads.
-		if catalog := apiServer.DeployCatalog(); catalog != nil {
-			prov = prov.WithCatalogSink(catalog.Add)
-		}
+	bootProvisioning(log, apiServer, orgService, authService, keyService)
 
-		if err := prov.LoadAndApply(context.Background(), provFile); err != nil {
-			log.Error("provisioning failed", "err", err)
-		} else {
-			log.Info("provisioning complete")
+	// A sync job cannot outlive the process running it, so a job left working by a
+	// previous run is marked interrupted before any new sync can start.
+	if apiServer.DB != nil {
+		jobs := storage.NewProvisioningStorage(apiServer.DB.DB())
+		// The cutoff is process start, not "now": a job that started before this process
+		// began cannot still be running, so it is genuinely abandoned. Using time.Now()
+		// here would be the same instant as the boot and would also sweep up a job a second
+		// worker started a moment ago, reporting a healthy in-flight sync as interrupted.
+		if n, err := jobs.FailInterrupted(context.Background(), processStart); err != nil {
+			log.Warn("could not mark interrupted provisioning jobs", "err", err)
+		} else if n > 0 {
+			log.Info("marked interrupted provisioning jobs", "count", n)
 		}
+	}
+
+	// Provisioning syncs on an interval, so a repository converges without a user
+	// pressing Sync. It shares the server's context and stops with it.
+	if scheduler := apiServer.ProvisioningScheduler(); scheduler != nil {
+		// Exactly one node may run the schedule. The per-repository lock in the sync
+		// service is in-process only, so without this every replica synced every
+		// repository: the same deploys applied twice, counters racing each other.
+		scheduler.SetNodeLock(lockSvc)
+		scheduler.Start(ctx)
+		defer scheduler.Stop()
+		log.Info("provisioning scheduler started")
 	}
 
 	go func() {
@@ -436,5 +441,51 @@ func startServer(cfg *config.Config, log *slog.Logger, apiServer *api.Server,
 	if ssrConfig.EnableSSR && ssrManager != nil {
 		_ = ssrManager.Stop()
 		log.Info("SSR server stopped")
+	}
+}
+
+// bootProvisioning applies the boot provisioning file, if one is configured.
+//
+// It is separate from startServer so that function stays within the length budget
+// the linter enforces; the wiring it builds is one cohesive unit and belongs
+// together.
+func bootProvisioning(log *slog.Logger, apiServer *api.Server,
+	orgService *orgapplication.OrganizationService, authService *auth.AuthService, keyService *keys.APIKeyService) {
+	provFile := os.Getenv("PROVISIONING_FILE")
+	if provFile == "" {
+		return
+	}
+
+	prov := provisioning.New(log)
+	if apiServer.DB != nil {
+		db := apiServer.DB.DB()
+		prov = prov.
+			WithRepositories(
+				provOrgRepo{storage.NewOrganizationStorage(db)},
+				provUserRepo{storage.NewUserRepository(db)},
+				provGroupRepo{storage.NewDeviceGroupRepository(db)},
+				provGrantRepo{storage.NewGrantRepository(db)},
+			).
+			WithCreators(
+				provOrgCreator{orgService},
+				provUserCreator{authService},
+				provKeyCreator{keyService},
+			).
+			WithAlertRepository(storage.NewAlertRuleRepository(db)).
+			WithContactPointRepository(storage.NewContactPointRepository(db)).
+			WithServiceAccountRepository(storage.NewServiceAccountRepository(db)).
+			WithAnnotationRepository(storage.NewAnnotationRepository(db))
+	}
+
+	// The app catalog is seeded from the file, not a store, so it is wired as a
+	// sink the deploy feature's catalog reads.
+	if catalog := apiServer.DeployCatalog(); catalog != nil {
+		prov = prov.WithCatalogSink(catalog.Add)
+	}
+
+	if err := prov.LoadAndApply(context.Background(), provFile); err != nil {
+		log.Error("provisioning failed", "err", err)
+	} else {
+		log.Info("provisioning complete")
 	}
 }

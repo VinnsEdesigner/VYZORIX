@@ -19,7 +19,7 @@ type InboxEntry struct {
 	DeviceClass       string      `json:"deviceClass,omitempty"`
 	Status            InboxStatus `json:"status"`
 	Notes             string      `json:"notes,omitempty"`
-	UserID        string      `json:"userId,omitempty"`
+	UserID            string      `json:"userId,omitempty"`
 	OrganizationID    string      `json:"organizationId,omitempty"`
 	IMEI              string      `json:"imei"`
 	DeviceName        string      `json:"deviceName,omitempty"`
@@ -82,15 +82,15 @@ func (e *InboxEntry) CanBeRejected() bool {
 
 // RegistrationLog represents an audit log entry for registration actions.
 type RegistrationLog struct {
-	ID         string `json:"id"`
-	DeviceID   string `json:"deviceId"`
-	IMEI       string `json:"imei"`
-	Action     string `json:"action"` // registered, approved, rejected, deregistered.
-	UserID string `json:"userId"`
-	ClientIP   string `json:"clientIp"`
-	UserAgent  string `json:"userAgent"`
-	Details    string `json:"details,omitempty"`
-	Timestamp  int64  `json:"timestamp"`
+	ID        string `json:"id"`
+	DeviceID  string `json:"deviceId"`
+	IMEI      string `json:"imei"`
+	Action    string `json:"action"` // registered, approved, rejected, deregistered.
+	UserID    string `json:"userId"`
+	ClientIP  string `json:"clientIp"`
+	UserAgent string `json:"userAgent"`
+	Details   string `json:"details,omitempty"`
+	Timestamp int64  `json:"timestamp"`
 }
 
 // TimestampTime returns the Timestamp as a time.Time.

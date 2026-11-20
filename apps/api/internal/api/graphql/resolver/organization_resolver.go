@@ -307,7 +307,7 @@ func (r *Resolver) CreateOrganization(p graphql.ResolveParams) (interface{}, err
 			"id":             fmt.Sprintf("evt-%d", time.Now().UnixNano()),
 			"type":           "created",
 			"organizationId": org.ID,
-			"userId":     op.ID,
+			"userId":         op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -382,7 +382,7 @@ func (r *Resolver) UpdateOrganization(p graphql.ResolveParams) (interface{}, err
 			"id":             fmt.Sprintf("evt-%d", time.Now().UnixNano()),
 			"type":           eventType,
 			"organizationId": id,
-			"userId":     op.ID,
+			"userId":         op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -425,7 +425,7 @@ func (r *Resolver) DeleteOrganization(p graphql.ResolveParams) (interface{}, err
 			"id":             fmt.Sprintf("evt-%d", time.Now().UnixNano()),
 			"type":           "deleted",
 			"organizationId": id,
-			"userId":     op.ID,
+			"userId":         op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -480,7 +480,7 @@ func (r *Resolver) InviteMember(p graphql.ResolveParams) (interface{}, error) {
 			"type":           "member_invited",
 			"organizationId": orgID,
 			"memberId":       invitation.ID,
-			"userId":     op.ID,
+			"userId":         op.ID,
 			"timestamp":      time.Now().UTC(),
 			"data": map[string]interface{}{
 				"email": email,
@@ -548,7 +548,7 @@ func (r *Resolver) RemoveMember(p graphql.ResolveParams) (interface{}, error) {
 			"type":           "member_removed",
 			"organizationId": orgID,
 			"memberId":       memberID,
-			"userId":     op.ID,
+			"userId":         op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -696,7 +696,7 @@ func (r *Resolver) publishRoleChangedEvent(orgID, memberID, userID, oldRole, new
 		"type":           "role_changed",
 		"organizationId": orgID,
 		"memberId":       memberID,
-		"userId":     userID,
+		"userId":         userID,
 		"timestamp":      time.Now().UTC(),
 		"data": map[string]interface{}{
 			"oldRole": oldRole,
@@ -769,7 +769,7 @@ func (r *Resolver) AcceptInvitation(p graphql.ResolveParams) (interface{}, error
 			"type":           "member_joined",
 			"organizationId": membership.OrganizationID,
 			"memberId":       membership.ID,
-			"userId":     op.ID,
+			"userId":         op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -939,7 +939,7 @@ func (r *Resolver) TransferOwnership(p graphql.ResolveParams) (interface{}, erro
 			"type":           "ownership_transferred",
 			"organizationId": orgID,
 			"memberId":       memberID,
-			"userId":     op.ID,
+			"userId":         op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -995,7 +995,7 @@ func (r *Resolver) SuspendMember(p graphql.ResolveParams) (interface{}, error) {
 			"type":           "member_suspended",
 			"organizationId": orgID,
 			"memberId":       memberID,
-			"userId":     op.ID,
+			"userId":         op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -1051,7 +1051,7 @@ func (r *Resolver) ReinstateMember(p graphql.ResolveParams) (interface{}, error)
 			"type":           "member_reinstated",
 			"organizationId": orgID,
 			"memberId":       memberID,
-			"userId":     op.ID,
+			"userId":         op.ID,
 			"timestamp":      time.Now().UTC(),
 		})
 	}
@@ -1086,7 +1086,7 @@ func (r *Resolver) membershipToMap(m *orgdomain.OrganizationMember) map[string]i
 	result := map[string]interface{}{
 		"id":             m.ID,
 		"organizationId": m.OrganizationID,
-		"userId":     m.UserID,
+		"userId":         m.UserID,
 		"role":           string(m.Role),
 		"lifecycle":      string(m.Lifecycle),
 	}

@@ -1,15 +1,32 @@
 import { cx } from '@emotion/css';
 import { useCombobox } from 'downshift';
-import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Icon } from '../Icon';
 import { Input } from '../Input';
+import { OverlaySheet } from '../Overlay';
 import { Portal } from '../Portal';
+import { useOverlay } from '../Overlay/OverlayProvider';
 import { useStyles2 } from '../../theme/ThemeContext';
 import { ComboboxList } from './ComboboxList';
 import { filterOptions } from './filter';
 import { getComboboxStyles } from './styles';
 import { itemToString, type ComboboxOption } from './types';
 import { useComboboxFloat } from './useComboboxFloat';
+
+function composeRefs(
+  ...refs: Array<React.Ref<HTMLDivElement> | undefined>
+): React.RefCallback<HTMLDivElement> {
+  return (node) => {
+    for (const ref of refs) {
+      if (!ref) continue;
+      if (typeof ref === 'function') {
+        ref(node);
+      } else {
+        (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+      }
+    }
+  };
+}
 
 export interface ComboboxProps<T extends string | number> {
   options: ComboboxOption<T>[];
@@ -51,7 +68,13 @@ export function Combobox<T extends string | number>({
   );
 
   const [isOpen, setIsOpen] = useState(false);
-  const { inputRef, floatingRef, scrollRef, menuStyles, maxHeight } = useComboboxFloat(isOpen);
+  const { presentation } = useOverlay();
+  const isSheet = presentation === 'sheet';
+
+  const { inputRef, floatingRef, scrollRef, menuStyles, maxHeight } = useComboboxFloat(isOpen && !isSheet);
+
+  const sheetScrollRef = useRef<HTMLDivElement>(null);
+  const activeScrollRef = isSheet ? sheetScrollRef : scrollRef;
 
   const [items, setItems] = useState(options);
 
@@ -80,6 +103,7 @@ export function Combobox<T extends string | number>({
     },
     onSelectedItemChange: ({ selectedItem: next }) => {
       onChange(next ? next.value : null);
+      setIsOpen(false);
     },
     onStateChange: ({ type }) => {
       setShowFocusRing(/KeyDown|InputChange/.test(String(type)));
@@ -118,6 +142,15 @@ export function Combobox<T extends string | number>({
   }, [onChange]);
 
   const showClear = Boolean(isClearable) && value !== null && !disabled;
+
+  const {
+    ref: menuRef,
+    suppressRefError: _suppress,
+    ...menuProps
+  } = getMenuProps({ suppressRefError: true }) as {
+    ref?: React.Ref<HTMLDivElement>;
+    suppressRefError?: boolean;
+  } & Record<string, unknown>;
 
   return (
     <>
@@ -163,27 +196,50 @@ export function Combobox<T extends string | number>({
         }
       />
 
-      <Portal>
-        {}
-        <div
-          {...getMenuProps({ ref: floatingRef })}
-          className={cx(styles.menu, !isOpen && styles.menuClosed)}
-          style={menuStyles}
+      {isSheet ? (
+        <OverlaySheet
+          open={isOpen}
+          onClose={() => setIsOpen(false)}
+          label={ariaLabel ?? placeholder}
+          testId={dataTestId ? `${dataTestId}-sheet` : undefined}
         >
-          {isOpen ? (
-            <div ref={scrollRef} className={styles.menuScroll} style={{ maxHeight }}>
+          <div {...menuProps} ref={menuRef} className={styles.sheetList}>
+            <div ref={sheetScrollRef} className={styles.menuScroll}>
               <ComboboxList
                 options={items}
                 highlightedIndex={highlightedIndex}
                 selectedValue={value ?? undefined}
                 showFocusRing={showFocusRing}
-                scrollRef={scrollRef}
+                scrollRef={activeScrollRef}
                 getItemProps={getItemProps}
+                density="sheet"
               />
             </div>
-          ) : null}
-        </div>
-      </Portal>
+          </div>
+        </OverlaySheet>
+      ) : (
+        <Portal>
+          <div
+            {...menuProps}
+            ref={composeRefs(menuRef, floatingRef)}
+            className={cx(styles.menu, !isOpen && styles.menuClosed)}
+            style={menuStyles}
+          >
+            {isOpen ? (
+              <div ref={scrollRef} className={styles.menuScroll} style={{ maxHeight }}>
+                <ComboboxList
+                  options={items}
+                  highlightedIndex={highlightedIndex}
+                  selectedValue={value ?? undefined}
+                  showFocusRing={showFocusRing}
+                  scrollRef={activeScrollRef}
+                  getItemProps={getItemProps}
+                />
+              </div>
+            ) : null}
+          </div>
+        </Portal>
+      )}
     </>
   );
 }

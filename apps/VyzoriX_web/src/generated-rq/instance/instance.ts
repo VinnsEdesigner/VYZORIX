@@ -6,10 +6,12 @@
  * OpenAPI spec version: 0.0.01
  */
 import {
-  useMutation
+  useMutation,
+  useQueryClient
 } from '@tanstack/react-query';
 import type {
   MutationFunction,
+  MutationFunctionContext,
   QueryClient,
   UseMutationOptions,
   UseMutationResult
@@ -21,6 +23,9 @@ import type {
 } from '../../../../../packages/API_Client/src/generated/schemas';
 
 import { customAxios } from '../../../../../packages/API_Client/src/generated/rest-bridge';
+import { getGetAdminApiKeysQueryKey, getGetAdminApiKeysStatsQueryKey, getGetAdminClientsQueryKey, getGetAdminSupportBundleQueryKey, getGetAuthAdminUsersQueryKey, getGetAuthAdminUsersStatsQueryKey } from '../admin/admin-operations';
+import { getGetAuthLockoutStatusQueryKey, getGetAuthMeQueryKey, getGetAuthOrganizationsQueryKey, getGetAuthPollVerificationQueryKey, getGetAuthResendVerificationQueryKey, getGetAuthVerifyEmailQueryKey } from '../auth/auth-session';
+import { getGetAuthSessionsQueryKey } from '../sessions/auth-sessions';
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -55,7 +60,7 @@ export const postInstanceLockoutUnlockUserId = async (userId: string, options?: 
 
 
 export const getPostInstanceLockoutUnlockUserIdMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postInstanceLockoutUnlockUserId>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postInstanceLockoutUnlockUserId>>, TError,{userId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
 ): UseMutationOptions<Awaited<ReturnType<typeof postInstanceLockoutUnlockUserId>>, TError,{userId: string}, TContext> => {
 
 const mutationKey = ['postInstanceLockoutUnlockUserId'];
@@ -74,12 +79,29 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
           return  postInstanceLockoutUnlockUserId(userId,requestOptions)
         }
 
+  const onSuccess = (data: Awaited<ReturnType<typeof postInstanceLockoutUnlockUserId>>, variables: {userId: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetAdminApiKeysQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAdminApiKeysStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAdminClientsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAdminSupportBundleQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthSessionsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthLockoutStatusQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthMeQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthOrganizationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthPollVerificationQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthResendVerificationQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthVerifyEmailQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
 
 
 
 
-
-  return  { mutationFn, ...mutationOptions }}
+  return  { ...mutationOptions, mutationFn, onSuccess }}
 
     export type PostInstanceLockoutUnlockUserIdMutationResult = NonNullable<Awaited<ReturnType<typeof postInstanceLockoutUnlockUserId>>>
 
@@ -89,12 +111,265 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Unlock account
  */
 export const usePostInstanceLockoutUnlockUserId = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postInstanceLockoutUnlockUserId>>, TError,{userId: string}, TContext>, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postInstanceLockoutUnlockUserId>>, TError,{userId: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof postInstanceLockoutUnlockUserId>>,
         TError,
         {userId: string},
         TContext
       > => {
-      return useMutation(getPostInstanceLockoutUnlockUserIdMutationOptions(options), queryClient);
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPostInstanceLockoutUnlockUserIdMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
+    }
+    export const getDeleteInstanceUsersIdUrl = (id: string,) => {
+
+
+
+
+  return `/instance/users/${id}`
+}
+
+/**
+ * Deletes an account and its memberships (instance admin only)
+ * @summary Delete an account
+ */
+export const deleteInstanceUsersId = async (id: string, options?: Parameters<typeof customAxios>[1]): Promise<SuccessResult> => {
+
+  return customAxios<SuccessResult>(getDeleteInstanceUsersIdUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteInstanceUsersIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteInstanceUsersId>>, TError,{id: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteInstanceUsersId>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['deleteInstanceUsersId'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteInstanceUsersId>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteInstanceUsersId(id,requestOptions)
+        }
+
+  const onSuccess = (data: Awaited<ReturnType<typeof deleteInstanceUsersId>>, variables: {id: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetAdminApiKeysQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAdminApiKeysStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAdminClientsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAdminSupportBundleQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthSessionsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthLockoutStatusQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
+
+
+
+
+  return  { ...mutationOptions, mutationFn, onSuccess }}
+
+    export type DeleteInstanceUsersIdMutationResult = NonNullable<Awaited<ReturnType<typeof deleteInstanceUsersId>>>
+
+    export type DeleteInstanceUsersIdMutationError = ErrorResponse
+
+    /**
+ * @summary Delete an account
+ */
+export const useDeleteInstanceUsersId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteInstanceUsersId>>, TError,{id: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteInstanceUsersId>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      const backupQueryClient = useQueryClient();
+      return useMutation(getDeleteInstanceUsersIdMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
+    }
+    export const getPostInstanceUsersIdDisableUrl = (id: string,) => {
+
+
+
+
+  return `/instance/users/${id}/disable`
+}
+
+/**
+ * Disables an account and revokes every session (instance admin only)
+ * @summary Disable an account
+ */
+export const postInstanceUsersIdDisable = async (id: string, options?: Parameters<typeof customAxios>[1]): Promise<SuccessResult> => {
+
+  return customAxios<SuccessResult>(getPostInstanceUsersIdDisableUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostInstanceUsersIdDisableMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postInstanceUsersIdDisable>>, TError,{id: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+): UseMutationOptions<Awaited<ReturnType<typeof postInstanceUsersIdDisable>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['postInstanceUsersIdDisable'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postInstanceUsersIdDisable>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postInstanceUsersIdDisable(id,requestOptions)
+        }
+
+  const onSuccess = (data: Awaited<ReturnType<typeof postInstanceUsersIdDisable>>, variables: {id: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetAdminApiKeysQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAdminApiKeysStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAdminClientsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAdminSupportBundleQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthSessionsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthLockoutStatusQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
+
+
+
+
+  return  { ...mutationOptions, mutationFn, onSuccess }}
+
+    export type PostInstanceUsersIdDisableMutationResult = NonNullable<Awaited<ReturnType<typeof postInstanceUsersIdDisable>>>
+
+    export type PostInstanceUsersIdDisableMutationError = ErrorResponse
+
+    /**
+ * @summary Disable an account
+ */
+export const usePostInstanceUsersIdDisable = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postInstanceUsersIdDisable>>, TError,{id: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postInstanceUsersIdDisable>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPostInstanceUsersIdDisableMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
+    }
+    export const getPostInstanceUsersIdEnableUrl = (id: string,) => {
+
+
+
+
+  return `/instance/users/${id}/enable`
+}
+
+/**
+ * Clears the account-disable timestamp (instance admin only)
+ * @summary Re-enable an account
+ */
+export const postInstanceUsersIdEnable = async (id: string, options?: Parameters<typeof customAxios>[1]): Promise<SuccessResult> => {
+
+  return customAxios<SuccessResult>(getPostInstanceUsersIdEnableUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPostInstanceUsersIdEnableMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postInstanceUsersIdEnable>>, TError,{id: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+): UseMutationOptions<Awaited<ReturnType<typeof postInstanceUsersIdEnable>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['postInstanceUsersIdEnable'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postInstanceUsersIdEnable>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  postInstanceUsersIdEnable(id,requestOptions)
+        }
+
+  const onSuccess = (data: Awaited<ReturnType<typeof postInstanceUsersIdEnable>>, variables: {id: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetAdminApiKeysQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAdminApiKeysStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAdminClientsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAdminSupportBundleQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthSessionsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthLockoutStatusQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
+
+
+
+
+  return  { ...mutationOptions, mutationFn, onSuccess }}
+
+    export type PostInstanceUsersIdEnableMutationResult = NonNullable<Awaited<ReturnType<typeof postInstanceUsersIdEnable>>>
+
+    export type PostInstanceUsersIdEnableMutationError = ErrorResponse
+
+    /**
+ * @summary Re-enable an account
+ */
+export const usePostInstanceUsersIdEnable = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postInstanceUsersIdEnable>>, TError,{id: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postInstanceUsersIdEnable>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPostInstanceUsersIdEnableMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }

@@ -10,8 +10,8 @@ import (
 
 // OAuthResult holds the result of OAuth operations.
 type OAuthResult struct {
-	User *user.User
-	IsNew    bool
+	User  *user.User
+	IsNew bool
 }
 
 // DefaultOAuthRole is the role assigned to new OAuth users.

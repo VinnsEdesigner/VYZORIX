@@ -66,18 +66,28 @@ git pull
 docker compose up -d --build vyzorix  # Nginx stays up, only Go restarts
 ```
 
-## VPS bare metal (no Docker)
+## VPS bare metal (no Docker, systemd)
 
 ```bash
 apt install -y nginx
 cp tooling/nginx/vyzorix.conf /etc/nginx/sites-available/vyzorix
 ln -s /etc/nginx/sites-available/vyzorix /etc/nginx/sites-enabled/vyzorix
 certbot --nginx -d your-domain.com
-cd apps/api && go build -o /usr/local/bin/vyzorix-api ./cmd/api
-# create /etc/vyzorix/.env with your secrets
-# create systemd service (see DEPLOYMENT_GUIDE.md)
-systemctl start vyzorix && systemctl reload nginx
+
+# Install the API and proxy as systemd services. Creates the vyzorix account,
+# lays out /opt/vyzorix and /var/lib/vyzorix, writes the env files, builds the
+# binary, and starts both units.
+sudo bash tooling/systemd/install.sh
 ```
+
+`install.sh` refuses to start the units while `api.env` still contains
+`CHANGE_ME`: replace those values first (`openssl rand -hex 32`), then run
+`systemctl start vyzorix-api vyzorix-proxy`.
+
+Two units, one process each — `vyzorix-api.service` (Go, loopback :3000) and
+`vyzorix-proxy.service` (Node BFF, :12000). Nginx terminates TLS in front of the
+proxy. See `tooling/systemd/README.md` for the layout, the operational commands,
+and the two settings that will bite (`BIND_ADDR` and `PROXY_SESSION_FILE`).
 
 ## Nginx config
 

@@ -23,7 +23,7 @@ func NewService(clientRepo client.Repository) *Service {
 
 // CreateClientRequest is the request to create a new client.
 type CreateClientRequest struct {
-	UserID     string
+	UserID         string
 	Name           string
 	Platform       string
 	AllowedOrigins []string
@@ -34,7 +34,7 @@ type CreateClientRequest struct {
 // Create creates a new API client.
 func (s *Service) Create(ctx context.Context, req *CreateClientRequest) (*dto.ClientResponse, string, error) {
 	c := &client.Client{
-		UserID:     req.UserID,
+		UserID:         req.UserID,
 		Name:           req.Name,
 		Platform:       req.Platform,
 		AllowedOrigins: req.AllowedOrigins,
@@ -50,7 +50,7 @@ func (s *Service) Create(ctx context.Context, req *CreateClientRequest) (*dto.Cl
 
 	return &dto.ClientResponse{
 		ID:             created.ID,
-		UserID:     created.UserID,
+		UserID:         created.UserID,
 		Name:           created.Name,
 		Platform:       created.Platform,
 		AllowedOrigins: created.AllowedOrigins,
@@ -240,7 +240,7 @@ func (s *Service) GetHmacKey(ctx context.Context, clientID string) (string, bool
 func toClientResponse(c *client.Client) dto.ClientResponse {
 	return dto.ClientResponse{
 		ID:             c.ID,
-		UserID:     c.UserID,
+		UserID:         c.UserID,
 		Name:           c.Name,
 		Platform:       c.Platform,
 		AllowedOrigins: c.AllowedOrigins,

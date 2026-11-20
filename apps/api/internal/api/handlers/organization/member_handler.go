@@ -65,8 +65,9 @@ func (a *MemberServiceAdapter) GetMembership(ctx context.Context, userID, orgID 
 // @Tags         members
 // @Accept       json
 // @Produce      json
-// @Param        X-Organization-ID  header  string  true  "Organization ID"
+// @Param        X-Organization-ID  header  string  true   "Organization ID"
 // @Param        id  path  string  true  "organization ID"
+// @Param        status  query  string  false  "Membership status: active, suspended, all"
 // @Success      200  {object}  openapi.OrganizationMemberListResult  "members"
 // @Failure      401  {object}  openapi.ErrorResponse  "authentication required"
 // @Failure      403  {object}  openapi.ErrorResponse  "access denied"
@@ -103,7 +104,13 @@ func (h *MemberHandler) List(c *gin.Context) {
 		}
 	}
 
-	members, err := h.memberService.ListMembers(c.Request.Context(), orgID)
+	status, ok := parseMemberStatusFilter(c.Query("status"))
+	if !ok {
+		h.presenter.BadRequest(c, "invalid status filter")
+		return
+	}
+
+	members, err := h.memberService.ListMembersByStatus(c.Request.Context(), orgID, status)
 	if err != nil {
 		h.presenter.InternalError(c, "failed to list members")
 		return
@@ -111,22 +118,7 @@ func (h *MemberHandler) List(c *gin.Context) {
 
 	result := make([]openapi.OrganizationMember, len(members))
 	for i, member := range members {
-		item := openapi.OrganizationMember{
-			ID:             member.ID,
-			OrganizationID: member.OrganizationID,
-			UserID:     member.UserID,
-			Role:           string(member.Role),
-			Status:         string(member.Lifecycle),
-			UserName:   member.UserName,
-			UserEmail:  member.UserEmail,
-		}
-		if member.InvitedBy != nil {
-			item.InvitedBy = *member.InvitedBy
-		}
-		if !member.JoinedAt.IsZero() {
-			item.JoinedAt = int64Ptr(member.JoinedAt.UnixMilli())
-		}
-		result[i] = item
+		result[i] = memberJSON(member)
 	}
 
 	h.presenter.OK(c, openapi.OrganizationMemberListResult{
@@ -193,25 +185,39 @@ func (h *MemberHandler) Get(c *gin.Context) {
 		return
 	}
 
-	single := openapi.OrganizationMember{
+	h.presenter.OK(c, memberJSON(member))
+}
+
+// memberJSON maps a membership to its wire shape. One mapper for the list and
+// the single read, so the two cannot report different fields.
+func memberJSON(member *organization.OrganizationMember) openapi.OrganizationMember {
+	item := openapi.OrganizationMember{
 		ID:             member.ID,
 		OrganizationID: member.OrganizationID,
-		UserID:     member.UserID,
+		UserID:         member.UserID,
 		Role:           string(member.Role),
 		Status:         string(member.Lifecycle),
-		UserName:   member.UserName,
-		UserEmail:  member.UserEmail,
+		UserName:       member.UserName,
+		UserEmail:      member.UserEmail,
+		AvatarURL:      member.AvatarURL,
 	}
 	if member.InvitedBy != nil {
-		single.InvitedBy = *member.InvitedBy
+		item.InvitedBy = *member.InvitedBy
 	}
 	if !member.JoinedAt.IsZero() {
-		single.JoinedAt = int64Ptr(member.JoinedAt.UnixMilli())
+		item.JoinedAt = int64Ptr(member.JoinedAt.UnixMilli())
 	}
 	if member.RemovedAt != nil {
-		single.RemovedAt = int64Ptr(member.RemovedAt.UnixMilli())
+		item.RemovedAt = int64Ptr(member.RemovedAt.UnixMilli())
 	}
-	h.presenter.OK(c, single)
+	if member.SuspendedAt != nil {
+		item.SuspendedAt = int64Ptr(member.SuspendedAt.UnixMilli())
+	}
+	if member.LastSeenAt != nil {
+		item.LastSeen = int64Ptr(member.LastSeenAt.UnixMilli())
+	}
+
+	return item
 }
 
 // UpdateRole handles PATCH /v1/organizations/:id/members/:memberId.
@@ -295,11 +301,11 @@ func (h *MemberHandler) UpdateRole(c *gin.Context) {
 	h.presenter.OK(c, openapi.OrganizationMember{
 		ID:             member.ID,
 		OrganizationID: member.OrganizationID,
-		UserID:     member.UserID,
+		UserID:         member.UserID,
 		Role:           string(member.Role),
 		Status:         string(member.Lifecycle),
-		UserName:   member.UserName,
-		UserEmail:  member.UserEmail,
+		UserName:       member.UserName,
+		UserEmail:      member.UserEmail,
 	})
 }
 
@@ -525,4 +531,20 @@ func (h *MemberHandler) Reinstate(c *gin.Context) {
 	h.presenter.OK(c, openapi.MessageResult{
 		Message: "member reinstated",
 	})
+}
+
+// parseMemberStatusFilter maps the ?status= query to a membership lifecycle.
+// Absent or "all" means every state except removed, so an administrator sees
+// suspended members and can reinstate them.
+func parseMemberStatusFilter(raw string) (organization.MemberLifecycle, bool) {
+	switch raw {
+	case "", "all":
+		return "", true
+	case "active":
+		return organization.MemberLifecycleActive, true
+	case "suspended":
+		return organization.MemberLifecycleSuspended, true
+	default:
+		return "", false
+	}
 }

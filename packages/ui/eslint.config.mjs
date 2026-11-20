@@ -19,7 +19,12 @@ export default tseslint.config(
       sourceType: 'module',
     },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
+      // `_`-prefixed bindings are deliberate discards: an omitted destructured
+      // key (so it cannot leak into a spread) or an ignored callback argument.
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-unused-vars': 'off',
       // A tagged template used purely for its side effect (Emotion's

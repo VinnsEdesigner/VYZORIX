@@ -54,7 +54,7 @@ type TestState struct {
 	Password   string            `json:"password"`
 	Name       string            `json:"name"`
 	OrgID      string            `json:"org_id"`
-	UserID string            `json:"user_id"`
+	UserID     string            `json:"user_id"`
 	APIKeys    map[string]string `json:"api_keys"`
 	CSRF       string            `json:"csrf"`
 	Cookies    map[string]string `json:"cookies"`

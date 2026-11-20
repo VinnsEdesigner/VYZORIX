@@ -7,10 +7,13 @@
  */
 
 export interface AdminUser {
+  avatar_url?: string;
   created_at?: number;
+  disabled?: boolean;
   email?: string;
   email_verified?: boolean;
   id?: string;
+  last_login_at?: number;
   mfa_enabled?: boolean;
   name?: string;
   role?: string;

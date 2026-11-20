@@ -493,8 +493,8 @@ func (s *Service) postSlackBotMessage(ctx context.Context, token, channel, text 
 	}
 	// Slack returns 200 with {"ok":false,"error":"..."} on a logical failure.
 	var decoded struct {
-		OK    bool   `json:"ok"`
 		Error string `json:"error"`
+		OK    bool   `json:"ok"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&decoded); err == nil && !decoded.OK {
 		return fmt.Errorf("slack error: %s", decoded.Error)

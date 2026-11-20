@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.0.01
  */
 import type {
+  GetOrganizationsIdMembersParams,
   MessageResult,
   OrganizationMember,
   OrganizationMemberListResult,
@@ -25,9 +26,11 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
  */
 const getOrganizationsIdMembers = (
     id: string,
+    params?: GetOrganizationsIdMembersParams,
  options?: SecondParameter<typeof customAxios<OrganizationMemberListResult>>,) => {
       return customAxios<OrganizationMemberListResult>(
-      {url: `/organizations/${id}/members`, method: 'GET'
+      {url: `/organizations/${id}/members`, method: 'GET',
+        params
     },
       options);
     }

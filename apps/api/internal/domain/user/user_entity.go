@@ -56,6 +56,7 @@ type User struct {
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
 	MFAEnabledAt       *time.Time
+	DisabledAt         *time.Time
 	PasswordHash       string
 	Email              string
 	ID                 string
@@ -76,6 +77,7 @@ type User struct {
 	MFARequired        bool
 	EmailVerified      bool
 	MFAEnabled         bool
+	Disabled           bool
 }
 
 // DefaultSecuritySettings returns default security settings.

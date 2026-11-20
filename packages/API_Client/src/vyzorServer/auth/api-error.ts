@@ -11,7 +11,7 @@ export const ApiErrorCode = {
   INVALID_INPUT: 'invalid_input',
 } as const;
 
-export type ApiErrorCode = typeof ApiErrorCode[keyof typeof ApiErrorCode];
+export type ApiErrorCode = (typeof ApiErrorCode)[keyof typeof ApiErrorCode] | (string & {});
 
 export interface RateLimitInfo {
   limit: number;
@@ -72,7 +72,10 @@ function parseRateLimitHeaders(headers: Record<string, string>): RateLimitInfo |
 
 export function parseApiError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<{ error?: string; message?: string }>;
+    const axiosError = error as AxiosError<{
+      error?: string | { code?: string; message?: string };
+      message?: string;
+    }>;
     const statusCode = axiosError.response?.status ?? 0;
     const responseData = axiosError.response?.data;
     const headers = axiosError.response?.headers as Record<string, string> | undefined;
@@ -83,9 +86,13 @@ export function parseApiError(error: unknown): ApiError {
     let rateLimit: RateLimitInfo | undefined;
 
     if (responseData) {
-      code = (responseData.error as ApiErrorCode) || getCodeFromStatus(statusCode);
-      message = responseData.message || getMessageFromCode(code);
-      details = responseData;
+
+      const nested = typeof responseData.error === 'object' ? responseData.error : undefined;
+      const flatCode = typeof responseData.error === 'string' ? responseData.error : undefined;
+
+      code = (nested?.code ?? flatCode ?? getCodeFromStatus(statusCode)) as ApiErrorCode;
+      message = nested?.message || responseData.message || getMessageFromCode(code);
+      details = (nested ?? responseData) as Record<string, unknown>;
     }
 
         if (headers) {

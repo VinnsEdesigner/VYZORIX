@@ -8,11 +8,11 @@ import (
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/command"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/session"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/telemetry"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/transaction"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/google/uuid"
 )
 
@@ -72,7 +72,7 @@ type OrganizationService struct {
 	orgRepo        organization.OrganizationRepository
 	memberRepo     organization.MemberRepository
 	invitationRepo organization.InvitationRepository
-	userRepo   user.Repository
+	userRepo       user.Repository
 	sessionRepo    session.Repository
 	deviceRepo     device.Repository
 	telemetryRepo  telemetry.Repository
@@ -101,7 +101,7 @@ func NewOrganizationService(
 		orgRepo:        orgRepo,
 		memberRepo:     memberRepo,
 		invitationRepo: invitationRepo,
-		userRepo:   userRepo,
+		userRepo:       userRepo,
 		sessionRepo:    sessionRepo,
 		deviceRepo:     deviceRepo,
 		telemetryRepo:  telemetryRepo,

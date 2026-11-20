@@ -202,7 +202,7 @@ func (h *ExecuteHandler) Handle(c *gin.Context) {
 	}
 
 	h.audit.CommandExecuted(c.Request.Context(), audit.CommandExecutedEvent{
-		UserID: userIDFromContext(c),
+		UserID:     userIDFromContext(c),
 		DeviceID:   imei,
 		Command:    req.Command,
 		DispatchID: cmdResp.DispatchID,
@@ -234,7 +234,7 @@ func (h *ExecuteHandler) Handle(c *gin.Context) {
 func (h *ExecuteHandler) authorizeCommand(c *gin.Context, req commandRequest, imei string) bool {
 	actor := command.ActorContext{
 		UserID: userIDFromContext(c),
-		OrgID:      middleware.GetOrganizationID(c),
+		OrgID:  middleware.GetOrganizationID(c),
 	}
 	if op := middleware.GetUserFromContext(c); op != nil {
 		actor.IsSuperAdmin = op.IsSuperAdmin()
@@ -252,15 +252,15 @@ func (h *ExecuteHandler) authorizeCommand(c *gin.Context, req commandRequest, im
 	}
 
 	h.audit.CommandExecuted(c.Request.Context(), audit.CommandExecutedEvent{
-		UserID: actor.UserID,
-		DeviceID:   imei,
-		Command:    req.Command,
-		IPAddress:  c.ClientIP(),
-		UserAgent:  c.Request.UserAgent(),
-		TraceID:    middleware.GetTraceID(c),
-		RiskTier:   string(outcome.Tier),
-		Result:     audit.ResultBlocked,
-		Reason:     outcome.Reason,
+		UserID:    actor.UserID,
+		DeviceID:  imei,
+		Command:   req.Command,
+		IPAddress: c.ClientIP(),
+		UserAgent: c.Request.UserAgent(),
+		TraceID:   middleware.GetTraceID(c),
+		RiskTier:  string(outcome.Tier),
+		Result:    audit.ResultBlocked,
+		Reason:    outcome.Reason,
 	})
 	if outcome.NeedsConfirmation {
 		responses.RespondStructured(c, http.StatusTooEarly, outcome.Message)

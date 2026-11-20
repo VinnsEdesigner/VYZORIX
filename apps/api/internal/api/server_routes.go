@@ -183,6 +183,10 @@ func (s *Server) setupPublicRoutes() {
 	public.GET("/", s.dashboardHandler)
 	s.setupAuthRoutes(public)
 	s.setupDevicePublicRoutes(public)
+
+	// A git provider has no session or API key, so the push receiver is public. Its
+	// authentication is the HMAC signature the handler verifies.
+	s.setupProvisioningWebhookRoute(public)
 }
 
 func (s *Server) setupAuthRoutes(public *gin.RouterGroup) {
@@ -303,6 +307,11 @@ func (s *Server) setupAuthenticatedRoutes() {
 
 	// Organization routes: Session required (users, invitations, members).
 	s.setupOrganizationRoutes(tenantGroup)
+
+	// Provisioning (GitOps) routes: org-scoped, guarded by provisioning.read /
+	// provisioning.write. The group is registered only when the handler is
+	// wired, so an unwired deployment simply has no provisioning surface.
+	s.setupProvisioningRoutes(tenantGroup)
 
 	// Instance routes: Session required, deployment-scoped (InstanceRole).
 	s.setupInstanceRoutes(tenantGroup)
@@ -829,12 +838,17 @@ func (s *Server) setupServiceAccountRoutes(r *gin.RouterGroup) {
 	saGroup.Use(middleware.NewOrganizationContext(nil).Middleware())
 	saGroup.Use(middleware.NewOrganizationMembership(s.memberHandler.MembershipChecker()).Middleware())
 	{
+		// Registered before "/:id" so "roles" is not captured as an account id.
+		saGroup.GET("/roles", s.ServiceAccountHandler.ListFixedRoles)
 		saGroup.GET("",
 			s.requireScope(permission.ActionServiceAccountsRead, permission.WildcardScope(permission.ScopeOrg)),
 			s.ServiceAccountHandler.List)
 		saGroup.POST("",
 			s.requireScope(permission.ActionServiceAccountsWrite, permission.WildcardScope(permission.ScopeOrg)),
 			s.ServiceAccountHandler.Create)
+		saGroup.PATCH("/:id",
+			s.requireScope(permission.ActionServiceAccountsWrite, permission.WildcardScope(permission.ScopeOrg)),
+			s.ServiceAccountHandler.Update)
 		saGroup.DELETE("/:id",
 			s.requireScope(permission.ActionServiceAccountsWrite, permission.WildcardScope(permission.ScopeOrg)),
 			s.ServiceAccountHandler.Delete)
@@ -847,6 +861,9 @@ func (s *Server) setupServiceAccountRoutes(r *gin.RouterGroup) {
 		saGroup.DELETE("/:id/tokens/:token_id",
 			s.requireScope(permission.ActionServiceAccountsWrite, permission.WildcardScope(permission.ScopeOrg)),
 			s.ServiceAccountHandler.RevokeToken)
+		saGroup.PATCH("/:id/tokens/:token_id",
+			s.requireScope(permission.ActionServiceAccountsWrite, permission.WildcardScope(permission.ScopeOrg)),
+			s.ServiceAccountHandler.UpdateTokenRoles)
 		saGroup.POST("/:id/tokens/:token_id/rotate",
 			s.requireScope(permission.ActionServiceAccountsWrite, permission.WildcardScope(permission.ScopeOrg)),
 			s.ServiceAccountHandler.RotateToken)
@@ -1025,11 +1042,19 @@ func (s *Server) setupOrganizationRoutes(r *gin.RouterGroup) {
 	}
 
 	// Invitation routes (public + authenticated).
+	//
+	// Creating an invitation adds a member to an organisation, so it is an
+	// org-scoped write: the org is resolved from the credential and the caller
+	// must hold members.write, exactly like the sibling member routes. Without
+	// this guard the only check was the service role test, invisible to the
+	// route audit.
 	invitations := r.Group("/invitations")
 	invitations.Use(s.cookieAuth.Middleware())
+	invitations.Use(middleware.NewOrganizationContext(nil).Middleware())
+	invitations.Use(middleware.NewOrganizationMembership(s.memberHandler.MembershipChecker()).Middleware())
 	{
 		// Note: Idempotency is handled globally by tenantGroup middleware.
-		invitations.POST("", s.invitationHandler.Create)
+		invitations.POST("", s.requireScope(permission.ActionMembersWrite, permission.WildcardScope(permission.ScopeOrg)), s.invitationHandler.Create)
 		invitations.GET("", s.invitationHandler.ListByInviter)
 		invitations.DELETE("/:id", s.invitationHandler.Delete)
 	}

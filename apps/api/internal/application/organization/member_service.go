@@ -304,19 +304,30 @@ func (s *MemberService) GetMember(ctx context.Context, memberID string) (*organi
 	return member, nil
 }
 
-// ListMembers lists all members of an organization.
+// ListMembers lists all active members of an organization.
 func (s *MemberService) ListMembers(ctx context.Context, orgID string) ([]*organization.OrganizationMember, error) {
+	return s.ListMembersByStatus(ctx, orgID, organization.MemberLifecycleActive)
+}
+
+// ListMembersByStatus lists the members in one lifecycle state. An empty status
+// lists every member except removed, which is what an administrative view needs:
+// a suspended member is still part of the organisation and must be visible so
+// they can be reinstated.
+func (s *MemberService) ListMembersByStatus(ctx context.Context, orgID string, status organization.MemberLifecycle) ([]*organization.OrganizationMember, error) {
 	members, err := s.memberRepo.FindByOrganization(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Filter to only active members.
 	result := make([]*organization.OrganizationMember, 0, len(members))
 	for _, m := range members {
-		if m.IsActive() {
-			result = append(result, m)
+		if m.IsRemoved() {
+			continue
 		}
+		if status != "" && m.Lifecycle != status {
+			continue
+		}
+		result = append(result, m)
 	}
 
 	return result, nil

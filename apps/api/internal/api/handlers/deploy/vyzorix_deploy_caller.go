@@ -1,5 +1,5 @@
 // Package deployhandlers provides the HTTP surface for the deploy contract
-//. It is a thin adapter: every decision —
+// . It is a thin adapter: every decision —
 // who may deploy, what compiles, what is refused, what is signed — belongs to
 // internal/deploy, and this package only turns a request into a call and a
 // result into a response.
@@ -16,9 +16,9 @@ import (
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/deploy"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 )
 
 // MembershipChecker resolves a user's membership in an organization. It is

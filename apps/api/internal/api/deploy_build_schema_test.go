@@ -61,7 +61,6 @@ func TestBuildSchemaRouteIsPublic(t *testing.T) {
 	f := newDeployFixture(t)
 
 	// The public router, with no tenant group and no injected principal.
-	gin.SetMode(gin.TestMode)
 	r := gin.New()
 	f.server.setupDeploySchemaRoute(r.Group("/v1"))
 

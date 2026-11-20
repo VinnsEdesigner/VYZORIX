@@ -30,15 +30,20 @@ import type {
 import type {
   CreateServiceAccountRequest,
   CreateServiceAccountTokenRequest,
+  DeleteServiceAccountsIdTokensTokenParams,
   DeletedResult,
   ErrorResponse,
+  FixedRoleCatalogResult,
   RevokedResult,
   RotateServiceAccountTokenRequest,
   ServiceAccount,
   ServiceAccountListResult,
+  ServiceAccountToken,
   ServiceAccountTokenCreated,
   ServiceAccountTokenListResult,
-  ServiceAccountTokenRotated
+  ServiceAccountTokenRotated,
+  UpdateServiceAccountRequest,
+  UpdateServiceAccountTokenRolesRequest
 } from '../../../../../packages/API_Client/src/generated/schemas';
 
 import { customAxios } from '../../../../../packages/API_Client/src/generated/rest-bridge';
@@ -256,7 +261,116 @@ export const usePostServiceAccounts = <TError = ErrorResponse,
       const backupQueryClient = useQueryClient();
       return useMutation(getPostServiceAccountsMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
-    export const getDeleteServiceAccountsIdUrl = (id: string,) => {
+    export const getGetServiceAccountsRolesUrl = () => {
+
+
+
+
+  return `/service-accounts/roles`
+}
+
+/**
+ * Returns the fixed-role catalog and org roles a service account token may be assigned
+ * @summary List assignable roles
+ */
+export const getServiceAccountsRoles = async ( options?: Parameters<typeof customAxios>[1]): Promise<FixedRoleCatalogResult> => {
+
+  return customAxios<FixedRoleCatalogResult>(getGetServiceAccountsRolesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetServiceAccountsRolesQueryKey = () =>
+    organizationScopedQueryKey({  }, { url: `/service-accounts/roles` });
+
+
+export const useGetServiceAccountsRolesQueryOptions = <TData = Awaited<ReturnType<typeof getServiceAccountsRoles>>, TError = ErrorResponse>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getServiceAccountsRoles>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  organizationScopedQueryKey({  }, { url: `/service-accounts/roles`, queryOptions });
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getServiceAccountsRoles>>> = ({ signal }) => getServiceAccountsRoles({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getServiceAccountsRoles>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetServiceAccountsRolesQueryResult = NonNullable<Awaited<ReturnType<typeof getServiceAccountsRoles>>>
+export type GetServiceAccountsRolesQueryError = ErrorResponse
+
+
+export function useGetServiceAccountsRoles<TData = Awaited<ReturnType<typeof getServiceAccountsRoles>>, TError = ErrorResponse>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getServiceAccountsRoles>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getServiceAccountsRoles>>,
+          TError,
+          Awaited<ReturnType<typeof getServiceAccountsRoles>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetServiceAccountsRoles<TData = Awaited<ReturnType<typeof getServiceAccountsRoles>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getServiceAccountsRoles>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getServiceAccountsRoles>>,
+          TError,
+          Awaited<ReturnType<typeof getServiceAccountsRoles>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetServiceAccountsRoles<TData = Awaited<ReturnType<typeof getServiceAccountsRoles>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getServiceAccountsRoles>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List assignable roles
+ */
+
+export function useGetServiceAccountsRoles<TData = Awaited<ReturnType<typeof getServiceAccountsRoles>>, TError = ErrorResponse>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getServiceAccountsRoles>>, TError, TData>>, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = useGetServiceAccountsRolesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+/**
+ * @summary List assignable roles
+ */
+export const invalidateGetServiceAccountsRoles = async (
+ queryClient: QueryClient,  options?: InvalidateOptions
+  ): Promise<QueryClient> => {
+
+  await queryClient.invalidateQueries({ queryKey: organizationScopedQueryKey({  }, { url: `/service-accounts/roles` }) }, options);
+
+  return queryClient;
+}
+
+
+
+
+export const getDeleteServiceAccountsIdUrl = (id: string,) => {
 
 
 
@@ -333,20 +447,20 @@ export const useDeleteServiceAccountsId = <TError = ErrorResponse,
       const backupQueryClient = useQueryClient();
       return useMutation(getDeleteServiceAccountsIdMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
-    export const getPostServiceAccountsIdRotateUrl = (id: string,) => {
+    export const getPatchServiceAccountsIdUrl = (id: string,) => {
 
 
 
 
-  return `/service-accounts/${id}/rotate`
+  return `/service-accounts/${id}`
 }
 
 /**
- * Revokes the existing token and issues a new one. Returns the full key once
- * @summary Rotate service account token
+ * Renames a service account and/or toggles it enabled. Omitted fields are left unchanged
+ * @summary Update service account
  */
-export const postServiceAccountsIdRotate = async (id: string,
-    rotateServiceAccountTokenRequest: RotateServiceAccountTokenRequest, options?: Parameters<typeof customAxios>[1]): Promise<ServiceAccountTokenRotated> => {
+export const patchServiceAccountsId = async (id: string,
+    updateServiceAccountRequest: UpdateServiceAccountRequest, options?: Parameters<typeof customAxios>[1]): Promise<ServiceAccount> => {
 
     const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
     if (!h) return {};
@@ -354,12 +468,12 @@ export const postServiceAccountsIdRotate = async (id: string,
     if (Array.isArray(h)) return Object.fromEntries(h);
     return h;
   };
-return customAxios<ServiceAccountTokenRotated>(getPostServiceAccountsIdRotateUrl(id),
+return customAxios<ServiceAccount>(getPatchServiceAccountsIdUrl(id),
   {
     ...options,
-    method: 'POST',
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(rotateServiceAccountTokenRequest)
+    body: JSON.stringify(updateServiceAccountRequest)
   }
 );}
 
@@ -367,11 +481,11 @@ return customAxios<ServiceAccountTokenRotated>(getPostServiceAccountsIdRotateUrl
 
 
 
-export const getPostServiceAccountsIdRotateMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postServiceAccountsIdRotate>>, TError,{id: string;data: RotateServiceAccountTokenRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
-): UseMutationOptions<Awaited<ReturnType<typeof postServiceAccountsIdRotate>>, TError,{id: string;data: RotateServiceAccountTokenRequest}, TContext> => {
+export const getPatchServiceAccountsIdMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchServiceAccountsId>>, TError,{id: string;data: UpdateServiceAccountRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchServiceAccountsId>>, TError,{id: string;data: UpdateServiceAccountRequest}, TContext> => {
 
-const mutationKey = ['postServiceAccountsIdRotate'];
+const mutationKey = ['patchServiceAccountsId'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -381,13 +495,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postServiceAccountsIdRotate>>, {id: string;data: RotateServiceAccountTokenRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchServiceAccountsId>>, {id: string;data: UpdateServiceAccountRequest}> = (props) => {
           const {id,data} = props ?? {};
 
-          return  postServiceAccountsIdRotate(id,data,requestOptions)
+          return  patchServiceAccountsId(id,data,requestOptions)
         }
 
-  const onSuccess = (data: Awaited<ReturnType<typeof postServiceAccountsIdRotate>>, variables: {id: string;data: RotateServiceAccountTokenRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
+  const onSuccess = (data: Awaited<ReturnType<typeof patchServiceAccountsId>>, variables: {id: string;data: UpdateServiceAccountRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetServiceAccountsQueryKey() });
         }
@@ -399,23 +513,23 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { ...mutationOptions, mutationFn, onSuccess }}
 
-    export type PostServiceAccountsIdRotateMutationResult = NonNullable<Awaited<ReturnType<typeof postServiceAccountsIdRotate>>>
-    export type PostServiceAccountsIdRotateMutationBody = RotateServiceAccountTokenRequest
-    export type PostServiceAccountsIdRotateMutationError = ErrorResponse
+    export type PatchServiceAccountsIdMutationResult = NonNullable<Awaited<ReturnType<typeof patchServiceAccountsId>>>
+    export type PatchServiceAccountsIdMutationBody = UpdateServiceAccountRequest
+    export type PatchServiceAccountsIdMutationError = ErrorResponse
 
     /**
- * @summary Rotate service account token
+ * @summary Update service account
  */
-export const usePostServiceAccountsIdRotate = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postServiceAccountsIdRotate>>, TError,{id: string;data: RotateServiceAccountTokenRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+export const usePatchServiceAccountsId = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchServiceAccountsId>>, TError,{id: string;data: UpdateServiceAccountRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof postServiceAccountsIdRotate>>,
+        Awaited<ReturnType<typeof patchServiceAccountsId>>,
         TError,
-        {id: string;data: RotateServiceAccountTokenRequest},
+        {id: string;data: UpdateServiceAccountRequest},
         TContext
       > => {
       const backupQueryClient = useQueryClient();
-      return useMutation(getPostServiceAccountsIdRotateMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
+      return useMutation(getPatchServiceAccountsIdMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
     export const getGetServiceAccountsIdTokensUrl = (id: string,) => {
 
@@ -611,22 +725,31 @@ export const usePostServiceAccountsIdTokens = <TError = ErrorResponse,
       return useMutation(getPostServiceAccountsIdTokensMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }
     export const getDeleteServiceAccountsIdTokensTokenUrl = (id: string,
-    token: string,) => {
+    token: string,
+    params?: DeleteServiceAccountsIdTokensTokenParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/service-accounts/${id}/tokens/${token}`
+  return stringifiedParams.length > 0 ? `/service-accounts/${id}/tokens/${token}?${stringifiedParams}` : `/service-accounts/${id}/tokens/${token}`
 }
 
 /**
- * Revokes a single token by ID
- * @summary Revoke service account token
+ * Revokes a token by ID (soft, auditable). With purge=true the token row is deleted.
+ * @summary Revoke or delete service account token
  */
 export const deleteServiceAccountsIdTokensToken = async (id: string,
-    token: string, options?: Parameters<typeof customAxios>[1]): Promise<RevokedResult> => {
+    token: string,
+    params?: DeleteServiceAccountsIdTokensTokenParams, options?: Parameters<typeof customAxios>[1]): Promise<RevokedResult> => {
 
-  return customAxios<RevokedResult>(getDeleteServiceAccountsIdTokensTokenUrl(id,token),
+  return customAxios<RevokedResult>(getDeleteServiceAccountsIdTokensTokenUrl(id,token,params),
   {
     ...options,
     method: 'DELETE'
@@ -640,8 +763,8 @@ export const deleteServiceAccountsIdTokensToken = async (id: string,
 
 
 export const getDeleteServiceAccountsIdTokensTokenMutationOptions = <TError = ErrorResponse,
-    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteServiceAccountsIdTokensToken>>, TError,{id: string;token: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteServiceAccountsIdTokensToken>>, TError,{id: string;token: string}, TContext> => {
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteServiceAccountsIdTokensToken>>, TError,{id: string;token: string;params?: DeleteServiceAccountsIdTokensTokenParams}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteServiceAccountsIdTokensToken>>, TError,{id: string;token: string;params?: DeleteServiceAccountsIdTokensTokenParams}, TContext> => {
 
 const mutationKey = ['deleteServiceAccountsIdTokensToken'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -653,13 +776,13 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteServiceAccountsIdTokensToken>>, {id: string;token: string}> = (props) => {
-          const {id,token} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteServiceAccountsIdTokensToken>>, {id: string;token: string;params?: DeleteServiceAccountsIdTokensTokenParams}> = (props) => {
+          const {id,token,params} = props ?? {};
 
-          return  deleteServiceAccountsIdTokensToken(id,token,requestOptions)
+          return  deleteServiceAccountsIdTokensToken(id,token,params,requestOptions)
         }
 
-  const onSuccess = (data: Awaited<ReturnType<typeof deleteServiceAccountsIdTokensToken>>, variables: {id: string;token: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
+  const onSuccess = (data: Awaited<ReturnType<typeof deleteServiceAccountsIdTokensToken>>, variables: {id: string;token: string;params?: DeleteServiceAccountsIdTokensTokenParams}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetServiceAccountsQueryKey() });
         }
@@ -676,16 +799,188 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteServiceAccountsIdTokensTokenMutationError = ErrorResponse
 
     /**
- * @summary Revoke service account token
+ * @summary Revoke or delete service account token
  */
 export const useDeleteServiceAccountsIdTokensToken = <TError = ErrorResponse,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteServiceAccountsIdTokensToken>>, TError,{id: string;token: string}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteServiceAccountsIdTokensToken>>, TError,{id: string;token: string;params?: DeleteServiceAccountsIdTokensTokenParams}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteServiceAccountsIdTokensToken>>,
         TError,
-        {id: string;token: string},
+        {id: string;token: string;params?: DeleteServiceAccountsIdTokensTokenParams},
         TContext
       > => {
       const backupQueryClient = useQueryClient();
       return useMutation(getDeleteServiceAccountsIdTokensTokenMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
+    }
+    export const getPatchServiceAccountsIdTokensTokenUrl = (id: string,
+    token: string,) => {
+
+
+
+
+  return `/service-accounts/${id}/tokens/${token}`
+}
+
+/**
+ * Replaces a token's basic role and fixed roles. The token's key is unchanged
+ * @summary Update service account token roles
+ */
+export const patchServiceAccountsIdTokensToken = async (id: string,
+    token: string,
+    updateServiceAccountTokenRolesRequest: UpdateServiceAccountTokenRolesRequest, options?: Parameters<typeof customAxios>[1]): Promise<ServiceAccountToken> => {
+
+    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return customAxios<ServiceAccountToken>(getPatchServiceAccountsIdTokensTokenUrl(id,token),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateServiceAccountTokenRolesRequest)
+  }
+);}
+
+
+
+
+
+export const getPatchServiceAccountsIdTokensTokenMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchServiceAccountsIdTokensToken>>, TError,{id: string;token: string;data: UpdateServiceAccountTokenRolesRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchServiceAccountsIdTokensToken>>, TError,{id: string;token: string;data: UpdateServiceAccountTokenRolesRequest}, TContext> => {
+
+const mutationKey = ['patchServiceAccountsIdTokensToken'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchServiceAccountsIdTokensToken>>, {id: string;token: string;data: UpdateServiceAccountTokenRolesRequest}> = (props) => {
+          const {id,token,data} = props ?? {};
+
+          return  patchServiceAccountsIdTokensToken(id,token,data,requestOptions)
+        }
+
+  const onSuccess = (data: Awaited<ReturnType<typeof patchServiceAccountsIdTokensToken>>, variables: {id: string;token: string;data: UpdateServiceAccountTokenRolesRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetServiceAccountsQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
+
+
+
+
+  return  { ...mutationOptions, mutationFn, onSuccess }}
+
+    export type PatchServiceAccountsIdTokensTokenMutationResult = NonNullable<Awaited<ReturnType<typeof patchServiceAccountsIdTokensToken>>>
+    export type PatchServiceAccountsIdTokensTokenMutationBody = UpdateServiceAccountTokenRolesRequest
+    export type PatchServiceAccountsIdTokensTokenMutationError = ErrorResponse
+
+    /**
+ * @summary Update service account token roles
+ */
+export const usePatchServiceAccountsIdTokensToken = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchServiceAccountsIdTokensToken>>, TError,{id: string;token: string;data: UpdateServiceAccountTokenRolesRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof patchServiceAccountsIdTokensToken>>,
+        TError,
+        {id: string;token: string;data: UpdateServiceAccountTokenRolesRequest},
+        TContext
+      > => {
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPatchServiceAccountsIdTokensTokenMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
+    }
+    export const getPostServiceAccountsIdTokensTokenRotateUrl = (id: string,
+    token: string,) => {
+
+
+
+
+  return `/service-accounts/${id}/tokens/${token}/rotate`
+}
+
+/**
+ * Revokes the existing token and issues a new one. Returns the full key once
+ * @summary Rotate service account token
+ */
+export const postServiceAccountsIdTokensTokenRotate = async (id: string,
+    token: string,
+    rotateServiceAccountTokenRequest: RotateServiceAccountTokenRequest, options?: Parameters<typeof customAxios>[1]): Promise<ServiceAccountTokenRotated> => {
+
+    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+return customAxios<ServiceAccountTokenRotated>(getPostServiceAccountsIdTokensTokenRotateUrl(id,token),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(rotateServiceAccountTokenRequest)
+  }
+);}
+
+
+
+
+
+export const getPostServiceAccountsIdTokensTokenRotateMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(queryClient: QueryClient, options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postServiceAccountsIdTokensTokenRotate>>, TError,{id: string;token: string;data: RotateServiceAccountTokenRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+): UseMutationOptions<Awaited<ReturnType<typeof postServiceAccountsIdTokensTokenRotate>>, TError,{id: string;token: string;data: RotateServiceAccountTokenRequest}, TContext> => {
+
+const mutationKey = ['postServiceAccountsIdTokensTokenRotate'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postServiceAccountsIdTokensTokenRotate>>, {id: string;token: string;data: RotateServiceAccountTokenRequest}> = (props) => {
+          const {id,token,data} = props ?? {};
+
+          return  postServiceAccountsIdTokensTokenRotate(id,token,data,requestOptions)
+        }
+
+  const onSuccess = (data: Awaited<ReturnType<typeof postServiceAccountsIdTokensTokenRotate>>, variables: {id: string;token: string;data: RotateServiceAccountTokenRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
+        if (!options?.skipInvalidation) {
+        queryClient.invalidateQueries({ queryKey: getGetServiceAccountsQueryKey() });
+        }
+        mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
+      };
+
+
+
+
+  return  { ...mutationOptions, mutationFn, onSuccess }}
+
+    export type PostServiceAccountsIdTokensTokenRotateMutationResult = NonNullable<Awaited<ReturnType<typeof postServiceAccountsIdTokensTokenRotate>>>
+    export type PostServiceAccountsIdTokensTokenRotateMutationBody = RotateServiceAccountTokenRequest
+    export type PostServiceAccountsIdTokensTokenRotateMutationError = ErrorResponse
+
+    /**
+ * @summary Rotate service account token
+ */
+export const usePostServiceAccountsIdTokensTokenRotate = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postServiceAccountsIdTokensTokenRotate>>, TError,{id: string;token: string;data: RotateServiceAccountTokenRequest}, TContext>, skipInvalidation?: boolean, request?: SecondParameter<typeof customAxios>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postServiceAccountsIdTokensTokenRotate>>,
+        TError,
+        {id: string;token: string;data: RotateServiceAccountTokenRequest},
+        TContext
+      > => {
+      const backupQueryClient = useQueryClient();
+      return useMutation(getPostServiceAccountsIdTokensTokenRotateMutationOptions(queryClient ?? backupQueryClient, options), queryClient);
     }

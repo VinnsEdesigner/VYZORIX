@@ -84,9 +84,9 @@ type SessionCapabilityInfo struct {
 	// Identity — shown by the CLI's `whoami`.
 	UserID   string
 	UserName string
-	Email        string
-	OrgID        string
-	OrgName      string
+	Email    string
+	OrgID    string
+	OrgName  string
 	// Role is the machine value (super_admin, admin, user, viewer); RoleLabel
 	// is its human name ("Super admin"). Both, so a client need not map.
 	Role      string
@@ -102,7 +102,7 @@ type SessionCapabilityInfo struct {
 // mirrors the command path's authorization inputs so the same risk gate applies
 // to a shell as to any other critical operation.
 type PTYAuthRequest struct {
-	UserID        string
+	UserID            string
 	OrgID             string
 	DeviceID          string
 	ConfirmationToken string
@@ -144,7 +144,7 @@ type ptyUserClient struct {
 	sessions      map[string]bool
 	outbox        chan []byte
 	closed        chan struct{}
-	user      string
+	user          string
 	orgID         string
 	lastInput     time.Time
 	closeOnce     sync.Once
@@ -252,7 +252,7 @@ func (h *UserTerminalHandler) Handle(c *gin.Context) {
 	// an MFA-verified session plus a single-use confirmation token.
 	if h.authorizer != nil {
 		decision := h.authorizer.AuthorizePTYOpen(c.Request.Context(), PTYAuthRequest{
-			UserID:        op.ID,
+			UserID:            op.ID,
 			OrgID:             orgID,
 			DeviceID:          deviceID,
 			ConfirmationToken: c.Query("confirmation_token"),
@@ -263,13 +263,13 @@ func (h *UserTerminalHandler) Handle(c *gin.Context) {
 			h.log.Warn("pty open denied",
 				"userId", op.ID, "deviceId", deviceID, "reason", decision.Reason)
 			h.auditSession(c.Request.Context(), audit.PTYSessionEvent{
-				DeviceID:   deviceID,
-				UserID: op.ID,
-				Reason:     decision.Reason,
-				IPAddress:  c.ClientIP(),
-				UserAgent:  c.Request.UserAgent(),
-				Result:     audit.ResultBlocked,
-				Opened:     true,
+				DeviceID:  deviceID,
+				UserID:    op.ID,
+				Reason:    decision.Reason,
+				IPAddress: c.ClientIP(),
+				UserAgent: c.Request.UserAgent(),
+				Result:    audit.ResultBlocked,
+				Opened:    true,
 			})
 
 			// A confirmation gate is satisfiable: report it as such so the client
@@ -297,7 +297,7 @@ func (h *UserTerminalHandler) Handle(c *gin.Context) {
 	client := &ptyUserClient{
 		conn:      conn,
 		log:       h.log,
-		user:  op.ID,
+		user:      op.ID,
 		orgID:     orgID,
 		sessions:  make(map[string]bool),
 		outbox:    make(chan []byte, ptyUserOutbox),
@@ -548,12 +548,12 @@ func (c *ptyUserClient) handleOpen(h *UserTerminalHandler, deviceID, sessionID s
 		if !ok || len(capability.APIAllowlist) == 0 {
 			_, _ = h.relay.Registry().Close(sessionID)
 			h.auditSession(context.Background(), audit.PTYSessionEvent{
-				SessionID:  sessionID,
-				DeviceID:   session.DeviceID,
-				UserID: c.user,
-				Reason:     "no capability resolved for session",
-				Result:     audit.ResultBlocked,
-				Opened:     true,
+				SessionID: sessionID,
+				DeviceID:  session.DeviceID,
+				UserID:    c.user,
+				Reason:    "no capability resolved for session",
+				Result:    audit.ResultBlocked,
+				Opened:    true,
 			})
 			c.sendError(sessionID, "no capability resolved for this session")
 
@@ -562,7 +562,7 @@ func (c *ptyUserClient) handleOpen(h *UserTerminalHandler, deviceID, sessionID s
 
 		session.SetCapability(capability.APIAllowlist, capability.Tier, capability.ExpiresAt)
 		identity = hub.SessionIdentity{
-			User:  capability.UserID,
+			User:      capability.UserID,
 			Name:      capability.UserName,
 			Email:     capability.Email,
 			Org:       capability.OrgID,
@@ -591,12 +591,12 @@ func (c *ptyUserClient) handleOpen(h *UserTerminalHandler, deviceID, sessionID s
 	c.mu.Unlock()
 
 	h.auditSession(context.Background(), audit.PTYSessionEvent{
-		SessionID:  sessionID,
-		DeviceID:   session.DeviceID,
-		UserID: c.user,
-		Result:     audit.ResultSuccess,
-		Opened:     true,
-		Recording:  session.Recording,
+		SessionID: sessionID,
+		DeviceID:  session.DeviceID,
+		UserID:    c.user,
+		Result:    audit.ResultSuccess,
+		Opened:    true,
+		Recording: session.Recording,
 	})
 
 	c.sendJSON(map[string]string{"type": "pty_opened", "sessionId": sessionID})

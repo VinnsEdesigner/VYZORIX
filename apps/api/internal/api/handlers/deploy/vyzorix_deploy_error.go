@@ -8,8 +8,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/middleware"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/responses"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/audit"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/deploy"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/appsecret"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/deploycredential"
 	apperrors "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/errors"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/configscan"
 )
@@ -23,11 +27,28 @@ type Handler struct {
 	devices           deploy.DeviceLookup
 	membershipChecker MembershipChecker
 	grants            GrantLister
-	users         UserLookup
+	users             UserLookup
 	organizations     OrganizationLookup
+	audit             DeployAudit
 	log               *slog.Logger
 	pusher            ConfigPusher
 }
+
+// DeployAudit records a deploy action in the audit trail. It is a narrow interface over
+// *audit.Logger so this package does not depend on the audit package, and so a test can
+// assert exactly which events a request produced.
+//
+// A deploy decides what code a device runs, so it is audited with the same weight as a
+// command: who asked, for which device and organisation, at which version, and whether it
+// succeeded.
+type DeployAudit interface {
+	Deploy(ctx context.Context, e audit.DeployEvent)
+}
+
+// SetAudit injects the audit trail. It is a setter because the audit logger is built
+// alongside the database, and a handler wired without one simply records nothing rather
+// than panicking on the first deploy.
+func (h *Handler) SetAudit(a DeployAudit) { h.audit = a }
 
 // ConfigPusher delivers a freshly deployed config to a device that is connected
 // right now. The push is an optimisation over the device's own re-fetch
@@ -67,7 +88,7 @@ func NewHandler(
 		devices:           devices,
 		membershipChecker: membershipChecker,
 		grants:            grants,
-		users:         users,
+		users:             users,
 		organizations:     organizations,
 		log:               log,
 	}
@@ -141,6 +162,40 @@ func (h *Handler) respondDeployError(c *gin.Context, err error) {
 		return
 	}
 
+	// The device exists and the request is valid, but the device has no secret key, so a value
+	// cannot be wrapped to it. That is a state the caller can fix (register the device's key),
+	// not a server fault — a 500 here told the user the server had broken.
+	if errors.Is(err, deploy.ErrNoSecretKey) {
+		responses.RespondConflictError(c, "this device has no secret key registered, so it cannot receive secrets")
+
+		return
+	}
+
+	// A deploy is already in flight for this device. The caller can retry; proceeding
+	// would produce the version collision the per-device lock exists to prevent.
+	// A revoke that matched no live credential is a 404, not a 204: answering "done" for
+	// a credential that is not there tells the operator a token was killed when it was not.
+	// A secret unset that matched nothing is a 404 for the same reason a revoke is:
+	// answering "done" for a key that was never set tells the operator something was
+	// cleared when nothing was.
+	if errors.Is(err, appsecret.ErrNotFound) {
+		responses.RespondNotFoundError(c, "app secret")
+
+		return
+	}
+
+	if errors.Is(err, deploycredential.ErrNotFound) {
+		responses.RespondNotFoundError(c, "deploy credential")
+
+		return
+	}
+
+	if errors.Is(err, deploy.ErrDeployInProgress) {
+		responses.RespondConflictError(c, err.Error())
+
+		return
+	}
+
 	// A missing or non-signing signer is a server fault, not a caller one: the
 	// contract is that a config is never served unsigned, so this must be a 500
 	// with the cause in the log, never a silently unsigned document.
@@ -153,6 +208,44 @@ func (h *Handler) respondDeployError(c *gin.Context, err error) {
 
 	h.logError(c, err)
 	responses.RespondInternalError(c)
+}
+
+// auditEvent assembles the common fields of a deploy audit entry from the request.
+//
+// It reads the actor from the same place the caller resolution does, so a credential
+// deploy is attributed to the credential's author and a session deploy to the user — the
+// audit row names a human in both cases. The trace id joins the row to the access log.
+func (h *Handler) auditEvent(c *gin.Context, orgID, deviceID string, action audit.Action, result audit.Result, detail string) audit.DeployEvent {
+	e := audit.DeployEvent{
+		OrgID:     orgID,
+		DeviceID:  deviceID,
+		Action:    action,
+		Result:    result,
+		Detail:    detail,
+		IPAddress: c.ClientIP(),
+		UserAgent: c.GetHeader("User-Agent"),
+		TraceID:   responses.GetTraceID(c),
+	}
+
+	if identity, ok := middleware.DeployCredentialFromContext(c); ok {
+		e.UserID = identity.CreatedBy
+		e.ActorType = "deploy_credential"
+	} else if op := middleware.GetUserFromContext(c); op != nil {
+		e.UserID = op.ID
+		e.ActorEmail = op.Email
+		e.ActorType = "user"
+	}
+
+	return e
+}
+
+// recordAudit writes a deploy audit entry when an audit sink is wired.
+func (h *Handler) recordAudit(c *gin.Context, e audit.DeployEvent) {
+	if h.audit == nil {
+		return
+	}
+
+	h.audit.Deploy(c.Request.Context(), e)
 }
 
 // logError records a server-side failure with its trace id. The response body
@@ -179,6 +272,13 @@ func respondMissingOrg(c *gin.Context) {
 
 func respondNotAMember(c *gin.Context) {
 	responses.RespondForbiddenError(c, "not a member of this organization")
+}
+
+// respondBadQuery refuses a query parameter that is present but unrecognised. It is
+// distinct from a bad body: the request read fine, the caller asked for something the
+// server does not understand, and saying so points at the right thing to fix.
+func respondBadQuery(c *gin.Context, name string) {
+	responses.RespondStructured(c, http.StatusBadRequest, name+" must be true or false")
 }
 
 func respondBadBody(c *gin.Context) {

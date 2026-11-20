@@ -8,7 +8,7 @@ import (
 
 // migrateAddDeviceIdentity adds the columns the keypair registration model needs.
 //
-//. The device generates its own signing keypair
+// . The device generates its own signing keypair
 // and sends only the public half, so nothing secret is ever transmitted — which is
 // what removes the FCM delivery of the old command secret. `pairing_code` and
 // `pairing_expires_at` carry the short code a user types to claim the device.

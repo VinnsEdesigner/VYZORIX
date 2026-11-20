@@ -43,9 +43,18 @@ type Record struct {
 // device: deploy is one device per call, never a fleet.
 type Repository interface {
 	// Current returns the config the device should be running, or ErrNotFound.
-	Current(ctx context.Context, deviceID string) (*Record, error)
-	// LastGood returns the config that last applied, or ErrNotFound.
-	LastGood(ctx context.Context, deviceID string) (*Record, error)
+	//
+	// It takes the organisation as well as the device, so a device in another tenant
+	// reads as not-found rather than as a config the caller should not see. The org is a
+	// property of the device, so the store enforces it with a join; a caller cannot
+	// forget the check.
+	Current(ctx context.Context, orgID, deviceID string) (*Record, error)
+	// LastGood returns the config that last applied, scoped to an organisation.
+	LastGood(ctx context.Context, orgID, deviceID string) (*Record, error)
+	// CurrentForDevice returns the config the device should be running, keyed by device
+	// id alone. It is for the device's own signed read, where the device is the
+	// authenticated principal; user-facing reads use Current and its org check.
+	CurrentForDevice(ctx context.Context, deviceID string) (*Record, error)
 	// SaveCurrent stores a new current config, demoting the previous current to
 	// last-good and dropping any older last-good. The demotion and the drop are
 	// one transaction: a half-applied retention would leave two last-goods.

@@ -157,12 +157,12 @@ func (s *AuthService) IssueRefreshToken(ctx context.Context, userID, sessionID s
 	}
 
 	rt := &refresh_token.RefreshToken{
-		ID:         id,
-		UserID: userID,
-		SessionID:  sessionID,
-		TokenHash:  tokenHash,
-		ExpiresAt:  time.Now().Add(expiry),
-		CreatedAt:  time.Now(),
+		ID:        id,
+		UserID:    userID,
+		SessionID: sessionID,
+		TokenHash: tokenHash,
+		ExpiresAt: time.Now().Add(expiry),
+		CreatedAt: time.Now(),
 	}
 
 	if err := s.refreshTokenRepo.Create(ctx, rt); err != nil {

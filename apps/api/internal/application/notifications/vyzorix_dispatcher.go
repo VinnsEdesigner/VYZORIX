@@ -8,6 +8,7 @@ import (
 
 	notificationdomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/notification"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/metrics"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/redaction"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/uuid"
 )
 
@@ -63,11 +64,40 @@ func (d *Dispatcher) SendToPoint(ctx context.Context, cp *notificationdomain.Con
 	return d.dispatchOne(ctx, cp, msg)
 }
 
+// sanitizeMessage returns a copy of the message with its free-text fields redacted.
+//
+// HTML is scrubbed as text: a credential pasted into a body is usually inside a tag or
+// an attribute, and the text patterns match either way. Data is redacted by key, so a
+// value filed under "token" is masked regardless of its shape.
+func sanitizeMessage(msg *notificationdomain.Message) *notificationdomain.Message {
+	if msg == nil {
+		return nil
+	}
+
+	r := redaction.DefaultRedactor
+
+	out := *msg
+	out.Subject = r.Redact(msg.Subject)
+	out.Body = r.Redact(msg.Body)
+	out.HTML = r.Redact(msg.HTML)
+	out.Data = r.RedactMapKey(msg.Data)
+
+	return &out
+}
+
+// dispatchOne delivers one message through one contact point.
+//
+// The message is redacted first: it leaves the process, so a credential that reached a
+// subject or body — an alert whose text quotes a failing connection string, a test
+// message echoing a user-supplied URL — would be handed to a third party. Sanitizing
+// here covers Send and SendToPoint alike, since both route through this function.
 func (d *Dispatcher) dispatchOne(ctx context.Context, cp *notificationdomain.ContactPoint, msg *notificationdomain.Message) error {
 	channel, ok := d.channels[cp.Channel]
 	if !ok {
 		return fmt.Errorf("no channel registered for %q", cp.Channel)
 	}
+
+	msg = sanitizeMessage(msg)
 	err := channel.Send(ctx, cp, msg)
 	status := "sent"
 	errStr := ""

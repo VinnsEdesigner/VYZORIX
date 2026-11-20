@@ -14,6 +14,9 @@ import (
 // newDeployConfigDB opens an in-memory SQLite database with the real schema,
 // created by the migration itself rather than a hand-copied DDL. A copy would
 // drift from the migration and pass while the real table failed.
+//
+// The devices table is created too: the org-scoped read joins against it, so a
+// fixture without devices would fail every read rather than test it.
 func newDeployConfigDB(t *testing.T) *sql.DB {
 	t.Helper()
 
@@ -33,11 +36,38 @@ func newDeployConfigDB(t *testing.T) *sql.DB {
 		t.Fatalf("migrate: %v", err)
 	}
 
+	if _, err := tx.Exec(`CREATE TABLE IF NOT EXISTS devices (
+		id TEXT PRIMARY KEY,
+		organization_id TEXT
+	)`); err != nil {
+		t.Fatalf("create devices: %v", err)
+	}
+
 	if err := tx.Commit(); err != nil {
 		t.Fatalf("commit: %v", err)
 	}
 
 	return db
+}
+
+// seedDeployDevice records a device in an organisation, so an org-scoped read has a
+// row to join against.
+func seedDeployDevice(t *testing.T, db *sql.DB, deviceID, orgID string) {
+	t.Helper()
+
+	if _, err := db.Exec(`INSERT INTO devices (id, organization_id) VALUES (?, ?)`, deviceID, orgID); err != nil {
+		t.Fatalf("seed device %s: %v", deviceID, err)
+	}
+}
+
+// deployFixture is the common setup: a store, a device in org-1, and a context.
+func deployFixture(t *testing.T) (*DeployConfigRepository, *sql.DB, context.Context) {
+	t.Helper()
+
+	db := newDeployConfigDB(t)
+	seedDeployDevice(t, db, "d_1", "org-1")
+
+	return NewDeployConfigRepository(db), db, context.Background()
 }
 
 func record(deviceID string, version int, document string) *deployconfig.Record {
@@ -54,14 +84,16 @@ func record(deviceID string, version int, document string) *deployconfig.Record 
 func TestSaveCurrentRoundTrip(t *testing.T) {
 	t.Parallel()
 
-	repo := NewDeployConfigRepository(newDeployConfigDB(t))
+	db := newDeployConfigDB(t)
+	seedDeployDevice(t, db, "d_1", "org-1")
+	repo := NewDeployConfigRepository(db)
 	ctx := context.Background()
 
 	if err := repo.SaveCurrent(ctx, record("d_1", 1, "doc-v1")); err != nil {
 		t.Fatalf("save: %v", err)
 	}
 
-	got, err := repo.Current(ctx, "d_1")
+	got, err := repo.Current(ctx, "org-1", "d_1")
 	if err != nil {
 		t.Fatalf("current: %v", err)
 	}
@@ -76,9 +108,11 @@ func TestSaveCurrentRoundTrip(t *testing.T) {
 func TestMissingConfigIsNotFound(t *testing.T) {
 	t.Parallel()
 
-	repo := NewDeployConfigRepository(newDeployConfigDB(t))
+	db := newDeployConfigDB(t)
+	seedDeployDevice(t, db, "d_1", "org-1")
+	repo := NewDeployConfigRepository(db)
 
-	if _, err := repo.Current(context.Background(), "absent"); !errors.Is(err, deployconfig.ErrNotFound) {
+	if _, err := repo.Current(context.Background(), "org-1", "absent"); !errors.Is(err, deployconfig.ErrNotFound) {
 		t.Fatalf("want ErrNotFound, got %v", err)
 	}
 }
@@ -88,7 +122,9 @@ func TestMissingConfigIsNotFound(t *testing.T) {
 func TestSaveCurrentDemotesPrevious(t *testing.T) {
 	t.Parallel()
 
-	repo := NewDeployConfigRepository(newDeployConfigDB(t))
+	db := newDeployConfigDB(t)
+	seedDeployDevice(t, db, "d_1", "org-1")
+	repo := NewDeployConfigRepository(db)
 	ctx := context.Background()
 
 	if err := repo.SaveCurrent(ctx, record("d_1", 1, "doc-v1")); err != nil {
@@ -99,7 +135,7 @@ func TestSaveCurrentDemotesPrevious(t *testing.T) {
 		t.Fatalf("save v2: %v", err)
 	}
 
-	lastGood, err := repo.LastGood(ctx, "d_1")
+	lastGood, err := repo.LastGood(ctx, "org-1", "d_1")
 	if err != nil {
 		t.Fatalf("last good: %v", err)
 	}
@@ -108,7 +144,7 @@ func TestSaveCurrentDemotesPrevious(t *testing.T) {
 		t.Fatalf("the previous current must become the last-good, got %+v", lastGood)
 	}
 
-	current, err := repo.Current(ctx, "d_1")
+	current, err := repo.Current(ctx, "org-1", "d_1")
 	if err != nil {
 		t.Fatalf("current: %v", err)
 	}
@@ -123,7 +159,9 @@ func TestSaveCurrentDemotesPrevious(t *testing.T) {
 func TestRetentionStaysAtTwo(t *testing.T) {
 	t.Parallel()
 
-	repo := NewDeployConfigRepository(newDeployConfigDB(t))
+	db := newDeployConfigDB(t)
+	seedDeployDevice(t, db, "d_1", "org-1")
+	repo := NewDeployConfigRepository(db)
 	ctx := context.Background()
 
 	for v := 1; v <= 3; v++ {
@@ -132,7 +170,7 @@ func TestRetentionStaysAtTwo(t *testing.T) {
 		}
 	}
 
-	lastGood, err := repo.LastGood(ctx, "d_1")
+	lastGood, err := repo.LastGood(ctx, "org-1", "d_1")
 	if err != nil {
 		t.Fatalf("last good: %v", err)
 	}
@@ -158,7 +196,9 @@ func TestRetentionStaysAtTwo(t *testing.T) {
 func TestMarkAppliedRecordsTheVersion(t *testing.T) {
 	t.Parallel()
 
-	repo := NewDeployConfigRepository(newDeployConfigDB(t))
+	db := newDeployConfigDB(t)
+	seedDeployDevice(t, db, "d_1", "org-1")
+	repo := NewDeployConfigRepository(db)
 	ctx := context.Background()
 
 	if err := repo.SaveCurrent(ctx, record("d_1", 7, "doc-v7")); err != nil {
@@ -171,7 +211,7 @@ func TestMarkAppliedRecordsTheVersion(t *testing.T) {
 		t.Fatalf("mark applied: %v", err)
 	}
 
-	got, err := repo.Current(ctx, "d_1")
+	got, err := repo.Current(ctx, "org-1", "d_1")
 	if err != nil {
 		t.Fatalf("current: %v", err)
 	}
@@ -186,7 +226,9 @@ func TestMarkAppliedRecordsTheVersion(t *testing.T) {
 func TestMarkAppliedIgnoresAStaleVersion(t *testing.T) {
 	t.Parallel()
 
-	repo := NewDeployConfigRepository(newDeployConfigDB(t))
+	db := newDeployConfigDB(t)
+	seedDeployDevice(t, db, "d_1", "org-1")
+	repo := NewDeployConfigRepository(db)
 	ctx := context.Background()
 
 	if err := repo.SaveCurrent(ctx, record("d_1", 7, "doc-v7")); err != nil {
@@ -197,7 +239,7 @@ func TestMarkAppliedIgnoresAStaleVersion(t *testing.T) {
 		t.Fatalf("mark applied: %v", err)
 	}
 
-	got, err := repo.Current(ctx, "d_1")
+	got, err := repo.Current(ctx, "org-1", "d_1")
 	if err != nil {
 		t.Fatalf("current: %v", err)
 	}
@@ -211,7 +253,9 @@ func TestMarkAppliedIgnoresAStaleVersion(t *testing.T) {
 func TestDevicesAreIsolated(t *testing.T) {
 	t.Parallel()
 
-	repo := NewDeployConfigRepository(newDeployConfigDB(t))
+	db := newDeployConfigDB(t)
+	seedDeployDevice(t, db, "d_1", "org-1")
+	repo := NewDeployConfigRepository(db)
 	ctx := context.Background()
 
 	if err := repo.SaveCurrent(ctx, record("d_1", 1, "doc-a")); err != nil {
@@ -222,7 +266,7 @@ func TestDevicesAreIsolated(t *testing.T) {
 		t.Fatalf("save d_2: %v", err)
 	}
 
-	first, err := repo.Current(ctx, "d_1")
+	first, err := repo.Current(ctx, "org-1", "d_1")
 	if err != nil {
 		t.Fatalf("current d_1: %v", err)
 	}
@@ -237,12 +281,73 @@ func TestDevicesAreIsolated(t *testing.T) {
 func TestSaveCurrentRejectsTheWrongKind(t *testing.T) {
 	t.Parallel()
 
-	repo := NewDeployConfigRepository(newDeployConfigDB(t))
+	db := newDeployConfigDB(t)
+	seedDeployDevice(t, db, "d_1", "org-1")
+	repo := NewDeployConfigRepository(db)
 
 	rec := record("d_1", 1, "doc")
 	rec.Kind = deployconfig.KindLastGood
 
 	if err := repo.SaveCurrent(context.Background(), rec); err == nil {
 		t.Fatal("SaveCurrent must refuse a last-good record")
+	}
+}
+
+// TestCurrentIsOrgScoped is the guard for the cross-tenant read.
+//
+// Current used to look a device up by id alone, so a caller holding another tenant's
+// device id could read that device's signed config — which names its apps and their
+// secret keys. The read now joins against devices on organization_id, so a device in
+// another organisation reads as ErrNotFound, exactly like one that does not exist.
+func TestCurrentIsOrgScoped(t *testing.T) {
+	db := newDeployConfigDB(t)
+	seedDeployDevice(t, db, "d_1", "org-1")
+	seedDeployDevice(t, db, "d_other", "org-2")
+
+	repo := NewDeployConfigRepository(db)
+	ctx := context.Background()
+
+	if err := repo.SaveCurrent(ctx, record("d_other", 1, "other-tenant-doc")); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+
+	// The owning org reads it.
+	if _, err := repo.Current(ctx, "org-2", "d_other"); err != nil {
+		t.Fatalf("the owning org could not read its own config: %v", err)
+	}
+
+	// Another org must not, and must not be able to tell it exists.
+	if _, err := repo.Current(ctx, "org-1", "d_other"); !errors.Is(err, deployconfig.ErrNotFound) {
+		t.Fatalf("org-1 read org-2's config: %v", err)
+	}
+	if _, err := repo.LastGood(ctx, "org-1", "d_other"); !errors.Is(err, deployconfig.ErrNotFound) {
+		t.Fatalf("org-1 read org-2's last-good config: %v", err)
+	}
+
+	// The device's own read is not org-scoped: the device signed the request, so it is
+	// the authenticated principal and can only reach its own row.
+	if _, err := repo.CurrentForDevice(ctx, "d_other"); err != nil {
+		t.Fatalf("the device could not read its own config: %v", err)
+	}
+}
+
+// TestCurrentForDeviceStillReadsOwnRow proves the device-own read was not broken by the
+// org scoping, and that it does not require a devices row to exist — the device path
+// authenticates by signature, not by a join.
+func TestCurrentForDeviceStillReadsOwnRow(t *testing.T) {
+	db := newDeployConfigDB(t)
+	repo := NewDeployConfigRepository(db)
+	ctx := context.Background()
+
+	if err := repo.SaveCurrent(ctx, record("d_unjoined", 3, "doc")); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+
+	got, err := repo.CurrentForDevice(ctx, "d_unjoined")
+	if err != nil {
+		t.Fatalf("CurrentForDevice: %v", err)
+	}
+	if got.Version != 3 {
+		t.Fatalf("version = %d, want 3", got.Version)
 	}
 }

@@ -5,14 +5,18 @@
  * Go-generated OpenAPI contract from handler annotations
  * OpenAPI spec version: 0.0.01
  */
+import type { FixedRoleGrant } from './fixedRoleGrant';
 
 export interface ServiceAccountToken {
+  basic_role?: string;
   created_at?: number;
   expires_at?: number;
   id?: string;
   key_prefix?: string;
+  last_used_at?: number;
   name?: string;
   revoked_at?: number;
+  roles?: FixedRoleGrant[];
   scopes?: string[];
   service_id?: string;
   valid?: boolean;

@@ -246,6 +246,22 @@ describe('overlays and structure', () => {
     expect(screen.getByText('Extra detail')).toBeInTheDocument();
   });
 
+  it('InfoBox contains long unbroken content inside its border', () => {
+
+    const { container } = renderThemed(
+      <InfoBox title="Note">{'W'.repeat(280)}</InfoBox>,
+    );
+
+    const box = container.firstElementChild as HTMLElement;
+    const body = box.lastElementChild as HTMLElement;
+    const boxStyle = getComputedStyle(box);
+    const bodyStyle = getComputedStyle(body);
+
+    expect(boxStyle.overflowWrap).toBe('anywhere');
+    expect(bodyStyle.minWidth).toBe('0px');
+    expect(bodyStyle.overflowWrap).toBe('anywhere');
+  });
+
   it('Spinner renders a status region', () => {
     renderThemed(<Spinner />);
     expect(screen.getByTestId('Spinner')).toBeInTheDocument();

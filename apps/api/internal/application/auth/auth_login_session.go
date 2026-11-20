@@ -12,8 +12,8 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/dto"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/shared"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/session"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
 )
 
@@ -24,7 +24,7 @@ func (s *AuthService) buildLoginResponse(op *user.User) *dto.LoginResponse {
 	if err != nil {
 		// If we can't get organizations, indicate org selection is needed.
 		return &dto.LoginResponse{
-			UserID:           op.ID,
+			UserID:               op.ID,
 			Email:                op.Email,
 			Name:                 op.Name,
 			MFAEnabled:           op.MFAEnabled,
@@ -66,7 +66,7 @@ func (s *AuthService) buildLoginResponse(op *user.User) *dto.LoginResponse {
 	}
 
 	return &dto.LoginResponse{
-		UserID:           op.ID,
+		UserID:               op.ID,
 		Email:                op.Email,
 		Name:                 op.Name,
 		MFAEnabled:           op.MFAEnabled,
@@ -102,6 +102,10 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest, meta Ses
 
 	if op.PasswordHash == "" {
 		return nil, nil, application.ErrInvalidCredentials
+	}
+
+	if op.Disabled {
+		return nil, nil, application.ErrUserDisabled
 	}
 
 	// Verify password with proper error handling.
@@ -246,7 +250,7 @@ func (s *AuthService) buildLoginWithTokensResponse(op *user.User) *dto.LoginWith
 	if err != nil {
 		// If we can't get organizations, indicate org selection is needed.
 		return &dto.LoginWithTokensResponse{
-			UserID:           op.ID,
+			UserID:               op.ID,
 			Email:                op.Email,
 			Name:                 op.Name,
 			MFAEnabled:           op.MFAEnabled,
@@ -288,7 +292,7 @@ func (s *AuthService) buildLoginWithTokensResponse(op *user.User) *dto.LoginWith
 	}
 
 	return &dto.LoginWithTokensResponse{
-		UserID:           op.ID,
+		UserID:               op.ID,
 		Email:                op.Email,
 		Name:                 op.Name,
 		MFAEnabled:           op.MFAEnabled,
@@ -356,8 +360,8 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest, va
 
 	return &dto.RegisterResponse{
 		UserID: id,
-		Email:      email,
-		Name:       name,
+		Email:  email,
+		Name:   name,
 	}, nil
 }
 
@@ -403,8 +407,8 @@ func (s *AuthService) RegisterAsSuperAdmin(ctx context.Context, req *dto.Registe
 
 	return &dto.RegisterResponse{
 		UserID: id,
-		Email:      email,
-		Name:       name,
+		Email:  email,
+		Name:   name,
 	}, nil
 }
 
@@ -425,6 +429,14 @@ func (s *AuthService) CreateSession(ctx context.Context, userID string, meta Ses
 	op, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return nil, err
+	}
+
+	// A disabled account must not be issued a session on ANY login path. The
+	// per-path checks would each have to remember this; enforcing it here means
+	// password login, token login, MFA completion and device recognition all
+	// inherit it from one place.
+	if op.Disabled {
+		return nil, application.ErrUserDisabled
 	}
 
 	maxSessions := 5 // default.
@@ -465,7 +477,7 @@ func (s *AuthService) CreateSession(ctx context.Context, userID string, meta Ses
 
 	sess := &session.Session{
 		ID:         id,
-		UserID: userID,
+		UserID:     userID,
 		CreatedAt:  now,
 		ExpiresAt:  now.Add(s.sessionTTL),
 		SigningKey: signingKey,
@@ -494,25 +506,25 @@ func (s *AuthService) CreateSession(ctx context.Context, userID string, meta Ses
 // practice). Best-effort: a failure must not break the request, so the error is
 // logged and swallowed.
 func (s *AuthService) BackfillSessionMeta(ctx context.Context, sess *session.Session, ipAddress, userAgent string) {
-        if sess == nil || s.sessionRepo == nil {
-                return
-        }
-        if sess.IPAddress != "" && sess.UserAgent != "" {
-                return
-        }
-        if ipAddress == "" && userAgent == "" {
-                return
-        }
-        if err := s.sessionRepo.UpdateSessionMeta(ctx, sess.ID, ipAddress, userAgent); err != nil {
-                if s.logger != nil {
-                        s.logger.Warn("failed to backfill session metadata", "session_id", sess.ID, "error", err)
-                }
-                return
-        }
-        // Keep the in-request copy in step so a handler reading it in this same
-        // request (the profile page) sees the values it just wrote.
-        sess.IPAddress = ipAddress
-        sess.UserAgent = userAgent
+	if sess == nil || s.sessionRepo == nil {
+		return
+	}
+	if sess.IPAddress != "" && sess.UserAgent != "" {
+		return
+	}
+	if ipAddress == "" && userAgent == "" {
+		return
+	}
+	if err := s.sessionRepo.UpdateSessionMeta(ctx, sess.ID, ipAddress, userAgent); err != nil {
+		if s.logger != nil {
+			s.logger.Warn("failed to backfill session metadata", "session_id", sess.ID, "error", err)
+		}
+		return
+	}
+	// Keep the in-request copy in step so a handler reading it in this same
+	// request (the profile page) sees the values it just wrote.
+	sess.IPAddress = ipAddress
+	sess.UserAgent = userAgent
 }
 
 // Logout destroys a session and revokes associated refresh tokens.
@@ -618,6 +630,12 @@ func (s *AuthService) ValidateSession(ctx context.Context, sessionID string) (*s
 	op, err := s.userRepo.FindByID(ctx, sess.UserID)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	// A disabled account must not keep a live session.
+	if op.Disabled {
+		_ = s.sessionRepo.Delete(ctx, sessionID)
+		return nil, nil, application.ErrUserDisabled
 	}
 
 	// MFA enforcement: If user has MFA enabled and MFA was enabled at a specific time,.

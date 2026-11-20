@@ -110,7 +110,7 @@ func (s *APIKeyService) GenerateKey(ctx context.Context, userID, orgID string, r
 	now := time.Now()
 	key := &infraStorage.APIKey{
 		ID:             uuid.Must(uuid.NewV7()).String(),
-		UserID:     userID,
+		UserID:         userID,
 		OrganizationID: orgID,
 		Name:           req.Name,
 		KeyPrefix:      prefix,
@@ -129,14 +129,14 @@ func (s *APIKeyService) GenerateKey(ctx context.Context, userID, orgID string, r
 
 	return &domain.APIKeyWithFullKey{
 		APIKey: domain.APIKey{
-			ID:         key.ID,
-			UserID: key.UserID,
-			Name:       key.Name,
-			KeyPrefix:  key.KeyPrefix,
-			Scope:      domain.Scope(key.Scope),
-			ExpiresAt:  fromMillis(key.ExpiresAt),
-			IsActive:   key.IsActive,
-			CreatedAt:  fromMillisVal(key.CreatedAt),
+			ID:        key.ID,
+			UserID:    key.UserID,
+			Name:      key.Name,
+			KeyPrefix: key.KeyPrefix,
+			Scope:     domain.Scope(key.Scope),
+			ExpiresAt: fromMillis(key.ExpiresAt),
+			IsActive:  key.IsActive,
+			CreatedAt: fromMillisVal(key.CreatedAt),
 		},
 		FullKey:    fullKey,
 		SigningKey: signingSecret,
@@ -348,7 +348,7 @@ func (s *APIKeyService) RotateKey(ctx context.Context, userID, keyID string) (*d
 
 	newKey := &infraStorage.APIKey{
 		ID:             uuid.Must(uuid.NewV7()).String(),
-		UserID:     userID,
+		UserID:         userID,
 		OrganizationID: key.OrganizationID,
 		Name:           key.Name,
 		KeyPrefix:      prefix,
@@ -367,14 +367,14 @@ func (s *APIKeyService) RotateKey(ctx context.Context, userID, keyID string) (*d
 
 	return &domain.APIKeyWithFullKey{
 		APIKey: domain.APIKey{
-			ID:         newKey.ID,
-			UserID: newKey.UserID,
-			Name:       newKey.Name,
-			KeyPrefix:  newKey.KeyPrefix,
-			Scope:      domain.Scope(newKey.Scope),
-			ExpiresAt:  fromMillis(newKey.ExpiresAt),
-			IsActive:   newKey.IsActive,
-			CreatedAt:  fromMillisVal(newKey.CreatedAt),
+			ID:        newKey.ID,
+			UserID:    newKey.UserID,
+			Name:      newKey.Name,
+			KeyPrefix: newKey.KeyPrefix,
+			Scope:     domain.Scope(newKey.Scope),
+			ExpiresAt: fromMillis(newKey.ExpiresAt),
+			IsActive:  newKey.IsActive,
+			CreatedAt: fromMillisVal(newKey.CreatedAt),
 		},
 		FullKey:    fullKey,
 		SigningKey: signingSecret,
@@ -420,7 +420,7 @@ func deriveAPIKeySigningSecret(fullKey string) string {
 func toDomainAPIKey(key *infraStorage.APIKey) *domain.APIKey {
 	domain := &domain.APIKey{
 		ID:             key.ID,
-		UserID:     key.UserID,
+		UserID:         key.UserID,
 		OrganizationID: key.OrganizationID,
 		Name:           key.Name,
 		KeyPrefix:      key.KeyPrefix,
@@ -501,8 +501,8 @@ func (s *APIKeyService) ListAllKeys(ctx context.Context, page, limit int, userID
 		k := toDomainAPIKey(&row.APIKey)
 		responses[i] = domain.AdminAPIKeyResponse{
 			APIKeyResponse: k.ToResponse(),
-			UserID:     k.UserID,
-			UserName:   row.UserName,
+			UserID:         k.UserID,
+			UserName:       row.UserName,
 		}
 	}
 
@@ -556,8 +556,8 @@ func (s *APIKeyService) GetGlobalStats(ctx context.Context) (*domain.GlobalAPIKe
 			return nil, fmt.Errorf("failed to count operator keys: %w", cErr)
 		}
 		topStats = append(topStats, domain.TopUserStat{
-			UserID:     op.UserID,
-			UserName:   op.UserName,
+			UserID:         op.UserID,
+			UserName:       op.UserName,
 			TotalRequests:  op.TotalRequests,
 			ActiveKeyCount: activeCount,
 		})
@@ -569,8 +569,8 @@ func (s *APIKeyService) GetGlobalStats(ctx context.Context) (*domain.GlobalAPIKe
 		RevokedKeys:     revokedKeys,
 		TotalRequests:   totalRequests,
 		RequestsByScope: requestsByScope,
-		TopUsers:    topStats,
-		TotalUsers:  totalUsers,
+		TopUsers:        topStats,
+		TotalUsers:      totalUsers,
 		MaxPerMonth:     s.config.MaxPerMonth,
 	}, nil
 }

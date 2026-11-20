@@ -88,20 +88,21 @@ func (r *UserRepository) FindByID(ctx context.Context, id string) (*user.User, e
 	query := `
 		SELECT id, email, name, avatar_url, password_hash, google_id, github_id, 
 		       mfa_secret, mfa_secret_mac, mfa_enabled, mfa_enabled_at, backup_codes, email_verified, created_at, updated_at, fcm_token,
-		       last_organization_id, instance_role
+		       last_organization_id, instance_role, disabled_at
 		FROM users WHERE id = ?`
 
 	var op user.User
 
 	var googleID, githubID, mfaSecret, mfaSecretMAC, mfaBackupCodes, fcmToken, lastOrgID sql.NullString
 	var instanceRole sql.NullString
+	var disabledAt sql.NullInt64
 	var mfaEnabledAt sql.NullInt64
 	var createdAt, updatedAt interface{} // Handle both TEXT and INTEGER.
 
 	err := r.queryRow(ctx, query, id).Scan(
 		&op.ID, &op.Email, &op.Name, &op.AvatarURL, &op.PasswordHash,
 		&googleID, &githubID, &mfaSecret, &mfaSecretMAC, &op.MFAEnabled, &mfaEnabledAt,
-		&mfaBackupCodes, &op.EmailVerified, &createdAt, &updatedAt, &fcmToken, &lastOrgID, &instanceRole,
+		&mfaBackupCodes, &op.EmailVerified, &createdAt, &updatedAt, &fcmToken, &lastOrgID, &instanceRole, &disabledAt,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -119,6 +120,7 @@ func (r *UserRepository) FindByID(ctx context.Context, id string) (*user.User, e
 	op.FCMToken = fcmToken.String
 	op.LastOrganizationID = lastOrgID.String
 	op.InstanceRole = permission.ParseInstanceRole(instanceRole.String)
+	op.Disabled = disabledAt.Valid
 
 	// Parse timestamps - handle both TEXT and INTEGER formats.
 	op.CreatedAt = parseTimestamp(createdAt)
@@ -145,20 +147,21 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*user.U
 	query := `
 		SELECT id, email, name, avatar_url, password_hash, google_id, github_id, 
 		       mfa_secret, mfa_secret_mac, mfa_enabled, mfa_enabled_at, email_verified, created_at, updated_at, fcm_token,
-		       last_organization_id, instance_role
+		       last_organization_id, instance_role, disabled_at
 		FROM users WHERE email = ?`
 
 	var op user.User
 
 	var googleID, githubID, mfaSecret, mfaSecretMAC, fcmToken, lastOrgID sql.NullString
 	var instanceRole sql.NullString
+	var disabledAt sql.NullInt64
 	var mfaEnabledAt sql.NullInt64
 	var createdAt, updatedAt interface{} // Handle both TEXT and INTEGER.
 
 	err := r.queryRow(ctx, query, strings.ToLower(email)).Scan(
 		&op.ID, &op.Email, &op.Name, &op.AvatarURL, &op.PasswordHash,
 		&googleID, &githubID, &mfaSecret, &mfaSecretMAC, &op.MFAEnabled, &mfaEnabledAt,
-		&op.EmailVerified, &createdAt, &updatedAt, &fcmToken, &lastOrgID, &instanceRole,
+		&op.EmailVerified, &createdAt, &updatedAt, &fcmToken, &lastOrgID, &instanceRole, &disabledAt,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -176,6 +179,7 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*user.U
 	op.FCMToken = fcmToken.String
 	op.LastOrganizationID = lastOrgID.String
 	op.InstanceRole = permission.ParseInstanceRole(instanceRole.String)
+	op.Disabled = disabledAt.Valid
 
 	// Parse timestamps - handle both TEXT (ISO8601) and INTEGER (Unix ms).
 	op.CreatedAt = parseTimestamp(createdAt)
@@ -249,20 +253,21 @@ func (r *UserRepository) FindByGoogleID(ctx context.Context, googleID string) (*
 	query := `
 		SELECT id, email, name, avatar_url, password_hash, google_id, github_id, 
 		       mfa_secret, mfa_secret_mac, mfa_enabled, mfa_enabled_at, backup_codes, email_verified, created_at, updated_at, fcm_token,
-		       last_organization_id, instance_role
+		       last_organization_id, instance_role, disabled_at
 		FROM users WHERE google_id = ?`
 
 	var op user.User
 
 	var googleIDVal, githubID, mfaSecret, mfaSecretMAC, mfaBackupCodes, fcmToken, lastOrgID sql.NullString
 	var instanceRole sql.NullString
+	var disabledAt sql.NullInt64
 	var mfaEnabledAt sql.NullInt64
 	var createdAt, updatedAt interface{} // Handle both TEXT and INTEGER.
 
 	err := r.queryRow(ctx, query, googleID).Scan(
 		&op.ID, &op.Email, &op.Name, &op.AvatarURL, &op.PasswordHash,
 		&googleIDVal, &githubID, &mfaSecret, &mfaSecretMAC, &op.MFAEnabled, &mfaEnabledAt,
-		&mfaBackupCodes, &op.EmailVerified, &createdAt, &updatedAt, &fcmToken, &lastOrgID, &instanceRole,
+		&mfaBackupCodes, &op.EmailVerified, &createdAt, &updatedAt, &fcmToken, &lastOrgID, &instanceRole, &disabledAt,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -280,6 +285,7 @@ func (r *UserRepository) FindByGoogleID(ctx context.Context, googleID string) (*
 	op.FCMToken = fcmToken.String
 	op.LastOrganizationID = lastOrgID.String
 	op.InstanceRole = permission.ParseInstanceRole(instanceRole.String)
+	op.Disabled = disabledAt.Valid
 
 	// Parse timestamps - handle both TEXT and INTEGER formats.
 	op.CreatedAt = parseTimestamp(createdAt)
@@ -301,20 +307,21 @@ func (r *UserRepository) FindByGitHubID(ctx context.Context, githubID string) (*
 	query := `
 		SELECT id, email, name, avatar_url, password_hash, google_id, github_id, 
 		       mfa_secret, mfa_secret_mac, mfa_enabled, mfa_enabled_at, backup_codes, email_verified, created_at, updated_at, fcm_token,
-		       last_organization_id, instance_role
+		       last_organization_id, instance_role, disabled_at
 		FROM users WHERE github_id = ?`
 
 	var op user.User
 
 	var googleID, githubIDVal, mfaSecret, mfaSecretMAC, mfaBackupCodes, fcmToken, lastOrgID sql.NullString
 	var instanceRole sql.NullString
+	var disabledAt sql.NullInt64
 	var mfaEnabledAt sql.NullInt64
 	var createdAt, updatedAt interface{} // Handle both TEXT and INTEGER.
 
 	err := r.queryRow(ctx, query, githubID).Scan(
 		&op.ID, &op.Email, &op.Name, &op.AvatarURL, &op.PasswordHash,
 		&googleID, &githubIDVal, &mfaSecret, &mfaSecretMAC, &op.MFAEnabled, &mfaEnabledAt,
-		&mfaBackupCodes, &op.EmailVerified, &createdAt, &updatedAt, &fcmToken, &lastOrgID, &instanceRole,
+		&mfaBackupCodes, &op.EmailVerified, &createdAt, &updatedAt, &fcmToken, &lastOrgID, &instanceRole, &disabledAt,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -332,6 +339,7 @@ func (r *UserRepository) FindByGitHubID(ctx context.Context, githubID string) (*
 	op.FCMToken = fcmToken.String
 	op.LastOrganizationID = lastOrgID.String
 	op.InstanceRole = permission.ParseInstanceRole(instanceRole.String)
+	op.Disabled = disabledAt.Valid
 
 	// Parse timestamps - handle both TEXT and INTEGER formats.
 	op.CreatedAt = parseTimestamp(createdAt)
@@ -351,10 +359,10 @@ func (r *UserRepository) FindByGitHubID(ctx context.Context, githubID string) (*
 // Create creates a new user.
 func (r *UserRepository) Create(ctx context.Context, op *user.User) error {
 	query := `
-		INSERT INTO users (id, email, name, password_hash, google_id, github_id, 
+		INSERT INTO users (id, email, name, avatar_url, password_hash, google_id, github_id, 
 		                       mfa_secret, mfa_secret_mac, mfa_enabled, email_verified, created_at, updated_at, fcm_token,
 		                       last_organization_id, instance_role)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 	_, err := r.exec(ctx, query,
 		op.ID, strings.ToLower(op.Email), op.Name, op.AvatarURL, op.PasswordHash,
@@ -426,35 +434,68 @@ func (r *UserRepository) Count(ctx context.Context) (int, error) {
 	return count, err
 }
 
-// List returns a paginated list of users.
-func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*user.User, int, error) {
-	query := `
-		SELECT id, email, name, avatar_url, password_hash, google_id, github_id, 
-		       mfa_secret, mfa_secret_mac, mfa_enabled, mfa_enabled_at, email_verified, created_at, updated_at,
-		       last_organization_id, instance_role
-		FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?`
+// userSortColumns whitelists the ORDER BY columns for ListFiltered. The chosen
+// value is interpolated into the query, so it must never come from raw input.
+var userSortColumns = map[string]string{
+	"email":         "email",
+	"name":          "name",
+	"created_at":    "created_at",
+	"last_login_at": "last_login_at",
+}
 
-	rows, err := r.queryRows(ctx, query, limit, offset)
+// List returns a paginated list of users, newest first.
+func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*user.User, int, error) {
+	return r.ListFiltered(ctx, limit, offset, "", "created_at", true)
+}
+
+// ListFiltered returns a paginated list of users, optionally narrowed by a
+// case-insensitive search over email and name, ordered by a whitelisted column.
+// An unknown sort column falls back to created_at rather than erroring, so a
+// stale client cannot break the list.
+func (r *UserRepository) ListFiltered(ctx context.Context, limit, offset int, search, sort string, desc bool) ([]*user.User, int, error) {
+	col, ok := userSortColumns[sort]
+	if !ok {
+		col = "created_at"
+	}
+	dir := "ASC"
+	if desc {
+		dir = "DESC"
+	}
+
+	where := ""
+	var filterArgs []interface{}
+	if search != "" {
+		where = " WHERE (email LIKE ? OR name LIKE ?)"
+		like := "%" + search + "%"
+		filterArgs = append(filterArgs, like, like)
+	}
+
+	query := `
+		SELECT id, email, name, avatar_url, password_hash, google_id, github_id,
+		       mfa_secret, mfa_secret_mac, mfa_enabled, mfa_enabled_at, email_verified, created_at, updated_at,
+		       last_organization_id, instance_role, disabled_at
+		FROM users` + where + ` ORDER BY ` + col + ` ` + dir + ` LIMIT ? OFFSET ?`
+
+	args := append(append([]interface{}{}, filterArgs...), limit, offset)
+	rows, err := r.queryRows(ctx, query, args...)
 	if err != nil {
 		return nil, 0, err
 	}
-
 	defer func() { _ = rows.Close() }()
 
 	var users []*user.User
-
 	for rows.Next() {
 		var op user.User
-
 		var googleID, githubID, mfaSecret, mfaSecretMAC, lastOrgID sql.NullString
 		var instanceRole sql.NullString
+		var disabledAt sql.NullInt64
 		var mfaEnabledAt sql.NullInt64
 		var createdAt, updatedAt interface{} // Handle both TEXT and INTEGER.
 
 		if err := rows.Scan(
 			&op.ID, &op.Email, &op.Name, &op.AvatarURL, &op.PasswordHash,
 			&googleID, &githubID, &mfaSecret, &mfaSecretMAC, &op.MFAEnabled, &mfaEnabledAt,
-			&op.EmailVerified, &createdAt, &updatedAt, &lastOrgID, &instanceRole,
+			&op.EmailVerified, &createdAt, &updatedAt, &lastOrgID, &instanceRole, &disabledAt,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -465,8 +506,8 @@ func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*user.U
 		op.MFASecretMAC = mfaSecretMAC.String
 		op.LastOrganizationID = lastOrgID.String
 		op.InstanceRole = permission.ParseInstanceRole(instanceRole.String)
+		op.Disabled = disabledAt.Valid
 
-		// Parse timestamps - handle both TEXT and INTEGER formats.
 		op.CreatedAt = parseTimestamp(createdAt)
 		op.UpdatedAt = parseTimestamp(updatedAt)
 		if mfaEnabledAt.Valid {
@@ -478,11 +519,125 @@ func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]*user.U
 	}
 
 	var total int
-	if err := r.queryRow(ctx, "SELECT COUNT(*) FROM users").Scan(&total); err != nil {
+	if err := r.queryRow(ctx, "SELECT COUNT(*) FROM users"+where, filterArgs...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
 	return users, total, rows.Err()
+}
+
+// ListByOrganization returns a page of users holding a membership in orgID,
+// joined on that membership so an org-scoped caller can never see an account
+// outside its own organisation. status filters the membership lifecycle: empty
+// means every state except removed.
+//
+// The role and status reported are the membership's, not the account's: a
+// person's role is per-organisation, so "admin" means admin of this org.
+func (r *UserRepository) ListByOrganization(ctx context.Context, orgID string, limit, offset int, search, sort string, desc bool, status string) ([]*user.OrganizationUser, int, error) {
+	col, ok := userSortColumns[sort]
+	if !ok {
+		col = "u.created_at"
+	} else {
+		col = "u." + col
+	}
+	dir := "ASC"
+	if desc {
+		dir = "DESC"
+	}
+
+	where := " WHERE om.organization_id = ?"
+	args := []interface{}{orgID}
+
+	if status != "" {
+		where += " AND om.status = ?"
+		args = append(args, status)
+	} else {
+		where += " AND om.status != 'removed'"
+	}
+
+	if search != "" {
+		where += " AND (u.email LIKE ? OR u.name LIKE ?)"
+		like := "%" + search + "%"
+		args = append(args, like, like)
+	}
+
+	query := `
+                SELECT u.id, u.email, u.name, u.avatar_url, u.mfa_enabled, u.email_verified,
+                       u.created_at, u.updated_at, u.disabled_at, u.last_login_at,
+                       om.id, om.role, om.status, om.joined_at
+                FROM organization_members om
+                INNER JOIN users u ON u.id = om.user_id` + where +
+		` ORDER BY ` + col + ` ` + dir + ` LIMIT ? OFFSET ?`
+
+	pageArgs := append(append([]interface{}{}, args...), limit, offset)
+	rows, err := r.queryRows(ctx, query, pageArgs...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() { _ = rows.Close() }()
+
+	var users []*user.OrganizationUser
+	for rows.Next() {
+		var ou user.OrganizationUser
+		var disabledAt, lastLoginAt, joinedAtMs sql.NullInt64
+		var createdAt, updatedAt interface{}
+
+		if err := rows.Scan(
+			&ou.ID, &ou.Email, &ou.Name, &ou.AvatarURL, &ou.MFAEnabled, &ou.EmailVerified,
+			&createdAt, &updatedAt, &disabledAt, &lastLoginAt,
+			&ou.MemberID, &ou.Role, &ou.Status, &joinedAtMs,
+		); err != nil {
+			return nil, 0, err
+		}
+
+		ou.CreatedAt = parseTimestamp(createdAt)
+		ou.UpdatedAt = parseTimestamp(updatedAt)
+		ou.Disabled = disabledAt.Valid
+		if joinedAtMs.Valid {
+			ou.JoinedAt = time.UnixMilli(joinedAtMs.Int64)
+		}
+		if lastLoginAt.Valid {
+			t := time.UnixMilli(lastLoginAt.Int64)
+			ou.LastSeenAt = &t
+		}
+
+		users = append(users, &ou)
+	}
+
+	countQuery := `
+                SELECT COUNT(*)
+                FROM organization_members om
+                INNER JOIN users u ON u.id = om.user_id` + where
+
+	var total int
+	if err := r.queryRow(ctx, countQuery, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	return users, total, rows.Err()
+}
+
+// SetDisabled stamps or clears the account-disable timestamp. A nil time
+// re-enables the account. Returns user.ErrNotFound when no row matched.
+func (r *UserRepository) SetDisabled(ctx context.Context, id string, disabledAt *time.Time) error {
+	var value interface{}
+	if disabledAt != nil {
+		value = disabledAt.UnixMilli()
+	}
+	result, err := r.exec(ctx,
+		"UPDATE users SET disabled_at = ?, updated_at = ? WHERE id = ?",
+		value, time.Now().UnixMilli(), id)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return user.ErrNotFound
+	}
+	return nil
 }
 
 // UpdatePassword updates the password hash for a user.

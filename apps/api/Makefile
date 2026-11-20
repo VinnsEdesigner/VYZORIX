@@ -1,4 +1,4 @@
-.PHONY: all build run test test-quick test-race clean docker-build docker-run docker-stop lint lint-go lint-js fmt vet deps tidy check lint-fix lint-go-fix lint-js-fix wire migrate seed dev profile race build-prod build-production verify verify-arch arch-baseline duplication-baseline deadcode-baseline
+.PHONY: all build run test test-quick test-race clean docker-build docker-run docker-stop lint lint-go fmt vet deps tidy check lint-fix lint-go-fix wire migrate seed dev profile race build-prod build-production verify verify-arch arch-baseline duplication-baseline deadcode-baseline
 
 # Go parameters
 GOCMD=go
@@ -165,16 +165,9 @@ lint-go:
 lint-go-fix:
 	$(GOLANGCILINT) run --fix ./...
 
-lint-js:
-	@echo "Running STRICT ESLint..."
-	cd src && npm run lint
+lint: lint-go
 
-lint-js-fix:
-	cd src && npm exec -- eslint . --fix
-
-lint: lint-go lint-js
-
-lint-fix: lint-go-fix lint-js-fix
+lint-fix: lint-go-fix
 
 check: fmt lint vet test verify
 

@@ -42,6 +42,7 @@ import type {
 
 import { customAxios } from '../../../../../packages/API_Client/src/generated/rest-bridge';
 import organizationScopedQueryKey from '.././query-key-mutator';
+import { getGetAuthAdminUsersQueryKey, getGetAuthAdminUsersStatsQueryKey } from '../admin/admin-operations';
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -228,6 +229,8 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   const onSuccess = (data: Awaited<ReturnType<typeof postOrganizations>>, variables: {data: CreateOrganizationRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetOrganizationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -414,6 +417,8 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   const onSuccess = (data: Awaited<ReturnType<typeof deleteOrganizationsId>>, variables: {id: string}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetOrganizationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -498,6 +503,8 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   const onSuccess = (data: Awaited<ReturnType<typeof patchOrganizationsId>>, variables: {id: string;data: UpdateOrganizationRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetOrganizationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -800,6 +807,8 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   const onSuccess = (data: Awaited<ReturnType<typeof patchOrganizationsIdSettings>>, variables: {id: string;data: UpdateOrganizationSettingsRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetOrganizationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };
@@ -993,6 +1002,8 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   const onSuccess = (data: Awaited<ReturnType<typeof patchOrganizationsIdSettingsThresholds>>, variables: {id: string;data: ThresholdUpdateRequest}, onMutateResult: TContext, context: MutationFunctionContext) => {
         if (!options?.skipInvalidation) {
         queryClient.invalidateQueries({ queryKey: getGetOrganizationsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetAuthAdminUsersStatsQueryKey() });
         }
         mutationOptions?.onSuccess?.(data, variables, onMutateResult, context);
       };

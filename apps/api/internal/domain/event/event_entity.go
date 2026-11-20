@@ -47,14 +47,14 @@ const (
 
 // Event represents a real-time event in the system.
 type Event struct {
-	ID         string         `json:"id"`
-	DeviceID   string         `json:"deviceId"`
-	UserID string         `json:"userId,omitempty"`
-	Type       EventType      `json:"type"`
-	Severity   Severity       `json:"severity"`
-	Timestamp  time.Time      `json:"timestamp"`
-	Data       map[string]any `json:"data,omitempty"`
-	Source     string         `json:"source"` // "device", "server", "dashboard".
+	ID        string         `json:"id"`
+	DeviceID  string         `json:"deviceId"`
+	UserID    string         `json:"userId,omitempty"`
+	Type      EventType      `json:"type"`
+	Severity  Severity       `json:"severity"`
+	Timestamp time.Time      `json:"timestamp"`
+	Data      map[string]any `json:"data,omitempty"`
+	Source    string         `json:"source"` // "device", "server", "dashboard".
 }
 
 // EventFilter contains filter parameters for querying events.

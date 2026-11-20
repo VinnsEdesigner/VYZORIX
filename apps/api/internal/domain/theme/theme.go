@@ -21,40 +21,40 @@ const SystemID ID = "system"
 
 // All lists every selectable theme id. Order matches the frontend registry.
 var All = []ID{
-"dark",
-"light",
-"rose-500",
-"burgundy",
-"matrix",
-"tron",
-"synthwave",
-"zen",
+	"dark",
+	"light",
+	"rose-500",
+	"burgundy",
+	"matrix",
+	"tron",
+	"synthwave",
+	"zen",
 }
 
 var valid = func() map[ID]struct{} {
-m := make(map[ID]struct{}, len(All)+1)
-for _, id := range All {
-m[id] = struct{}{}
-}
-m[SystemID] = struct{}{}
-return m
+	m := make(map[ID]struct{}, len(All)+1)
+	for _, id := range All {
+		m[id] = struct{}{}
+	}
+	m[SystemID] = struct{}{}
+	return m
 }()
 
 // IsValid reports whether id names a selectable theme. The empty string is
 // valid: it means "clear the preference and fall through to the next tier".
 func IsValid(id string) bool {
-if id == "" {
-return true
-}
-_, ok := valid[ID(id)]
-return ok
+	if id == "" {
+		return true
+	}
+	_, ok := valid[ID(id)]
+	return ok
 }
 
 // IDs returns the selectable theme ids as strings, for tests and API metadata.
 func IDs() []string {
-out := make([]string, len(All))
-for i, id := range All {
-out[i] = string(id)
-}
-return out
+	out := make([]string, len(All))
+	for i, id := range All {
+		out[i] = string(id)
+	}
+	return out
 }

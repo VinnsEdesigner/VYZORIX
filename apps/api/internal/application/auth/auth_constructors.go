@@ -9,11 +9,11 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/devicestore"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/email_verification"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/password_reset"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/refresh_token"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/session"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	infraauth "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security"
 	infraSession "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/security/session"
 )
@@ -70,7 +70,7 @@ type AuthService struct {
 	passwordResetRepo  password_reset.Repository
 	passwordHasher     PasswordHasher
 	memberRepo         organization.MemberRepository
-	userRepo       user.Repository
+	userRepo           user.Repository
 	jwtManager         *infraauth.JWTManager
 	ldapConfig         *LDAPConfig
 	deviceStore        devicestore.Store
@@ -90,7 +90,7 @@ func NewAuthService(
 	sessionTTL time.Duration,
 ) *AuthService {
 	return &AuthService{
-		userRepo:      userRepo,
+		userRepo:          userRepo,
 		sessionRepo:       sessionRepo,
 		emailVerifyRepo:   emailVerifyRepo,
 		passwordResetRepo: passwordResetRepo,
@@ -114,7 +114,7 @@ func NewAuthServiceWithRefresh(
 	ldapConfig *LDAPConfig,
 ) *AuthService {
 	return &AuthService{
-		userRepo:       userRepo,
+		userRepo:           userRepo,
 		sessionRepo:        sessionRepo,
 		emailVerifyRepo:    emailVerifyRepo,
 		passwordResetRepo:  passwordResetRepo,

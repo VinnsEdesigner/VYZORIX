@@ -256,20 +256,20 @@ export interface AdminClientResult {
   client?: AdminClient;
 }
 
-export interface AdminUser {
+export interface SessionInfo {
   created_at?: number;
-  email?: string;
-  email_verified?: boolean;
+  expires_at?: number;
   id?: string;
-  mfa_enabled?: boolean;
-  name?: string;
-  role?: string;
-  updated_at?: number;
+  ip_address?: string;
+  is_current?: boolean;
+  selected_organization_id?: string;
+  user_agent?: string;
+  user_id?: string;
 }
 
-export interface AdminUserListResult {
+export interface AdminUserSessionListResult {
+  sessions?: SessionInfo[];
   total?: number;
-  users?: AdminUser[];
 }
 
 export interface AlertEvaluateResult {
@@ -522,16 +522,6 @@ export interface CommandStatus {
   status?: string;
 }
 
-export interface SessionInfo {
-  created_at?: number;
-  expires_at?: number;
-  id?: string;
-  ip_address?: string;
-  is_current?: boolean;
-  selected_organization_id?: string;
-  user_agent?: string;
-}
-
 export interface ConcurrentSessionsResult {
   count?: number;
   has_concurrent?: boolean;
@@ -629,7 +619,8 @@ export interface CreateClientCredentialRequest {
 
 export interface CreateInvitationRequest {
   email?: string;
-  org_id?: string;
+  notes?: string;
+  organizationId?: string;
   role?: string;
 }
 
@@ -644,18 +635,17 @@ export interface CreateServiceAccountRequest {
   name?: string;
 }
 
-export interface CreateServiceAccountTokenRequest {
-  expires_at?: string;
-  name?: string;
-  scopes?: string[];
-  service_id?: string;
+export interface FixedRoleGrant {
+  role?: string;
+  scope?: string;
 }
 
-export interface CreateUserRequest {
-  email?: string;
+export interface CreateServiceAccountTokenRequest {
+  basic_role?: string;
+  expires_at?: string;
   name?: string;
-  password?: string;
-  role?: string;
+  roles?: FixedRoleGrant[];
+  service_id?: string;
 }
 
 export interface CursorPaginationResult {
@@ -912,6 +902,18 @@ export interface ErrorResponse {
   fields?: ErrorResponseFields;
   message?: string;
   trace_id?: string;
+}
+
+export interface FixedRoleInfo {
+  access?: string;
+  group?: string;
+  id?: string;
+}
+
+export interface FixedRoleCatalogResult {
+  org_roles?: string[];
+  roles?: FixedRoleInfo[];
+  scopes?: string[];
 }
 
 export interface ForgotPasswordRequest {
@@ -1288,6 +1290,38 @@ export interface NotificationUpdateRequest {
   webhook?: WebhookNotifications;
 }
 
+export interface OrgUser {
+  avatar_url?: string;
+  created_at?: number;
+  disabled?: boolean;
+  email?: string;
+  email_verified?: boolean;
+  id?: string;
+  joined_at?: number;
+  last_seen_at?: number;
+  member_id?: string;
+  mfa_enabled?: boolean;
+  name?: string;
+  role?: string;
+  status?: string;
+}
+
+export interface OrgUserListResult {
+  limit?: number;
+  page?: number;
+  total?: number;
+  total_pages?: number;
+  users?: OrgUser[];
+}
+
+export type OrgUserStatsResultByRole = {[key: string]: number};
+
+export interface OrgUserStatsResult {
+  by_role?: OrgUserStatsResultByRole;
+  pending_invites?: number;
+  total?: number;
+}
+
 export interface Organization {
   created_at?: number;
   created_by?: string;
@@ -1305,13 +1339,16 @@ export interface OrganizationListResult {
 }
 
 export interface OrganizationMember {
+  avatar_url?: string;
   id?: string;
   invited_by?: string;
   joined_at?: number;
+  last_seen?: number;
   organization_id?: string;
   removed_at?: number;
   role?: string;
   status?: string;
+  suspended_at?: number;
   user_email?: string;
   user_id?: string;
   user_name?: string;
@@ -1425,9 +1462,10 @@ export interface RevokedResult {
 }
 
 export interface RotateServiceAccountTokenRequest {
+  basic_role?: string;
   expires_at?: string;
   name?: string;
-  scopes?: string[];
+  roles?: FixedRoleGrant[];
 }
 
 export interface SelectOrganizationRequest {
@@ -1441,11 +1479,19 @@ export interface SelectOrganizationResult {
 }
 
 export interface ServiceAccount {
+  avatar_url?: string;
   created_at?: number;
+  disabled_at?: number;
+  disabled_by?: string;
+  disabled_by_name?: string;
+  disabled_reason?: string;
   enabled?: boolean;
+  enabled_by?: string;
+  enabled_by_name?: string;
   id?: string;
   name?: string;
   org_id?: string;
+  token_count?: number;
   updated_at?: number;
 }
 
@@ -1454,12 +1500,15 @@ export interface ServiceAccountListResult {
 }
 
 export interface ServiceAccountToken {
+  basic_role?: string;
   created_at?: number;
   expires_at?: number;
   id?: string;
   key_prefix?: string;
+  last_used_at?: number;
   name?: string;
   revoked_at?: number;
+  roles?: FixedRoleGrant[];
   scopes?: string[];
   service_id?: string;
   valid?: boolean;
@@ -1808,6 +1857,17 @@ export interface UpdatePushResult {
   version?: string;
 }
 
+export interface UpdateServiceAccountRequest {
+  enabled?: boolean;
+  name?: string;
+  reason?: string;
+}
+
+export interface UpdateServiceAccountTokenRolesRequest {
+  basic_role?: string;
+  roles?: FixedRoleGrant[];
+}
+
 export interface UpdateSettingsRequest {
   client?: ClientSettings;
   name?: string;
@@ -1841,14 +1901,6 @@ export interface UpdateSyncStatusResult {
   nextSyncAt?: number;
   status?: string;
   versionsFound?: number;
-}
-
-export interface UpdateUserRequest {
-  email?: string;
-  email_verified?: boolean;
-  mfa_enabled?: boolean;
-  name?: string;
-  role?: string;
 }
 
 export interface UpdateVersionListResult {
@@ -1971,6 +2023,33 @@ start_time?: string;
  * RFC3339 upper bound
  */
 end_time?: string;
+};
+
+export type GetAuthAdminUsersParams = {
+/**
+ * Page number (1-based)
+ */
+page?: number;
+/**
+ * Page size (max 100)
+ */
+limit?: number;
+/**
+ * Search by email or name
+ */
+q?: string;
+/**
+ * Sort column: email, name, created_at, last_login_at
+ */
+sort?: string;
+/**
+ * Sort direction: asc or desc
+ */
+order?: string;
+/**
+ * Membership status filter: active, suspended; empty means every state except removed
+ */
+status?: string;
 };
 
 export type GetAuthApiKeysParams = {
@@ -2260,6 +2339,20 @@ export type GetOrganizationsIdInvitationsParams = {
  * filter by status
  */
 status?: string;
+};
+
+export type GetOrganizationsIdMembersParams = {
+/**
+ * Membership status: active, suspended, all
+ */
+status?: string;
+};
+
+export type DeleteServiceAccountsIdTokensTokenParams = {
+/**
+ * Delete the token row instead of marking it revoked
+ */
+purge?: boolean;
 };
 
 export type GetTelemetryHistoryParams = {

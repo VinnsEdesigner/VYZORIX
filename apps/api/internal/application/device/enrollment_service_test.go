@@ -248,7 +248,7 @@ func TestClaimBindsOwnerAndOrgAndConsumesTheCode(t *testing.T) {
 
 	d, err := svc.Claim(ctx, ClaimRequest{
 		PairingCode:    enrolled.PairingDisplay, // as the user types it
-		UserID:     "op-1",
+		UserID:         "op-1",
 		OrganizationID: "org-1",
 		Name:           "field-ops-07",
 		TierCap:        2,
@@ -285,7 +285,7 @@ func TestClaimIsSingleUse(t *testing.T) {
 	enrolled, _ := svc.Enroll(ctx, EnrollRequest{DeviceUUID: "dev-1", PublicKeyPEM: testPublicKey(t)})
 	req := ClaimRequest{
 		PairingCode:    enrolled.PairingCode,
-		UserID:     "op-1",
+		UserID:         "op-1",
 		OrganizationID: "org-1",
 	}
 
@@ -305,7 +305,7 @@ func TestClaimRefusesAnUnknownCode(t *testing.T) {
 
 	_, err := svc.Claim(context.Background(), ClaimRequest{
 		PairingCode:    "ZZZZZZZZ",
-		UserID:     "op-1",
+		UserID:         "op-1",
 		OrganizationID: "org-1",
 	})
 	if !errors.Is(err, ErrPairingCodeUnknown) {
@@ -330,7 +330,7 @@ func TestClaimRefusesAnExpiredCode(t *testing.T) {
 
 	_, err := svc.Claim(ctx, ClaimRequest{
 		PairingCode:    enrolled.PairingCode,
-		UserID:     "op-1",
+		UserID:         "op-1",
 		OrganizationID: "org-1",
 	})
 	if !errors.Is(err, ErrPairingCodeUnknown) {
@@ -348,7 +348,7 @@ func TestEnrollRefusesAnAlreadyClaimedDevice(t *testing.T) {
 	enrolled, _ := svc.Enroll(ctx, EnrollRequest{DeviceUUID: "dev-1", PublicKeyPEM: key})
 	if _, err := svc.Claim(ctx, ClaimRequest{
 		PairingCode:    enrolled.PairingCode,
-		UserID:     "op-1",
+		UserID:         "op-1",
 		OrganizationID: "org-1",
 	}); err != nil {
 		t.Fatalf("claim: %v", err)
@@ -371,7 +371,7 @@ func TestClaimNormalizesTheCodeTheUserTyped(t *testing.T) {
 	typed := " " + enrolled.PairingDisplay[:4] + " " + enrolled.PairingDisplay[5:]
 	if _, err := svc.Claim(ctx, ClaimRequest{
 		PairingCode:    typed,
-		UserID:     "op-1",
+		UserID:         "op-1",
 		OrganizationID: "org-1",
 	}); err != nil {
 		t.Fatalf("a code typed with a space must be accepted: %v", err)

@@ -155,7 +155,7 @@ func EncodeSessionData(sessionID string, data []byte) []byte {
 // It is the resolved capability, not a claim: the device enforces [Allowlist], and
 // the CLI displays it. The two come from one resolution so they cannot disagree.
 type SessionIdentity struct {
-	User  string   `json:"user"`
+	User      string   `json:"user"`
 	Name      string   `json:"name"`
 	Email     string   `json:"email"`
 	Org       string   `json:"org"`

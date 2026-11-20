@@ -106,14 +106,25 @@ func (r *AppSecretRepository) Put(ctx context.Context, record *appsecret.Record)
 	return generation, nil
 }
 
-// Delete removes a secret. Deleting an absent one is not an error: the caller
-// asked for a state, not for a transition.
+// Delete removes a secret.
+//
+// It reports ErrNotFound when no row matched, so a delete for a key that was never set
+// is not answered with a 204 that tells the operator a stale secret was cleared when
+// nothing changed. This is the same rule the deploy credential's Revoke follows.
 func (r *AppSecretRepository) Delete(ctx context.Context, name appsecret.Name) error {
-	_, err := r.db.ExecContext(ctx,
+	res, err := r.db.ExecContext(ctx,
 		`DELETE FROM device_app_secrets WHERE device_id = ? AND app = ? AND key = ?`,
 		name.DeviceID, name.App, name.Key)
 	if err != nil {
 		return fmt.Errorf("delete app secret: %w", err)
+	}
+
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("delete app secret: %w", err)
+	}
+	if n == 0 {
+		return appsecret.ErrNotFound
 	}
 
 	return nil

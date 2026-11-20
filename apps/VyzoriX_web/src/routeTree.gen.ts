@@ -26,7 +26,9 @@ import { Route as AdminAuthenticationIndexRouteImport } from './routes/admin/aut
 import { Route as AdminDefaultPreferencesIndexRouteImport } from './routes/admin/default-preferences/index'
 import { Route as AdminProvisioningIndexRouteImport } from './routes/admin/provisioning/index'
 import { Route as AdminServiceAccountsIndexRouteImport } from './routes/admin/service-accounts/index'
+import { Route as AdminServiceAccountsIdRouteImport } from './routes/admin/service-accounts/$id'
 import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
+import { Route as AdminUsersUserIdRouteImport } from './routes/admin/users/$userId'
 import { Route as ProfileNotificationsEmailRouteImport } from './routes/profile/notifications/email'
 import { Route as ProfileNotificationsSlackRouteImport } from './routes/profile/notifications/slack'
 
@@ -118,9 +120,19 @@ const AdminServiceAccountsIndexRoute =
     path: '/admin/service-accounts/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminServiceAccountsIdRoute = AdminServiceAccountsIdRouteImport.update({
+  id: '/admin/service-accounts/$id',
+  path: '/admin/service-accounts/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
   id: '/admin/users/',
   path: '/admin/users/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsersUserIdRoute = AdminUsersUserIdRouteImport.update({
+  id: '/admin/users/$userId',
+  path: '/admin/users/$userId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileNotificationsEmailRoute =
@@ -150,6 +162,8 @@ export interface FileRoutesByFullPath {
   '/telemetry/': typeof TelemetryIndexRoute
   '/terminal/': typeof TerminalIndexRoute
   '/updates/': typeof UpdatesIndexRoute
+  '/admin/service-accounts/$id': typeof AdminServiceAccountsIdRoute
+  '/admin/users/$userId': typeof AdminUsersUserIdRoute
   '/profile/notifications/email': typeof ProfileNotificationsEmailRoute
   '/profile/notifications/slack': typeof ProfileNotificationsSlackRoute
   '/admin/authentication/': typeof AdminAuthenticationIndexRoute
@@ -172,6 +186,8 @@ export interface FileRoutesByTo {
   '/telemetry': typeof TelemetryIndexRoute
   '/terminal': typeof TerminalIndexRoute
   '/updates': typeof UpdatesIndexRoute
+  '/admin/service-accounts/$id': typeof AdminServiceAccountsIdRoute
+  '/admin/users/$userId': typeof AdminUsersUserIdRoute
   '/profile/notifications/email': typeof ProfileNotificationsEmailRoute
   '/profile/notifications/slack': typeof ProfileNotificationsSlackRoute
   '/admin/authentication': typeof AdminAuthenticationIndexRoute
@@ -195,6 +211,8 @@ export interface FileRoutesById {
   '/telemetry/': typeof TelemetryIndexRoute
   '/terminal/': typeof TerminalIndexRoute
   '/updates/': typeof UpdatesIndexRoute
+  '/admin/service-accounts/$id': typeof AdminServiceAccountsIdRoute
+  '/admin/users/$userId': typeof AdminUsersUserIdRoute
   '/profile/notifications/email': typeof ProfileNotificationsEmailRoute
   '/profile/notifications/slack': typeof ProfileNotificationsSlackRoute
   '/admin/authentication/': typeof AdminAuthenticationIndexRoute
@@ -219,6 +237,8 @@ export interface FileRouteTypes {
     | '/telemetry/'
     | '/terminal/'
     | '/updates/'
+    | '/admin/service-accounts/$id'
+    | '/admin/users/$userId'
     | '/profile/notifications/email'
     | '/profile/notifications/slack'
     | '/admin/authentication/'
@@ -241,6 +261,8 @@ export interface FileRouteTypes {
     | '/telemetry'
     | '/terminal'
     | '/updates'
+    | '/admin/service-accounts/$id'
+    | '/admin/users/$userId'
     | '/profile/notifications/email'
     | '/profile/notifications/slack'
     | '/admin/authentication'
@@ -263,6 +285,8 @@ export interface FileRouteTypes {
     | '/telemetry/'
     | '/terminal/'
     | '/updates/'
+    | '/admin/service-accounts/$id'
+    | '/admin/users/$userId'
     | '/profile/notifications/email'
     | '/profile/notifications/slack'
     | '/admin/authentication/'
@@ -286,6 +310,8 @@ export interface RootRouteChildren {
   TelemetryIndexRoute: typeof TelemetryIndexRoute
   TerminalIndexRoute: typeof TerminalIndexRoute
   UpdatesIndexRoute: typeof UpdatesIndexRoute
+  AdminServiceAccountsIdRoute: typeof AdminServiceAccountsIdRoute
+  AdminUsersUserIdRoute: typeof AdminUsersUserIdRoute
   ProfileNotificationsEmailRoute: typeof ProfileNotificationsEmailRoute
   ProfileNotificationsSlackRoute: typeof ProfileNotificationsSlackRoute
   AdminAuthenticationIndexRoute: typeof AdminAuthenticationIndexRoute
@@ -416,11 +442,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminServiceAccountsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/service-accounts/$id': {
+      id: '/admin/service-accounts/$id'
+      path: '/admin/service-accounts/$id'
+      fullPath: '/admin/service-accounts/$id'
+      preLoaderRoute: typeof AdminServiceAccountsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/users/': {
       id: '/admin/users/'
       path: '/admin/users'
       fullPath: '/admin/users/'
       preLoaderRoute: typeof AdminUsersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/users/$userId': {
+      id: '/admin/users/$userId'
+      path: '/admin/users/$userId'
+      fullPath: '/admin/users/$userId'
+      preLoaderRoute: typeof AdminUsersUserIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile/notifications/email': {
@@ -454,6 +494,8 @@ const rootRouteChildren: RootRouteChildren = {
   TelemetryIndexRoute: TelemetryIndexRoute,
   TerminalIndexRoute: TerminalIndexRoute,
   UpdatesIndexRoute: UpdatesIndexRoute,
+  AdminServiceAccountsIdRoute: AdminServiceAccountsIdRoute,
+  AdminUsersUserIdRoute: AdminUsersUserIdRoute,
   ProfileNotificationsEmailRoute: ProfileNotificationsEmailRoute,
   ProfileNotificationsSlackRoute: ProfileNotificationsSlackRoute,
   AdminAuthenticationIndexRoute: AdminAuthenticationIndexRoute,

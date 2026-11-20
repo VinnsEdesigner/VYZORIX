@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/serviceaccount"
 )
 
@@ -26,29 +27,61 @@ func (r *ServiceAccountRepository) Save(ctx context.Context, sa *serviceaccount.
 		enabled = 1
 	}
 	query := `
-		INSERT INTO service_accounts (id, org_id, name, enabled, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?)
+		INSERT INTO service_accounts (id, org_id, name, enabled, created_at, updated_at,
+			disabled_at, disabled_by, enabled_by, disabled_reason)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(id) DO UPDATE SET
 			name = excluded.name,
 			enabled = excluded.enabled,
-			updated_at = excluded.updated_at
+			updated_at = excluded.updated_at,
+			disabled_at = excluded.disabled_at,
+			disabled_by = excluded.disabled_by,
+			enabled_by = excluded.enabled_by,
+			disabled_reason = excluded.disabled_reason
 	`
 	_, err := r.db.ExecContext(ctx, query,
 		sa.ID, sa.OrgID, sa.Name, enabled,
 		sa.CreatedAt.UnixMilli(), sa.UpdatedAt.UnixMilli(),
+		nullTimeMillis(sa.DisabledAt), nullIfEmpty(sa.DisabledBy),
+		nullIfEmpty(sa.EnabledBy), nullIfEmpty(sa.DisabledReason),
 	)
 	return err
 }
 
-const serviceAccountColumns = `id, org_id, name, enabled, created_at, updated_at`
+// nullTimeMillis renders an optional timestamp as Unix millis, or nil for NULL.
+func nullTimeMillis(t *time.Time) interface{} {
+	if t == nil {
+		return nil
+	}
+
+	return t.UnixMilli()
+}
+
+// nullIfEmpty stores an absent string as SQL NULL, so "never set" and "" are the
+// same thing on the wire rather than two spellings of it.
+func nullIfEmpty(s string) interface{} {
+	if s == "" {
+		return nil
+	}
+
+	return s
+}
+
+const serviceAccountColumns = `id, org_id, name, enabled, created_at, updated_at,
+	disabled_at, disabled_by, enabled_by, disabled_reason`
 
 func scanServiceAccount(scanner interface{ Scan(...any) error }) (*serviceaccount.ServiceAccount, error) {
 	var sa serviceaccount.ServiceAccount
 	var enabled int
 	var createdAt, updatedAt int64
+	var tokenCount int
+	var disabledAt sql.NullInt64
+	var disabledBy, enabledBy, disabledReason sql.NullString
 	err := scanner.Scan(
 		&sa.ID, &sa.OrgID, &sa.Name, &enabled,
 		&createdAt, &updatedAt,
+		&disabledAt, &disabledBy, &enabledBy, &disabledReason,
+		&tokenCount,
 	)
 	if err != nil {
 		return nil, err
@@ -56,23 +89,40 @@ func scanServiceAccount(scanner interface{ Scan(...any) error }) (*serviceaccoun
 	sa.Enabled = enabled == 1
 	sa.CreatedAt = time.UnixMilli(createdAt)
 	sa.UpdatedAt = time.UnixMilli(updatedAt)
+	sa.DisabledBy = disabledBy.String
+	sa.EnabledBy = enabledBy.String
+	sa.DisabledReason = disabledReason.String
+	if disabledAt.Valid {
+		t := time.UnixMilli(disabledAt.Int64)
+		sa.DisabledAt = &t
+	}
+	sa.TokenCount = tokenCount
 	return &sa, nil
 }
+
+// selectServiceAccountWithCount returns the account columns plus its live token
+// count. The count is computed on read (a correlated subquery) rather than
+// stored, so it can never drift from service_account_tokens.
+const selectServiceAccountWithCount = `
+	SELECT ` + serviceAccountColumns + `,
+	       (SELECT COUNT(*) FROM service_account_tokens t
+	        WHERE t.service_id = service_accounts.id AND t.valid = 1) AS token_count
+	FROM service_accounts`
 
 // GetByID returns a service account or serviceaccount.ErrNotFound.
 func (r *ServiceAccountRepository) GetByID(ctx context.Context, id string) (*serviceaccount.ServiceAccount, error) {
 	sa, err := scanServiceAccount(r.db.QueryRowContext(ctx,
-		`SELECT `+serviceAccountColumns+` FROM service_accounts WHERE id = ?`, id))
+		selectServiceAccountWithCount+` WHERE id = ?`, id))
 	if err == sql.ErrNoRows {
 		return nil, serviceaccount.ErrNotFound
 	}
 	return sa, err
 }
 
-// ListByOrg returns all service accounts of an org.
+// ListByOrg returns all service accounts of an org, each with its token count.
 func (r *ServiceAccountRepository) ListByOrg(ctx context.Context, orgID string) ([]*serviceaccount.ServiceAccount, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT `+serviceAccountColumns+` FROM service_accounts WHERE org_id = ? ORDER BY name`, orgID)
+		selectServiceAccountWithCount+` WHERE org_id = ? ORDER BY name`, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +179,7 @@ func NewServiceAccountTokenRepository(db *sql.DB) *ServiceAccountTokenRepository
 	return &ServiceAccountTokenRepository{db: db}
 }
 
-const serviceTokenColumns = `id, service_id, name, key_hash, key_prefix, scopes, valid, expires_at, revoked_at, last_used_at, created_at`
+const serviceTokenColumns = `id, service_id, name, key_hash, key_prefix, scopes, valid, expires_at, revoked_at, last_used_at, created_at, basic_role, roles`
 
 func scanServiceToken(scanner interface{ Scan(...any) error }) (*serviceaccount.Token, error) {
 	var token serviceaccount.Token
@@ -137,9 +187,11 @@ func scanServiceToken(scanner interface{ Scan(...any) error }) (*serviceaccount.
 	var valid int
 	var createdAt int64
 	var expiresAt, revokedAt, lastUsedAt sql.NullInt64
+	var basicRole, rolesJSON sql.NullString
 	err := scanner.Scan(
 		&token.ID, &token.ServiceID, &token.Name, &token.KeyHash, &token.KeyPrefix,
 		&scopes, &valid, &expiresAt, &revokedAt, &lastUsedAt, &createdAt,
+		&basicRole, &rolesJSON,
 	)
 	if err != nil {
 		return nil, err
@@ -166,6 +218,15 @@ func scanServiceToken(scanner interface{ Scan(...any) error }) (*serviceaccount.
 	if token.Scopes == nil {
 		token.Scopes = []string{}
 	}
+	token.BasicRole = basicRole.String
+	if rolesJSON.Valid && rolesJSON.String != "" {
+		if err := json.Unmarshal([]byte(rolesJSON.String), &token.Roles); err != nil {
+			return nil, err
+		}
+	}
+	if token.Roles == nil {
+		token.Roles = []permission.FixedRoleGrant{}
+	}
 	return &token, nil
 }
 
@@ -189,20 +250,31 @@ func (r *ServiceAccountTokenRepository) Save(ctx context.Context, token *service
 	if token.LastUsedAt != nil {
 		lastUsedAt = token.LastUsedAt.UnixMilli()
 	}
+	rolesJSON, err := json.Marshal(token.Roles)
+	if err != nil {
+		return err
+	}
+	var basicRole interface{}
+	if token.BasicRole != "" {
+		basicRole = token.BasicRole
+	}
 	query := `
-		INSERT INTO service_account_tokens (id, service_id, name, key_hash, key_prefix, scopes, valid, expires_at, revoked_at, last_used_at, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO service_account_tokens (id, service_id, name, key_hash, key_prefix, scopes, valid, expires_at, revoked_at, last_used_at, created_at, basic_role, roles)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(id) DO UPDATE SET
 			name = excluded.name,
 			scopes = excluded.scopes,
 			valid = excluded.valid,
 			expires_at = excluded.expires_at,
 			revoked_at = excluded.revoked_at,
-			last_used_at = excluded.last_used_at
+			last_used_at = excluded.last_used_at,
+			basic_role = excluded.basic_role,
+			roles = excluded.roles
 	`
 	_, err = r.db.ExecContext(ctx, query,
 		token.ID, token.ServiceID, token.Name, token.KeyHash, token.KeyPrefix,
 		string(scopesJSON), valid, expiresAt, revokedAt, lastUsedAt, token.CreatedAt.UnixMilli(),
+		basicRole, string(rolesJSON),
 	)
 	return err
 }

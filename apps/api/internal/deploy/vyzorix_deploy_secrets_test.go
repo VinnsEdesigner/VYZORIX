@@ -84,7 +84,9 @@ type memKeyLookup struct {
 
 func (m *memKeyLookup) SecretPublicKey(_ context.Context, _ string) (string, error) {
 	if m.publicPEM == "" {
-		return "", errors.New("no secret key registered")
+		// The real store returns the sentinel, so the fake does too: the point of the test
+		// below is that it survives Set's wrapping.
+		return "", ErrNoSecretKey
 	}
 
 	return m.publicPEM, nil
@@ -320,7 +322,29 @@ func TestSetRequiresARegisteredKey(t *testing.T) {
 
 	svc := NewSecretService(newMemSecrets(), &memKeyLookup{})
 
-	if _, err := svc.Set(context.Background(), "d_1", "vfd", "K", "v"); err == nil {
+	// The sentinel must survive Set's wrapping, or the handler cannot tell this device-state
+	// condition from a genuine server fault and answers 500.
+	_, err := svc.Set(context.Background(), "d_1", "vfd", "K", "v")
+	if err == nil {
 		t.Fatal("a device with no secret key must be refused")
+	}
+	if !errors.Is(err, ErrNoSecretKey) {
+		t.Fatalf("the sentinel did not survive the wrap: %v", err)
+	}
+}
+
+// TestSetRefusesAnAppNameAManifestCouldNotDeclare proves a secret cannot be filed under
+// an app name the manifest rule rejects. Such a row would be unreachable — the device's
+// config gates the fetch, and no config will ever name that app — so it would sit in the
+// table forever looking set.
+func TestSetRefusesAnAppNameAManifestCouldNotDeclare(t *testing.T) {
+	t.Parallel()
+
+	svc, _, _ := secretFixture(t)
+
+	for _, app := range []string{"VFD", "vfd_app", "-vfd", "vfd app", strings.Repeat("a", maxAppNameLen+1)} {
+		if _, err := svc.Set(context.Background(), "d_1", app, "K", "v"); err == nil {
+			t.Errorf("app %q was accepted; a manifest could never name it", app)
+		}
 	}
 }

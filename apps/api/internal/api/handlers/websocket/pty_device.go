@@ -18,7 +18,7 @@ type PTYDeviceHandler struct {
 	// delivered. It is a lookup rather than a stored reference because the
 	// user's connection can be replaced on reconnect.
 	users PTYUserLookup
-	log       *slog.Logger
+	log   *slog.Logger
 }
 
 // PTYUserLookup returns the user endpoint for a session, or nil if the

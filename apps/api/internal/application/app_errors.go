@@ -18,7 +18,8 @@ var (
 	ErrPasswordPolicy         = errors.New("password policy violation")
 	ErrBreachCheckUnavailable = errors.New("password verification temporarily unavailable, please try again")
 	ErrOAuthFailed            = errors.New("oauth authentication failed")
-	ErrUserNotFound       = errors.New("not_found")
+	ErrUserNotFound           = errors.New("not_found")
+	ErrUserDisabled           = errors.New("user account is disabled")
 
 	// Organization errors (multi-tenant).
 	ErrNoOrganization             = errors.New("no organization found, please create or join one")

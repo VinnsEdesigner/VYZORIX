@@ -55,15 +55,15 @@ func (p *Presenter) CommandBlocked(ctx context.Context, userID, deviceID, comman
 		return
 	}
 	p.auditLogger.CommandExecuted(ctx, audit.CommandExecutedEvent{
-		UserID: userID,
-		DeviceID:   deviceID,
-		Command:    command,
-		IPAddress:  gqlcontext.GetClientIP(ctx),
-		UserAgent:  gqlcontext.GetUserAgent(ctx),
-		RiskTier:   riskTier,
-		Result:     audit.ResultBlocked,
-		Reason:     reason,
-		ActorType:  "user",
+		UserID:    userID,
+		DeviceID:  deviceID,
+		Command:   command,
+		IPAddress: gqlcontext.GetClientIP(ctx),
+		UserAgent: gqlcontext.GetUserAgent(ctx),
+		RiskTier:  riskTier,
+		Result:    audit.ResultBlocked,
+		Reason:    reason,
+		ActorType: "user",
 	})
 }
 

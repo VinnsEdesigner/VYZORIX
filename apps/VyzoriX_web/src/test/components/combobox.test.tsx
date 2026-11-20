@@ -1,5 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { filterOptions, isNewGroup, itemToString } from '@vyzorix/ui';
+import { fireEvent, render, screen } from '@testing-library/react';
+import {
+  Combobox,
+  ThemeContext,
+  filterOptions,
+  getThemeById,
+  isNewGroup,
+  itemToString,
+} from '@vyzorix/ui';
+
+function renderThemed(ui: React.ReactElement, themeId = 'dark') {
+  return render(<ThemeContext.Provider value={getThemeById(themeId)}>{ui}</ThemeContext.Provider>);
+}
 
 const options = [
   { value: '', label: 'Default' },
@@ -59,5 +71,28 @@ describe('isNewGroup', () => {
 
   it('is true when leaving a group for an ungrouped option', () => {
     expect(isNewGroup({ value: 'b' }, { value: 'a', group: 'G' })).toBe(true);
+  });
+});
+
+describe('Combobox menu', () => {
+
+  it('opens a listbox when the input is clicked', () => {
+    const opts = [
+      { value: 'viewer', label: 'Viewer' },
+      { value: 'operator', label: 'Operator' },
+      { value: 'admin', label: 'Admin' },
+    ];
+
+    renderThemed(
+      <Combobox options={opts} value={null} onChange={() => {}} aria-label="Role" />,
+    );
+
+    const input = screen.getByLabelText('Role');
+    expect(input).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(input);
+
+    expect(input).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
   });
 });

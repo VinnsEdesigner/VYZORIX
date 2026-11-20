@@ -23,9 +23,9 @@ import (
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/deploy"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/deployconfig"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	cryptohmac "github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/crypto"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/storage"
 )
@@ -72,21 +72,19 @@ expose = "loopback"
 
 // deployFixture is a running deploy surface over real stores.
 type deployFixture struct {
-	server   *Server
-	engine   *gin.Engine
-	configs  *storage.DeployConfigRepository
-	creds    *storage.DeployCredentialRepository
-	db       *storage.SQLite
-	user *user.User
-	orgID    string
+	server  *Server
+	engine  *gin.Engine
+	configs *storage.DeployConfigRepository
+	creds   *storage.DeployCredentialRepository
+	db      *storage.SQLite
+	user    *user.User
+	orgID   string
 }
 
 // newDeployFixture builds the deploy surface over a migrated temp database with
 // one registered device in deployOrg and one in otherOrg.
 func newDeployFixture(t *testing.T) *deployFixture {
 	t.Helper()
-
-	gin.SetMode(gin.TestMode)
 
 	db, err := storage.Open(storage.DefaultConfig(filepath.Join(t.TempDir(), "deploy.db")))
 	if err != nil {
@@ -116,6 +114,9 @@ func newDeployFixture(t *testing.T) *deployFixture {
 		DeviceRepo:        devices,
 		grantRepo:         grants,
 		deployCredentials: credSvc,
+		// The production wiring stores the service here, and the audit test installs a
+		// sink on it, so the fixture must too.
+		deployService: svc,
 	}
 	s.deployHandler = deployhandlers.NewHandler(svc, secretSvc, credSvc, devices, nil, grants, users, organizations, s.log)
 
@@ -138,7 +139,6 @@ func newDeployFixture(t *testing.T) *deployFixture {
 // engineFor builds a router whose tenant group is the real deploy registration,
 // with the authenticated principal injected ahead of it.
 func (f *deployFixture) engineFor(op *user.User, orgID string) *gin.Engine {
-	gin.SetMode(gin.TestMode)
 
 	r := gin.New()
 	tenant := r.Group("/v1")
@@ -250,7 +250,7 @@ func TestDeployRouteTakesTheDeviceFromTheManifest(t *testing.T) {
 	}
 
 	// The config must have been persisted against the manifest's device, not "".
-	record, err := f.configs.Current(t.Context(), deployDevice)
+	record, err := f.configs.Current(t.Context(), deployOrg, deployDevice)
 	if err != nil {
 		t.Fatalf("the deploy must persist against the manifest's device: %v", err)
 	}
@@ -375,7 +375,7 @@ func TestDeployDryRunStoresNothing(t *testing.T) {
 		t.Fatal("the response must report dryRun=true")
 	}
 
-	if _, err := f.configs.Current(t.Context(), deployDevice); err == nil {
+	if _, err := f.configs.Current(t.Context(), deployOrg, deployDevice); err == nil {
 		t.Fatal("a dry run must not persist a config")
 	} else if !errors.Is(err, deployconfig.ErrNotFound) {
 		t.Fatalf("unexpected error reading config after dry run: %v", err)
@@ -535,7 +535,7 @@ func TestMintedCredentialDeploysAndIsRefusedAfterRevocation(t *testing.T) {
 	// The config carries the member who authorised it. A credential deploy has
 	// no user in the context, so the member must come from the credential's
 	// minting user — not from GetUserFromContext, which is nil here.
-	record, err := f.configs.Current(t.Context(), deployDevice)
+	record, err := f.configs.Current(t.Context(), deployOrg, deployDevice)
 	if err != nil {
 		t.Fatalf("read config: %v", err)
 	}
@@ -747,8 +747,6 @@ func TestSchemaRouteIsPublicAndCoexistsWithTheDeviceRoute(t *testing.T) {
 	t.Parallel()
 
 	f := newDeployFixture(t)
-
-	gin.SetMode(gin.TestMode)
 
 	r := gin.New()
 	v1 := r.Group("/v1")

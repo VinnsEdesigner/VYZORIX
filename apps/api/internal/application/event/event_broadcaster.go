@@ -20,7 +20,7 @@ type DashboardClient struct {
 	Send       chan []byte
 	Subscribed map[string]bool
 	ID         string
-	UserID string
+	UserID     string
 	mu         sync.RWMutex
 }
 
@@ -28,7 +28,7 @@ type DashboardClient struct {
 func NewDashboardClient(id, userID string) *DashboardClient {
 	return &DashboardClient{
 		ID:         id,
-		UserID: userID,
+		UserID:     userID,
 		Send:       make(chan []byte, 256),
 		Subscribed: make(map[string]bool),
 	}
@@ -68,18 +68,18 @@ func (c *DashboardClient) GetSubscriptions() []string {
 
 // Broadcaster manages dashboard client connections and broadcasts events.
 type Broadcaster struct {
-	clients         map[string]*DashboardClient // clientID -> client.
+	clients     map[string]*DashboardClient // clientID -> client.
 	userClients map[string][]string         // userID -> []clientID.
-	log             *slog.Logger
-	mu              sync.RWMutex
+	log         *slog.Logger
+	mu          sync.RWMutex
 }
 
 // NewBroadcaster creates a new event broadcaster.
 func NewBroadcaster(log *slog.Logger) *Broadcaster {
 	return &Broadcaster{
-		clients:         make(map[string]*DashboardClient),
+		clients:     make(map[string]*DashboardClient),
 		userClients: make(map[string][]string),
-		log:             log,
+		log:         log,
 	}
 }
 

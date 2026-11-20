@@ -9,9 +9,9 @@ import (
 	orgapplication "github.com/VinnsEdesigner/vyzorix/apps/api/internal/application/organization"
 	apikeydomain "github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/device_group"
-	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/organization"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/permission"
+	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/user"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/infrastructure/storage"
 )
 

@@ -220,7 +220,7 @@ func (h *EnrollHandler) Claim(c *gin.Context) {
 
 	d, err := h.devices.Claim(c.Request.Context(), devicesvc.ClaimRequest{
 		PairingCode:    req.PairingCode,
-		UserID:     op.ID,
+		UserID:         op.ID,
 		OrganizationID: orgID,
 		Name:           req.Name,
 		TierCap:        req.TierCap,

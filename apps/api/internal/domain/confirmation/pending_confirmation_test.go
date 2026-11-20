@@ -29,9 +29,9 @@ func TestPendingConfirmation_IsConsumed(t *testing.T) {
 func TestPendingConfirmation_Matches(t *testing.T) {
 	c := &PendingConfirmation{UserID: "op-1", Command: "device.reboot", DeviceID: "imei-1"}
 	tests := []struct {
-		name                        string
+		name                    string
 		userID, command, device string
-		want                        bool
+		want                    bool
 	}{
 		{"exact match", "op-1", "device.reboot", "imei-1", true},
 		{"wrong operator", "op-2", "device.reboot", "imei-1", false},

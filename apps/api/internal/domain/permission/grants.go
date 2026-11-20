@@ -64,7 +64,7 @@ type GrantRepository interface {
 type SessionCapability struct {
 	SessionID    string
 	DeviceID     string
-	UserID   string
+	UserID       string
 	APIAllowlist []string
 	Tier         Tier
 	ExpiresAt    int64
