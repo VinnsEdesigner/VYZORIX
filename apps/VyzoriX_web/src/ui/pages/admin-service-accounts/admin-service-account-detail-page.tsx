@@ -15,7 +15,7 @@ import {
   useStyles2,
   type VyzorixTheme,
 } from '@vyzorix/ui';
-import type { FixedRoleGrant, ServiceAccount, ServiceAccountToken } from '@vyzorix/api-client';
+import type { FixedRoleGrant, ServiceAccount, ServiceAccountToken } from '@/hooks/service-accounts';
 import { Page } from '@/ui/components/layout';
 import { StatusBadge } from '@/ui/components/shared/status-badge';
 import { filterTableStyles } from '@/ui/components/shared/table';

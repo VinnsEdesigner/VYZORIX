@@ -9,3 +9,4 @@ export {
   type AvatarStyle,
 } from './dicebear';
 export { serviceAccountAvatar } from './service-account-avatar';
+export { emptyStateAvatar, type EmptyIllustration } from './empty-state-avatar';

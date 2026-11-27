@@ -73,6 +73,26 @@ func (h *Hub) SetDeviceDisconnectHook(fn func(deviceID string)) {
 	h.mu.Unlock()
 }
 
+// SetDeviceReportedHook installs a callback invoked when a device reports the config
+// version it holds. Provisioning uses it to re-evaluate a resource: the apply path can only
+// say "signed and stored", so the device's own report is the only evidence it is running.
+//
+// Like the other hooks it runs outside the hub lock and must not block; a slow consumer must
+// queue its own work rather than hold the frame path.
+func (h *Hub) SetDeviceReportedHook(fn func(deviceID string, configVersion int)) {
+	h.mu.Lock()
+	h.deviceReportedHook = fn
+	h.mu.Unlock()
+}
+
+// deviceReportedHookFor returns the installed hook under the read lock.
+func (h *Hub) deviceReportedHookFor() func(deviceID string, configVersion int) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	return h.deviceReportedHook
+}
+
 // deviceDisconnectHookFor returns the installed hook under the read lock.
 func (h *Hub) deviceDisconnectHookFor() func(deviceID string) {
 	h.mu.RLock()

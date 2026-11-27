@@ -10,8 +10,9 @@ import {
   Modal,
   useStyles2,
 } from '@vyzorix/ui';
-import type { ServiceAccount } from '@vyzorix/api-client';
+import type { ServiceAccount } from '@/hooks/service-accounts';
 import { Page } from '@/ui/components/layout';
+import { EmptySurface } from '@/ui/components/shared/surface-state';
 import { SearchInput } from '@/ui/components/shared/search-input';
 import { StatusBadge } from '@/ui/components/shared/status-badge';
 import { filterTableStyles } from '@/ui/components/shared/table';
@@ -57,15 +58,24 @@ export function AdminServiceAccountsPage() {
       ) : null}
 
       {!accounts.isLoading && !accounts.isError && rows.length === 0 ? (
-        <EmptyState icon="key" message="You haven't created any service accounts yet">
-          <Button variant="primary" onClick={() => setCreateOpen(true)}>
-            Add service account
-          </Button>
-        </EmptyState>
+        <EmptySurface
+          illustration="serviceAccounts"
+          title="No service accounts yet"
+          detail="A service account is a non-human identity for automation and CI. It holds its own tokens, so a pipeline never uses a person's credentials."
+          actions={
+            <Button variant="primary" onClick={() => setCreateOpen(true)}>
+              Add service account
+            </Button>
+          }
+        />
       ) : null}
 
       {!accounts.isLoading && rows.length > 0 && filtered.length === 0 ? (
-        <EmptyState icon="key" message="No service accounts found" />
+        <EmptySurface
+          illustration="serviceAccounts"
+          title="No service accounts match that search"
+          detail="Clear the search to see every account."
+        />
       ) : null}
 
       {filtered.length > 0 ? (

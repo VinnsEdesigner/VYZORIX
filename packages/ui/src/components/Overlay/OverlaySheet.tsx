@@ -26,6 +26,8 @@ export interface OverlaySheetProps {
 
   header?: ReactNode;
   testId?: string;
+
+  rootRef?: React.Ref<HTMLDivElement>;
 }
 
 export function OverlaySheet({
@@ -35,6 +37,7 @@ export function OverlaySheet({
   children,
   header,
   testId,
+  rootRef,
 }: OverlaySheetProps) {
   const styles = useStyles2(getStyles);
   const theme = useTheme2();
@@ -72,6 +75,7 @@ export function OverlaySheet({
     <Portal>
       <div className={styles.scrim} onClick={onClose} aria-hidden="true" />
       <div
+        ref={rootRef}
         role="dialog"
         aria-modal="true"
         aria-label={label}

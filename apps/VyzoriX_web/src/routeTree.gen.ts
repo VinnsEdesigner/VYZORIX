@@ -31,6 +31,8 @@ import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
 import { Route as AdminUsersUserIdRouteImport } from './routes/admin/users/$userId'
 import { Route as ProfileNotificationsEmailRouteImport } from './routes/profile/notifications/email'
 import { Route as ProfileNotificationsSlackRouteImport } from './routes/profile/notifications/slack'
+import { Route as AdminProvisioningGuidesGuideIdRouteImport } from './routes/admin/provisioning/guides/$guideId'
+import { Route as AdminProvisioningProvidersProviderIdRouteImport } from './routes/admin/provisioning/providers/$providerId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -147,6 +149,18 @@ const ProfileNotificationsSlackRoute =
     path: '/profile/notifications/slack',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdminProvisioningGuidesGuideIdRoute =
+  AdminProvisioningGuidesGuideIdRouteImport.update({
+    id: '/admin/provisioning/guides/$guideId',
+    path: '/admin/provisioning/guides/$guideId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminProvisioningProvidersProviderIdRoute =
+  AdminProvisioningProvidersProviderIdRouteImport.update({
+    id: '/admin/provisioning/providers/$providerId',
+    path: '/admin/provisioning/providers/$providerId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -171,6 +185,8 @@ export interface FileRoutesByFullPath {
   '/admin/provisioning/': typeof AdminProvisioningIndexRoute
   '/admin/service-accounts/': typeof AdminServiceAccountsIndexRoute
   '/admin/users/': typeof AdminUsersIndexRoute
+  '/admin/provisioning/guides/$guideId': typeof AdminProvisioningGuidesGuideIdRoute
+  '/admin/provisioning/providers/$providerId': typeof AdminProvisioningProvidersProviderIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -195,6 +211,8 @@ export interface FileRoutesByTo {
   '/admin/provisioning': typeof AdminProvisioningIndexRoute
   '/admin/service-accounts': typeof AdminServiceAccountsIndexRoute
   '/admin/users': typeof AdminUsersIndexRoute
+  '/admin/provisioning/guides/$guideId': typeof AdminProvisioningGuidesGuideIdRoute
+  '/admin/provisioning/providers/$providerId': typeof AdminProvisioningProvidersProviderIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -220,6 +238,8 @@ export interface FileRoutesById {
   '/admin/provisioning/': typeof AdminProvisioningIndexRoute
   '/admin/service-accounts/': typeof AdminServiceAccountsIndexRoute
   '/admin/users/': typeof AdminUsersIndexRoute
+  '/admin/provisioning/guides/$guideId': typeof AdminProvisioningGuidesGuideIdRoute
+  '/admin/provisioning/providers/$providerId': typeof AdminProvisioningProvidersProviderIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -246,6 +266,8 @@ export interface FileRouteTypes {
     | '/admin/provisioning/'
     | '/admin/service-accounts/'
     | '/admin/users/'
+    | '/admin/provisioning/guides/$guideId'
+    | '/admin/provisioning/providers/$providerId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -270,6 +292,8 @@ export interface FileRouteTypes {
     | '/admin/provisioning'
     | '/admin/service-accounts'
     | '/admin/users'
+    | '/admin/provisioning/guides/$guideId'
+    | '/admin/provisioning/providers/$providerId'
   id:
     | '__root__'
     | '/'
@@ -294,6 +318,8 @@ export interface FileRouteTypes {
     | '/admin/provisioning/'
     | '/admin/service-accounts/'
     | '/admin/users/'
+    | '/admin/provisioning/guides/$guideId'
+    | '/admin/provisioning/providers/$providerId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -319,6 +345,8 @@ export interface RootRouteChildren {
   AdminProvisioningIndexRoute: typeof AdminProvisioningIndexRoute
   AdminServiceAccountsIndexRoute: typeof AdminServiceAccountsIndexRoute
   AdminUsersIndexRoute: typeof AdminUsersIndexRoute
+  AdminProvisioningGuidesGuideIdRoute: typeof AdminProvisioningGuidesGuideIdRoute
+  AdminProvisioningProvidersProviderIdRoute: typeof AdminProvisioningProvidersProviderIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -477,6 +505,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileNotificationsSlackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/provisioning/guides/$guideId': {
+      id: '/admin/provisioning/guides/$guideId'
+      path: '/admin/provisioning/guides/$guideId'
+      fullPath: '/admin/provisioning/guides/$guideId'
+      preLoaderRoute: typeof AdminProvisioningGuidesGuideIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/provisioning/providers/$providerId': {
+      id: '/admin/provisioning/providers/$providerId'
+      path: '/admin/provisioning/providers/$providerId'
+      fullPath: '/admin/provisioning/providers/$providerId'
+      preLoaderRoute: typeof AdminProvisioningProvidersProviderIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -503,6 +545,9 @@ const rootRouteChildren: RootRouteChildren = {
   AdminProvisioningIndexRoute: AdminProvisioningIndexRoute,
   AdminServiceAccountsIndexRoute: AdminServiceAccountsIndexRoute,
   AdminUsersIndexRoute: AdminUsersIndexRoute,
+  AdminProvisioningGuidesGuideIdRoute: AdminProvisioningGuidesGuideIdRoute,
+  AdminProvisioningProvidersProviderIdRoute:
+    AdminProvisioningProvidersProviderIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

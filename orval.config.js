@@ -85,7 +85,13 @@ module.exports = {
 				                                // Deploy: setting or removing a secret, and minting or revoking a
 				                                // credential, all change what the device will run, so they invalidate the
 				                                // deploy view rather than the device list.
-				                                { onMutations: ['postDeployImeiSecretsApp', 'deleteDeployImeiSecretsAppKey', 'postDeployImeiCredentials', 'deleteDeployImeiCredentialsId'], invalidates: [{ query: 'getDeploy' }] },
+				                                                                                             { onMutations: ['postDeployImeiSecretsApp', 'deleteDeployImeiSecretsAppKey', 'postDeployImeiCredentials', 'deleteDeployImeiCredentialsId'], invalidates: [{ query: 'getDeploy' }] },
+                                                             // Provisioning: every write changes repository rows, resource rows,
+                                                             // jobs, or the org-level counts, so the whole provisioning surface is
+                                                             // refetched. Keys that need a path param cannot be named here (orval
+                                                             // would call them with no arguments); the hand-written hooks in
+                                                             // hooks/provisioning invalidate those by prefix instead.
+                                                             { onMutations: ['postProvisioningConnections', 'patchProvisioningConnectionsId', 'deleteProvisioningConnectionsId', 'postProvisioningConnectionsIdCheck', 'postProvisioningRepositories', 'patchProvisioningRepositoriesId', 'deleteProvisioningRepositoriesId', 'postProvisioningRepositoriesIdSync', 'postProvisioningRepositoriesIdResourcesResourceIdSync', 'postProvisioningRepositoriesIdResourcesResourceIdPush', 'deleteProvisioningEvents'], invalidates: [{ query: 'getProvisioningConnections' }, { query: 'getProvisioningRepositories' }, { query: 'getProvisioningEvents' }, { query: 'getProvisioningInstance' }] },
                                         ],
                                 },
                         },

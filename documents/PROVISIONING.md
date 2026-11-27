@@ -1,6 +1,6 @@
 # GitOps Provisioning
 
-> **Status:** Server complete. Console screen is being built next.
+> **Status:** Server and console are shipped.
 > **Applies to:** Organisations that keep their device configuration in a git repository.
 
 ---
@@ -134,6 +134,38 @@ Two things worth knowing:
   it is protected and never returned. A token pasted into a URL would be stored in the
   clear and shown back to anyone who can read the repository.
 
+### Browsing the repository
+
+The **Code** tab reads what is actually committed, without a git client. It reads the
+branch the repository tracks — the same files a sync reads, not a copy the server keeps
+and not a listing that could be stale.
+
+- The **Files** view starts at the repository root. A folder opens in place, and the
+  breadcrumb walks back up.
+- Opening a **file** shows its content with the commit, author, and time it came from.
+- **History** lists the most recent commits on the branch, newest first.
+
+Browsing is **read-only and needs only `provisioning.read`**, so it works on a read-only
+connection: someone who cannot push can still see every file. If the connection has write
+access and the file is a provisioned resource, an **Edit** button appears, and the edit
+goes through the same preview-then-commit path as the rest of the console. A file that is
+not a provisioned resource has no Edit button — there is nothing to apply it to.
+
+Two limits are deliberate: a very large file is truncated and marked as such rather than
+streamed whole, and history is a bounded window (the last 50 commits), so a large
+repository is not cloned in full just to answer "show me the log".
+
+The routes behind it are:
+
+| Method | Path | Permission |
+|---|---|---|
+| `GET` | `/v1/provisioning/repositories/{id}/tree?dir=` | `provisioning.read` |
+| `GET` | `/v1/provisioning/repositories/{id}/file?path=` | `provisioning.read` |
+| `GET` | `/v1/provisioning/repositories/{id}/history?limit=` | `provisioning.read` |
+
+Each uses the repository's own connection for its token, so the caller never supplies a
+credential. A path that tries to escape the checkout is refused with a `400`, not resolved.
+
 ### 3. See what it would do
 
 Before the first sync, and at any time afterwards, you can ask what a sync would change.
@@ -174,15 +206,54 @@ Each resource shows a state:
 
 | State | What it means |
 |---|---|
-| **Applied** | The device is running the configuration this repository applied |
+| **Applied** | The device reports it is running the configuration this repository applied |
+| **Awaiting device** | The config is signed and stored, but the device has not confirmed it yet |
 | **Drifted** | The device was changed by something else after this repository applied it |
 | **Missing** | The file was removed from the repository; the device keeps what it has |
-| **Error** | The last attempt to apply it failed |
+| **Out of scope** | The file is now outside the repository's include/exclude patterns |
+| **Failed** | The last attempt to apply it failed, and the reason is shown |
 
 **Drifted** is the one to watch. It means the device no longer matches your repository,
 usually because someone changed it in the console or a deploy was pushed another way.
 VYZORIX shows it rather than silently correcting it, so you can decide whether the
 repository or the device should change.
+
+### What "applied" actually means, and why presence matters
+
+A sync proves the server compiled, authorised, signed and stored a document. That is all
+it proves. It says nothing about the device: the device may be offline, may not be
+registered, or may simply not have polled yet. So a freshly applied resource is recorded
+as **awaiting device**, not applied.
+
+Only the device can say what it is running. It reports its config version on every
+heartbeat, and the resource becomes **applied** when that report matches what this source
+signed **and the report is current**:
+
+- A device that is connected right now is current by definition.
+- A device that is not connected still counts while its last report is inside the offline
+  window (the same threshold diagnostics uses, `DIAG_OFFLINE_THRESHOLD_MINUTES`, five
+  minutes by default).
+- A week-old report from a device nobody has heard from does **not** count. That is not
+  evidence, it is a stored guess, and the resource stays awaiting device.
+
+That is why a resource row carries a **presence line** beside its state:
+
+| Presence | Meaning |
+|---|---|
+| **Online** | The device holds a live connection right now |
+| **Offline** | Not connected; last-seen says how long |
+| **Reachability unknown** | The server could not read the device — this is *not* "offline" |
+| **reports vN** | The config version the device last said it holds |
+
+Reading them together is the point. "Applied · Online" is a device that confirmed and is
+still there. "Applied · Offline" confirmed, then went away. "Awaiting device · Offline"
+is a config that may never have landed. If you need a device to converge now, use **Sync
+this device** on its resource — a full pass over every file is a much bigger hammer.
+
+The wire fields behind this are `device_online`, `device_last_seen`, `device_reported_at`
+and `device_reported_version` on each resource. They are absent for an org resource,
+which has no device, and for a device the server could not read — absence means
+"unknown", never "offline".
 
 ## What a sync will never do
 
@@ -286,9 +357,6 @@ configured.
 
 Stated plainly, so nobody plans around something that is not there:
 
-- **The console screen is still being built.** The Provisioning page currently shows a
-  placeholder. Everything described here works today through the API, but the point-and-click
-  screen is the next step.
 - **Pull only, by default.** Syncing reads from the repository. Writing back requires a
   connection with write access, and only edits made in the console use it.
 - **One branch per repository.**

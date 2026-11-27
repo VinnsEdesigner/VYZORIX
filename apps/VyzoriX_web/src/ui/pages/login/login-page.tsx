@@ -11,7 +11,7 @@ import {
   useStyles2,
   type VyzorixTheme,
 } from '@vyzorix/ui';
-import { parseApiError } from '@vyzorix/api-client';
+import { parseApiError } from '@/lib/error';
 import { useLogin, useMfaVerify } from '@/hooks/auth';
 import { useAuthStore } from '@/stores';
 

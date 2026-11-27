@@ -144,16 +144,18 @@ func (f *fakeResources) ListByRepo(_ context.Context, repoID string) ([]*domain.
 	return out, nil
 }
 
-func (f *fakeResources) SetState(_ context.Context, id string, state domain.ResourceState, _ string) error {
+func (f *fakeResources) SetState(_ context.Context, id string, state domain.ResourceState, lastError string) error {
 	f.states = append(f.states, state)
 	for _, r := range f.byDevice {
 		if r.ID == id {
 			r.State = state
+			r.LastError = lastError
 		}
 	}
 	for _, r := range f.byPath {
 		if r.ID == id {
 			r.State = state
+			r.LastError = lastError
 		}
 	}
 
@@ -430,6 +432,8 @@ func TestSync_AppliesNewManifest(t *testing.T) {
 	resources := newFakeResources()
 	dep := &fakeDeployer{}
 	s := newSyncServiceForTest(t, root, resources, newFakeJobs(), dep)
+	// A confirming reader, so the device is treated as running the signed version.
+	s.SetDeviceConfirmation(fakeConfirmation{confirmsAll: true})
 
 	res, err := s.Sync(context.Background(), testRepo(), SyncOptions{})
 	if err != nil {

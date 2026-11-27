@@ -307,6 +307,35 @@ def vet(files: list[Path], quiet: bool) -> int:
     return offending
 
 
+def safe_to_write(original: str, cleaned: str) -> str | None:
+    """Return a reason not to write `cleaned`, or None when the result looks sane.
+
+    The scanner understands strings and regexes but NOT JSX text, so a literal such as
+    `<code>/*</code>` reads as an unterminated block comment and swallows the rest of the
+    file. That is silent truncation, and it destroyed a real file once. A comment strip can
+    only ever remove comments, so a result that loses a large share of the file, or most of
+    its lines, is a truncation rather than a strip — refuse it and say so.
+    """
+    lost = len(original) - len(cleaned)
+    if lost <= 0:
+        return None
+
+    # Comments are a minority of any real file. Losing more than 60% of the bytes means
+    # something other than comments went missing.
+    if lost > len(original) * 0.6:
+        return f"would drop {lost} of {len(original)} bytes — looks like truncation, not a strip"
+
+    original_lines = original.count("\n")
+    cleaned_lines = cleaned.count("\n")
+    if original_lines and cleaned_lines < original_lines * 0.4:
+        return (
+            f"would drop {original_lines - cleaned_lines} of {original_lines} lines — "
+            "likely an unterminated comment that swallowed code"
+        )
+
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("paths", nargs="*", default=[DEFAULT_PATH])
@@ -333,11 +362,18 @@ def main() -> int:
     changed = 0
     saved = 0
     touched: list[Path] = []
+    refused = 0
 
     for path in targets:
         original = path.read_text(encoding="utf-8")
         cleaned = tidy(strip_comments(original))
         if cleaned == original:
+            continue
+
+        reason = safe_to_write(original, cleaned)
+        if reason is not None:
+            refused += 1
+            print(f"refused: {path}: {reason}", file=sys.stderr)
             continue
 
         changed += 1
@@ -347,10 +383,18 @@ def main() -> int:
             print(f"  {path}: -{len(original) - len(cleaned)} bytes")
 
         if not args.dry_run and not args.check:
-            path.write_text(cleaned, encoding="utf-8")
+            # Write via a temp file and rename, so an interrupted run can never leave a
+            # half-written source in place of a working one.
+            tmp = path.with_suffix(path.suffix + ".stripped")
+            tmp.write_text(cleaned, encoding="utf-8")
+            tmp.replace(path)
 
     verb = "would change" if (args.dry_run or args.check) else "changed"
     print(f"\n{verb} {changed} of {len(targets)} files ({saved} bytes)")
+
+    if refused:
+        print(f"refused {refused} file(s) whose result looked truncated", file=sys.stderr)
+        return 1
 
     if args.check and changed:
         return 1

@@ -375,9 +375,20 @@ func (c *Client) recordReportedState(t *telemetry.TelemetryFrame) {
 	err := c.Hub.deviceRepo.UpdateReportedState(
 		ctx, c.DeviceID, t.ConfigVersion, digests, time.Now().UnixMilli(),
 	)
-	if err != nil && c.log != nil {
-		c.log.Warn("device reported-state update failed",
-			"deviceId", c.DeviceID, "configVersion", *t.ConfigVersion, "err", err)
+	if err != nil {
+		if c.log != nil {
+			c.log.Warn("device reported-state update failed",
+				"deviceId", c.DeviceID, "configVersion", *t.ConfigVersion, "err", err)
+		}
+
+		return
+	}
+
+	// The stored version alone changes nothing a user can see: provisioning stamped this
+	// device's resource "pending" because only the device can prove it is running the
+	// config. Tell it the proof arrived, so the resource can become "applied".
+	if hook := c.Hub.deviceReportedHookFor(); hook != nil {
+		hook(c.DeviceID, *t.ConfigVersion)
 	}
 }
 

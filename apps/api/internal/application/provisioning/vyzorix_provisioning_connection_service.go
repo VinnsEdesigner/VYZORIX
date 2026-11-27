@@ -329,22 +329,38 @@ func duplicateConnectionNameAsInvalid(err error, name string) error {
 	return err
 }
 
-// normaliseHost reduces a URL to its host, so "https://github.com/" and
+// normaliseHost reduces a host to a probeable form, so "https://github.com/" and
 // "github.com" are one connection rather than two.
+//
+// An explicit http:// scheme is KEPT. https is the default the health checker assumes, so
+// stripping "https://" loses nothing — but stripping "http://" made a plain-HTTP git host
+// impossible to store at all: the checker forced https://, so an internal server (Gitea or
+// GitLab on a LAN, a loopback server in development) could only ever read "unreachable".
 func normaliseHost(raw string) string {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
 		return ""
 	}
 	if u, err := url.Parse(raw); err == nil && u.Host != "" {
+		if u.Scheme == "http" {
+			return "http://" + u.Host
+		}
+
 		return u.Host
 	}
 
 	return strings.TrimSuffix(raw, "/")
 }
 
+// validHost reports whether a host is usable: non-empty, carrying no path and no spaces.
+// The "//" that a scheme introduces is not a path, so it is removed before the path check.
 func validHost(raw string) bool {
 	host := normaliseHost(raw)
+	if host == "" {
+		return false
+	}
 
-	return host != "" && !strings.ContainsAny(host, " /")
+	remainder := strings.TrimPrefix(strings.TrimPrefix(host, "http://"), "https://")
+
+	return remainder != "" && !strings.ContainsAny(remainder, " /")
 }

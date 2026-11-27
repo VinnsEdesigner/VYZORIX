@@ -58,6 +58,15 @@ func (s *Server) setupProvisioningRoutes(r *gin.RouterGroup) {
 			s.provisioningPushBackHandler.Apply)
 	}
 
+	if s.provisioningBrowserHandler != nil {
+		// Read-only repository browsing: the tree, one file, and the commit log. They sit
+		// under the read scope because seeing what is in a repository is harmless; the edit
+		// routes stay on the write scope.
+		group.GET("/repositories/:id/tree", read, s.provisioningBrowserHandler.Tree)
+		group.GET("/repositories/:id/file", read, s.provisioningBrowserHandler.File)
+		group.GET("/repositories/:id/history", read, s.provisioningBrowserHandler.History)
+	}
+
 	if s.provisioningSyncHandler != nil {
 		group.POST("/repositories/:id/sync", write, s.provisioningSyncHandler.Sync)
 		// A single-resource sync takes the same write scope as a full sync: applying one
@@ -73,6 +82,12 @@ func (s *Server) setupProvisioningRoutes(r *gin.RouterGroup) {
 		group.GET("/repositories/:id/discovery", read, s.provisioningSyncHandler.Discover)
 		group.GET("/repositories/:id/events", read, s.provisioningSyncHandler.ListResourceEvents)
 		group.GET("/events", read, s.provisioningSyncHandler.ListEvents)
+		// Dismissing hides an event from the list; it takes write scope because it changes
+		// what the trail shows, even though the row is retained.
+		group.DELETE("/events", write, s.provisioningSyncHandler.DismissEvents)
+		// The interval scheduler's state. Read scope: it reveals nothing secret, and a
+		// user needs it to know whether a repository changes on a timer.
+		group.GET("/scheduler", read, s.provisioningSyncHandler.SchedulerStatus)
 		// The instance summary is org-scoped: it counts one organisation's repositories,
 		// resources, and connections. It is therefore mounted inside this group, at
 		// /v1/provisioning/instance rather than repeating the prefix.

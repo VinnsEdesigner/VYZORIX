@@ -1,9 +1,7 @@
-import { type NavSection } from './nav-model';
+import { type NavSection, type PageTabDef } from './nav-model';
+import { PROVISIONING_PAGE_TABS } from '@/lib/provisioning/provisioning-tabs';
 
-export interface PageTabDef {
-  id: string;
-  text: string;
-}
+export type { PageTabDef };
 
 export const pageTabs: Record<string, PageTabDef[]> = {
   '/': [{ id: 'overview', text: 'Overview' }],
@@ -43,11 +41,7 @@ export const pageTabs: Record<string, PageTabDef[]> = {
     { id: 'security', text: 'Security' },
   ],
   '/admin/default-preferences': [{ id: 'overview', text: 'Overview' }],
-  '/admin/provisioning': [
-    { id: 'repos', text: 'Repositories' },
-    { id: 'connections', text: 'Connections' },
-    { id: 'getting-started', text: 'Get started' },
-  ],
+  '/admin/provisioning': PROVISIONING_PAGE_TABS,
   '/admin/users': [{ id: 'overview', text: 'Overview' }],
   '/admin/service-accounts': [{ id: 'overview', text: 'Overview' }],
   '/admin/authentication': [{ id: 'overview', text: 'Overview' }],

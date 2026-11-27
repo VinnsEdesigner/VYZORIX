@@ -27,6 +27,7 @@ export * from "./members/organization-members";
 export * from "./mfa/mfa-management";
 export * from "./notifications/notifications";
 export * from "./organizations/organization-management";
+export * from "./provisioning/provisioning";
 export * from "./service-accounts/service-accounts-management";
 export * from "./sessions/auth-sessions";
 export * from "./settings/user-settings";

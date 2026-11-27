@@ -68,11 +68,18 @@ export function Menu({ items, children, className }: MenuProps) {
   const isSheet = presentation === 'sheet';
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const sheetContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (!wrapperRef.current?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (wrapperRef.current?.contains(target)) return;
+
+      window.setTimeout(() => {
+        if (sheetContentRef.current?.contains(target)) return;
+        setOpen(false);
+      }, 0);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
@@ -122,7 +129,12 @@ export function Menu({ items, children, className }: MenuProps) {
             );
 
             return isSheet ? (
-              <OverlaySheet open onClose={() => setOpen(false)} label="Actions">
+              <OverlaySheet
+                open
+                onClose={() => setOpen(false)}
+                label="Actions"
+                rootRef={sheetContentRef}
+              >
                 {list}
               </OverlaySheet>
             ) : (

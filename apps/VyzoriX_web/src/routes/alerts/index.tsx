@@ -1,18 +1,16 @@
 import { useState } from 'react';
 import { css } from '@emotion/css';
-import { useStyles2, type VyzorixTheme } from '@vyzorix/ui';
+import { Combobox, useStyles2, type VyzorixTheme } from '@vyzorix/ui';
 import { createFileRoute } from '@tanstack/react-router';
 import {
   ALERT_METRICS,
   ALERT_CONDITIONS,
-  type AlertRule,
-  type AlertRuleRequest,
-} from '@vyzorix/api-client';
-import {
   useAlertRules,
   useCreateAlertRule,
   useDeleteAlertRule,
   useEvaluateAlertRule,
+  type AlertRule,
+  type AlertRuleRequest,
 } from '@/hooks/alerts/use-alerts';
 import { Page } from '@/ui/components/layout';
 
@@ -87,16 +85,18 @@ function RuleForm({
           required
           className={styles.input}
         />
-        <select value={metric} onChange={(e) => setMetric(e.target.value as (typeof ALERT_METRICS)[number])} className={styles.input}>
-          {ALERT_METRICS.map((m) => (
-            <option key={m} value={m}>{METRIC_LABELS[m]}</option>
-          ))}
-        </select>
-        <select value={condition} onChange={(e) => setCondition(e.target.value as (typeof ALERT_CONDITIONS)[number])} className={styles.input}>
-          {ALERT_CONDITIONS.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+        <Combobox
+          options={ALERT_METRICS.map((m) => ({ value: m, label: METRIC_LABELS[m] }))}
+          value={metric}
+          onChange={(next) => setMetric((next as (typeof ALERT_METRICS)[number]) ?? 'device_offline_count')}
+          aria-label="Metric"
+        />
+        <Combobox
+          options={ALERT_CONDITIONS.map((c) => ({ value: c, label: c }))}
+          value={condition}
+          onChange={(next) => setCondition((next as (typeof ALERT_CONDITIONS)[number]) ?? 'gt')}
+          aria-label="Condition"
+        />
         <input
           value={threshold}
           onChange={(e) => setThreshold(e.target.value)}

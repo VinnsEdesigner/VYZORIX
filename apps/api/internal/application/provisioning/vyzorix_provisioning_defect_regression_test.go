@@ -75,6 +75,9 @@ func TestDriftedStateIsPersisted(t *testing.T) {
 	})
 
 	svc := NewSyncService(nil, resources, nil, nil, &fakeDeployer{}, newFakeJobs(), nil)
+	// A confirming reader: "applied after a re-apply" now means the device reported the
+	// version it was given. A stored document alone records pending.
+	svc.SetDeviceConfirmation(fakeConfirmation{confirmsAll: true})
 	svc.now = func() time.Time { return time.Unix(0, 0) }
 
 	repo := &domain.Repository{ID: "repo-1", OrgID: "org-1", Enabled: true, Branch: "main"}

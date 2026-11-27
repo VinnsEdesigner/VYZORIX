@@ -197,7 +197,9 @@ type ResourceStats struct {
 	Missing int `json:"missing"`
 	Error   int `json:"error"`
 	Ignored int `json:"ignored"`
-	// Total is the sum, so a client does not have to add the five up.
+	// Pending counts resources whose device has not confirmed the config it holds.
+	Pending int `json:"pending"`
+	// Total is the sum, so a client does not have to add the six up.
 	Total int `json:"total"`
 }
 
@@ -216,6 +218,11 @@ const (
 	// reverting that is a deliberate act. Ignored is "this repository no longer claims
 	// it", so the resource is left alone and only its state changes.
 	ResourceIgnored ResourceState = "ignored"
+	// ResourcePending means the config was signed and stored, but the device has not
+	// confirmed it is running it. A deploy writing a row is not proof of anything: the
+	// device may not be registered, may be offline, or may not have fetched yet. Reporting
+	// "applied" until the device says so would claim a fact the server cannot see.
+	ResourcePending ResourceState = "pending"
 )
 
 // Resource is one manifest, bound to one device.

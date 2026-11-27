@@ -56,3 +56,9 @@ export function useUpdateServiceAccountTokenRoles() {
 export function useServiceAccountRoleCatalog() {
   return useGetServiceAccountsRoles();
 }
+
+export type {
+  ServiceAccount,
+  ServiceAccountToken,
+  FixedRoleGrant,
+} from '@vyzorix/api-client';

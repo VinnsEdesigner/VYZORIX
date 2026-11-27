@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { getGetAuthMeNotificationsHistoryQueryKey, useNotificationHistory, useMarkNotificationsRead } from '@/hooks/settings';
 import { useVyzorTranslation } from '@/hooks/i18n';
 import { notifyError, notifySuccess } from '@/stores/toast-store';
-import type { NotificationHistoryEntry, NotificationHistoryResult } from '@vyzorix/api-client';
+import type { NotificationHistoryEntry, NotificationHistoryResult } from '@/hooks/settings';
 
 const PAGE_SIZE = 25;
 const LIVE_INTERVAL_MS = 15_000;

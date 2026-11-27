@@ -74,6 +74,10 @@ func NewScheduler(store SchedulerStore, syncSvc *SyncService, log *slog.Logger, 
 	}
 }
 
+// Tick exposes the loop's cadence, so a status view can report the real value rather than a
+// default that may have been overridden.
+func (s *Scheduler) Tick() time.Duration { return s.tick }
+
 // Start runs the loop until ctx is cancelled. It returns immediately; the loop
 // runs in its own goroutine.
 func (s *Scheduler) Start(ctx context.Context) {

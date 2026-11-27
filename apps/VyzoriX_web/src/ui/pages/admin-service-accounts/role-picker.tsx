@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { css } from '@emotion/css';
 import { Checkbox, Combobox, Spinner, useStyles2, type VyzorixTheme } from '@vyzorix/ui';
-import type { FixedRoleGrant } from '@vyzorix/api-client';
+import type { FixedRoleGrant } from '@/hooks/service-accounts';
 import { useServiceAccountRoleCatalog } from '@/hooks/service-accounts';
 
 export type FixedRoleScope = 'organization' | 'all';

@@ -180,6 +180,8 @@ func (r *ProvisioningStorage) StatsByRepo(ctx context.Context, repoID string) (*
 			stats.Error = n
 		case provisioning.ResourceIgnored:
 			stats.Ignored = n
+		case provisioning.ResourcePending:
+			stats.Pending = n
 		}
 		stats.Total += n
 	}

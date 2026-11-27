@@ -57,6 +57,8 @@ IGNORED: dict[str, str] = {
     "postInviteTokenReject": "rejection is handled on a standalone page",
     "postAuthMeNotificationsPushTest": "sends a test notification; no cached data changes",
     "postDeploy": "the deploy hooks invalidate by hand in their own onSuccess",
+    "postProvisioningRepositoriesIdResourcesResourceIdPreview": "renders a diff and writes nothing, so no cached data changes",
+    "postProvisioningWebhooksRepoID": "called by the git provider, not the console",
     "postConfigVersionsResourceVersionRestore": "not used by the console yet",
     "postV1DeviceClaim": "device-initiated; the console never calls it",
     "postV1DeviceEnroll": "device-initiated; the console never calls it",

@@ -20,6 +20,11 @@ export interface NavSection {
   items: NavItem[];
 }
 
+export interface PageTabDef {
+  id: string;
+  text: string;
+}
+
 export function stripTrailingSlash(value: string): string {
   return value.length > 1 ? value.replace(/\/$/, '') : value;
 }

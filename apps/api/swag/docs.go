@@ -10963,6 +10963,1889 @@ const docTemplate = `{
                 }
             }
         },
+        "/provisioning/connections": {
+            "get": {
+                "description": "Lists an organisation's stored git credentials. Token material is never returned.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "List provisioning connections",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "connections",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.connectionListJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Stores a git credential, encrypts the token at rest, and runs a health check. A failed check still stores the connection, with status error and the reason.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Create provisioning connection",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "connection",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.connectionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.connectionJSON"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.write required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/connections/{id}": {
+            "get": {
+                "description": "Returns one stored git credential. Token material is never returned.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Get provisioning connection",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "connection ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "connection",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.connectionJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Removes a connection. Refused with 409 while a repository still uses it.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Delete provisioning connection",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "connection ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "deleted",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.SuccessResult"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.write required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "connection still in use",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Renames, re-hosts, or rotates the token. An empty token keeps the stored one. A token or host change re-runs the health check.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Update provisioning connection",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "connection ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "fields to change",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.connectionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "updated",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.connectionJSON"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.write required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/connections/{id}/check": {
+            "post": {
+                "description": "Re-runs the health check and records the result.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Check provisioning connection",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "connection ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "checked",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.connectionJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.write required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/events": {
+            "get": {
+                "description": "Lists who caused each provisioning action, distinguishing a person, a service-account token, the scheduler, and the server itself.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "List provisioning events",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "how many events to return",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "events",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.eventListJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Hides events from the activity list without deleting them. The trail records who changed what, so it is never erased.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Dismiss activity events",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "event ids",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.dismissRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "dismissed",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.dismissResultJSON"
+                        }
+                    },
+                    "400": {
+                        "description": "no ids supplied",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.write required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/instance": {
+            "get": {
+                "description": "Reports whether a boot provisioning file is configured and how many GitOps repositories, resources, and connections exist.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Instance provisioning summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "summary",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.InstanceSummary"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories": {
+            "get": {
+                "description": "Lists an organisation's repositories with their sync state.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "List provisioning repositories",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "repositories",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.repositoryListJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Validates the remote and branch against the provider before storing. An unreachable remote is rejected rather than stored as a permanently failing row.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Create provisioning repository",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "repository",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.repositoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.repositoryJSON"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.write required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "remote not reachable",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}": {
+            "get": {
+                "description": "Returns one repository with its sync state.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Get provisioning repository",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "repository",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.repositoryJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Removes a repository. Its resources and job history are removed with it; devices keep the config they already run.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Delete provisioning repository",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "release devices instead of deleting their ownership rows",
+                        "name": "keep_resources",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "deleted",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.SuccessResult"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.write required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Changes the mutable fields. A URL, branch, or connection change is re-verified against the provider.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Update provisioning repository",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "fields to change",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.repositoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "updated",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.repositoryJSON"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.write required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "remote not reachable",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}/discovery": {
+            "get": {
+                "description": "Lists every manifest the repository declares with the action a sync would take, plus the device directories it does not manage. Nothing is applied.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Discover a repository's contents",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "discovery",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.discoveryJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "remote not reachable",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}/events": {
+            "get": {
+                "description": "Lists who caused each action against this repository, newest first.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "List a repository's provisioning events",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "how many events to return",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "events",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.eventListJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}/file": {
+            "get": {
+                "description": "Returns a file's content and the commit it came from, so an edit can be based on it.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Read one repository file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "file path, relative to the repository root",
+                        "name": "path",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "file",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.fileJSON"
+                        }
+                    },
+                    "400": {
+                        "description": "path required or invalid",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "repository or file not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}/health": {
+            "get": {
+                "description": "Returns the average and last sync duration, the current failure streak, and a timeline of recent completed runs.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Repository sync health over time",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "how many recent runs to include",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "health",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.healthJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}/history": {
+            "get": {
+                "description": "Returns recent commits on the repository's branch, newest first. The window is bounded, so a large repository is not cloned in full to answer it.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "List a repository's recent commits",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "how many commits to return",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "commits",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.historyJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "repository not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}/jobs": {
+            "get": {
+                "description": "Returns a repository's recent sync runs, newest first.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "List sync jobs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "maximum jobs to return",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "jobs",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.jobListJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}/jobs/{jobId}": {
+            "get": {
+                "description": "Returns one sync run with its per-manifest results.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Get a sync job",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "job ID",
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "job",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.jobJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}/resources": {
+            "get": {
+                "description": "Lists the manifests a repository owns, with each one's drift state.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "List provisioned resources",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "resources",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.resourceListJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}/resources/{resourceId}/document": {
+            "get": {
+                "description": "Returns the signed config the device currently holds, as text. This is the document this repository's manifest produced, not a rebuild.",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Get a provisioned resource's signed document",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "resource ID",
+                        "name": "resourceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "signed config",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}/resources/{resourceId}/preview": {
+            "post": {
+                "description": "Returns the unified diff an edit would produce. Nothing is written.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Preview an edit to a provisioned manifest",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "resource ID",
+                        "name": "resourceId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "new content",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.editRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "diff",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.previewJSON"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid body",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.write required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "connection is read-only",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}/resources/{resourceId}/push": {
+            "post": {
+                "description": "Commits the new content to a generated branch and opens a pull request (mode pr), or commits straight to the repository's branch (mode direct). Refused when the remote moved since the preview.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Push an edit to a provisioned manifest",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "resource ID",
+                        "name": "resourceId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "new content",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.editRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "pushed",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.editResultJSON"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid body",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.write required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "read-only connection, or the remote moved",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}/resources/{resourceId}/secrets": {
+            "get": {
+                "description": "Reads the names the device's current config declares and reports which are set. Never returns a value.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "List a provisioned resource's declared secrets and whether each is set",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "resource ID",
+                        "name": "resourceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "declared secrets",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.secretReadinessJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "resource not found, or the device has no config",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}/resources/{resourceId}/sync": {
+            "post": {
+                "description": "Fetches the branch and plans as a full sync does, then applies only this one resource. The job records the rest as skipped. The repository's sync state is not stamped, because the repository was not synced.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Sync a single provisioned resource",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "resource ID",
+                        "name": "resourceId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "preview only, apply nothing",
+                        "name": "dry_run",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "sync result",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.jobJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.write required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "repository or resource not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "a sync is already running",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}/sync": {
+            "post": {
+                "description": "Fetches the branch, discovers manifests, diffs them against the resources this repository owns, and applies the new or changed ones through the deploy service. With dry_run=true nothing is applied; the response is the preview.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Sync a provisioning repository",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "preview only, apply nothing",
+                        "name": "dry_run",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "revert devices whose manifest was removed",
+                        "name": "revert_missing",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "sync result",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.jobJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.write required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "a sync is already running",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/repositories/{id}/tree": {
+            "get": {
+                "description": "Lists one directory of the repository at its branch. An empty dir means the root. Reads only; works on a read-only connection.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "List a repository's files",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "directory, relative to the repository root",
+                        "name": "dir",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "entries",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.treeJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "repository or path not found",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/scheduler": {
+            "get": {
+                "description": "Reports whether the interval scheduler is running, its tick, which repositories are due now, and when the next one becomes due.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Scheduler status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "X-Organization-ID",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "scheduler",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api_handlers_provisioning.schedulerJSON"
+                        }
+                    },
+                    "401": {
+                        "description": "authentication required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "provisioning.read required",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/provisioning/webhooks/{repoID}": {
+            "post": {
+                "description": "Verifies the provider's HMAC signature against the repository's secret and triggers a sync. A push to a branch this repository does not track is acknowledged without syncing.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "provisioning"
+                ],
+                "summary": "Receive a git provider push webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "repository ID",
+                        "name": "repoID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "GitHub-style HMAC-SHA256 signature",
+                        "name": "X-Hub-Signature-256",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "GitLab shared secret",
+                        "name": "X-Gitlab-Token",
+                        "in": "header"
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "accepted",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "401": {
+                        "description": "signature missing or invalid",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "unknown repository",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "body too large",
+                        "schema": {
+                            "$ref": "#/definitions/openapi.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/service-accounts": {
             "get": {
                 "description": "Returns all org-scoped service accounts",
@@ -12609,6 +14492,109 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.Action": {
+            "type": "string",
+            "enum": [
+                "create",
+                "update",
+                "unchanged",
+                "missing",
+                "conflict",
+                "error",
+                "ignored"
+            ],
+            "x-enum-varnames": [
+                "ActionCreate",
+                "ActionUpdate",
+                "ActionUnchanged",
+                "ActionMissing",
+                "ActionConflict",
+                "ActionError",
+                "ActionIgnored"
+            ]
+        },
+        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.DeviceDir": {
+            "type": "object",
+            "properties": {
+                "device_id": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.OrgResourceSummary": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.Action"
+                },
+                "kind": {
+                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.ResourceKind"
+                },
+                "message": {
+                    "description": "Message explains a refusal, such as an unknown organisation.",
+                    "type": "string"
+                },
+                "org": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.ResourceKind": {
+            "type": "string",
+            "enum": [
+                "device",
+                "alerts",
+                "contact_points",
+                "annotations",
+                "groups",
+                "device",
+                "alerts",
+                "contact_points",
+                "annotations",
+                "groups"
+            ],
+            "x-enum-varnames": [
+                "KindDevice",
+                "KindAlerts",
+                "KindContactPoints",
+                "KindAnnotations",
+                "KindGroups"
+            ]
+        },
+        "github_com_VinnsEdesigner_vyzorix_apps_api_internal_domain_provisioning.ResourceStats": {
+            "type": "object",
+            "properties": {
+                "applied": {
+                    "type": "integer"
+                },
+                "drifted": {
+                    "type": "integer"
+                },
+                "error": {
+                    "type": "integer"
+                },
+                "ignored": {
+                    "type": "integer"
+                },
+                "missing": {
+                    "type": "integer"
+                },
+                "pending": {
+                    "description": "Pending counts resources whose device has not confirmed the config it holds.",
+                    "type": "integer"
+                },
+                "total": {
+                    "description": "Total is the sum, so a client does not have to add the six up.",
+                    "type": "integer"
+                }
+            }
+        },
         "internal_api_handlers_deploy.appMarking": {
             "type": "object",
             "properties": {
@@ -12978,6 +14964,736 @@ const docTemplate = `{
                 },
                 "pollIntervalSeconds": {
                     "description": "PollIntervalSeconds is how often the device should ask for its config while\nit waits to be claimed. The config normally arrives over the held WebSocket\nthe moment a user claims the code, so this is the fallback for a device\nwhose socket is not up — it bounds how long a claimed device can sit\nunconfigured. The server owns the value so the cadence can be tuned without\nshipping a new APK.",
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.InstanceSummary": {
+            "type": "object",
+            "properties": {
+                "boot_seed_configured": {
+                    "description": "BootSeedSet reports whether a boot seed file is configured. The path itself is not\nreturned: it is server filesystem layout, and a provisioning.read holder has no use\nfor it — knowing where the file lives only helps an attacker who already has a write\nprimitive.",
+                    "type": "boolean"
+                },
+                "connections": {
+                    "type": "integer"
+                },
+                "repositories": {
+                    "type": "integer"
+                },
+                "resources": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.commitJSON": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "sha": {
+                    "type": "string"
+                },
+                "when": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.connectionJSON": {
+            "type": "object",
+            "properties": {
+                "checked_at": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "host": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_error": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "write_enabled": {
+                    "description": "WriteEnabled reports whether the token has push scope. It is a capability flag,\nnot secret material, so it is safe to return and the UI needs it to offer editing.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.connectionListJSON": {
+            "type": "object",
+            "properties": {
+                "connections": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_handlers_provisioning.connectionJSON"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.connectionRequest": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "write_enabled": {
+                    "description": "WriteEnabled declares the token has push scope. It is a pointer so a request that\nonly renames a connection cannot silently flip it either way.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.discoveryItemJSON": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string"
+                },
+                "device_id": {
+                    "type": "string"
+                },
+                "kind": {
+                    "description": "Kind lets the wizard group step 3 by kind rather than assuming every item is a device.",
+                    "type": "string"
+                },
+                "managed": {
+                    "type": "boolean"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.discoveryJSON": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_handlers_provisioning.discoveryItemJSON"
+                    }
+                },
+                "org_files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.OrgResourceSummary"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "unmanaged": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.DeviceDir"
+                    }
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.dismissRequest": {
+            "type": "object",
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.dismissResultJSON": {
+            "type": "object",
+            "properties": {
+                "dismissed": {
+                    "description": "Dismissed is how many rows were hidden by this call. An id that was already dismissed\nor belongs to another organisation is not counted, so a caller can tell the difference.",
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.editRequest": {
+            "type": "object",
+            "properties": {
+                "base_commit": {
+                    "type": "string"
+                },
+                "commit_message": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "mode": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.editResultJSON": {
+            "type": "object",
+            "properties": {
+                "branch": {
+                    "type": "string"
+                },
+                "changed": {
+                    "type": "boolean"
+                },
+                "commit": {
+                    "type": "string"
+                },
+                "pull_request_error": {
+                    "type": "string"
+                },
+                "pull_request_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.eventJSON": {
+            "type": "object",
+            "properties": {
+                "actor_id": {
+                    "type": "string"
+                },
+                "actor_kind": {
+                    "type": "string"
+                },
+                "actor_label": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "detail": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "resource_id": {
+                    "type": "string"
+                },
+                "resource_type": {
+                    "type": "string"
+                },
+                "result": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.eventListJSON": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_handlers_provisioning.eventJSON"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.fileJSON": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "commit": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "truncated": {
+                    "type": "boolean"
+                },
+                "when": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.healthJSON": {
+            "type": "object",
+            "properties": {
+                "average_duration_ms": {
+                    "type": "integer"
+                },
+                "failure_streak": {
+                    "type": "integer"
+                },
+                "failures": {
+                    "type": "integer"
+                },
+                "last_duration_ms": {
+                    "type": "integer"
+                },
+                "successes": {
+                    "type": "integer"
+                },
+                "timeline": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_handlers_provisioning.healthPointJSON"
+                    }
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.healthPointJSON": {
+            "type": "object",
+            "properties": {
+                "duration_ms": {
+                    "type": "integer"
+                },
+                "failed": {
+                    "type": "integer"
+                },
+                "finished_at": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.historyJSON": {
+            "type": "object",
+            "properties": {
+                "commits": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_handlers_provisioning.commitJSON"
+                    }
+                },
+                "depth": {
+                    "description": "Depth is how much history the read covered, so a client can say \"the last N\" rather\nthan implying the full log.",
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.jobJSON": {
+            "type": "object",
+            "properties": {
+                "applied": {
+                    "type": "integer"
+                },
+                "dry_run": {
+                    "type": "boolean"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "failed": {
+                    "type": "integer"
+                },
+                "finished_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "repo_id": {
+                    "type": "string"
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_handlers_provisioning.jobResultJSON"
+                    }
+                },
+                "skipped": {
+                    "type": "integer"
+                },
+                "started_at": {
+                    "type": "integer"
+                },
+                "state": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.jobListJSON": {
+            "type": "object",
+            "properties": {
+                "jobs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_handlers_provisioning.jobJSON"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.jobResultJSON": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "outcome": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "resource_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.previewJSON": {
+            "type": "object",
+            "properties": {
+                "base_commit": {
+                    "type": "string"
+                },
+                "changed": {
+                    "type": "boolean"
+                },
+                "diff": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.repositoryJSON": {
+            "type": "object",
+            "properties": {
+                "branch": {
+                    "type": "string"
+                },
+                "connection_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "exclude": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "include": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "last_error": {
+                    "type": "string"
+                },
+                "last_sync_at": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "stats": {
+                    "$ref": "#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_domain_provisioning.ResourceStats"
+                },
+                "sync_interval_seconds": {
+                    "type": "integer"
+                },
+                "sync_state": {
+                    "type": "string"
+                },
+                "sync_target": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.repositoryListJSON": {
+            "type": "object",
+            "properties": {
+                "repositories": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_handlers_provisioning.repositoryJSON"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.repositoryRequest": {
+            "type": "object",
+            "properties": {
+                "branch": {
+                    "type": "string"
+                },
+                "clear_webhook": {
+                    "description": "ClearWebhook removes the stored webhook secret. Without it a user could replace a\nsecret but never disable one, because an empty webhook_secret means \"unchanged\".",
+                    "type": "boolean"
+                },
+                "connection_id": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "exclude": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "include": {
+                    "description": "Include and Exclude are the repository's scope patterns. A nil means \"not\nsupplied\", so a PATCH that only renames cannot silently clear them.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "sync_interval_seconds": {
+                    "type": "integer"
+                },
+                "sync_target": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                },
+                "webhook_secret": {
+                    "description": "WebhookSecret configures the HMAC secret a provider signs pushes with. It is\nwrite-only: no response echoes it back, and omitting it leaves the stored one alone.",
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.resourceJSON": {
+            "type": "object",
+            "properties": {
+                "config_version": {
+                    "type": "integer"
+                },
+                "content_hash": {
+                    "type": "string"
+                },
+                "device_id": {
+                    "type": "string"
+                },
+                "device_last_seen": {
+                    "type": "integer"
+                },
+                "device_online": {
+                    "description": "DeviceOnline is the live connection state. It is nil when there is no device (an org\nresource) or the device could not be read, so a client never shows \"offline\" for a\ndevice it simply does not know about.",
+                    "type": "boolean"
+                },
+                "device_reported_at": {
+                    "type": "integer"
+                },
+                "device_reported_version": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "kind": {
+                    "description": "Kind is what the resource declares, so a client can filter and group by it. An org\nresource has no device_id.",
+                    "type": "string"
+                },
+                "last_applied_at": {
+                    "type": "integer"
+                },
+                "last_error": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.resourceListJSON": {
+            "type": "object",
+            "properties": {
+                "resources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_handlers_provisioning.resourceJSON"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.schedulerJSON": {
+            "type": "object",
+            "properties": {
+                "due_now": {
+                    "description": "DueNow names the repositories the next tick will sync.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "next_due_at": {
+                    "description": "NextDueAt is epoch millis of the earliest future due time; absent when none is due.",
+                    "type": "integer"
+                },
+                "running": {
+                    "description": "Running is false when the server was started with the scheduler disabled, so a user\nis never told a timer will run when nothing is ticking.",
+                    "type": "boolean"
+                },
+                "tick_seconds": {
+                    "description": "TickSeconds is how often the loop looks for due repositories.",
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.secretReadinessJSON": {
+            "type": "object",
+            "properties": {
+                "missing": {
+                    "description": "Missing counts the declared keys the device does not have, so a client can badge the\nresource without scanning the list.",
+                    "type": "integer"
+                },
+                "secrets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_handlers_provisioning.secretRequirementJSON"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.secretRequirementJSON": {
+            "type": "object",
+            "properties": {
+                "app": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "set": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.treeEntryJSON": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api_handlers_provisioning.treeJSON": {
+            "type": "object",
+            "properties": {
+                "dir": {
+                    "description": "Dir is the directory these entries belong to; empty means the repository root.",
+                    "type": "string"
+                },
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_api_handlers_provisioning.treeEntryJSON"
+                    }
+                },
+                "total": {
                     "type": "integer"
                 }
             }

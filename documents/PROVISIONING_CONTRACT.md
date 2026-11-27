@@ -804,3 +804,94 @@ Each step is independently shippable and testable.
 
 Steps 1–3 do not touch the resource model. Step 4 is the largest and lands last
 because it adds a dimension the others do not depend on.
+
+## 20. Repository browsing
+
+Status: **implemented.** The console can read the repository without a git client.
+
+### 20.1 The problem this solves
+
+§7 makes the console the place a person manages provisioning. Every other view there
+answers a question about *state* — what was applied, what drifted, what failed. None of
+them answers the question a person asks next: **what is actually in the repository?**
+
+Without that, diagnosing a failed file means cloning the repository somewhere else. That
+is a worse experience than the API it replaces, and it makes the console a partial view of
+the very thing it claims to manage.
+
+### 20.2 Requirements
+
+- **Three read routes**, all under `provisioning.read`:
+  - `GET .../repositories/{id}/tree?dir=` — one directory, `dir` empty meaning the root.
+  - `GET .../repositories/{id}/file?path=` — one file, with the commit it came from.
+  - `GET .../repositories/{id}/history?limit=` — recent commits, newest first.
+- **Reading works on a read-only connection.** A credential without push scope must
+  still browse: seeing what is in a repository is harmless, and an operator who cannot
+  push should not be blind.
+- **The token comes from the repository's own connection.** The caller never supplies a
+  credential; there is no route that accepts one.
+- **A path is confined to the checkout.** A `..` segment is refused with `400`, not
+  resolved — the path arrives from the network.
+- **A file read carries its commit.** The response names the commit, author, and time, so
+  a subsequent edit can be based on that revision and the existing conflict check
+  (base-commit mismatch) still means something.
+- **A large file is truncated and says so**, rather than being streamed whole through
+  JSON.
+- **History is a bounded window** (50 commits). A full clone of a large repository is
+  minutes of work to answer "show me the log", so the clone is bounded and the response
+  reports the depth it covered.
+- **Editing is not browsing.** An edit still goes through the resource's preview and push
+  routes, which carry the write scope and the base-commit check. A file that is not a
+  provisioned resource has no edit path at all.
+
+### 20.3 Client
+
+- The **Code** tab reads a source's repository: a Files view (tree with breadcrumbs, and a
+  file view with commit metadata) and a **History** list.
+- An **Edit** button appears only when the connection has write access *and* the file is a
+  provisioned resource. Otherwise the file is read-only, and the UI says why rather than
+  offering a dead button.
+
+## 21. Device evidence — a state is a claim about a device
+
+Status: **implemented.** Supersedes the "applied on successful deploy" behaviour.
+
+### 21.1 The problem this solves
+
+§3 defines `applied` as "the device is running the config this repository applied". An
+earlier implementation stamped `applied` whenever the deploy service returned success —
+which only proves the server compiled, signed and stored a document. The device may have
+been offline, unregistered, or simply not polled yet.
+
+A state read from a database row is therefore not evidence. It is a stored guess. Reporting
+it as fact is the same class of error the `drifted` state exists to prevent, in the
+opposite direction.
+
+### 21.2 Requirements
+
+- **A deploy records `pending`, not `applied`.** Only a device report can move a resource
+  to `applied`.
+- **The report must be current.** A device that is connected now is current. A device that
+  is not connected counts while its last report is inside the offline window — the same
+  threshold diagnostics uses (`DIAG_OFFLINE_THRESHOLD_MINUTES`), so no two features
+  disagree about when a device stopped being reachable. A report older than that is
+  **stale**: the resource stays `pending` and its reason says the device is offline with a
+  stale report, which is a different fact from "has not reported yet".
+- **A device report moves the row in both directions.** `pending → applied` when the device
+  reports the version this repository applied; `applied → pending` when it reports a
+  different one (a rollback, or a deploy from elsewhere). Drift is *not* inferred here:
+  drift is "someone changed the device after this source applied it", which only the
+  sync's own comparison establishes.
+- **Presence is part of the resource payload.** Each resource carries `device_online`,
+  `device_last_seen`, `device_reported_at`, and `device_reported_version`. They are absent
+  for an org resource (no device) and for a device the server could not read.
+- **Absence means unknown, never offline.** A failed device read must not be rendered as a
+  down device. This is the same rule §10 already applies to a failed provider check.
+- **A nil reader fails closed.** With no confirmation reader wired, every applied resource
+  records `pending` rather than assuming success.
+
+### 21.3 Client
+
+- A resource's state is shown next to its presence: online, offline (with last-seen), or
+  reachability unknown, and the version the device reports.
+- The presence line is its own component, per §7.4, and never an inline ternary.

@@ -1,6 +1,3 @@
-import { restClient } from '@vyzorix/api-client';
-import type { PushPublicKeyResult, SuccessResult } from '@vyzorix/api-client';
-
 export function pushSupported(): boolean {
   return (
     typeof window !== 'undefined' &&
@@ -24,54 +21,40 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
   return output;
 }
 
-export async function getPushPublicKey(): Promise<PushPublicKeyResult> {
-  return restClient.get<PushPublicKeyResult>('/v1/auth/me/notifications/push/public-key');
-}
-
 async function registerWorker(): Promise<ServiceWorkerRegistration> {
   return navigator.serviceWorker.register('/sw.js', { scope: '/' });
 }
 
-export async function subscribeToPush(): Promise<PushSubscription> {
+export async function subscribeToPush(publicKey: string): Promise<PushSubscription> {
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') {
     throw new Error('permission_denied');
   }
 
-  const { publicKey, enabled } = await getPushPublicKey();
-  if (!enabled || !publicKey) {
-    throw new Error('push_not_configured');
-  }
-
   await registerWorker();
   const registration = await navigator.serviceWorker.ready;
   const existing = await registration.pushManager.getSubscription();
-  const subscription =
+
+  return (
     existing ??
     (await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
-    }));
-
-  await restClient.post<SuccessResult>('/v1/auth/me/notifications/push/subscribe', subscription.toJSON());
-  return subscription;
+    }))
+  );
 }
 
-export async function unsubscribeFromPush(): Promise<void> {
-  if (!pushSupported()) return;
+export async function currentPushSubscription(): Promise<PushSubscription | null> {
+  if (!pushSupported()) return null;
   const registration = await navigator.serviceWorker.getRegistration('/');
-  const subscription = await registration?.pushManager.getSubscription();
-  if (!subscription) return;
 
-  await restClient.post<SuccessResult>('/v1/auth/me/notifications/push/unsubscribe', {
-    endpoint: subscription.endpoint,
-  });
+  return (await registration?.pushManager.getSubscription()) ?? null;
+}
+
+export async function dropPushSubscription(subscription: PushSubscription): Promise<void> {
   await subscription.unsubscribe();
 }
 
 export async function hasPushSubscription(): Promise<boolean> {
-  if (!pushSupported()) return false;
-  const registration = await navigator.serviceWorker.getRegistration('/');
-  const subscription = await registration?.pushManager.getSubscription();
-  return Boolean(subscription);
+  return (await currentPushSubscription()) !== null;
 }

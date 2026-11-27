@@ -73,6 +73,30 @@
   Go struct json tags, not intuition). The pre-existing connectivity test mocked
   `/api/v1/health` but the monitor probes `/health` — now aligned.
 
+## Codegen gotchas (learned on the provisioning client, 2026-11-20)
+- **Run orval with no `-p` filter.** `--config orval.config.js -p sdk` regenerates the SDK but
+  never writes `packages/API_Client/src/generated/schemas/index.ts`; only the full run does.
+- **`tooling/codegen/organize_query_hooks.py` is mandatory after every orval run.** orval emits
+  `queryClient.invalidateQueries({ queryKey: getXQueryKey() })` for cross-tag invalidation
+  without importing the key; the script restores the imports and drops the calls whose key
+  needs a path param. Skip it and `tsc` fails with ~20 `Cannot find name 'getGetXQueryKey'`
+  errors in tags you did not touch.
+- **A handler must return a named struct, never `gin.H` and never a `domain.*` type.** `gin.H`
+  becomes `{[key:string]: unknown}` in the SDK. A domain type drags its enums into the shared
+  schema barrel, where two domains' `SyncState` collided (TS2308). Both were found this way in
+  the provisioning handlers (`ListJobs`, `GetHealth`).
+- **`mutationInvalidates` can only name queries whose key function takes no required args.**
+  A path-keyed query's `getXQueryKey(id)` cannot be called with `()`.
+  `tooling/codegen/check_mutation_invalidation.py` enforces this; invalidate keyed queries by
+  predicate at the call site instead.
+- **`packages/API_Client` cannot be typechecked standalone** — its tsconfig `baseUrl` trips
+  TS5101 under TypeScript 6 before any source error. Typecheck from `apps/VyzoriX_web`.
+- **Cross-language enum drift guard pattern** (used for provisioning vocabulary):
+  a Go test reads the TS `*-vocabulary.ts` file and compares it to the Go constants, so adding
+  a value on one side only fails the build. Same pattern as `theme_test.go` /
+  `auth_preferences_drift_test.go`. Note the Go test result is cached — use `-count=1` when
+  proving the test has teeth.
+
 ## GraphQL schema generation (2026-08-24)
 - The GraphQL schema is **code-first** (`graphql-go`); there is no `.graphqls` SDL file.
   The canonical generated artifact is `apps/api/swag/graphql/schema.graphql` (SDL), produced by

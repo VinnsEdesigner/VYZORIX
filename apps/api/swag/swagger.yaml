@@ -1,4 +1,82 @@
 definitions:
+  github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.Action:
+    enum:
+    - create
+    - update
+    - unchanged
+    - missing
+    - conflict
+    - error
+    - ignored
+    type: string
+    x-enum-varnames:
+    - ActionCreate
+    - ActionUpdate
+    - ActionUnchanged
+    - ActionMissing
+    - ActionConflict
+    - ActionError
+    - ActionIgnored
+  github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.DeviceDir:
+    properties:
+      device_id:
+        type: string
+      path:
+        type: string
+    type: object
+  github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.OrgResourceSummary:
+    properties:
+      action:
+        $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.Action'
+      kind:
+        $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.ResourceKind'
+      message:
+        description: Message explains a refusal, such as an unknown organisation.
+        type: string
+      org:
+        type: string
+      path:
+        type: string
+    type: object
+  github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.ResourceKind:
+    enum:
+    - device
+    - alerts
+    - contact_points
+    - annotations
+    - groups
+    - device
+    - alerts
+    - contact_points
+    - annotations
+    - groups
+    type: string
+    x-enum-varnames:
+    - KindDevice
+    - KindAlerts
+    - KindContactPoints
+    - KindAnnotations
+    - KindGroups
+  github_com_VinnsEdesigner_vyzorix_apps_api_internal_domain_provisioning.ResourceStats:
+    properties:
+      applied:
+        type: integer
+      drifted:
+        type: integer
+      error:
+        type: integer
+      ignored:
+        type: integer
+      missing:
+        type: integer
+      pending:
+        description: Pending counts resources whose device has not confirmed the config
+          it holds.
+        type: integer
+      total:
+        description: Total is the sum, so a client does not have to add the six up.
+        type: integer
+    type: object
   internal_api_handlers_deploy.appMarking:
     properties:
       custom:
@@ -254,6 +332,518 @@ definitions:
           whose socket is not up — it bounds how long a claimed device can sit
           unconfigured. The server owns the value so the cadence can be tuned without
           shipping a new APK.
+        type: integer
+    type: object
+  internal_api_handlers_provisioning.InstanceSummary:
+    properties:
+      boot_seed_configured:
+        description: |-
+          BootSeedSet reports whether a boot seed file is configured. The path itself is not
+          returned: it is server filesystem layout, and a provisioning.read holder has no use
+          for it — knowing where the file lives only helps an attacker who already has a write
+          primitive.
+        type: boolean
+      connections:
+        type: integer
+      repositories:
+        type: integer
+      resources:
+        type: integer
+    type: object
+  internal_api_handlers_provisioning.commitJSON:
+    properties:
+      author:
+        type: string
+      message:
+        type: string
+      sha:
+        type: string
+      when:
+        type: integer
+    type: object
+  internal_api_handlers_provisioning.connectionJSON:
+    properties:
+      checked_at:
+        type: integer
+      created_at:
+        type: integer
+      host:
+        type: string
+      id:
+        type: string
+      last_error:
+        type: string
+      name:
+        type: string
+      status:
+        type: string
+      type:
+        type: string
+      updated_at:
+        type: integer
+      write_enabled:
+        description: |-
+          WriteEnabled reports whether the token has push scope. It is a capability flag,
+          not secret material, so it is safe to return and the UI needs it to offer editing.
+        type: boolean
+    type: object
+  internal_api_handlers_provisioning.connectionListJSON:
+    properties:
+      connections:
+        items:
+          $ref: '#/definitions/internal_api_handlers_provisioning.connectionJSON'
+        type: array
+      total:
+        type: integer
+    type: object
+  internal_api_handlers_provisioning.connectionRequest:
+    properties:
+      host:
+        type: string
+      name:
+        type: string
+      token:
+        type: string
+      type:
+        type: string
+      write_enabled:
+        description: |-
+          WriteEnabled declares the token has push scope. It is a pointer so a request that
+          only renames a connection cannot silently flip it either way.
+        type: boolean
+    type: object
+  internal_api_handlers_provisioning.discoveryItemJSON:
+    properties:
+      action:
+        type: string
+      device_id:
+        type: string
+      kind:
+        description: Kind lets the wizard group step 3 by kind rather than assuming
+          every item is a device.
+        type: string
+      managed:
+        type: boolean
+      message:
+        type: string
+      path:
+        type: string
+    type: object
+  internal_api_handlers_provisioning.discoveryJSON:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_api_handlers_provisioning.discoveryItemJSON'
+        type: array
+      org_files:
+        items:
+          $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.OrgResourceSummary'
+        type: array
+      total:
+        type: integer
+      unmanaged:
+        items:
+          $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_application_provisioning.DeviceDir'
+        type: array
+    type: object
+  internal_api_handlers_provisioning.dismissRequest:
+    properties:
+      ids:
+        items:
+          type: string
+        type: array
+    type: object
+  internal_api_handlers_provisioning.dismissResultJSON:
+    properties:
+      dismissed:
+        description: |-
+          Dismissed is how many rows were hidden by this call. An id that was already dismissed
+          or belongs to another organisation is not counted, so a caller can tell the difference.
+        type: integer
+    type: object
+  internal_api_handlers_provisioning.editRequest:
+    properties:
+      base_commit:
+        type: string
+      commit_message:
+        type: string
+      content:
+        type: string
+      mode:
+        type: string
+    type: object
+  internal_api_handlers_provisioning.editResultJSON:
+    properties:
+      branch:
+        type: string
+      changed:
+        type: boolean
+      commit:
+        type: string
+      pull_request_error:
+        type: string
+      pull_request_url:
+        type: string
+    type: object
+  internal_api_handlers_provisioning.eventJSON:
+    properties:
+      actor_id:
+        type: string
+      actor_kind:
+        type: string
+      actor_label:
+        type: string
+      created_at:
+        type: integer
+      detail:
+        type: string
+      id:
+        type: string
+      resource_id:
+        type: string
+      resource_type:
+        type: string
+      result:
+        type: string
+      type:
+        type: string
+    type: object
+  internal_api_handlers_provisioning.eventListJSON:
+    properties:
+      events:
+        items:
+          $ref: '#/definitions/internal_api_handlers_provisioning.eventJSON'
+        type: array
+      total:
+        type: integer
+    type: object
+  internal_api_handlers_provisioning.fileJSON:
+    properties:
+      author:
+        type: string
+      commit:
+        type: string
+      content:
+        type: string
+      message:
+        type: string
+      path:
+        type: string
+      truncated:
+        type: boolean
+      when:
+        type: integer
+    type: object
+  internal_api_handlers_provisioning.healthJSON:
+    properties:
+      average_duration_ms:
+        type: integer
+      failure_streak:
+        type: integer
+      failures:
+        type: integer
+      last_duration_ms:
+        type: integer
+      successes:
+        type: integer
+      timeline:
+        items:
+          $ref: '#/definitions/internal_api_handlers_provisioning.healthPointJSON'
+        type: array
+    type: object
+  internal_api_handlers_provisioning.healthPointJSON:
+    properties:
+      duration_ms:
+        type: integer
+      failed:
+        type: integer
+      finished_at:
+        type: string
+      state:
+        type: string
+    type: object
+  internal_api_handlers_provisioning.historyJSON:
+    properties:
+      commits:
+        items:
+          $ref: '#/definitions/internal_api_handlers_provisioning.commitJSON'
+        type: array
+      depth:
+        description: |-
+          Depth is how much history the read covered, so a client can say "the last N" rather
+          than implying the full log.
+        type: integer
+      total:
+        type: integer
+    type: object
+  internal_api_handlers_provisioning.jobJSON:
+    properties:
+      applied:
+        type: integer
+      dry_run:
+        type: boolean
+      error:
+        type: string
+      failed:
+        type: integer
+      finished_at:
+        type: integer
+      id:
+        type: string
+      repo_id:
+        type: string
+      results:
+        items:
+          $ref: '#/definitions/internal_api_handlers_provisioning.jobResultJSON'
+        type: array
+      skipped:
+        type: integer
+      started_at:
+        type: integer
+      state:
+        type: string
+    type: object
+  internal_api_handlers_provisioning.jobListJSON:
+    properties:
+      jobs:
+        items:
+          $ref: '#/definitions/internal_api_handlers_provisioning.jobJSON'
+        type: array
+      total:
+        type: integer
+    type: object
+  internal_api_handlers_provisioning.jobResultJSON:
+    properties:
+      message:
+        type: string
+      outcome:
+        type: string
+      path:
+        type: string
+      resource_id:
+        type: string
+    type: object
+  internal_api_handlers_provisioning.previewJSON:
+    properties:
+      base_commit:
+        type: string
+      changed:
+        type: boolean
+      diff:
+        type: string
+      path:
+        type: string
+    type: object
+  internal_api_handlers_provisioning.repositoryJSON:
+    properties:
+      branch:
+        type: string
+      connection_id:
+        type: string
+      created_at:
+        type: integer
+      description:
+        type: string
+      enabled:
+        type: boolean
+      exclude:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      include:
+        items:
+          type: string
+        type: array
+      last_error:
+        type: string
+      last_sync_at:
+        type: integer
+      name:
+        type: string
+      path:
+        type: string
+      stats:
+        $ref: '#/definitions/github_com_VinnsEdesigner_vyzorix_apps_api_internal_domain_provisioning.ResourceStats'
+      sync_interval_seconds:
+        type: integer
+      sync_state:
+        type: string
+      sync_target:
+        type: string
+      title:
+        type: string
+      type:
+        type: string
+      updated_at:
+        type: integer
+      url:
+        type: string
+    type: object
+  internal_api_handlers_provisioning.repositoryListJSON:
+    properties:
+      repositories:
+        items:
+          $ref: '#/definitions/internal_api_handlers_provisioning.repositoryJSON'
+        type: array
+      total:
+        type: integer
+    type: object
+  internal_api_handlers_provisioning.repositoryRequest:
+    properties:
+      branch:
+        type: string
+      clear_webhook:
+        description: |-
+          ClearWebhook removes the stored webhook secret. Without it a user could replace a
+          secret but never disable one, because an empty webhook_secret means "unchanged".
+        type: boolean
+      connection_id:
+        type: string
+      description:
+        type: string
+      enabled:
+        type: boolean
+      exclude:
+        items:
+          type: string
+        type: array
+      include:
+        description: |-
+          Include and Exclude are the repository's scope patterns. A nil means "not
+          supplied", so a PATCH that only renames cannot silently clear them.
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      path:
+        type: string
+      sync_interval_seconds:
+        type: integer
+      sync_target:
+        type: string
+      title:
+        type: string
+      url:
+        type: string
+      webhook_secret:
+        description: |-
+          WebhookSecret configures the HMAC secret a provider signs pushes with. It is
+          write-only: no response echoes it back, and omitting it leaves the stored one alone.
+        type: string
+    type: object
+  internal_api_handlers_provisioning.resourceJSON:
+    properties:
+      config_version:
+        type: integer
+      content_hash:
+        type: string
+      device_id:
+        type: string
+      device_last_seen:
+        type: integer
+      device_online:
+        description: |-
+          DeviceOnline is the live connection state. It is nil when there is no device (an org
+          resource) or the device could not be read, so a client never shows "offline" for a
+          device it simply does not know about.
+        type: boolean
+      device_reported_at:
+        type: integer
+      device_reported_version:
+        type: integer
+      id:
+        type: string
+      kind:
+        description: |-
+          Kind is what the resource declares, so a client can filter and group by it. An org
+          resource has no device_id.
+        type: string
+      last_applied_at:
+        type: integer
+      last_error:
+        type: string
+      path:
+        type: string
+      state:
+        type: string
+    type: object
+  internal_api_handlers_provisioning.resourceListJSON:
+    properties:
+      resources:
+        items:
+          $ref: '#/definitions/internal_api_handlers_provisioning.resourceJSON'
+        type: array
+      total:
+        type: integer
+    type: object
+  internal_api_handlers_provisioning.schedulerJSON:
+    properties:
+      due_now:
+        description: DueNow names the repositories the next tick will sync.
+        items:
+          type: string
+        type: array
+      next_due_at:
+        description: NextDueAt is epoch millis of the earliest future due time; absent
+          when none is due.
+        type: integer
+      running:
+        description: |-
+          Running is false when the server was started with the scheduler disabled, so a user
+          is never told a timer will run when nothing is ticking.
+        type: boolean
+      tick_seconds:
+        description: TickSeconds is how often the loop looks for due repositories.
+        type: integer
+    type: object
+  internal_api_handlers_provisioning.secretReadinessJSON:
+    properties:
+      missing:
+        description: |-
+          Missing counts the declared keys the device does not have, so a client can badge the
+          resource without scanning the list.
+        type: integer
+      secrets:
+        items:
+          $ref: '#/definitions/internal_api_handlers_provisioning.secretRequirementJSON'
+        type: array
+      total:
+        type: integer
+    type: object
+  internal_api_handlers_provisioning.secretRequirementJSON:
+    properties:
+      app:
+        type: string
+      key:
+        type: string
+      set:
+        type: boolean
+    type: object
+  internal_api_handlers_provisioning.treeEntryJSON:
+    properties:
+      kind:
+        type: string
+      name:
+        type: string
+      path:
+        type: string
+      size:
+        type: integer
+    type: object
+  internal_api_handlers_provisioning.treeJSON:
+    properties:
+      dir:
+        description: Dir is the directory these entries belong to; empty means the
+          repository root.
+        type: string
+      entries:
+        items:
+          $ref: '#/definitions/internal_api_handlers_provisioning.treeEntryJSON'
+        type: array
+      total:
         type: integer
     type: object
   openapi.APIKey:
@@ -10580,6 +11170,1295 @@ paths:
       summary: Update organization thresholds
       tags:
       - organizations
+  /provisioning/connections:
+    get:
+      consumes:
+      - application/json
+      description: Lists an organisation's stored git credentials. Token material
+        is never returned.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: connections
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.connectionListJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: List provisioning connections
+      tags:
+      - provisioning
+    post:
+      consumes:
+      - application/json
+      description: Stores a git credential, encrypts the token at rest, and runs a
+        health check. A failed check still stores the connection, with status error
+        and the reason.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: connection
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_handlers_provisioning.connectionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: created
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.connectionJSON'
+        "400":
+          description: invalid input
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.write required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Create provisioning connection
+      tags:
+      - provisioning
+  /provisioning/connections/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Removes a connection. Refused with 409 while a repository still
+        uses it.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: connection ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: deleted
+          schema:
+            $ref: '#/definitions/openapi.SuccessResult'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.write required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "409":
+          description: connection still in use
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Delete provisioning connection
+      tags:
+      - provisioning
+    get:
+      consumes:
+      - application/json
+      description: Returns one stored git credential. Token material is never returned.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: connection ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: connection
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.connectionJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Get provisioning connection
+      tags:
+      - provisioning
+    patch:
+      consumes:
+      - application/json
+      description: Renames, re-hosts, or rotates the token. An empty token keeps the
+        stored one. A token or host change re-runs the health check.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: connection ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: fields to change
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_handlers_provisioning.connectionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: updated
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.connectionJSON'
+        "400":
+          description: invalid input
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.write required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Update provisioning connection
+      tags:
+      - provisioning
+  /provisioning/connections/{id}/check:
+    post:
+      consumes:
+      - application/json
+      description: Re-runs the health check and records the result.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: connection ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: checked
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.connectionJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.write required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Check provisioning connection
+      tags:
+      - provisioning
+  /provisioning/events:
+    delete:
+      consumes:
+      - application/json
+      description: Hides events from the activity list without deleting them. The
+        trail records who changed what, so it is never erased.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: event ids
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_handlers_provisioning.dismissRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: dismissed
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.dismissResultJSON'
+        "400":
+          description: no ids supplied
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.write required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Dismiss activity events
+      tags:
+      - provisioning
+    get:
+      description: Lists who caused each provisioning action, distinguishing a person,
+        a service-account token, the scheduler, and the server itself.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: how many events to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: events
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.eventListJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: List provisioning events
+      tags:
+      - provisioning
+  /provisioning/instance:
+    get:
+      description: Reports whether a boot provisioning file is configured and how
+        many GitOps repositories, resources, and connections exist.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: summary
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.InstanceSummary'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Instance provisioning summary
+      tags:
+      - provisioning
+  /provisioning/repositories:
+    get:
+      consumes:
+      - application/json
+      description: Lists an organisation's repositories with their sync state.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: repositories
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.repositoryListJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: List provisioning repositories
+      tags:
+      - provisioning
+    post:
+      consumes:
+      - application/json
+      description: Validates the remote and branch against the provider before storing.
+        An unreachable remote is rejected rather than stored as a permanently failing
+        row.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_handlers_provisioning.repositoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: created
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.repositoryJSON'
+        "400":
+          description: invalid input
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.write required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "422":
+          description: remote not reachable
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Create provisioning repository
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Removes a repository. Its resources and job history are removed
+        with it; devices keep the config they already run.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: release devices instead of deleting their ownership rows
+        in: query
+        name: keep_resources
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: deleted
+          schema:
+            $ref: '#/definitions/openapi.SuccessResult'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.write required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Delete provisioning repository
+      tags:
+      - provisioning
+    get:
+      consumes:
+      - application/json
+      description: Returns one repository with its sync state.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: repository
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.repositoryJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Get provisioning repository
+      tags:
+      - provisioning
+    patch:
+      consumes:
+      - application/json
+      description: Changes the mutable fields. A URL, branch, or connection change
+        is re-verified against the provider.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: fields to change
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_handlers_provisioning.repositoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: updated
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.repositoryJSON'
+        "400":
+          description: invalid input
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.write required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "422":
+          description: remote not reachable
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Update provisioning repository
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}/discovery:
+    get:
+      description: Lists every manifest the repository declares with the action a
+        sync would take, plus the device directories it does not manage. Nothing is
+        applied.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: discovery
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.discoveryJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "422":
+          description: remote not reachable
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Discover a repository's contents
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}/events:
+    get:
+      description: Lists who caused each action against this repository, newest first.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: how many events to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: events
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.eventListJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: List a repository's provisioning events
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}/file:
+    get:
+      description: Returns a file's content and the commit it came from, so an edit
+        can be based on it.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: file path, relative to the repository root
+        in: query
+        name: path
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: file
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.fileJSON'
+        "400":
+          description: path required or invalid
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: repository or file not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Read one repository file
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}/health:
+    get:
+      description: Returns the average and last sync duration, the current failure
+        streak, and a timeline of recent completed runs.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: how many recent runs to include
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: health
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.healthJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Repository sync health over time
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}/history:
+    get:
+      description: Returns recent commits on the repository's branch, newest first.
+        The window is bounded, so a large repository is not cloned in full to answer
+        it.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: how many commits to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: commits
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.historyJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: repository not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: List a repository's recent commits
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}/jobs:
+    get:
+      consumes:
+      - application/json
+      description: Returns a repository's recent sync runs, newest first.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: maximum jobs to return
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: jobs
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.jobListJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: List sync jobs
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}/jobs/{jobId}:
+    get:
+      consumes:
+      - application/json
+      description: Returns one sync run with its per-manifest results.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: job ID
+        in: path
+        name: jobId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: job
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.jobJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Get a sync job
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}/resources:
+    get:
+      consumes:
+      - application/json
+      description: Lists the manifests a repository owns, with each one's drift state.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: resources
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.resourceListJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: List provisioned resources
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}/resources/{resourceId}/document:
+    get:
+      description: Returns the signed config the device currently holds, as text.
+        This is the document this repository's manifest produced, not a rebuild.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: resource ID
+        in: path
+        name: resourceId
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: signed config
+          schema:
+            type: string
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Get a provisioned resource's signed document
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}/resources/{resourceId}/preview:
+    post:
+      consumes:
+      - application/json
+      description: Returns the unified diff an edit would produce. Nothing is written.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: resource ID
+        in: path
+        name: resourceId
+        required: true
+        type: string
+      - description: new content
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_handlers_provisioning.editRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: diff
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.previewJSON'
+        "400":
+          description: invalid body
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.write required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "409":
+          description: connection is read-only
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Preview an edit to a provisioned manifest
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}/resources/{resourceId}/push:
+    post:
+      consumes:
+      - application/json
+      description: Commits the new content to a generated branch and opens a pull
+        request (mode pr), or commits straight to the repository's branch (mode direct).
+        Refused when the remote moved since the preview.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: resource ID
+        in: path
+        name: resourceId
+        required: true
+        type: string
+      - description: new content
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api_handlers_provisioning.editRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: pushed
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.editResultJSON'
+        "400":
+          description: invalid body
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.write required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "409":
+          description: read-only connection, or the remote moved
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Push an edit to a provisioned manifest
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}/resources/{resourceId}/secrets:
+    get:
+      description: Reads the names the device's current config declares and reports
+        which are set. Never returns a value.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: resource ID
+        in: path
+        name: resourceId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: declared secrets
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.secretReadinessJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: resource not found, or the device has no config
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: List a provisioned resource's declared secrets and whether each is
+        set
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}/resources/{resourceId}/sync:
+    post:
+      consumes:
+      - application/json
+      description: Fetches the branch and plans as a full sync does, then applies
+        only this one resource. The job records the rest as skipped. The repository's
+        sync state is not stamped, because the repository was not synced.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: resource ID
+        in: path
+        name: resourceId
+        required: true
+        type: string
+      - description: preview only, apply nothing
+        in: query
+        name: dry_run
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: sync result
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.jobJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.write required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: repository or resource not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "409":
+          description: a sync is already running
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Sync a single provisioned resource
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}/sync:
+    post:
+      consumes:
+      - application/json
+      description: Fetches the branch, discovers manifests, diffs them against the
+        resources this repository owns, and applies the new or changed ones through
+        the deploy service. With dry_run=true nothing is applied; the response is
+        the preview.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: preview only, apply nothing
+        in: query
+        name: dry_run
+        type: boolean
+      - description: revert devices whose manifest was removed
+        in: query
+        name: revert_missing
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: sync result
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.jobJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.write required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "409":
+          description: a sync is already running
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Sync a provisioning repository
+      tags:
+      - provisioning
+  /provisioning/repositories/{id}/tree:
+    get:
+      description: Lists one directory of the repository at its branch. An empty dir
+        means the root. Reads only; works on a read-only connection.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      - description: repository ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: directory, relative to the repository root
+        in: query
+        name: dir
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: entries
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.treeJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: repository or path not found
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: List a repository's files
+      tags:
+      - provisioning
+  /provisioning/scheduler:
+    get:
+      description: Reports whether the interval scheduler is running, its tick, which
+        repositories are due now, and when the next one becomes due.
+      parameters:
+      - description: Organization ID
+        in: header
+        name: X-Organization-ID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: scheduler
+          schema:
+            $ref: '#/definitions/internal_api_handlers_provisioning.schedulerJSON'
+        "401":
+          description: authentication required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "403":
+          description: provisioning.read required
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Scheduler status
+      tags:
+      - provisioning
+  /provisioning/webhooks/{repoID}:
+    post:
+      consumes:
+      - application/json
+      description: Verifies the provider's HMAC signature against the repository's
+        secret and triggers a sync. A push to a branch this repository does not track
+        is acknowledged without syncing.
+      parameters:
+      - description: repository ID
+        in: path
+        name: repoID
+        required: true
+        type: string
+      - description: GitHub-style HMAC-SHA256 signature
+        in: header
+        name: X-Hub-Signature-256
+        type: string
+      - description: GitLab shared secret
+        in: header
+        name: X-Gitlab-Token
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: accepted
+          schema:
+            type: object
+        "401":
+          description: signature missing or invalid
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "404":
+          description: unknown repository
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+        "413":
+          description: body too large
+          schema:
+            $ref: '#/definitions/openapi.ErrorResponse'
+      summary: Receive a git provider push webhook
+      tags:
+      - provisioning
   /service-accounts:
     get:
       consumes:

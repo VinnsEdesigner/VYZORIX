@@ -4,6 +4,7 @@ package wire
 import (
 	"context"
 	"path/filepath"
+	"time"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/adapters/response"
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/api/handlers"
@@ -123,6 +124,9 @@ type HandlerSet struct {
 	ProvisioningWebhook *provisioninghandler.WebhookHandler
 	// ProvisioningPushBack edits a manifest and commits it back to its repository.
 	ProvisioningPushBack *provisioninghandler.PushBackHandler
+	// ProvisioningBrowser reads a repository's tree, files and history. Read-only, so it
+	// works on a connection without push scope.
+	ProvisioningBrowser *provisioninghandler.BrowserHandler
 	// ProvisioningSyncService is the engine behind ProvisioningSync. It is
 	// exported so the server can hand it the deploy service, which is built after
 	// this handler set.
@@ -344,12 +348,30 @@ func wireProvisioningHandlers(hs *HandlerSet, deps HandlerDependencies) {
 		provSyncService.SetOrgNameLookup(newOrgNameAdapter(deps.OrgService))
 	}
 
+	// A signed document is not proof the device runs it, so the sync asks the device store
+	// what each device reports, and the hub whether it is reachable now. Without this every
+	// resource would record `pending`, and a device that went offline days ago would keep a
+	// stale "applied" row.
+	var deviceEvidence *deviceConfirmationAdapter
+	if adapter := newDeviceConfirmationAdapter(deps.DeviceRepo, deps.Hub); adapter != nil {
+		provSyncService.SetDeviceConfirmation(adapter)
+		// The offline threshold is the same window diagnostics uses, so the two features
+		// agree on when a device stopped being reachable.
+		provSyncService.SetEvidenceFreshness(time.Duration(deps.Config.DiagnosticsConfig.OfflineThresholdMinutes) * time.Minute)
+		deviceEvidence = adapter
+	}
+
 	hs.ProvisioningRepository = provisioninghandler.NewRepositoryHandler(provRepoService, deps.Presenter)
 	hs.ProvisioningRepository.SetStatsSource(provStore)
 	hs.ProvisioningConnection = provisioninghandler.NewConnectionHandler(provSvc, deps.Presenter)
 	hs.ProvisioningSync = provisioninghandler.NewSyncHandler(provRepoService, provSyncService, provStore, provStore, deps.Presenter)
 	hs.ProvisioningSync.SetCounters(provStore)
 	hs.ProvisioningSync.SetEventRepository(provStore)
+	// The resource list carries device presence so a state is read next to whether the device
+	// can actually be seen running it. The same adapter answers both questions.
+	if deviceEvidence != nil {
+		hs.ProvisioningSync.SetPresenceSource(deviceEvidence)
+	}
 
 	// One Auditor shared by every provisioning service, so a failed audit write is
 	// escalated the same way wherever it happens. The escalator needs the notification
@@ -380,6 +402,15 @@ func wireProvisioningHandlers(hs *HandlerSet, deps HandlerDependencies) {
 		provisioningapp.NewPushBackService(
 			provisioningapp.NewGitPusher(), provStore, provisioningapp.NewHTTPPullRequester(), provAuditor, deps.Log,
 		),
+		provRepoService,
+		provStore,
+		deps.Presenter,
+	)
+
+	// Browsing is read-only and shares the connection store for its token, so an operator
+	// without push scope can still see the repository.
+	hs.ProvisioningBrowser = provisioninghandler.NewBrowserHandler(
+		provisioningapp.NewGitBrowser(),
 		provRepoService,
 		provStore,
 		deps.Presenter,

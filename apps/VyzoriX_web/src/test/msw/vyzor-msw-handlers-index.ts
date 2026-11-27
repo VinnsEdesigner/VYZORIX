@@ -11,6 +11,7 @@ import { createGraphQLHandlers } from './vyzor-msw-handlers-graphql';
 import { createConnectivityHandlers } from './vyzor-msw-handlers-connectivity';
 import { createApiKeysHandlers } from './vyzor-msw-handlers-apikeys';
 import { createAdminApiKeysHandlers } from './vyzor-msw-handlers-admin-apikeys';
+import { createProvisioningHandlers } from './vyzor-msw-handlers-provisioning';
 
 export function createVyzorHandlers(): HttpHandler[] {
   return [
@@ -26,5 +27,6 @@ export function createVyzorHandlers(): HttpHandler[] {
     ...createConnectivityHandlers(),
     ...createApiKeysHandlers(),
     ...createAdminApiKeysHandlers(),
+    ...createProvisioningHandlers(),
   ];
 }

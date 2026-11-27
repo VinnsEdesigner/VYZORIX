@@ -60,3 +60,5 @@ export function useEnableAccount() {
 export function useDeleteAccount() {
   return useDeleteInstanceUsersId();
 }
+
+export type { OrgUser } from '@vyzorix/api-client';

@@ -209,6 +209,7 @@ type Server struct {
 	provisioningSyncHandler       *provisioninghandler.SyncHandler
 	provisioningWebhookHandler    *provisioninghandler.WebhookHandler
 	provisioningPushBackHandler   *provisioninghandler.PushBackHandler
+	provisioningBrowserHandler    *provisioninghandler.BrowserHandler
 	provisioningSyncService       *provisioningapp.SyncService
 	provisioningAuditor           *provisioningapp.Auditor
 	provisioningScheduler         *provisioningapp.Scheduler
@@ -238,6 +239,18 @@ func (s *Server) DeployCatalog() *deploy.Catalog {
 // stops it alongside the other workers.
 func (s *Server) ProvisioningScheduler() *provisioningapp.Scheduler {
 	return s.provisioningScheduler
+}
+
+// AttachSchedulerStatus tells the scheduler status endpoint what is about to run.
+//
+// The scheduler is built with the handler set but started later, by the process that owns
+// the server's lifetime. Without this hand-off the status endpoint could only guess, and
+// guessing "running" for a disabled scheduler is the exact misinformation it exists to
+// prevent.
+func (s *Server) AttachSchedulerStatus(scheduler *provisioningapp.Scheduler) {
+	if s.provisioningSyncHandler != nil {
+		s.provisioningSyncHandler.SetScheduler(scheduler)
+	}
 }
 
 // Routes returns the Gin engine for serving.
@@ -402,6 +415,17 @@ func (s *Server) wireDeployHandler(cfg *ServerConfig) {
 	}
 	if s.provisioningSyncHandler != nil {
 		s.provisioningSyncHandler.SetDocumentReader(deployService)
+	}
+
+	// A device that reports the config version it holds is the only evidence that a
+	// provisioned resource is really running its config. Hand that report to the sync
+	// service so a "pending" row becomes "applied" the moment the device confirms, rather
+	// than staying pending forever because the state was only ever stamped at apply time.
+	if s.hub != nil && s.provisioningSyncService != nil {
+		syncService := s.provisioningSyncService
+		s.hub.SetDeviceReportedHook(func(deviceID string, configVersion int) {
+			syncService.ReconcileDeviceReport(deviceID, configVersion)
+		})
 	}
 }
 
@@ -876,6 +900,7 @@ func NewServerWithDeps(cfg *ServerConfigWithDeps) *Server {
 	s.provisioningSyncHandler = cfg.HandlerSet.ProvisioningSync
 	s.provisioningWebhookHandler = cfg.HandlerSet.ProvisioningWebhook
 	s.provisioningPushBackHandler = cfg.HandlerSet.ProvisioningPushBack
+	s.provisioningBrowserHandler = cfg.HandlerSet.ProvisioningBrowser
 	s.provisioningSyncService = cfg.HandlerSet.ProvisioningSyncService
 	s.provisioningAuditor = cfg.HandlerSet.ProvisioningAuditor
 	s.provisioningScheduler = cfg.HandlerSet.ProvisioningScheduler

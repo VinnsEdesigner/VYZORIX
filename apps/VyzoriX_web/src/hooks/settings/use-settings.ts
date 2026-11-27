@@ -68,3 +68,10 @@ export function useSendTestPush() {
 }
 
 export { getGetAuthMeNotificationsHistoryQueryKey };
+
+export type {
+  NotificationSettings,
+  NotificationHistoryEntry,
+  NotificationHistoryResult,
+  SlackChannelsResult,
+} from '@vyzorix/api-client';

@@ -10,9 +10,9 @@ import (
 
 // recordingOrgApplier captures the bytes it was asked to apply.
 type recordingOrgApplier struct {
+	err   error
 	orgs  []string
 	blobs [][]byte
-	err   error
 }
 
 func (r *recordingOrgApplier) Apply(_ context.Context, orgID string, data []byte) (*ApplyResult, error) {

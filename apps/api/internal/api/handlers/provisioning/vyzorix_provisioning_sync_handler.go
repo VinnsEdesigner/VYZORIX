@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -41,9 +42,25 @@ type SyncHandler struct {
 	documents    DocumentReader
 	counters     Counters
 	events       domain.EventRepository
-	presenter    *response.Presenter
-	log          *slog.Logger
+	// scheduler is the interval loop, read-only here: the schedule itself lives per
+	// repository. Nil means the server started without one.
+	scheduler SchedulerTickSource
+	// presence answers "is this device reachable, and what did it last report?". It is
+	// optional: without it a resource shows its state without the presence detail, which is
+	// less useful but never a false claim.
+	presence  PresenceSource
+	presenter *response.Presenter
+	log       *slog.Logger
 }
+
+// PresenceSource reports device presence for a resource list, in one read.
+type PresenceSource interface {
+	PresenceByIDs(ctx context.Context, orgID string, deviceIDs []string) (map[string]svc.DeviceEvidence, error)
+}
+
+// SetPresenceSource injects the presence reader. A setter because the device store and the
+// hub are built alongside the handler, not before it.
+func (h *SyncHandler) SetPresenceSource(p PresenceSource) { h.presence = p }
 
 // SetDocumentReader injects the reader behind the resource document route.
 func (h *SyncHandler) SetDocumentReader(r DocumentReader) { h.documents = r }
@@ -66,8 +83,15 @@ func NewSyncHandler(
 }
 
 type resourceJSON struct {
-	LastAppliedAt *int64 `json:"last_applied_at,omitempty"`
-	ID            string `json:"id"`
+	LastAppliedAt         *int64 `json:"last_applied_at,omitempty"`
+	DeviceLastSeen        *int64 `json:"device_last_seen,omitempty"`
+	DeviceReportedAt      *int64 `json:"device_reported_at,omitempty"`
+	DeviceReportedVersion *int   `json:"device_reported_version,omitempty"`
+	// DeviceOnline is the live connection state. It is nil when there is no device (an org
+	// resource) or the device could not be read, so a client never shows "offline" for a
+	// device it simply does not know about.
+	DeviceOnline *bool  `json:"device_online,omitempty"`
+	ID           string `json:"id"`
 	// Kind is what the resource declares, so a client can filter and group by it. An org
 	// resource has no device_id.
 	Kind          string `json:"kind"`
@@ -105,7 +129,7 @@ type jobJSON struct {
 	DryRun     bool            `json:"dry_run"`
 }
 
-func toResourceJSON(r *domain.Resource) resourceJSON {
+func toResourceJSON(r *domain.Resource, presence svc.DeviceEvidence) resourceJSON {
 	out := resourceJSON{
 		ID:            r.ID,
 		Kind:          string(r.Kind),
@@ -119,6 +143,23 @@ func toResourceJSON(r *domain.Resource) resourceJSON {
 	if r.LastAppliedAt != nil {
 		ms := r.LastAppliedAt.UnixMilli()
 		out.LastAppliedAt = &ms
+	}
+
+	// Presence is only meaningful for a device resource. An org resource has no device, and
+	// a device the server could not read stays "unknown" rather than being reported offline.
+	if r.DeviceID != "" && presence.Found {
+		online := presence.Online
+		out.DeviceOnline = &online
+
+		if !presence.LastSeen.IsZero() {
+			ms := presence.LastSeen.UnixMilli()
+			out.DeviceLastSeen = &ms
+		}
+		if !presence.ReportedAt.IsZero() {
+			ms := presence.ReportedAt.UnixMilli()
+			out.DeviceReportedAt = &ms
+		}
+		out.DeviceReportedVersion = presence.ReportedVersion
 	}
 
 	return out
@@ -533,6 +574,80 @@ type Counters interface {
 // SetCounters injects the totals source for the instance summary.
 func (h *SyncHandler) SetCounters(c Counters) { h.counters = c }
 
+// schedulerJSON is the scheduler's state as the console reads it.
+type schedulerJSON struct {
+	// NextDueAt is epoch millis of the earliest future due time; absent when none is due.
+	NextDueAt *int64 `json:"next_due_at,omitempty"`
+	// DueNow names the repositories the next tick will sync.
+	DueNow []string `json:"due_now"`
+	// TickSeconds is how often the loop looks for due repositories.
+	TickSeconds int `json:"tick_seconds"`
+	// Running is false when the server was started with the scheduler disabled, so a user
+	// is never told a timer will run when nothing is ticking.
+	Running bool `json:"running"`
+}
+
+// SchedulerStatus reports what the interval scheduler is doing.
+// @Summary      Scheduler status
+// @Description  Reports whether the interval scheduler is running, its tick, which repositories are due now, and when the next one becomes due.
+// @Tags         provisioning
+// @Produce      json
+// @Param        X-Organization-ID  header  string  true  "Organization ID"
+// @Success      200  {object}  provisioninghandler.schedulerJSON  "scheduler"
+// @Failure      401  {object}  openapi.ErrorResponse  "authentication required"
+// @Failure      403  {object}  openapi.ErrorResponse  "provisioning.read required"
+// @Router       /provisioning/scheduler [get]
+func (h *SyncHandler) SchedulerStatus(c *gin.Context) {
+	orgID := middleware.GetOrganizationID(c)
+	if orgID == "" {
+		h.presenter.BadRequest(c, "organization context required")
+
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	repos, err := h.repositories.List(ctx, orgID)
+	if err != nil {
+		h.presenter.InternalError(c, "failed to list repositories")
+
+		return
+	}
+
+	running := h.scheduler != nil
+	var tick = svc.DefaultSchedulerTick
+	if running {
+		tick = h.scheduler.Tick()
+	}
+
+	state := svc.SchedulerStatus(ctx, repos, running, tick, time.Now())
+
+	out := schedulerJSON{
+		Running:     state.Running,
+		TickSeconds: state.TickSeconds,
+		DueNow:      state.DueNow,
+	}
+	if !state.NextDue.IsZero() {
+		ms := state.NextDue.UnixMilli()
+		out.NextDueAt = &ms
+	}
+	if out.DueNow == nil {
+		out.DueNow = []string{}
+	}
+
+	c.JSON(http.StatusOK, out)
+}
+
+// SchedulerTickSource is the slice of the scheduler this handler reads. It is an interface
+// so the endpoint works when provisioning is wired without a scheduler.
+type SchedulerTickSource interface {
+	Tick() time.Duration
+}
+
+// SetScheduler injects the running scheduler. Absent means the scheduler is disabled, which
+// the status endpoint reports as running:false rather than omitting the fact.
+func (h *SyncHandler) SetScheduler(s SchedulerTickSource) { h.scheduler = s }
+
 // eventJSON is one audited provisioning action.
 type eventJSON struct {
 	ID           string `json:"id"`
@@ -589,6 +704,81 @@ func (h *SyncHandler) ListEvents(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, eventListJSON{Events: toEventJSON(events), Total: len(events)})
+}
+
+// dismissRequest names the events to hide from the activity list.
+type dismissRequest struct {
+	IDs []string `json:"ids"`
+}
+
+// dismissResultJSON reports what a dismiss changed.
+type dismissResultJSON struct {
+	// Dismissed is how many rows were hidden by this call. An id that was already dismissed
+	// or belongs to another organisation is not counted, so a caller can tell the difference.
+	Dismissed int `json:"dismissed"`
+}
+
+// DismissEvents handles DELETE /v1/provisioning/events.
+// @Summary      Dismiss activity events
+// @Description  Hides events from the activity list without deleting them. The trail records who changed what, so it is never erased.
+// @Tags         provisioning
+// @Accept       json
+// @Produce      json
+// @Param        X-Organization-ID  header  string  true  "Organization ID"
+// @Param        body  body  provisioninghandler.dismissRequest  true  "event ids"
+// @Success      200  {object}  provisioninghandler.dismissResultJSON  "dismissed"
+// @Failure      400  {object}  openapi.ErrorResponse  "no ids supplied"
+// @Failure      401  {object}  openapi.ErrorResponse  "authentication required"
+// @Failure      403  {object}  openapi.ErrorResponse  "provisioning.write required"
+// @Router       /provisioning/events [delete]
+func (h *SyncHandler) DismissEvents(c *gin.Context) {
+	orgID := middleware.GetOrganizationID(c)
+	if orgID == "" {
+		h.presenter.BadRequest(c, "organization context required")
+
+		return
+	}
+
+	var req dismissRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.presenter.BadRequest(c, "invalid request body")
+
+		return
+	}
+	if len(req.IDs) == 0 {
+		h.presenter.BadRequest(c, "ids is required")
+
+		return
+	}
+
+	if h.events == nil {
+		h.presenter.InternalError(c, "the event store is not configured")
+
+		return
+	}
+
+	dismisser, ok := h.events.(EventDismisser)
+	if !ok {
+		h.presenter.NotImplemented(c, "the event store cannot dismiss events")
+
+		return
+	}
+
+	count, err := dismisser.Dismiss(c.Request.Context(), orgID, req.IDs, time.Now())
+	if err != nil {
+		h.presenter.InternalError(c, "failed to dismiss events")
+
+		return
+	}
+
+	c.JSON(http.StatusOK, dismissResultJSON{Dismissed: count})
+}
+
+// EventDismisser is the slice of the event store that can hide rows. It is a separate
+// interface because the domain's EventRepository predates dismissal, and a store that cannot
+// dismiss should answer 501 rather than fail to compile.
+type EventDismisser interface {
+	Dismiss(ctx context.Context, orgID string, ids []string, at time.Time) (int, error)
 }
 
 // ListResourceEvents handles GET /v1/provisioning/repositories/:id/events.
@@ -657,6 +847,47 @@ func toEventJSON(events []*domain.ProvisioningEvent) []eventJSON {
 	return out
 }
 
+// healthPointJSON is one completed run in the health timeline. It is a handler DTO rather
+// than the domain struct so the wire shape stays owned here, as every other route's does.
+type healthPointJSON struct {
+	FinishedAt string `json:"finished_at"`
+	State      string `json:"state"`
+	DurationMs int64  `json:"duration_ms"`
+	Failed     int    `json:"failed"`
+}
+
+// healthJSON is a repository's sync health over time.
+type healthJSON struct {
+	Timeline          []healthPointJSON `json:"timeline"`
+	AverageDurationMs int64             `json:"average_duration_ms"`
+	LastDurationMs    int64             `json:"last_duration_ms"`
+	FailureStreak     int               `json:"failure_streak"`
+	Successes         int               `json:"successes"`
+	Failures          int               `json:"failures"`
+}
+
+func toHealthJSON(health *domain.RepositoryHealth) healthJSON {
+	out := healthJSON{
+		AverageDurationMs: health.AverageDurationMs,
+		LastDurationMs:    health.LastDurationMs,
+		FailureStreak:     health.FailureStreak,
+		Successes:         health.Successes,
+		Failures:          health.Failures,
+		Timeline:          make([]healthPointJSON, 0, len(health.Timeline)),
+	}
+
+	for _, p := range health.Timeline {
+		out.Timeline = append(out.Timeline, healthPointJSON{
+			FinishedAt: p.FinishedAt.UTC().Format(time.RFC3339),
+			State:      string(p.State),
+			DurationMs: p.DurationMs,
+			Failed:     p.Failed,
+		})
+	}
+
+	return out
+}
+
 // GetHealth handles GET /v1/provisioning/repositories/:id/health.
 // @Summary      Repository sync health over time
 // @Description  Returns the average and last sync duration, the current failure streak, and a timeline of recent completed runs.
@@ -665,7 +896,7 @@ func toEventJSON(events []*domain.ProvisioningEvent) []eventJSON {
 // @Param        X-Organization-ID  header  string  true  "Organization ID"
 // @Param        id     path   string  true  "repository ID"
 // @Param        limit  query  int     false  "how many recent runs to include"
-// @Success      200  {object}  domain.RepositoryHealth  "health"
+// @Success      200  {object}  provisioninghandler.healthJSON  "health"
 // @Failure      401  {object}  openapi.ErrorResponse  "authentication required"
 // @Failure      403  {object}  openapi.ErrorResponse  "provisioning.read required"
 // @Failure      404  {object}  openapi.ErrorResponse  "not found"
@@ -692,7 +923,7 @@ func (h *SyncHandler) GetHealth(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, health)
+	c.JSON(http.StatusOK, toHealthJSON(health))
 }
 
 // discoveryItemJSON is one manifest in the discovery view.
@@ -821,12 +1052,46 @@ func (h *SyncHandler) ListResources(c *gin.Context) {
 		return
 	}
 
+	presence := h.presenceFor(c.Request.Context(), orgID, resources)
+
 	out := make([]resourceJSON, len(resources))
 	for i, r := range resources {
-		out[i] = toResourceJSON(r)
+		out[i] = toResourceJSON(r, presence[r.DeviceID])
 	}
 
 	c.JSON(http.StatusOK, resourceListJSON{Resources: out, Total: len(out)})
+}
+
+// presenceFor reads device presence for a resource list in one pass.
+//
+// It is best-effort: with no reader wired, or a read failure, every resource simply has no
+// presence detail. That is a missing badge, not a wrong one — reporting a device offline
+// because a query failed would be the same class of lie this feature exists to remove.
+func (h *SyncHandler) presenceFor(ctx context.Context, orgID string, resources []*domain.Resource) map[string]svc.DeviceEvidence {
+	if h.presence == nil {
+		return nil
+	}
+
+	ids := make([]string, 0, len(resources))
+	for _, r := range resources {
+		if r.DeviceID != "" {
+			ids = append(ids, r.DeviceID)
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+
+	presence, err := h.presence.PresenceByIDs(ctx, orgID, ids)
+	if err != nil {
+		if h.log != nil {
+			h.log.Warn("provisioning: could not read device presence for the resource list", "err", err)
+		}
+
+		return nil
+	}
+
+	return presence
 }
 
 // GetJob handles GET /v1/provisioning/repositories/:id/jobs/:jobId.
@@ -940,6 +1205,11 @@ func jobLimit(c *gin.Context) int {
 	return n
 }
 
+type jobListJSON struct {
+	Jobs  []jobJSON `json:"jobs"`
+	Total int       `json:"total"`
+}
+
 // ListJobs handles GET /v1/provisioning/repositories/:id/jobs.
 // @Summary      List sync jobs
 // @Description  Returns a repository's recent sync runs, newest first.
@@ -949,7 +1219,7 @@ func jobLimit(c *gin.Context) int {
 // @Param        X-Organization-ID  header  string  true  "Organization ID"
 // @Param        id     path   string  true  "repository ID"
 // @Param        limit  query  int     false  "maximum jobs to return"
-// @Success      200  {object}  object  "jobs"
+// @Success      200  {object}  provisioninghandler.jobListJSON  "jobs"
 // @Failure      401  {object}  openapi.ErrorResponse  "authentication required"
 // @Failure      403  {object}  openapi.ErrorResponse  "provisioning.read required"
 // @Router       /provisioning/repositories/{id}/jobs [get]
@@ -980,5 +1250,5 @@ func (h *SyncHandler) ListJobs(c *gin.Context) {
 		out[i] = toJobJSON(j, nil)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"jobs": out, "total": len(out)})
+	c.JSON(http.StatusOK, jobListJSON{Jobs: out, Total: len(out)})
 }

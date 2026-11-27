@@ -3,7 +3,7 @@ import { Button, Combobox, useStyles2, type ComboboxOption, type VyzorixTheme } 
 import { useNotifications, useSlackChannels, useUpdateNotifications } from '@/hooks/settings';
 import { notifyError, notifySuccess } from '@/stores/toast-store';
 import { useVyzorTranslation } from '@/hooks/i18n';
-import type { NotificationSettings, SlackChannelsResult } from '@vyzorix/api-client';
+import type { NotificationSettings, SlackChannelsResult } from '@/hooks/settings';
 
 const SLACK_CONNECT_URL = '/api/v1/auth/me/notifications/slack/connect';
 

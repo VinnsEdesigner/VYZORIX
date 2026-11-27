@@ -19,6 +19,7 @@ export * from './settings';
 export * from './organization';
 export * from './admin';
 export * from './service-accounts';
+export * from './provisioning';
 export * from './connectivity';
 export * from './error';
 export * from './i18n';

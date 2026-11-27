@@ -630,6 +630,9 @@ var migrations = []Migration{
 	// Rebuild provisioning_resources with ON DELETE RESTRICT: 101's CASCADE erased the
 	// released ownership rows that keep_resources exists to preserve.
 	{Apply: migrateProvisioningResourceOwnershipRetention, Name: "provisioning_resource_retention", Version: 102},
+	// Dismissing an activity event hides it from the list instead of deleting it: the trail
+	// records who changed what, and a delete button would let that record be erased.
+	{Apply: migrateProvisioningEventDismissal, Name: "provisioning_event_dismissal", Version: 103},
 }
 
 // runMigrations applies all pending migrations.

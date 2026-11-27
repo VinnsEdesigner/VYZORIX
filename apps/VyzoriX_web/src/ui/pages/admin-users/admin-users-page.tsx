@@ -14,7 +14,7 @@ import {
   useStyles2,
   type VyzorixTheme,
 } from '@vyzorix/ui';
-import type { OrgUser } from '@vyzorix/api-client';
+import type { OrgUser } from '@/hooks/admin';
 import { Page } from '@/ui/components/layout';
 import { SearchInput } from '@/ui/components/shared/search-input';
 import { StatusBadge } from '@/ui/components/shared/status-badge';

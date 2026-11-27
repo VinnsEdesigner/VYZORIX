@@ -25,9 +25,18 @@ func NewHTTPRemoteVerifier() *HTTPRemoteVerifier {
 }
 
 // Verify checks that the repository is readable and the branch exists.
+//
+// A generic git host has no portable branch API, so reachability is the only check possible
+// without cloning — and that check must not require the URL to look like "owner/repository".
+// A self-hosted server may serve "http://host/device-config.git" from its root, which has no
+// owner segment; demanding one rejected every such host as unreachable.
 func (v *HTTPRemoteVerifier) Verify(
 	ctx context.Context, repoURL, branch string, kind domain.ConnectionType, token redaction.Secret,
 ) error {
+	if kind == domain.ConnectionGeneric {
+		return v.checkReachable(ctx, repoURL)
+	}
+
 	owner, name, ok := parseRepositoryPath(repoURL)
 	if !ok {
 		return fmt.Errorf("%w: cannot read an owner/repository from %q", ErrRemoteUnreachable, repoURL)
@@ -35,9 +44,8 @@ func (v *HTTPRemoteVerifier) Verify(
 
 	endpoint, header, authValue := branchEndpoint(kind, repoURL, owner, name, branch)
 	if endpoint == "" {
-		// A generic host has no portable branch API, but accepting anything means
-		// a typo'd hostname becomes a stored repository that can never sync.
-		// Reachability is the check still possible without cloning.
+		// A host with no portable branch API: accepting anything would let a typo'd
+		// hostname become a repository that can never sync, so reachability is the check.
 		return v.checkReachable(ctx, repoURL)
 	}
 

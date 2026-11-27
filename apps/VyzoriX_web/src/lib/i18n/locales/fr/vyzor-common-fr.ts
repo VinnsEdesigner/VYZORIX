@@ -67,6 +67,12 @@ export const vyzorCommonFr = {
   'tab.preferences': 'Préférences',
   'tab.notifications': 'Notifications',
   'tab.security': 'Sécurité',
+  'tab.overview': 'Vue d’ensemble',
+  'tab.sources': 'Sources',
+  'tab.credentials': 'Identifiants',
+  'tab.resources': 'Ressources',
+  'tab.activity': 'Activité',
+  'tab.getting-started': 'Premiers pas',
 
   'profile.title': 'Profil',
   'profile.subtitle': 'Votre compte et votre activité',

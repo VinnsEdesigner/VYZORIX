@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/VinnsEdesigner/vyzorix/apps/api/internal/domain/provisioning"
@@ -46,7 +47,7 @@ func (r *ProvisioningStorage) Record(ctx context.Context, event *provisioning.Pr
 func (r *ProvisioningStorage) ListForOrg(ctx context.Context, orgID string, limit int) ([]*provisioning.ProvisioningEvent, error) {
 	return r.listEvents(ctx,
 		`SELECT `+provisioningEventColumns+`
-                 FROM provisioning_events WHERE org_id = ?
+                 FROM provisioning_events WHERE org_id = ? AND dismissed_at IS NULL
                  ORDER BY created_at DESC LIMIT ?`, orgID, eventLimit(limit))
 }
 
@@ -56,6 +57,7 @@ func (r *ProvisioningStorage) ListForResource(ctx context.Context, orgID, resour
 		`SELECT `+provisioningEventColumns+`
                  FROM provisioning_events
                  WHERE org_id = ? AND resource_type = ? AND resource_id = ?
+                   AND dismissed_at IS NULL
                  ORDER BY created_at DESC LIMIT ?`,
 		orgID, resourceType, resourceID, eventLimit(limit))
 }
@@ -88,6 +90,41 @@ func (r *ProvisioningStorage) listEvents(ctx context.Context, query string, args
 	}
 
 	return out, rows.Err()
+}
+
+// Dismiss hides events from the activity list.
+//
+// It sets a timestamp rather than deleting the row. The trail answers "who changed this",
+// and a delete would let a user erase that answer; dismissing only takes the row out of the
+// list. The org_id is in the WHERE clause so an id from another organisation changes nothing.
+func (r *ProvisioningStorage) Dismiss(ctx context.Context, orgID string, ids []string, at time.Time) (int, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+
+	placeholders := make([]string, len(ids))
+	args := make([]any, 0, len(ids)+2)
+	args = append(args, at.UnixMilli(), orgID)
+
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args = append(args, id)
+	}
+
+	result, err := r.db.ExecContext(ctx,
+		`UPDATE provisioning_events SET dismissed_at = ?
+                 WHERE org_id = ? AND dismissed_at IS NULL
+                   AND id IN (`+strings.Join(placeholders, ",")+`)`, args...)
+	if err != nil {
+		return 0, err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+
+	return int(affected), nil
 }
 
 // eventLimit bounds a listing so a caller cannot ask for the whole table.

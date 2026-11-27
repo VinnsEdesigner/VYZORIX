@@ -2,11 +2,18 @@ import { useEffect, useState } from 'react';
 import { css, cx } from '@emotion/css';
 import { Button, Icon, Switch, getFocusStyles, useStyles2, type VyzorixTheme } from '@vyzorix/ui';
 import { useNavigate } from '@tanstack/react-router';
-import { useNotifications, useUpdateNotifications, useUnreadNotifications, useSendTestPush } from '@/hooks/settings';
+import {
+  useNotifications,
+  useUpdateNotifications,
+  useUnreadNotifications,
+  useSendTestPush,
+  useSubscribeToPush,
+  useUnsubscribeFromPush,
+} from '@/hooks/settings';
 import { notifyError, notifySuccess } from '@/stores/toast-store';
 import { useVyzorTranslation } from '@/hooks/i18n';
-import { pushSupported, subscribeToPush, unsubscribeFromPush, hasPushSubscription, notificationPermission } from '@/lib/push/web-push';
-import type { NotificationSettings } from '@vyzorix/api-client';
+import { pushSupported, hasPushSubscription, notificationPermission } from '@/lib/push/web-push';
+import type { NotificationSettings } from '@/hooks/settings';
 
 interface ChannelRow {
   id: string;
@@ -21,6 +28,8 @@ export function NotificationsTab() {
   const query = useNotifications();
   const update = useUpdateNotifications();
   const testPush = useSendTestPush();
+  const push = useSubscribeToPush();
+  const unpush = useUnsubscribeFromPush();
   const { t } = useVyzorTranslation();
   const unread = useUnreadNotifications();
   const [pushReady, setPushReady] = useState(false);
@@ -61,11 +70,11 @@ export function NotificationsTab() {
     setPushBusy(true);
     try {
       if (on) {
-        await subscribeToPush();
+        await push.subscribe();
         setPushReady(true);
         toggleChannel('push', true);
       } else {
-        await unsubscribeFromPush();
+        await unpush.unsubscribe();
         setPushReady(false);
         toggleChannel('push', false);
       }

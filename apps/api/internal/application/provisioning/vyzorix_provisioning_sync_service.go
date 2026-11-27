@@ -922,6 +922,9 @@ func (s *SyncService) applyOne(ctx context.Context, repo *domain.Repository, job
 		return
 	}
 
+	// A stored document is not proof the device runs it. Ask before claiming "applied".
+	state, pendingReason := stateForApply(s.confirmConfig(ctx, repo.OrgID, item.Manifest.DeviceID, result.Version))
+
 	resource := &domain.Resource{
 		ID:            resourceID(item.Resource),
 		RepoID:        repo.ID,
@@ -930,7 +933,8 @@ func (s *SyncService) applyOne(ctx context.Context, repo *domain.Repository, job
 		Path:          item.Manifest.Path,
 		ContentHash:   item.Manifest.ContentHash,
 		ConfigVersion: result.Version,
-		State:         domain.ResourceApplied,
+		State:         state,
+		LastError:     pendingReason,
 		AppliedAt:     s.now(),
 	}
 	appliedAt := resource.AppliedAt
@@ -1375,9 +1379,15 @@ type SyncService struct {
 	// that declares orgs/acme/groups.toml and finds nothing happens should be told why.
 	orgAppliers map[ResourceKind]OrgApplier
 	orgNames    OrgNameLookup
-	locks       *locks
-	log         *slog.Logger
-	now         func() time.Time
+	// confirmations answers "is the device actually running this version?". Optional: with
+	// none wired every applied resource records `pending`, which is the honest default.
+	confirmations DeviceConfirmation
+	locks         *locks
+	log           *slog.Logger
+	now           func() time.Time
+	// freshness bounds how old a device report may be and still count as evidence while the
+	// device is unreachable. Zero falls back to defaultEvidenceFreshness.
+	freshness time.Duration
 }
 
 // OrgApplier writes one kind of org file for an organisation.
@@ -1408,6 +1418,27 @@ type OrgNameLookup interface {
 // SetOrgNameLookup injects the resolver. A service built without one skips the check, which
 // keeps tests and the offline path working; the server always wires it.
 func (s *SyncService) SetOrgNameLookup(l OrgNameLookup) { s.orgNames = l }
+
+// SetDeviceConfirmation injects the reader that answers "is the device running this
+// version?". It is a setter because the device store is built alongside the server, after
+// this service. Without it a sync cannot confirm anything, so applied resources record
+// `pending` rather than claiming a fact nobody checked.
+func (s *SyncService) SetDeviceConfirmation(c DeviceConfirmation) { s.confirmations = c }
+
+// SetEvidenceFreshness sets how long a device report stays evidence while the device is
+// unreachable. The server passes its offline threshold, so provisioning and diagnostics
+// agree on when a device stopped being reachable.
+func (s *SyncService) SetEvidenceFreshness(d time.Duration) { s.freshness = d }
+
+// ReconcileDeviceReport re-evaluates a resource after its device reports the config version
+// it holds. The apply path can only stamp what it stored; only the device's own report can
+// turn that "pending" into "applied", and without this the row would stay pending forever.
+//
+// It is a method on the service because the service already holds the resource repository —
+// the WS hub needs one callback, not a second wiring path to the same store.
+func (s *SyncService) ReconcileDeviceReport(deviceID string, configVersion int) {
+	NewReconciler(s.resources, s.log).DeviceReported(context.Background(), deviceID, configVersion)
+}
 
 // Deployer is the slice of the deploy service a sync uses. It is an interface so
 // the engine can be tested without the real compile/sign pipeline, and so a

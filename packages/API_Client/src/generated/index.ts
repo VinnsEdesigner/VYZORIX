@@ -19,6 +19,7 @@ export * from './invitations/invitations';
 export * from './members/members';
 export * from './mfa/mfa';
 export * from './organizations/organizations';
+export * from './provisioning/provisioning';
 export * from './service-accounts/service-accounts';
 export * from './sessions/sessions';
 export * from './settings/settings';

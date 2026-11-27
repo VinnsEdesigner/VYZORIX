@@ -39,6 +39,10 @@ type Hub struct {
 	dashboardBroadcaster DashboardBroadcaster
 	deviceFrameHandler   DeviceFrameHandler
 	deviceDisconnectHook func(deviceID string)
+	// deviceReportedHook fires when a device reports the config version it actually holds.
+	// It exists so provisioning can re-evaluate a resource's state: a deploy stamps
+	// "pending", and only the device's own report can turn that into "applied".
+	deviceReportedHook func(deviceID string, configVersion int)
 	// deviceConnectHook is the counterpart to deviceDisconnectHook: a PTY
 	// session outlives the socket, so a reconnecting device is told to
 	// re-attach the shells it still holds.

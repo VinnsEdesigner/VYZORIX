@@ -41,6 +41,7 @@ export const APIKeyWithSecretSchema = z.object({
   updated_at: z.number().int().optional(),
   user_id: z.string().optional(),
 });
+export const ActionSchema = z.record(z.string(), z.unknown());
 export const AdminAPIKeySchema = z.object({
   created_at: z.number().int().optional(),
   expires_at: z.number().int().optional(),
@@ -433,6 +434,10 @@ export const DeviceDetailResultSchema = z.object({
   storage_bytes: z.number().int().optional(),
   supported_abis: z.string().optional(),
 });
+export const DeviceDirSchema = z.object({
+  device_id: z.string().optional(),
+  path: z.string().optional(),
+});
 export const DeviceDisconnectResultSchema = z.object({
   deviceId: z.string().optional(),
   disconnected: z.boolean().optional(),
@@ -690,6 +695,12 @@ export const InboxResendResultSchema = z.object({
   imei: z.string().optional(),
   status: z.string().optional(),
 });
+export const InstanceSummarySchema = z.object({
+  boot_seed_configured: z.boolean().optional(),
+  connections: z.number().int().optional(),
+  repositories: z.number().int().optional(),
+  resources: z.number().int().optional(),
+});
 export const InvitationSchema = z.object({
   email: z.string().optional(),
   expires_at: z.number().int().optional(),
@@ -892,6 +903,13 @@ export const NotificationUpdateRequestSchema = z.object({
   slack: z.lazy(() => SlackNotificationInputSchema).optional(),
   webhook: z.lazy(() => WebhookNotificationsSchema).optional(),
 });
+export const OrgResourceSummarySchema = z.object({
+  action: z.lazy(() => ActionSchema).optional(),
+  kind: z.lazy(() => ResourceKindSchema).optional(),
+  message: z.string().optional(),
+  org: z.string().optional(),
+  path: z.string().optional(),
+});
 export const OrgUserSchema = z.object({
   avatar_url: z.string().optional(),
   created_at: z.number().int().optional(),
@@ -1043,6 +1061,16 @@ export const ResendVerificationRequestSchema = z.object({
 export const ResetPasswordRequestSchema = z.object({
   newPassword: z.string().optional(),
   token: z.string().optional(),
+});
+export const ResourceKindSchema = z.record(z.string(), z.unknown());
+export const ResourceStatsSchema = z.object({
+  applied: z.number().int().optional(),
+  drifted: z.number().int().optional(),
+  error: z.number().int().optional(),
+  ignored: z.number().int().optional(),
+  missing: z.number().int().optional(),
+  pending: z.number().int().optional(),
+  total: z.number().int().optional(),
 });
 export const RevokeResultSchema = z.object({
   message: z.string().optional(),
@@ -1553,6 +1581,35 @@ export const claimRequestSchema = z.object({
   pairingCode: z.string(),
   tierCap: z.number().int().optional(),
 });
+export const commitJSONSchema = z.object({
+  author: z.string().optional(),
+  message: z.string().optional(),
+  sha: z.string().optional(),
+  when: z.number().int().optional(),
+});
+export const connectionJSONSchema = z.object({
+  checked_at: z.number().int().optional(),
+  created_at: z.number().int().optional(),
+  host: z.string().optional(),
+  id: z.string().optional(),
+  last_error: z.string().optional(),
+  name: z.string().optional(),
+  status: z.string().optional(),
+  type: z.string().optional(),
+  updated_at: z.number().int().optional(),
+  write_enabled: z.boolean().optional(),
+});
+export const connectionListJSONSchema = z.object({
+  connections: z.array(z.lazy(() => connectionJSONSchema)).optional(),
+  total: z.number().int().optional(),
+});
+export const connectionRequestSchema = z.object({
+  host: z.string().optional(),
+  name: z.string().optional(),
+  token: z.string().optional(),
+  type: z.string().optional(),
+  write_enabled: z.boolean().optional(),
+});
 export const credentialListResponseSchema = z.object({
   credentials: z.array(z.lazy(() => credentialResponseSchema)).optional(),
 });
@@ -1588,11 +1645,44 @@ export const deviceSummarySchema = z.object({
   supportedAbis: z.array(z.string()).optional(),
   tier: z.string().optional(),
 });
+export const discoveryItemJSONSchema = z.object({
+  action: z.string().optional(),
+  device_id: z.string().optional(),
+  kind: z.string().optional(),
+  managed: z.boolean().optional(),
+  message: z.string().optional(),
+  path: z.string().optional(),
+});
+export const discoveryJSONSchema = z.object({
+  items: z.array(z.lazy(() => discoveryItemJSONSchema)).optional(),
+  org_files: z.array(z.lazy(() => OrgResourceSummarySchema)).optional(),
+  total: z.number().int().optional(),
+  unmanaged: z.array(z.lazy(() => DeviceDirSchema)).optional(),
+});
+export const dismissRequestSchema = z.object({
+  ids: z.array(z.string()).optional(),
+});
+export const dismissResultJSONSchema = z.object({
+  dismissed: z.number().int().optional(),
+});
 export const driftResponseSchema = z.object({
   detail: z.string().optional(),
   reportedAt: z.number().int().optional(),
   reportedVersion: z.number().int().optional(),
   state: z.string().optional(),
+});
+export const editRequestSchema = z.object({
+  base_commit: z.string().optional(),
+  commit_message: z.string().optional(),
+  content: z.string().optional(),
+  mode: z.string().optional(),
+});
+export const editResultJSONSchema = z.object({
+  branch: z.string().optional(),
+  changed: z.boolean().optional(),
+  commit: z.string().optional(),
+  pull_request_error: z.string().optional(),
+  pull_request_url: z.string().optional(),
 });
 export const enrollRequestSchema = z.object({
   apiLevel: z.number().int().optional(),
@@ -1619,6 +1709,50 @@ export const enrollResponseSchema = z.object({
   pairingDisplay: z.string().optional(),
   pollIntervalSeconds: z.number().int().optional(),
 });
+export const eventJSONSchema = z.object({
+  actor_id: z.string().optional(),
+  actor_kind: z.string().optional(),
+  actor_label: z.string().optional(),
+  created_at: z.number().int().optional(),
+  detail: z.string().optional(),
+  id: z.string().optional(),
+  resource_id: z.string().optional(),
+  resource_type: z.string().optional(),
+  result: z.string().optional(),
+  type: z.string().optional(),
+});
+export const eventListJSONSchema = z.object({
+  events: z.array(z.lazy(() => eventJSONSchema)).optional(),
+  total: z.number().int().optional(),
+});
+export const fileJSONSchema = z.object({
+  author: z.string().optional(),
+  commit: z.string().optional(),
+  content: z.string().optional(),
+  message: z.string().optional(),
+  path: z.string().optional(),
+  truncated: z.boolean().optional(),
+  when: z.number().int().optional(),
+});
+export const healthJSONSchema = z.object({
+  average_duration_ms: z.number().int().optional(),
+  failure_streak: z.number().int().optional(),
+  failures: z.number().int().optional(),
+  last_duration_ms: z.number().int().optional(),
+  successes: z.number().int().optional(),
+  timeline: z.array(z.lazy(() => healthPointJSONSchema)).optional(),
+});
+export const healthPointJSONSchema = z.object({
+  duration_ms: z.number().int().optional(),
+  failed: z.number().int().optional(),
+  finished_at: z.string().optional(),
+  state: z.string().optional(),
+});
+export const historyJSONSchema = z.object({
+  commits: z.array(z.lazy(() => commitJSONSchema)).optional(),
+  depth: z.number().int().optional(),
+  total: z.number().int().optional(),
+});
 export const identityResponseSchema = z.object({
   device: z.lazy(() => deviceSummarySchema).optional(),
   email: z.string().optional(),
@@ -1626,6 +1760,29 @@ export const identityResponseSchema = z.object({
   orgName: z.string().optional(),
   role: z.string().optional(),
   userName: z.string().optional(),
+});
+export const jobJSONSchema = z.object({
+  applied: z.number().int().optional(),
+  dry_run: z.boolean().optional(),
+  error: z.string().optional(),
+  failed: z.number().int().optional(),
+  finished_at: z.number().int().optional(),
+  id: z.string().optional(),
+  repo_id: z.string().optional(),
+  results: z.array(z.lazy(() => jobResultJSONSchema)).optional(),
+  skipped: z.number().int().optional(),
+  started_at: z.number().int().optional(),
+  state: z.string().optional(),
+});
+export const jobListJSONSchema = z.object({
+  jobs: z.array(z.lazy(() => jobJSONSchema)).optional(),
+  total: z.number().int().optional(),
+});
+export const jobResultJSONSchema = z.object({
+  message: z.string().optional(),
+  outcome: z.string().optional(),
+  path: z.string().optional(),
+  resource_id: z.string().optional(),
 });
 export const mintCredentialRequestSchema = z.object({
   name: z.string().optional(),
@@ -1641,6 +1798,79 @@ export const mintCredentialResponseSchema = z.object({
   revokedAt: z.number().int().optional(),
   token: z.string().optional(),
 });
+export const previewJSONSchema = z.object({
+  base_commit: z.string().optional(),
+  changed: z.boolean().optional(),
+  diff: z.string().optional(),
+  path: z.string().optional(),
+});
+export const repositoryJSONSchema = z.object({
+  branch: z.string().optional(),
+  connection_id: z.string().optional(),
+  created_at: z.number().int().optional(),
+  description: z.string().optional(),
+  enabled: z.boolean().optional(),
+  exclude: z.array(z.string()).optional(),
+  id: z.string().optional(),
+  include: z.array(z.string()).optional(),
+  last_error: z.string().optional(),
+  last_sync_at: z.number().int().optional(),
+  name: z.string().optional(),
+  path: z.string().optional(),
+  stats: z.lazy(() => ResourceStatsSchema).optional(),
+  sync_interval_seconds: z.number().int().optional(),
+  sync_state: z.string().optional(),
+  sync_target: z.string().optional(),
+  title: z.string().optional(),
+  type: z.string().optional(),
+  updated_at: z.number().int().optional(),
+  url: z.string().optional(),
+});
+export const repositoryListJSONSchema = z.object({
+  repositories: z.array(z.lazy(() => repositoryJSONSchema)).optional(),
+  total: z.number().int().optional(),
+});
+export const repositoryRequestSchema = z.object({
+  branch: z.string().optional(),
+  clear_webhook: z.boolean().optional(),
+  connection_id: z.string().optional(),
+  description: z.string().optional(),
+  enabled: z.boolean().optional(),
+  exclude: z.array(z.string()).optional(),
+  include: z.array(z.string()).optional(),
+  name: z.string().optional(),
+  path: z.string().optional(),
+  sync_interval_seconds: z.number().int().optional(),
+  sync_target: z.string().optional(),
+  title: z.string().optional(),
+  url: z.string().optional(),
+  webhook_secret: z.string().optional(),
+});
+export const resourceJSONSchema = z.object({
+  config_version: z.number().int().optional(),
+  content_hash: z.string().optional(),
+  device_id: z.string().optional(),
+  device_last_seen: z.number().int().optional(),
+  device_online: z.boolean().optional(),
+  device_reported_at: z.number().int().optional(),
+  device_reported_version: z.number().int().optional(),
+  id: z.string().optional(),
+  kind: z.string().optional(),
+  last_applied_at: z.number().int().optional(),
+  last_error: z.string().optional(),
+  path: z.string().optional(),
+  state: z.string().optional(),
+});
+export const resourceListJSONSchema = z.object({
+  resources: z.array(z.lazy(() => resourceJSONSchema)).optional(),
+  total: z.number().int().optional(),
+});
+export const schedulerJSONSchema = z.object({
+  due_now: z.array(z.string()).optional(),
+  next_due_at: z.number().int().optional(),
+  running: z.boolean().optional(),
+  tick_seconds: z.number().int().optional(),
+});
 export const secretListResponseSchema = z.object({
   app: z.string().optional(),
   secrets: z.array(z.lazy(() => secretNameResponseSchema)).optional(),
@@ -1650,6 +1880,16 @@ export const secretNameResponseSchema = z.object({
   key: z.string().optional(),
   updatedAt: z.number().int().optional(),
 });
+export const secretReadinessJSONSchema = z.object({
+  missing: z.number().int().optional(),
+  secrets: z.array(z.lazy(() => secretRequirementJSONSchema)).optional(),
+  total: z.number().int().optional(),
+});
+export const secretRequirementJSONSchema = z.object({
+  app: z.string().optional(),
+  key: z.string().optional(),
+  set: z.boolean().optional(),
+});
 export const setSecretRequestSchema = z.object({
   key: z.string().optional(),
   value: z.string().optional(),
@@ -1658,5 +1898,16 @@ export const setSecretResponseSchema = z.object({
   app: z.string().optional(),
   generation: z.number().int().optional(),
   key: z.string().optional(),
+});
+export const treeEntryJSONSchema = z.object({
+  kind: z.string().optional(),
+  name: z.string().optional(),
+  path: z.string().optional(),
+  size: z.number().int().optional(),
+});
+export const treeJSONSchema = z.object({
+  dir: z.string().optional(),
+  entries: z.array(z.lazy(() => treeEntryJSONSchema)).optional(),
+  total: z.number().int().optional(),
 });
 

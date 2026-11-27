@@ -48,7 +48,10 @@ function getImportLayer(importPath) {
   const p = importPath.replace(/\\/g, '/').replace(/^@\//, '');
   if (p.startsWith('components/') || p.startsWith('ui/') || p.startsWith('pages/')) return 'ui';
   if (p.startsWith('hooks/')) return 'hooks';
-  if (p.startsWith('@vyzorix/api-client/domain/') || p.startsWith('domain/')) return 'domain';
+  // The bare package specifier is the SDK itself. It must be listed explicitly: matching
+  // only `@vyzorix/api-client/domain/...` let a plain `@vyzorix/api-client` import through
+  // from a component, which is the same violation spelled differently.
+  if (p === '@vyzorix/api-client' || p.startsWith('@vyzorix/api-client/')) return 'domain';
   if (p.startsWith('@vyzorix/api-client/vyzorServer/') || p.startsWith('vyzorServer/')) return 'vyzorServer';
   return null;
 }

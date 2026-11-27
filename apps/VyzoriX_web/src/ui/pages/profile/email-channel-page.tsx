@@ -6,7 +6,7 @@ import { notifyError, notifySuccess } from '@/stores/toast-store';
 import { describeError } from '@/lib/error';
 import { useCurrentUser } from '@/hooks/_shared';
 import { useVyzorTranslation } from '@/hooks/i18n';
-import type { NotificationSettings } from '@vyzorix/api-client';
+import type { NotificationSettings } from '@/hooks/settings';
 
 type EmailEventKey = 'thresholdBreach' | 'deviceOffline' | 'deviceOnline' | 'updateAvailable' | 'registrationRequest';
 

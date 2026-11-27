@@ -11,6 +11,7 @@ export * from "./clientcredentials";
 export * from "./email";
 export * from "./oauth";
 export * from "./organization";
+export * from "./provisioning";
 export * from "./session";
 export * from "./diagnostics";
 export * from "./events";

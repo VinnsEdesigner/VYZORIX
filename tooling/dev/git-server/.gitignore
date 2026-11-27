@@ -1,0 +1,5 @@
+# The seeded demo repositories are local test data, regenerated with `serve.py --seed`.
+# The server script itself is tracked.
+repos/
+.server.pid
+.server.log

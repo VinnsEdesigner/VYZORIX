@@ -84,6 +84,34 @@ export const TABLES: TableDefinition[] = [
     pk: 'user_id',
     columns: ['user_id', 'theme', 'updated_at'],
   },
+  {
+
+    name: 'provisioning_tree',
+    pk: 'key',
+    columns: ['key', 'repository_id', 'dir', 'organization_id', 'fetched_at'],
+    indexes: ['repository_id'],
+  },
+  {
+
+    name: 'provisioning_file',
+    pk: 'key',
+    columns: ['key', 'repository_id', 'path', 'organization_id', 'fetched_at'],
+    indexes: ['repository_id'],
+  },
+  {
+
+    name: 'provisioning_resources',
+    pk: 'key',
+    columns: ['key', 'repository_id', 'organization_id', 'fetched_at'],
+    indexes: ['repository_id'],
+  },
+  {
+
+    name: 'provisioning_history',
+    pk: 'key',
+    columns: ['key', 'repository_id', 'organization_id', 'fetched_at'],
+    indexes: ['repository_id'],
+  },
 ];
 
 export const BOUNDED_WINDOW_DAYS = 7;

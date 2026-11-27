@@ -5,6 +5,56 @@
  * Go-generated OpenAPI contract from handler annotations
  * OpenAPI spec version: 0.0.01
  */
+export type Action = typeof Action[keyof typeof Action];
+
+
+export const Action = {
+  create: 'create',
+  update: 'update',
+  unchanged: 'unchanged',
+  missing: 'missing',
+  conflict: 'conflict',
+  error: 'error',
+  ignored: 'ignored',
+} as const;
+
+export interface DeviceDir {
+  device_id?: string;
+  path?: string;
+}
+
+export type ResourceKind = typeof ResourceKind[keyof typeof ResourceKind];
+
+
+export const ResourceKind = {
+  device: 'device',
+  alerts: 'alerts',
+  contact_points: 'contact_points',
+  annotations: 'annotations',
+  groups: 'groups',
+} as const;
+
+export interface OrgResourceSummary {
+  action?: Action;
+  kind?: ResourceKind;
+  /** Message explains a refusal, such as an unknown organisation. */
+  message?: string;
+  org?: string;
+  path?: string;
+}
+
+export interface ResourceStats {
+  applied?: number;
+  drifted?: number;
+  error?: number;
+  ignored?: number;
+  missing?: number;
+  /** Pending counts resources whose device has not confirmed the config it holds. */
+  pending?: number;
+  /** Total is the sum, so a client does not have to add the six up. */
+  total?: number;
+}
+
 export interface AppMarking {
   custom?: boolean;
   name?: string;
@@ -162,6 +212,322 @@ export interface EnrollResponse {
      * shipping a new APK.
      */
   pollIntervalSeconds?: number;
+}
+
+export interface InstanceSummary {
+  /**
+     * BootSeedSet reports whether a boot seed file is configured. The path itself is not
+     * returned: it is server filesystem layout, and a provisioning.read holder has no use
+     * for it — knowing where the file lives only helps an attacker who already has a write
+     * primitive.
+     */
+  boot_seed_configured?: boolean;
+  connections?: number;
+  repositories?: number;
+  resources?: number;
+}
+
+export interface CommitJSON {
+  author?: string;
+  message?: string;
+  sha?: string;
+  when?: number;
+}
+
+export interface ConnectionJSON {
+  checked_at?: number;
+  created_at?: number;
+  host?: string;
+  id?: string;
+  last_error?: string;
+  name?: string;
+  status?: string;
+  type?: string;
+  updated_at?: number;
+  /**
+     * WriteEnabled reports whether the token has push scope. It is a capability flag,
+     * not secret material, so it is safe to return and the UI needs it to offer editing.
+     */
+  write_enabled?: boolean;
+}
+
+export interface ConnectionListJSON {
+  connections?: ConnectionJSON[];
+  total?: number;
+}
+
+export interface ConnectionRequest {
+  host?: string;
+  name?: string;
+  token?: string;
+  type?: string;
+  /**
+     * WriteEnabled declares the token has push scope. It is a pointer so a request that
+     * only renames a connection cannot silently flip it either way.
+     */
+  write_enabled?: boolean;
+}
+
+export interface DiscoveryItemJSON {
+  action?: string;
+  device_id?: string;
+  /** Kind lets the wizard group step 3 by kind rather than assuming every item is a device. */
+  kind?: string;
+  managed?: boolean;
+  message?: string;
+  path?: string;
+}
+
+export interface DiscoveryJSON {
+  items?: DiscoveryItemJSON[];
+  org_files?: OrgResourceSummary[];
+  total?: number;
+  unmanaged?: DeviceDir[];
+}
+
+export interface DismissRequest {
+  ids?: string[];
+}
+
+export interface DismissResultJSON {
+  /**
+     * Dismissed is how many rows were hidden by this call. An id that was already dismissed
+     * or belongs to another organisation is not counted, so a caller can tell the difference.
+     */
+  dismissed?: number;
+}
+
+export interface EditRequest {
+  base_commit?: string;
+  commit_message?: string;
+  content?: string;
+  mode?: string;
+}
+
+export interface EditResultJSON {
+  branch?: string;
+  changed?: boolean;
+  commit?: string;
+  pull_request_error?: string;
+  pull_request_url?: string;
+}
+
+export interface EventJSON {
+  actor_id?: string;
+  actor_kind?: string;
+  actor_label?: string;
+  created_at?: number;
+  detail?: string;
+  id?: string;
+  resource_id?: string;
+  resource_type?: string;
+  result?: string;
+  type?: string;
+}
+
+export interface EventListJSON {
+  events?: EventJSON[];
+  total?: number;
+}
+
+export interface FileJSON {
+  author?: string;
+  commit?: string;
+  content?: string;
+  message?: string;
+  path?: string;
+  truncated?: boolean;
+  when?: number;
+}
+
+export interface HealthPointJSON {
+  duration_ms?: number;
+  failed?: number;
+  finished_at?: string;
+  state?: string;
+}
+
+export interface HealthJSON {
+  average_duration_ms?: number;
+  failure_streak?: number;
+  failures?: number;
+  last_duration_ms?: number;
+  successes?: number;
+  timeline?: HealthPointJSON[];
+}
+
+export interface HistoryJSON {
+  commits?: CommitJSON[];
+  /**
+     * Depth is how much history the read covered, so a client can say "the last N" rather
+     * than implying the full log.
+     */
+  depth?: number;
+  total?: number;
+}
+
+export interface JobResultJSON {
+  message?: string;
+  outcome?: string;
+  path?: string;
+  resource_id?: string;
+}
+
+export interface JobJSON {
+  applied?: number;
+  dry_run?: boolean;
+  error?: string;
+  failed?: number;
+  finished_at?: number;
+  id?: string;
+  repo_id?: string;
+  results?: JobResultJSON[];
+  skipped?: number;
+  started_at?: number;
+  state?: string;
+}
+
+export interface JobListJSON {
+  jobs?: JobJSON[];
+  total?: number;
+}
+
+export interface PreviewJSON {
+  base_commit?: string;
+  changed?: boolean;
+  diff?: string;
+  path?: string;
+}
+
+export interface RepositoryJSON {
+  branch?: string;
+  connection_id?: string;
+  created_at?: number;
+  description?: string;
+  enabled?: boolean;
+  exclude?: string[];
+  id?: string;
+  include?: string[];
+  last_error?: string;
+  last_sync_at?: number;
+  name?: string;
+  path?: string;
+  stats?: ResourceStats;
+  sync_interval_seconds?: number;
+  sync_state?: string;
+  sync_target?: string;
+  title?: string;
+  type?: string;
+  updated_at?: number;
+  url?: string;
+}
+
+export interface RepositoryListJSON {
+  repositories?: RepositoryJSON[];
+  total?: number;
+}
+
+export interface RepositoryRequest {
+  branch?: string;
+  /**
+     * ClearWebhook removes the stored webhook secret. Without it a user could replace a
+     * secret but never disable one, because an empty webhook_secret means "unchanged".
+     */
+  clear_webhook?: boolean;
+  connection_id?: string;
+  description?: string;
+  enabled?: boolean;
+  exclude?: string[];
+  /**
+     * Include and Exclude are the repository's scope patterns. A nil means "not
+     * supplied", so a PATCH that only renames cannot silently clear them.
+     */
+  include?: string[];
+  name?: string;
+  path?: string;
+  sync_interval_seconds?: number;
+  sync_target?: string;
+  title?: string;
+  url?: string;
+  /**
+     * WebhookSecret configures the HMAC secret a provider signs pushes with. It is
+     * write-only: no response echoes it back, and omitting it leaves the stored one alone.
+     */
+  webhook_secret?: string;
+}
+
+export interface ResourceJSON {
+  config_version?: number;
+  content_hash?: string;
+  device_id?: string;
+  device_last_seen?: number;
+  /**
+     * DeviceOnline is the live connection state. It is nil when there is no device (an org
+     * resource) or the device could not be read, so a client never shows "offline" for a
+     * device it simply does not know about.
+     */
+  device_online?: boolean;
+  device_reported_at?: number;
+  device_reported_version?: number;
+  id?: string;
+  /**
+     * Kind is what the resource declares, so a client can filter and group by it. An org
+     * resource has no device_id.
+     */
+  kind?: string;
+  last_applied_at?: number;
+  last_error?: string;
+  path?: string;
+  state?: string;
+}
+
+export interface ResourceListJSON {
+  resources?: ResourceJSON[];
+  total?: number;
+}
+
+export interface SchedulerJSON {
+  /** DueNow names the repositories the next tick will sync. */
+  due_now?: string[];
+  /** NextDueAt is epoch millis of the earliest future due time; absent when none is due. */
+  next_due_at?: number;
+  /**
+     * Running is false when the server was started with the scheduler disabled, so a user
+     * is never told a timer will run when nothing is ticking.
+     */
+  running?: boolean;
+  /** TickSeconds is how often the loop looks for due repositories. */
+  tick_seconds?: number;
+}
+
+export interface SecretRequirementJSON {
+  app?: string;
+  key?: string;
+  set?: boolean;
+}
+
+export interface SecretReadinessJSON {
+  /**
+     * Missing counts the declared keys the device does not have, so a client can badge the
+     * resource without scanning the list.
+     */
+  missing?: number;
+  secrets?: SecretRequirementJSON[];
+  total?: number;
+}
+
+export interface TreeEntryJSON {
+  kind?: string;
+  name?: string;
+  path?: string;
+  size?: number;
+}
+
+export interface TreeJSON {
+  /** Dir is the directory these entries belong to; empty means the repository root. */
+  dir?: string;
+  entries?: TreeEntryJSON[];
+  total?: number;
 }
 
 export interface APIKey {
@@ -2347,6 +2713,82 @@ export type GetOrganizationsIdMembersParams = {
  */
 status?: string;
 };
+
+export type GetProvisioningEventsParams = {
+/**
+ * how many events to return
+ */
+limit?: number;
+};
+
+export type DeleteProvisioningRepositoriesIdParams = {
+/**
+ * release devices instead of deleting their ownership rows
+ */
+keep_resources?: boolean;
+};
+
+export type GetProvisioningRepositoriesIdEventsParams = {
+/**
+ * how many events to return
+ */
+limit?: number;
+};
+
+export type GetProvisioningRepositoriesIdFileParams = {
+/**
+ * file path, relative to the repository root
+ */
+path: string;
+};
+
+export type GetProvisioningRepositoriesIdHealthParams = {
+/**
+ * how many recent runs to include
+ */
+limit?: number;
+};
+
+export type GetProvisioningRepositoriesIdHistoryParams = {
+/**
+ * how many commits to return
+ */
+limit?: number;
+};
+
+export type GetProvisioningRepositoriesIdJobsParams = {
+/**
+ * maximum jobs to return
+ */
+limit?: number;
+};
+
+export type PostProvisioningRepositoriesIdResourcesResourceIdSyncParams = {
+/**
+ * preview only, apply nothing
+ */
+dry_run?: boolean;
+};
+
+export type PostProvisioningRepositoriesIdSyncParams = {
+/**
+ * preview only, apply nothing
+ */
+dry_run?: boolean;
+/**
+ * revert devices whose manifest was removed
+ */
+revert_missing?: boolean;
+};
+
+export type GetProvisioningRepositoriesIdTreeParams = {
+/**
+ * directory, relative to the repository root
+ */
+dir?: string;
+};
+
+export type PostProvisioningWebhooksRepoID202 = { [key: string]: unknown };
 
 export type DeleteServiceAccountsIdTokensTokenParams = {
 /**

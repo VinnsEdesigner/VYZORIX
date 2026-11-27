@@ -385,6 +385,9 @@ func startServer(cfg *config.Config, log *slog.Logger, apiServer *api.Server,
 		// service is in-process only, so without this every replica synced every
 		// repository: the same deploys applied twice, counters racing each other.
 		scheduler.SetNodeLock(lockSvc)
+		// Tell the status endpoint what is actually running, so the console can say "the
+		// scheduler is disabled" instead of implying a timer that does not exist.
+		apiServer.AttachSchedulerStatus(scheduler)
 		scheduler.Start(ctx)
 		defer scheduler.Stop()
 		log.Info("provisioning scheduler started")
